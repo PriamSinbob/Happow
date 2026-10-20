@@ -18,7 +18,7 @@ await withClient(async (db) => {
     await db.query(`
       drop schema if exists public cascade; create schema public;
       drop schema if exists extensions cascade; create schema extensions;
-      drop type if exists event_status, trust_level, submission_status cascade;`);
+      drop type if exists event_status, trust_level, submission_status, report_reason cascade;`);
     console.log('reset public schema');
   }
   await db.query('create schema if not exists extensions');

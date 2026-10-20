@@ -60,6 +60,8 @@ export interface HappowEvent {
   /** The source whose listing fills the primary fields, and that listing's page. */
   sourceId?: string | null;
   sourceUrl?: string | null;
+  /** False for community submissions no moderator has checked yet. */
+  verified?: boolean;
 }
 
 /** An event plus its distance from the query point. */

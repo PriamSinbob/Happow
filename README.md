@@ -9,8 +9,11 @@ See [docs/BRIEF.md](docs/BRIEF.md) for the full PoC build brief: scope, decision
 | Path                   | What                                                                                   |
 | ---------------------- | -------------------------------------------------------------------------------------- |
 | `apps/web`             | React + Vite PWA (MapLibre GL, OSM tiles via OpenFreeMap), Polish and English UI       |
+| `apps/web/functions`   | Cloudflare Pages Function that serves `/api/*` from `packages/api`                     |
 | `packages/core`        | Shared types, config schemas, geo/time/filter helpers, seed materializer               |
-| `packages/ingest`      | Source adapters (Ticketmaster, Meetup), normalizer, dedup, scheduler, `pnpm ingest`    |
+| `packages/ingest`      | Source adapters (Ticketmaster, Meetup, crawler), normalizer, dedup, `pnpm ingest`      |
+| `packages/extract`     | JSON-LD parsing, robots.txt, SSRF-safe fetch, Nominatim geocoder, Claude extractor     |
+| `packages/api`         | Autofill, geocode, submissions, reports and moderation endpoints (fetch handler)       |
 | `config/`              | Regions, categories, sources, map provider, app defaults — everything region-specific  |
 | `data/seed/`           | Hand-entered demo events per region (times are offsets from now)                       |
 | `supabase/migrations/` | Postgres + PostGIS schema, `events_near`, `event_by_id` and `density_near` (H3 counts) |
@@ -47,6 +50,20 @@ pnpm ingest --source ticketmaster --force  # one source, ignoring its schedule
 
 Each source in `config/sources.json` names its adapter, schedule, rate limit, trust level, required secrets, category mapping and API cache limit. Raw payloads are stored unchanged (`raw_payloads`), normalized into `events`, and merged with existing events when they share an H3 neighbourhood, start within 30 minutes and have similar titles; the highest-trust source owns the merged event. Adapter contract tests replay fixtures in `packages/ingest/test/fixtures` (no live calls in CI); `pnpm ingest --dry-run --source <id> --record packages/ingest/test/fixtures` re-records them.
 
+### Crawled sources
+
+Crawler sources (`"adapter": "crawler"` in `config/sources.json`) list their `startUrls`, an optional `followPattern` and `maxFollow` for detail pages, and a category map keyed by schema.org types or URL path words. The crawler honours robots.txt, reads schema.org `Event` JSON-LD first and only sends the page text to Claude (`config/app.json` → `extraction`) when a source sets `llmFallback` and `ANTHROPIC_API_KEY` is present. Results are cached by content hash, addresses are geocoded with Nominatim (1 request/s, cached for 30 days), and events below `extraction.minConfidence` go to the moderation queue instead of the map. Crawled descriptions and images are not republished (`republishDescription` / `republishImages`).
+
+### Submissions and moderation
+
+`pnpm dev` also serves `/api` (the same handler as production) using `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUBMITTER_SALT` and optionally `ANTHROPIC_API_KEY` from `.env`; without them the add and report forms answer "not available yet". Anyone can add an event (link autofill or the form) or report one; submissions appear at once as "Community · Unverified" while `submissions.publishBeforeModeration` is true, and rate limits per device and IP are in `config/app.json`.
+
+Moderators sign in at `#/moderate` with a Supabase magic link. To add one:
+
+1. Supabase → Authentication → Users → **Invite user** with their email (sign-up from the app is disabled).
+2. Authentication → URL Configuration: set **Site URL** to the deployed app and add it (and `http://localhost:5173` for dev) to **Redirect URLs**.
+3. Run `insert into moderators (email) values ('name@example.org');` in the SQL editor (lower-case email).
+
 ### Checks
 
 ```sh
@@ -59,15 +76,15 @@ Adding a region is a config change: add it to `config/regions.json` (centre, bbo
 
 ## Deployment
 
-| Workflow                                                             | Needs                                                                                                                                                                            |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yml` — format, typecheck, tests, build, PostGIS integration test | nothing                                                                                                                                                                          |
-| `deploy-web.yml` — Cloudflare Pages on push to `main`                | secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; optional `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`; optional variable `CLOUDFLARE_PAGES_PROJECT` (default `happow`) |
-| `db-migrate.yml` — manual migrate + seed                             | secret `DATABASE_URL`                                                                                                                                                            |
-| `ingest.yml` — every 15 min, runs due sources                        | secret `DATABASE_URL`; per source `TICKETMASTER_API_KEY`, `MEETUP_CLIENT_KEY`, `MEETUP_MEMBER_ID`, `MEETUP_SIGNING_KEY_ID`, `MEETUP_PRIVATE_KEY`                                 |
+| Workflow                                                                      | Needs                                                                                                                                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml` — format, typecheck, tests, build, PostGIS integration test          | nothing                                                                                                                                                                                                                                                                                                                                |
+| `deploy-web.yml` — Cloudflare Pages (app + `/api` function) on push to `main` | secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; optional `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`; optional variable `CLOUDFLARE_PAGES_PROJECT` (default `happow`). In the Pages project (Settings → Variables and Secrets): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUBMITTER_SALT`, optional `ANTHROPIC_API_KEY` |
+| `db-migrate.yml` — manual migrate + seed                                      | secret `DATABASE_URL`                                                                                                                                                                                                                                                                                                                  |
+| `ingest.yml` — every 15 min, runs due sources                                 | secret `DATABASE_URL`; per source `TICKETMASTER_API_KEY`, `MEETUP_CLIENT_KEY`, `MEETUP_MEMBER_ID`, `MEETUP_SIGNING_KEY_ID`, `MEETUP_PRIVATE_KEY`; `ANTHROPIC_API_KEY` for LLM fallback                                                                                                                                                 |
 
 Secrets live only in GitHub Secrets or a local `.env` (never committed).
 
 ## Attribution
 
-Map data © OpenStreetMap contributors; tiles by OpenFreeMap / OpenMapTiles. Event data from Ticketmaster and Meetup links back to the source listing.
+Map data © OpenStreetMap contributors; tiles by OpenFreeMap / OpenMapTiles. Geocoding by Nominatim (© OpenStreetMap contributors). Every event links back to its source listing (Ticketmaster, Meetup, eBilet, wroclaw.pl GO, NFM); crawled pages contribute facts only.

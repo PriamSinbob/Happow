@@ -38,4 +38,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/web/dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT || 'happow' }} --branch=main
+          # Run from apps/web so wrangler also bundles apps/web/functions (the /api endpoints).
+          # Their secrets (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUBMITTER_SALT, ANTHROPIC_API_KEY)
+          # are set in the Cloudflare Pages project, not here.
+          workingDirectory: apps/web
+          command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT || 'happow' }} --branch=main

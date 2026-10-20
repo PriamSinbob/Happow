@@ -8,6 +8,7 @@ import { useI18n } from '../i18n';
 import { CategoryIcon, useEventText } from './EventMeta';
 import { RuleList } from './EventCard';
 import { Icon } from './Icons';
+import { ReportDialog } from './ReportDialog';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
 
@@ -87,6 +88,7 @@ function DetailBody({
   const { t, lang } = useI18n();
   const { running, price, distance, walk, categories } = useEventText(ev, now);
   const [toast, setToast] = useState<string | null>(null);
+  const [reporting, setReporting] = useState(false);
   const url = eventUrl(ev.id);
   const ended = new Date(ev.endAt) < now;
   const dayLong = isDayLong(ev);
@@ -135,6 +137,9 @@ function DetailBody({
         <div className="event-card__cats">
           {categories.map((c) => c.labels[lang]).join(' · ')}
           <span className={`badge badge--${ev.trust}`}>{t(`event.source.${ev.trust}`)}</span>
+          {ev.verified === false && (
+            <span className="badge badge--unverified">{t('event.unverified')}</span>
+          )}
         </div>
         <h1 id="detail-title">{ev.title}</h1>
 
@@ -259,7 +264,20 @@ function DetailBody({
             </>
           )}
         </p>
+        <button type="button" className="report-link" onClick={() => setReporting(true)}>
+          <Icon name="flag" size={16} /> {t('event.report')}
+        </button>
       </div>
+      {reporting && (
+        <ReportDialog
+          eventId={ev.id}
+          onClose={() => setReporting(false)}
+          onSent={() => {
+            setReporting(false);
+            setToast(t('report.thanks'));
+          }}
+        />
+      )}
       {toast && (
         <div className="toast" role="status">
           {toast}

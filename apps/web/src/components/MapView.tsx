@@ -124,7 +124,7 @@ function computeChevrons(m: maplibregl.Map, p: Props): Chevron[] {
 
 const RADIUS_SOURCE = 'radius';
 
-function rasterStyle(): StyleSpecification {
+export function rasterStyle(): StyleSpecification {
   const r = config.map.fallbackRaster;
   return {
     version: 8,

@@ -22,6 +22,7 @@ interface Row {
   venue_name: string | null;
   venue_address: string | null;
   venue_website?: string | null;
+  verified?: boolean;
   lat: number;
   lng: number;
   h3_r9: string;
@@ -104,6 +105,7 @@ export function rowToEvent(r: Row): NearbyEvent {
     lastSeenAt: r.last_seen_at,
     sourceId: r.primary_source_id ?? null,
     sourceUrl: r.source_url ?? null,
+    verified: r.verified ?? true,
     distanceM: r.distance_m ?? 0,
   };
 }

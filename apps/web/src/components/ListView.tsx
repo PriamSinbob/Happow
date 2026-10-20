@@ -33,7 +33,12 @@ function Row({
       <button type="button" className="row" onClick={() => onSelect(ev.id)}>
         <CategoryIcon ev={ev} />
         <span className="row__body">
-          <span className="row__title">{ev.title}</span>
+          <span className="row__title">
+            {ev.title}
+            {ev.verified === false && (
+              <span className="badge badge--unverified">{t('event.unverified')}</span>
+            )}
+          </span>
           <span className="row__when">
             {running && <span className="now-pill">{t('event.now')}</span>}
             {when}

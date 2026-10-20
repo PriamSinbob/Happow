@@ -24,6 +24,10 @@ export const regionSchema = z.object({
   locale: languageSchema,
   /** ISO 3166-1 alpha-2, passed to sources that filter by country. */
   countryCode: z.string().length(2).optional(),
+  /** City names that count as this region on crawled pages (listings also carry other cities). */
+  localities: z.array(z.string().min(1)).optional(),
+  /** ISO 4217 code that prices typed into the add-event form are in. */
+  currency: z.string().length(3).default('EUR'),
   center: latLngSchema,
   defaultZoom: z.number().min(0).max(22),
   bbox: z.object({ west: z.number(), south: z.number(), east: z.number(), north: z.number() }),
@@ -69,6 +73,38 @@ export const appConfigSchema = z.object({
     titleSimilarity: z.number().min(0).max(1),
     /** H3 rings around the event's cell to search, so venues on a cell edge still match. */
     h3Ring: z.number().int().min(0).max(3),
+  }),
+  geocoding: z.object({
+    provider: z.literal('nominatim'),
+    endpoint: z.string().url(),
+    minIntervalMs: z.number().int().nonnegative(),
+    cacheDays: z.number().positive(),
+  }),
+  extraction: z.object({
+    provider: z.literal('anthropic'),
+    model: z.string().min(1),
+    effort: z.enum(['low', 'medium', 'high']),
+    /** Environment variable holding the API key; without it, LLM extraction is off. */
+    secret: z.string().regex(/^[A-Z][A-Z0-9_]*$/),
+    maxInputChars: z.number().int().positive(),
+    maxTokens: z.number().int().positive(),
+    /** Extractions below this go to the moderation queue instead of the map. */
+    minConfidence: z.number().min(0).max(1),
+    maxPageBytes: z.number().int().positive(),
+    /** schema.org Event subtypes (lower-case) → category ids, for every crawled page and URL autofill. */
+    schemaTypeMap: z.record(z.string()),
+  }),
+  submissions: z.object({
+    /** Show user submissions on the map (as unverified) before a moderator approves them. */
+    publishBeforeModeration: z.boolean(),
+    maxPerDevicePerDay: z.number().int().positive(),
+    autofillPerHourPerClient: z.number().int().positive(),
+    reportsPerDayPerDevice: z.number().int().positive(),
+    maxDescriptionChars: z.number().int().positive(),
+  }),
+  legal: z.object({
+    /** Takedown / DSA notice contact shown on the About page. */
+    contactEmail: z.string().email().nullable(),
   }),
   ingest: z.object({
     descriptionMaxChars: z.number().int().positive(),
@@ -121,6 +157,9 @@ export const sourceSchema = z.object({
   categoryMap: z.record(z.string()).default({}),
   /** Categories used when no label maps. */
   defaultCategories: z.array(z.string()).default(['other']),
+  /** Crawled pages: facts only. Store the page's description / images only where allowed. */
+  republishDescription: z.boolean().default(true),
+  republishImages: z.boolean().default(true),
 });
 export const sourcesConfigSchema = z.object({ sources: z.array(sourceSchema) });
 

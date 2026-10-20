@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import mapConfig from '../../config/map.json';
 
@@ -8,6 +8,48 @@ const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 const tileHosts = [mapConfig.styleUrl, ...mapConfig.fallbackRaster.tiles].map(
   (u) => new URL(u).host,
 );
+
+/**
+ * Serves /api/* in `vite dev` with the same handler as the Cloudflare Pages Function, reading the
+ * server secrets from the repo's .env (never exposed to the client bundle).
+ */
+function devApi(mode: string): Plugin {
+  return {
+    name: 'happow-dev-api',
+    configureServer(server: ViteDevServer) {
+      const env = loadEnv(mode, repoRoot, '');
+      let api: ((req: Request) => Promise<Response>) | null = null;
+      server.middlewares.use('/api', async (req, res) => {
+        try {
+          if (!api) {
+            const mod = await server.ssrLoadModule('@happow/api');
+            api = mod.createApi(env) as (req: Request) => Promise<Response>;
+          }
+          const chunks: Buffer[] = [];
+          for await (const c of req) chunks.push(c as Buffer);
+          const headers = new Headers();
+          for (const [k, v] of Object.entries(req.headers))
+            if (typeof v === 'string') headers.set(k, v);
+          const response = await api(
+            new Request(`http://localhost/api${req.url}`, {
+              method: req.method,
+              headers,
+              body:
+                req.method === 'GET' || req.method === 'HEAD' ? undefined : Buffer.concat(chunks),
+            }),
+          );
+          res.statusCode = response.status;
+          response.headers.forEach((v, k) => res.setHeader(k, v));
+          res.end(Buffer.from(await response.arrayBuffer()));
+        } catch (err) {
+          console.error(err);
+          res.statusCode = 500;
+          res.end('{"error":"server_error"}');
+        }
+      });
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, repoRoot, 'VITE_');
@@ -26,6 +68,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
+      devApi(mode),
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['icons/favicon.svg', 'icons/apple-touch-icon.png'],

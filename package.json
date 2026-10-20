@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@happow/core": "workspace:*",
+    "@happow/extract": "workspace:*",
     "@happow/ingest": "workspace:*",
     "@types/node": "^22.10.0",
     "@types/pg": "^8.15.0",

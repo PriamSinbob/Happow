@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type pg from 'pg';
-import type { HappowEvent } from '@happow/core';
+import type { HappowConfig, HappowEvent } from '@happow/core';
+import type { ExtractedEvent, GeoResult, KeyValueCache } from '@happow/extract';
 import { decide, type DedupConfig, type Listing, type StoredEvent } from './dedup.js';
 import { h3Neighbourhood } from './geo.js';
 import type { NormalizedEvent, RawEvent } from './types.js';
@@ -9,12 +10,15 @@ export interface ApplyStats {
   inserted: number;
   updated: number;
   merged: number;
+  /** Low-confidence new events sent to the moderation queue instead of the map. */
+  queued: number;
 }
 
 export interface ApplyOptions {
   regionId: string;
   rank: (sourceId: string | null) => number;
   dedup: DedupConfig & { h3Ring: number };
+  minConfidence: number;
 }
 
 const EVENT_COLUMNS = `
@@ -125,16 +129,23 @@ export class EventStore {
 
   /** Store raw payloads, then insert, update or merge every event, all in one transaction. */
   async apply(items: NormalizedEvent[], raws: RawEvent[], opts: ApplyOptions): Promise<ApplyStats> {
-    const stats: ApplyStats = { inserted: 0, updated: 0, merged: 0 };
+    const stats: ApplyStats = { inserted: 0, updated: 0, merged: 0, queued: 0 };
     await this.db.query('begin');
     try {
       for (const raw of raws) await this.saveRaw(raw);
       for (const item of items) {
         const listing = { sourceId: item.sourceId, externalId: item.externalId };
+        const linked = await this.linked(item);
+        // Unsure extractions wait for a moderator, unless a moderator already approved the listing.
+        if (!linked && item.event.confidence < opts.minConfidence) {
+          await this.queueForReview(item, opts.regionId);
+          stats.queued++;
+          continue;
+        }
         const d = decide(
           item.event,
           listing,
-          await this.linked(item),
+          linked,
           await this.nearby(item.event, opts.dedup),
           opts.rank,
           opts.dedup,
@@ -176,6 +187,122 @@ export class EventStore {
       throw err;
     }
     return stats;
+  }
+
+  /** Pending crawl submission; refreshed while pending, never revived once reviewed. */
+  private async queueForReview(item: NormalizedEvent, regionId: string) {
+    await this.db.query(
+      `insert into submissions (kind, url, extracted_payload, status, submitter_hash, region_id,
+         source_id, external_id, confidence)
+       values ('crawl', $1, $2, 'pending', $3, $4, $3, $5, $6)
+       on conflict (source_id, external_id) where external_id is not null do update
+         set extracted_payload = excluded.extracted_payload, confidence = excluded.confidence,
+           url = excluded.url
+         where submissions.status = 'pending'`,
+      [
+        item.sourceUrl,
+        JSON.stringify(item),
+        item.sourceId,
+        regionId,
+        item.externalId,
+        item.event.confidence,
+      ],
+    );
+  }
+
+  /** Upsert regions, categories and sources from config (also used by the seed script). */
+  async syncConfig(config: HappowConfig) {
+    for (const r of config.regions) {
+      const { west: w, south: s, east: e, north: n } = r.bbox;
+      await this.db.query(
+        `insert into regions (id, name, timezone, center, polygon, enabled_sources, updated_at)
+         values ($1, $2, $3, st_point($4, $5)::geography,
+                 st_geomfromtext($6, 4326)::geography, $7, now())
+         on conflict (id) do update set name = excluded.name, timezone = excluded.timezone,
+           center = excluded.center, polygon = excluded.polygon,
+           enabled_sources = excluded.enabled_sources, updated_at = now()`,
+        [
+          r.id,
+          r.name,
+          r.timezone,
+          r.center.lng,
+          r.center.lat,
+          `POLYGON((${w} ${s}, ${e} ${s}, ${e} ${n}, ${w} ${n}, ${w} ${s}))`,
+          r.enabledSources,
+        ],
+      );
+    }
+    for (const [i, c] of config.categories.entries()) {
+      await this.db.query(
+        `insert into categories (id, labels, default_duration_min, icon, color, sort_order)
+         values ($1, $2, $3, $4, $5, $6)
+         on conflict (id) do update set labels = excluded.labels,
+           default_duration_min = excluded.default_duration_min, icon = excluded.icon,
+           color = excluded.color, sort_order = excluded.sort_order`,
+        [c.id, c.labels, c.defaultDurationMin, c.icon, c.color, i],
+      );
+    }
+    for (const s of config.sources) {
+      await this.db.query(
+        `insert into sources (id, adapter, region_ids, schedule, rate_limit, trust_level, enabled, terms_notes)
+         values ($1, $2, $3, $4, $5, $6, $7, $8)
+         on conflict (id) do update set adapter = excluded.adapter, region_ids = excluded.region_ids,
+           schedule = excluded.schedule, rate_limit = excluded.rate_limit,
+           trust_level = excluded.trust_level, enabled = excluded.enabled, terms_notes = excluded.terms_notes`,
+        [
+          s.id,
+          s.adapter,
+          s.regionIds,
+          s.schedule,
+          s.rateLimit,
+          s.trustLevel,
+          s.enabled,
+          s.termsNotes,
+        ],
+      );
+    }
+  }
+
+  /** LLM results by content hash (see the crawler); kept until the page text changes. */
+  extractionCache(extractorId: string): KeyValueCache<ExtractedEvent[]> {
+    return {
+      get: async (key) => {
+        const { rows } = await this.db.query<{ result: ExtractedEvent[] }>(
+          'select result from extraction_cache where content_hash = $1',
+          [key],
+        );
+        return rows[0]?.result;
+      },
+      set: async (key, value) => {
+        await this.db.query(
+          `insert into extraction_cache (content_hash, extractor, result) values ($1, $2, $3)
+           on conflict (content_hash) do update set result = excluded.result, created_at = now()`,
+          [key, extractorId, JSON.stringify(value)],
+        );
+      },
+    };
+  }
+
+  /** Geocoder answers (including "not found"), valid for `maxAgeDays`. */
+  geocodeCache(provider: string, maxAgeDays: number): KeyValueCache<GeoResult | null> {
+    return {
+      get: async (key) => {
+        const { rows } = await this.db.query<{ result: GeoResult | null }>(
+          `select result from geocode_cache
+           where query_key = $1 and fetched_at > now() - make_interval(days => $2)`,
+          [key, maxAgeDays],
+        );
+        return rows.length ? rows[0]!.result : undefined;
+      },
+      set: async (key, value) => {
+        await this.db.query(
+          `insert into geocode_cache (query_key, provider, result) values ($1, $2, $3)
+           on conflict (query_key) do update set result = excluded.result, provider = excluded.provider,
+             fetched_at = now()`,
+          [key, provider, value === null ? null : JSON.stringify(value)],
+        );
+      },
+    };
   }
 
   private async saveRaw(raw: RawEvent) {

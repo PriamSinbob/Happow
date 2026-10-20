@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import type { HappowEvent, Region, Source } from '@happow/core';
+import type { Category, HappowEvent, Region, Source } from '@happow/core';
+import type { ExtractedEvent, Extractor, KeyValueCache } from '@happow/extract';
 import type { HttpClient } from './http.js';
 
 /** One item exactly as a source returned it. Stored unchanged so it can be re-parsed later. */
@@ -51,12 +52,35 @@ export const parsedEventSchema = z.object({
   ticketUrl: z.string().url().nullable(),
   imageUrl: z.string().url().nullable(),
   status: z.enum(['scheduled', 'cancelled', 'postponed']),
+  /** Category ids already in our taxonomy (LLM extraction); used before categoryLabels. */
+  categoryIds: z.array(z.string()).optional(),
+  /** Address parts to geocode when the source gives no coordinates. */
+  locationQuery: z
+    .object({
+      venueName: z.string().nullable(),
+      street: z.string().nullable(),
+      postalCode: z.string().nullable(),
+      city: z.string().nullable(),
+    })
+    .optional(),
+  /** 0–1; defaults to 1 for API sources. */
+  confidence: z.number().min(0).max(1).optional(),
 });
 export type ParsedEvent = z.infer<typeof parsedEventSchema>;
 
 export interface FetchWindow {
   from: Date;
   to: Date;
+}
+
+/** Shared helpers some adapters need (the crawler); absent ones mean the feature is off. */
+export interface AdapterServices {
+  extractor: Extractor | null;
+  extractionCache: KeyValueCache<ExtractedEvent[]>;
+  categories: Category[];
+  userAgent: string;
+  maxInputChars: number;
+  maxPageBytes: number;
 }
 
 export interface AdapterContext {
@@ -66,6 +90,7 @@ export interface AdapterContext {
   http: HttpClient;
   env: Record<string, string | undefined>;
   now: Date;
+  services?: AdapterServices;
 }
 
 /** One adapter per source type. Everything source-specific (endpoints, sizes, labels) comes from config. */

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { snapRadius, type Language } from '@happow/core';
 import { config, region } from './config';
 import { createRepository } from './data';
@@ -8,10 +8,12 @@ import { useEvents } from './hooks/useEvents';
 import { useGuidance } from './hooks/useGuidance';
 import { useFilters } from './hooks/useFilters';
 import { useGeolocation } from './hooks/useGeolocation';
-import { useDetailRoute } from './hooks/useHashRoute';
+import { useRoute } from './hooks/useHashRoute';
 import { useRadius } from './hooks/useRadius';
 import { useSaved } from './hooks/useSaved';
 import { useI18n } from './i18n';
+import { About } from './components/About';
+import { AddEvent } from './components/AddEvent';
 import { EventCard } from './components/EventCard';
 import { EventDetail } from './components/EventDetail';
 import { FilterBar, windowSummary } from './components/FilterBar';
@@ -19,6 +21,8 @@ import { FilterSheet } from './components/FilterSheet';
 import { GuidanceCard } from './components/Guidance';
 import { ListView } from './components/ListView';
 import { MapView } from './components/MapView';
+import { Moderation } from './components/Moderation';
+import { Icon } from './components/Icons';
 import { RadiusControl } from './components/RadiusControl';
 import { storage } from './storage';
 
@@ -48,7 +52,10 @@ export function App() {
   const [hotspotOpen, setHotspotOpen] = useState(false);
   const [recenter, setRecenter] = useState(0);
   const filtered = filters.activeCount > 0;
-  const [detailId, openDetail] = useDetailRoute();
+  const [route, go] = useRoute();
+  const detailId = route?.name === 'event' ? route.id : null;
+  const openDetail = (id: string) => go({ name: 'event', id });
+  const close = useCallback(() => go(null), [go]);
   const detail = useEventDetail(repo, detailId, events, location.center);
   const saved = useSaved();
 
@@ -100,12 +107,25 @@ export function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">
+        <button
+          type="button"
+          className="brand"
+          onClick={() => go({ name: 'about' })}
+          aria-label={`${t('header.about')}, ${regionName}`}
+        >
           <span className="brand__dot" aria-hidden />
           <span className="brand__name">Happow</span>
           <span className="brand__region">{regionName}</span>
-        </div>
+        </button>
         <div className="topbar__actions">
+          <button
+            type="button"
+            className="icon-btn icon-btn--raised"
+            onClick={() => go({ name: 'add' })}
+            aria-label={t('header.add')}
+          >
+            <Icon name="plus" />
+          </button>
           {otherLang && (
             <button
               type="button"
@@ -281,8 +301,15 @@ export function App() {
           now={now}
           saved={saved.isSaved(detailId)}
           onToggleSave={() => saved.toggle(detailId)}
-          onClose={() => openDetail(null)}
+          onClose={close}
         />
+      )}
+      {route?.name === 'add' && (
+        <AddEvent onClose={close} onOpenEvent={(id) => go({ name: 'event', id }, true)} />
+      )}
+      {route?.name === 'moderate' && <Moderation onClose={close} />}
+      {route?.name === 'about' && (
+        <About onClose={close} onModerate={() => go({ name: 'moderate' }, true)} />
       )}
     </div>
   );

@@ -60,6 +60,9 @@ export function EventCard({
           <div className="event-card__cats">
             {categories.map((c) => c.labels[lang]).join(' · ')}
             <span className={`badge badge--${ev.trust}`}>{t(`event.source.${ev.trust}`)}</span>
+            {ev.verified === false && (
+              <span className="badge badge--unverified">{t('event.unverified')}</span>
+            )}
           </div>
           <h2 id={`ev-${ev.id}`}>
             <button type="button" className="link-btn" onClick={onDetails}>

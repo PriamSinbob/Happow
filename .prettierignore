@@ -3,3 +3,5 @@ dist
 dev-dist
 coverage
 docs/BRIEF.md
+**/test/fixtures/**/*.html
+**/test/fixtures/**/*.txt

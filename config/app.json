@@ -2,22 +2,93 @@
   "defaultRegion": "wroclaw",
   "languages": ["pl", "en"],
   "fallbackLanguage": "en",
-  "radius": { "minM": 100, "maxM": 25000, "defaultM": 500 },
+  "radius": {
+    "minM": 100,
+    "maxM": 25000,
+    "defaultM": 500
+  },
   "walkingSpeedMPerMin": 80,
-  "h3": { "eventResolution": 9, "densityResolution": 8 },
-  "density": { "searchRadiusM": 5000, "hotspotMinEvents": 3, "maxChevrons": 6 },
+  "h3": {
+    "eventResolution": 9,
+    "densityResolution": 8
+  },
+  "density": {
+    "searchRadiusM": 5000,
+    "hotspotMinEvents": 3,
+    "maxChevrons": 6
+  },
   "timeWindows": [
-    { "id": "now", "hours": 0 },
-    { "id": "2h", "hours": 2 },
-    { "id": "6h", "hours": 6 },
-    { "id": "today", "endOfDay": true }
+    {
+      "id": "now",
+      "hours": 0
+    },
+    {
+      "id": "2h",
+      "hours": 2
+    },
+    {
+      "id": "6h",
+      "hours": 6
+    },
+    {
+      "id": "today",
+      "endOfDay": true
+    }
   ],
   "defaultTimeWindow": "today",
-  "dedup": { "startToleranceMin": 30, "titleSimilarity": 0.5, "h3Ring": 1 },
+  "dedup": {
+    "startToleranceMin": 30,
+    "titleSimilarity": 0.5,
+    "h3Ring": 1
+  },
   "ingest": {
     "descriptionMaxChars": 600,
     "lookbackHours": 8,
     "lookaheadHours": 48,
-    "userAgent": "Happow/0.2 (+https://github.com/PriamSinbob/Happow)"
+    "userAgent": "Happow/0.4 (+https://github.com/PriamSinbob/Happow)"
+  },
+  "geocoding": {
+    "provider": "nominatim",
+    "endpoint": "https://nominatim.openstreetmap.org/search",
+    "minIntervalMs": 1100,
+    "cacheDays": 30
+  },
+  "extraction": {
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "effort": "low",
+    "secret": "ANTHROPIC_API_KEY",
+    "maxInputChars": 12000,
+    "maxTokens": 16000,
+    "minConfidence": 0.7,
+    "maxPageBytes": 3000000,
+    "schemaTypeMap": {
+      "musicevent": "music",
+      "danceevent": "music",
+      "theaterevent": "theatre",
+      "comedyevent": "theatre",
+      "screeningevent": "cinema",
+      "exhibitionevent": "exhibition",
+      "visualartsevent": "exhibition",
+      "festival": "festival",
+      "sportsevent": "sport",
+      "childrensevent": "kids",
+      "foodevent": "food",
+      "saleevent": "market",
+      "educationevent": "talk",
+      "literaryevent": "talk",
+      "businessevent": "talk",
+      "socialevent": "happening"
+    }
+  },
+  "submissions": {
+    "publishBeforeModeration": true,
+    "maxPerDevicePerDay": 10,
+    "autofillPerHourPerClient": 30,
+    "reportsPerDayPerDevice": 20,
+    "maxDescriptionChars": 600
+  },
+  "legal": {
+    "contactEmail": null
   }
 }
