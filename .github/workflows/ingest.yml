@@ -1,0 +1,52 @@
+name: Ingest sources
+
+# Runs every 15 minutes; each source's own `schedule` in config/sources.json decides whether it is
+# due (tracked in the source_runs table). Sources whose secrets are missing are skipped.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Only this source id (e.g. ticketmaster); empty = all
+        type: string
+        default: ''
+      force:
+        description: Run even if not due
+        type: boolean
+        default: false
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+      MEETUP_CLIENT_KEY: ${{ secrets.MEETUP_CLIENT_KEY }}
+      MEETUP_MEMBER_ID: ${{ secrets.MEETUP_MEMBER_ID }}
+      MEETUP_SIGNING_KEY_ID: ${{ secrets.MEETUP_SIGNING_KEY_ID }}
+      MEETUP_PRIVATE_KEY: ${{ secrets.MEETUP_PRIVATE_KEY }}
+      SOURCE: ${{ inputs.source }}
+      FORCE: ${{ inputs.force && '1' || '' }}
+    steps:
+      - if: env.DATABASE_URL == ''
+        run: echo "::notice::DATABASE_URL secret is not set; skipping ingestion."
+      - if: env.DATABASE_URL != ''
+        uses: actions/checkout@v4
+      - if: env.DATABASE_URL != ''
+        uses: pnpm/action-setup@v4
+      - if: env.DATABASE_URL != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - if: env.DATABASE_URL != ''
+        run: pnpm install --frozen-lockfile
+      - if: env.DATABASE_URL != ''
+        # Inputs arrive through env, never interpolated into the script.
+        run: pnpm ingest ${SOURCE:+--source "$SOURCE"} ${FORCE:+--force}

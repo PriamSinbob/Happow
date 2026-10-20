@@ -1,0 +1,95 @@
+{
+  "categories": [
+    {
+      "id": "music",
+      "labels": { "pl": "Muzyka", "en": "Music" },
+      "defaultDurationMin": 150,
+      "icon": "🎵",
+      "color": "#7c3aed"
+    },
+    {
+      "id": "theatre",
+      "labels": { "pl": "Teatr", "en": "Theatre" },
+      "defaultDurationMin": 150,
+      "icon": "🎭",
+      "color": "#be123c"
+    },
+    {
+      "id": "cinema",
+      "labels": { "pl": "Kino", "en": "Cinema" },
+      "defaultDurationMin": 120,
+      "icon": "🎬",
+      "color": "#334155"
+    },
+    {
+      "id": "exhibition",
+      "labels": { "pl": "Wystawa", "en": "Exhibition" },
+      "defaultDurationMin": 480,
+      "icon": "🖼️",
+      "color": "#0e7490"
+    },
+    {
+      "id": "festival",
+      "labels": { "pl": "Festiwal", "en": "Festival" },
+      "defaultDurationMin": 480,
+      "icon": "🎪",
+      "color": "#c2410c"
+    },
+    {
+      "id": "happening",
+      "labels": { "pl": "Happening", "en": "Happening" },
+      "defaultDurationMin": 120,
+      "icon": "✨",
+      "color": "#db2777"
+    },
+    {
+      "id": "sport",
+      "labels": { "pl": "Sport", "en": "Sport" },
+      "defaultDurationMin": 120,
+      "icon": "⚽",
+      "color": "#15803d"
+    },
+    {
+      "id": "market",
+      "labels": { "pl": "Targi i jarmarki", "en": "Market & fair" },
+      "defaultDurationMin": 360,
+      "icon": "🧺",
+      "color": "#a16207"
+    },
+    {
+      "id": "garage-sale",
+      "labels": { "pl": "Wyprzedaż garażowa", "en": "Garage sale" },
+      "defaultDurationMin": 240,
+      "icon": "📦",
+      "color": "#92400e"
+    },
+    {
+      "id": "kids",
+      "labels": { "pl": "Dzieci i rodzina", "en": "Kids & family" },
+      "defaultDurationMin": 120,
+      "icon": "🧸",
+      "color": "#0284c7"
+    },
+    {
+      "id": "food",
+      "labels": { "pl": "Jedzenie", "en": "Food" },
+      "defaultDurationMin": 180,
+      "icon": "🍽️",
+      "color": "#ea580c"
+    },
+    {
+      "id": "talk",
+      "labels": { "pl": "Wykłady i warsztaty", "en": "Talks & workshops" },
+      "defaultDurationMin": 90,
+      "icon": "🎤",
+      "color": "#4338ca"
+    },
+    {
+      "id": "other",
+      "labels": { "pl": "Inne", "en": "Other" },
+      "defaultDurationMin": 120,
+      "icon": "📍",
+      "color": "#475569"
+    }
+  ]
+}

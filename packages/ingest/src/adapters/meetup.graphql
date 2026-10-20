@@ -1,0 +1,51 @@
+# Meetup gql-ext event search. Field names follow Meetup's 2025 API migration guide
+# (keywordSearch → eventSearch, venue → venues, image → featuredEventPhoto, isOnline → eventType).
+# The search filter's input type is not in the public docs: confirm by introspection with a Pro token
+# and adjust here — the adapter only depends on the result shape, and parses it tolerantly.
+query HappowEventSearch($filter: EventSearchFilter!, $first: Int!, $after: String) {
+  eventSearch(filter: $filter, first: $first, after: $after) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    edges {
+      node {
+        id
+        title
+        eventUrl
+        description
+        dateTime
+        endTime
+        duration
+        eventType
+        status
+        venues {
+          id
+          name
+          address
+          city
+          postalCode
+          lat
+          lon
+        }
+        feeSettings {
+          amount
+          currency
+        }
+        featuredEventPhoto {
+          id
+          baseUrl
+        }
+        group {
+          id
+          name
+          urlname
+          topicCategory {
+            name
+          }
+        }
+      }
+    }
+  }
+}

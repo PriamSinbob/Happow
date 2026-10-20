@@ -1,0 +1,27 @@
+{
+  "regions": [
+    {
+      "id": "wroclaw",
+      "name": {
+        "pl": "Wrocław",
+        "en": "Wrocław"
+      },
+      "timezone": "Europe/Warsaw",
+      "locale": "pl",
+      "countryCode": "PL",
+      "center": {
+        "lat": 51.1101,
+        "lng": 17.0326
+      },
+      "defaultZoom": 15,
+      "bbox": {
+        "west": 16.807,
+        "south": 51.042,
+        "east": 17.176,
+        "north": 51.211
+      },
+      "enabledSources": ["seed", "ticketmaster", "meetup"],
+      "seedFile": "data/seed/wroclaw.events.json"
+    }
+  ]
+}

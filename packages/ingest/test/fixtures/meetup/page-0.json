@@ -1,0 +1,108 @@
+{
+  "data": {
+    "eventSearch": {
+      "totalCount": 5,
+      "pageInfo": { "hasNextPage": true, "endCursor": "Y3Vyc29yOjM=" },
+      "edges": [
+        {
+          "node": {
+            "id": "311000001",
+            "title": "Wrocław JS #87: Signals, Servers and Suspense",
+            "eventUrl": "https://www.meetup.com/wroclaw-js/events/311000001/",
+            "description": "**Agenda**\n\n1. [Signals deep dive](https://example.org/talk) – Anna\n2. Pizza & networking",
+            "dateTime": "2026-10-24T18:00:00+02:00",
+            "endTime": null,
+            "duration": "PT2H30M",
+            "eventType": "PHYSICAL",
+            "status": "ACTIVE",
+            "venues": [
+              {
+                "id": "27500001",
+                "name": "Business Link Wrocław",
+                "address": "ul. Szewska 3A",
+                "city": "Wrocław",
+                "postalCode": "50-139",
+                "lat": 51.1107,
+                "lon": 17.0329
+              }
+            ],
+            "feeSettings": null,
+            "featuredEventPhoto": {
+              "id": "523000001",
+              "baseUrl": "https://secure-content.meetupstatic.com/images/classic-events/"
+            },
+            "group": {
+              "id": "1001",
+              "name": "Wrocław JS",
+              "urlname": "wroclaw-js",
+              "topicCategory": { "name": "Technology" }
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "311000002",
+            "title": "Remote Product Coffee",
+            "eventUrl": "https://www.meetup.com/product-wro/events/311000002/",
+            "description": "Online chat.",
+            "dateTime": "2026-10-24T09:00:00+02:00",
+            "endTime": "2026-10-24T10:00:00+02:00",
+            "duration": "PT1H",
+            "eventType": "ONLINE",
+            "status": "ACTIVE",
+            "venues": [
+              {
+                "id": "26906060",
+                "name": "Online event",
+                "address": "",
+                "city": "",
+                "lat": -8.521147,
+                "lon": 179.1962
+              }
+            ],
+            "feeSettings": null,
+            "featuredEventPhoto": null,
+            "group": {
+              "id": "1002",
+              "name": "Product WRO",
+              "urlname": "product-wro",
+              "topicCategory": { "name": "Career & Business" }
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "311000003",
+            "title": "Planszówki w Rynku",
+            "eventUrl": "https://www.meetup.com/planszowki-wroclaw/events/311000003/",
+            "description": "<p>Gramy w <i>Azul</i>, <i>Wingspan</i> i więcej.</p>",
+            "dateTime": "2026-10-24T17:00:00+02:00",
+            "endTime": "2026-10-24T22:00:00+02:00",
+            "duration": "PT5H",
+            "eventType": "PHYSICAL",
+            "status": "ACTIVE",
+            "venues": [
+              {
+                "id": "27500003",
+                "name": "Klubokawiarnia Mleczarnia",
+                "address": "ul. Włodkowica 5",
+                "city": "Wrocław",
+                "postalCode": "50-072",
+                "lat": 51.1081,
+                "lon": 17.0268
+              }
+            ],
+            "feeSettings": { "amount": 10, "currency": "pln" },
+            "featuredEventPhoto": null,
+            "group": {
+              "id": "1003",
+              "name": "Planszówki Wrocław",
+              "urlname": "planszowki-wroclaw",
+              "topicCategory": { "name": "Games" }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

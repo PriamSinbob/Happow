@@ -1,0 +1,73 @@
+{
+  "data": {
+    "eventSearch": {
+      "totalCount": 5,
+      "pageInfo": { "hasNextPage": false, "endCursor": "Y3Vyc29yOjU=" },
+      "edges": [
+        {
+          "node": {
+            "id": "311000004",
+            "title": "Bieg nad Odrą – 5 km",
+            "eventUrl": "https://www.meetup.com/biegamy-wroclaw/events/311000004/",
+            "description": "Spotykamy się przy Moście Grunwaldzkim.",
+            "dateTime": "2026-10-24T08:00:00+02:00",
+            "endTime": null,
+            "duration": "PT0S",
+            "eventType": "HYBRID",
+            "status": "CANCELLED",
+            "venues": [
+              {
+                "id": "27500004",
+                "name": "Most Grunwaldzki",
+                "address": "Most Grunwaldzki",
+                "city": "Wrocław",
+                "postalCode": null,
+                "lat": 51.1103,
+                "lon": 17.0496
+              }
+            ],
+            "feeSettings": { "amount": 0, "currency": "PLN" },
+            "featuredEventPhoto": null,
+            "group": {
+              "id": "1004",
+              "name": "Biegamy Wrocław",
+              "urlname": "biegamy-wroclaw",
+              "topicCategory": { "name": "Sports & Fitness" }
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "311000005",
+            "title": "Spacer fotograficzny",
+            "eventUrl": "https://www.meetup.com/foto-wroclaw/events/311000005/",
+            "description": null,
+            "dateTime": "2026-10-24T15:00:00+02:00",
+            "endTime": null,
+            "duration": null,
+            "eventType": "PHYSICAL",
+            "status": "ACTIVE",
+            "venues": [
+              {
+                "id": "27500005",
+                "name": "Do ustalenia",
+                "address": null,
+                "city": "Wrocław",
+                "lat": null,
+                "lon": null
+              }
+            ],
+            "feeSettings": null,
+            "featuredEventPhoto": null,
+            "group": {
+              "id": "1005",
+              "name": "Foto Wrocław",
+              "urlname": "foto-wroclaw",
+              "topicCategory": { "name": "Photography" }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

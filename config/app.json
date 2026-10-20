@@ -1,0 +1,22 @@
+{
+  "defaultRegion": "wroclaw",
+  "languages": ["pl", "en"],
+  "fallbackLanguage": "en",
+  "radius": { "minM": 100, "maxM": 25000, "defaultM": 500 },
+  "walkingSpeedMPerMin": 80,
+  "h3": { "eventResolution": 9, "weatherResolution": 7 },
+  "timeWindows": [
+    { "id": "now", "hours": 0 },
+    { "id": "2h", "hours": 2 },
+    { "id": "6h", "hours": 6 },
+    { "id": "today", "endOfDay": true }
+  ],
+  "defaultTimeWindow": "today",
+  "dedup": { "startToleranceMin": 30, "titleSimilarity": 0.5, "h3Ring": 1 },
+  "ingest": {
+    "descriptionMaxChars": 600,
+    "lookbackHours": 8,
+    "lookaheadHours": 48,
+    "userAgent": "Happow/0.2 (+https://github.com/PriamSinbob/Happow)"
+  }
+}

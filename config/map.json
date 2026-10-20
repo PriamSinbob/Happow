@@ -1,0 +1,12 @@
+{
+  "provider": "openfreemap",
+  "styleUrl": "https://tiles.openfreemap.org/styles/positron",
+  "fallbackRaster": {
+    "tiles": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+    "tileSize": 256,
+    "maxZoom": 19
+  },
+  "attribution": "© OpenFreeMap © OpenMapTiles Data from OpenStreetMap",
+  "minZoom": 9,
+  "maxZoom": 19
+}
