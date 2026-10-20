@@ -1,9 +1,22 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import maplibregl, { type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { circleBounds, circleRing, isRunning, type LatLng, type NearbyEvent } from '@happow/core';
+import {
+  bearing,
+  circleBounds,
+  circleRing,
+  compassPoint,
+  distanceM,
+  isRunning,
+  snapRadiusUp,
+  type DensityCluster,
+  type LatLng,
+  type NearbyEvent,
+} from '@happow/core';
 import { categoriesById, config, region } from '../config';
-import { useI18n } from '../i18n';
+import { formatDistance } from '../format';
+import type { Guidance } from '../hooks/useGuidance';
+import { useI18n, type MessageKey } from '../i18n';
 
 interface Props {
   center: LatLng;
@@ -15,7 +28,94 @@ interface Props {
   onSelect: (id: string | null) => void;
   /** Pixels covered by the bottom panel, so the radius circle stays in the visible area. */
   bottomInset: number;
+  /** Pixels covered by everything at the bottom (cards included), kept clear of chevrons. */
+  overlayInset: number;
   hidden?: boolean;
+  /** Matching events around the user per density cell, for chevrons and outside-radius bubbles. */
+  clusters: DensityCluster[];
+  hotspot: Guidance['hotspot'];
+  onHotspot: () => void;
+  onExpand: (radius: number) => void;
+}
+
+interface Chevron {
+  cell: string;
+  x: number;
+  y: number;
+  angle: number;
+  opacity: number;
+  distanceM: number;
+  count: number;
+  direction: string;
+  target: LatLng;
+}
+
+/** Map area not covered by the floating top bars (and the attribution button) or the bottom sheet. */
+const TOP_INSET = 136;
+const EDGE = 10;
+/** Chevrons are centred on their position, so keep that point half a chevron inside the edge. */
+const HALF_W = 52;
+const HALF_H = 16;
+const { minM, maxM } = config.app.radius;
+const { searchRadiusM, maxChevrons } = config.app.density;
+
+/**
+ * Edge-of-screen pointers to clusters outside the visible map area: placed where the line from the
+ * view's centre to the cluster leaves the visible rectangle, nearest first, faded with distance,
+ * capped and kept apart so they never pile up.
+ */
+function computeChevrons(m: maplibregl.Map, p: Props): Chevron[] {
+  const el = m.getContainer();
+  const rect = {
+    x0: EDGE + HALF_W,
+    y0: TOP_INSET + HALF_H,
+    x1: el.clientWidth - EDGE - HALF_W,
+    y1: el.clientHeight - p.overlayInset - EDGE - HALF_H,
+  };
+  if (rect.x1 - rect.x0 < 60 || rect.y1 - rect.y0 < 60) return [];
+  const cx = (rect.x0 + rect.x1) / 2;
+  const cy = (rect.y0 + rect.y1) / 2;
+  const span = Math.max(1, searchRadiusM - p.radiusM);
+
+  const candidates = p.clusters
+    .filter((c) => c.outsideCount > 0)
+    .map((c) => ({
+      c,
+      pt: m.project([c.center.lng, c.center.lat]),
+      // Distance to the cluster's nearest event, so labels agree with "Nearest: …" guidance.
+      d: c.nearestOutside?.distanceM ?? distanceM(p.center, c.center),
+    }))
+    .filter(({ pt }) => pt.x < rect.x0 || pt.x > rect.x1 || pt.y < rect.y0 || pt.y > rect.y1)
+    .sort((a, b) => a.d - b.d);
+
+  const out: Chevron[] = [];
+  for (const { c, pt, d } of candidates) {
+    if (out.length >= maxChevrons) break;
+    const dx = pt.x - cx;
+    const dy = pt.y - cy;
+    const s = Math.min(
+      dx ? (dx > 0 ? rect.x1 - cx : cx - rect.x0) / Math.abs(dx) : Infinity,
+      dy ? (dy > 0 ? rect.y1 - cy : cy - rect.y0) / Math.abs(dy) : Infinity,
+    );
+    const x = cx + dx * s;
+    const y = cy + dy * s;
+    // Pills are wide: keep them a pill apart horizontally or a row apart vertically.
+    if (out.some((o) => Math.abs(o.x - x) < 2 * HALF_W + 6 && Math.abs(o.y - y) < 2 * HALF_H + 6))
+      continue;
+    const fade = Math.min(1, Math.max(0, (d - p.radiusM) / span));
+    out.push({
+      cell: c.cell,
+      x,
+      y,
+      angle: (Math.atan2(dy, dx) * 180) / Math.PI,
+      opacity: 1 - 0.55 * fade,
+      distanceM: d,
+      count: c.count,
+      direction: compassPoint(bearing(p.center, c.center)),
+      target: c.center,
+    });
+  }
+  return out;
 }
 
 const RADIUS_SOURCE = 'radius';
@@ -46,11 +146,13 @@ function radiusFeature(center: LatLng, radiusM: number) {
 }
 
 export function MapView(props: Props) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLButtonElement }>());
   const userMarker = useRef<maplibregl.Marker | null>(null);
+  const hintMarkers = useRef<maplibregl.Marker[]>([]);
+  const [chevrons, setChevrons] = useState<Chevron[]>([]);
   const latest = useRef(props);
   latest.current = props;
 
@@ -114,6 +216,7 @@ export function MapView(props: Props) {
       map.current = null;
       markers.current.clear();
       userMarker.current = null;
+      hintMarkers.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -215,5 +318,125 @@ export function MapView(props: Props) {
     }
   }, [props.events, props.selectedId, props.now]);
 
-  return <div ref={container} className="map" hidden={props.hidden} />;
+  // Outside-radius bubbles (tap to widen the circle) and the hotspot marker.
+  useEffect(() => {
+    const m = map.current;
+    if (!m) return;
+    for (const mk of hintMarkers.current) mk.remove();
+    hintMarkers.current = [];
+    const label = (key: MessageKey, count: number, at: LatLng, place?: string) =>
+      t(key, {
+        count,
+        place: place ?? '',
+        distance: formatDistance(distanceM(props.center, at), lang),
+        direction: t(`dir.${compassPoint(bearing(props.center, at))}` as MessageKey),
+      });
+    const hot = props.hotspot && props.hotspot.outsideCount > 0 ? props.hotspot : null;
+
+    for (const c of props.clusters) {
+      if (c.outsideCount === 0 || c.cell === hot?.cell || !c.nearestOutside) continue;
+      // Inside-the-circle centroids would sit among the pins; anchor on the nearest outside event.
+      const at =
+        distanceM(props.center, c.center) > props.radiusM ? c.center : c.nearestOutside.point;
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'ghost';
+      el.textContent = String(c.outsideCount);
+      el.setAttribute('aria-label', label('cluster.label', c.outsideCount, at));
+      const reach = c.nearestOutside.distanceM;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        latest.current.onExpand(snapRadiusUp(reach + 10, minM, maxM));
+      });
+      hintMarkers.current.push(new maplibregl.Marker({ element: el }).setLngLat(at).addTo(m));
+    }
+    if (hot) {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'hotspot';
+      el.innerHTML = '<span class="hotspot__ring" aria-hidden="true"></span>';
+      el.append(
+        Object.assign(document.createElement('span'), {
+          className: 'hotspot__count',
+          textContent: String(hot.count),
+        }),
+      );
+      el.setAttribute(
+        'aria-label',
+        t('hotspot.label', { place: hot.topVenue ?? t('guide.place'), count: hot.count }),
+      );
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        latest.current.onHotspot();
+      });
+      hintMarkers.current.push(
+        new maplibregl.Marker({ element: el }).setLngLat(hot.center).addTo(m),
+      );
+    }
+  }, [props.clusters, props.hotspot, props.center, props.radiusM, t, lang]);
+
+  // Chevrons follow the map as it moves.
+  useEffect(() => {
+    const m = map.current;
+    if (!m || props.hidden) {
+      setChevrons([]);
+      return;
+    }
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => setChevrons(computeChevrons(m, latest.current)));
+    };
+    update();
+    m.on('move', update);
+    m.on('resize', update);
+    return () => {
+      cancelAnimationFrame(frame);
+      m.off('move', update);
+      m.off('resize', update);
+    };
+  }, [props.clusters, props.center, props.radiusM, props.overlayInset, props.hidden]);
+
+  return (
+    <div className="map" hidden={props.hidden}>
+      <div ref={container} className="map__canvas" />
+      {chevrons.map((c) => (
+        <button
+          key={c.cell}
+          type="button"
+          className="chevron"
+          style={{ left: c.x, top: c.y, opacity: c.opacity }}
+          aria-label={t('chevron.label', {
+            count: c.count,
+            distance: formatDistance(c.distanceM, lang),
+            direction: t(`dir.${c.direction}` as MessageKey),
+          })}
+          onClick={() =>
+            map.current?.easeTo({ center: [c.target.lng, c.target.lat], duration: 600 })
+          }
+        >
+          <svg
+            className="chevron__arrow"
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            style={{ transform: `rotate(${c.angle}deg)` }}
+            aria-hidden
+          >
+            <path
+              d="M5 12h12m-5-6 6 6-6 6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span>
+            {formatDistance(c.distanceM, lang)} · {c.count}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
 }

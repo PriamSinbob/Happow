@@ -49,7 +49,16 @@ export const appConfigSchema = z.object({
   walkingSpeedMPerMin: z.number().positive(),
   h3: z.object({
     eventResolution: z.number().int().min(0).max(15),
-    weatherResolution: z.number().int().min(0).max(15),
+    /** Coarser cells (r8 ≈ 0.7 km²) that events are counted in for hotspots and off-screen hints. */
+    densityResolution: z.number().int().min(0).max(15),
+  }),
+  density: z.object({
+    /** How far around the user clusters, hotspots and the nearest event are searched. */
+    searchRadiusM: z.number().positive(),
+    /** A cell needs at least this many events to be called a hotspot. */
+    hotspotMinEvents: z.number().int().positive(),
+    /** Off-screen chevrons shown at once. */
+    maxChevrons: z.number().int().min(0),
   }),
   timeWindows: z.array(timeWindowSchema).min(1),
   defaultTimeWindow: z.string(),

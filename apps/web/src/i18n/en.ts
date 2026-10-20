@@ -10,7 +10,6 @@ export const en = {
   'summary.loading': 'Looking around…',
   'summary.error': 'Could not load events. Showing what we have.',
   'list.empty.title': 'Nothing within {radius}',
-  'list.empty.body': 'Try a larger radius or a longer time window.',
   'list.empty.expand': 'Expand to {radius}',
   'event.now': 'Now',
   'event.until': 'until {time}',
@@ -59,7 +58,6 @@ export const en = {
   'filters.price.paid': 'Paid',
   'filters.clear': 'Clear',
   'filters.show': '{count, plural, =0 {No events} one {Show # event} other {Show # events}}',
-  'list.empty.bodyFiltered': 'Try a larger radius, a longer time window or fewer filters.',
   'list.empty.clear': 'Clear filters',
   'event.details': 'Details',
   'event.back': 'Back',
@@ -80,6 +78,27 @@ export const en = {
   'event.rules': 'Good to know',
   'event.dayLong': 'all day',
   'time.justNow': 'just now',
+  'dir.n': 'north',
+  'dir.ne': 'north-east',
+  'dir.e': 'east',
+  'dir.se': 'south-east',
+  'dir.s': 'south',
+  'dir.sw': 'south-west',
+  'dir.w': 'west',
+  'dir.nw': 'north-west',
+  'guide.nearest': 'Nearest: {distance} {direction}',
+  'guide.busiest': 'Busiest: {place}, {distance}, {count, plural, one {# event} other {# events}}',
+  'guide.busiestTitle': 'Busiest nearby',
+  'guide.place': 'a busy spot',
+  'guide.takeMeThere': 'Take me there',
+  'guide.showOnMap': 'Show on map',
+  'guide.nothingAround':
+    'Nothing within {distance} either. Try another time window or fewer filters.',
+  'cluster.label':
+    '{count, plural, one {# event} other {# events}} {distance} {direction}, outside your radius. Expand the radius to see them.',
+  'chevron.label':
+    '{count, plural, one {# event} other {# events}} {distance} {direction}. Move the map there.',
+  'hotspot.label': 'Busiest nearby: {place}, {count, plural, one {# event} other {# events}}',
   offline: 'Offline — showing cached data',
 } as const;
 

@@ -1,13 +1,15 @@
 import type { NearbyEvent } from '@happow/core';
-import { formatDistance } from '../format';
+import type { Guidance } from '../hooks/useGuidance';
 import { useI18n } from '../i18n';
 import { CategoryIcon, useEventText } from './EventMeta';
+import { GuidanceCard } from './Guidance';
 
 interface Props {
   events: NearbyEvent[];
   now: Date;
   radiusM: number;
   nextRadiusM: number | null;
+  guidance: Guidance;
   /** Category or price filters are narrowing the results. */
   filtered: boolean;
   onSelect: (id: string) => void;
@@ -47,28 +49,18 @@ function Row({
 }
 
 export function ListView(props: Props) {
-  const { t, lang } = useI18n();
   if (props.events.length === 0) {
     return (
       <div className="list list--empty">
-        <p className="empty__title">
-          {t('list.empty.title', { radius: formatDistance(props.radiusM, lang) })}
-        </p>
-        <p>{t(props.filtered ? 'list.empty.bodyFiltered' : 'list.empty.body')}</p>
-        {props.filtered && (
-          <button type="button" className="btn" onClick={props.onClearFilters}>
-            {t('list.empty.clear')}
-          </button>
-        )}
-        {props.nextRadiusM && (
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={() => props.onExpand(props.nextRadiusM!)}
-          >
-            {t('list.empty.expand', { radius: formatDistance(props.nextRadiusM, lang) })}
-          </button>
-        )}
+        <GuidanceCard
+          guidance={props.guidance}
+          radiusM={props.radiusM}
+          mode="empty"
+          filtered={props.filtered}
+          fallbackRadiusM={props.nextRadiusM}
+          onExpand={props.onExpand}
+          onClearFilters={props.onClearFilters}
+        />
       </div>
     );
   }

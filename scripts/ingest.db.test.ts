@@ -99,6 +99,10 @@ describe.skipIf(!url)('ingestion into Postgres', () => {
       `select count(*)::int as n from raw_payloads where source_id = 'ticketmaster'`,
     );
     expect(raw.rows[0].n).toBe(9); // every payload, including rejected ones, for re-parsing
+    const cells = await db.query(
+      `select count(*)::int as n from events where primary_source_id = 'ticketmaster' and density_cell is null`,
+    );
+    expect(cells.rows[0].n).toBe(0);
   });
 
   it('is idempotent: a second run updates instead of duplicating', async () => {

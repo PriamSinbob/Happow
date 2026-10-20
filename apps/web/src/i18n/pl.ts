@@ -13,7 +13,6 @@ export const pl: Record<MessageKey, string> = {
   'summary.loading': 'Rozglądamy się…',
   'summary.error': 'Nie udało się pobrać wydarzeń. Pokazujemy to, co mamy.',
   'list.empty.title': 'Nic w promieniu {radius}',
-  'list.empty.body': 'Spróbuj większego promienia lub dłuższego okna czasu.',
   'list.empty.expand': 'Zwiększ do {radius}',
   'event.now': 'Teraz',
   'event.until': 'do {time}',
@@ -63,8 +62,6 @@ export const pl: Record<MessageKey, string> = {
   'filters.clear': 'Wyczyść',
   'filters.show':
     '{count, plural, =0 {Brak wydarzeń} one {Pokaż # wydarzenie} few {Pokaż # wydarzenia} many {Pokaż # wydarzeń} other {Pokaż # wydarzenia}}',
-  'list.empty.bodyFiltered':
-    'Spróbuj większego promienia, dłuższego okna czasu lub mniejszej liczby filtrów.',
   'list.empty.clear': 'Wyczyść filtry',
   'event.details': 'Szczegóły',
   'event.back': 'Wróć',
@@ -85,5 +82,27 @@ export const pl: Record<MessageKey, string> = {
   'event.rules': 'Warto wiedzieć',
   'event.dayLong': 'cały dzień',
   'time.justNow': 'przed chwilą',
+  'dir.n': 'na północ',
+  'dir.ne': 'na północny wschód',
+  'dir.e': 'na wschód',
+  'dir.se': 'na południowy wschód',
+  'dir.s': 'na południe',
+  'dir.sw': 'na południowy zachód',
+  'dir.w': 'na zachód',
+  'dir.nw': 'na północny zachód',
+  'guide.nearest': 'Najbliżej: {distance} {direction}',
+  'guide.busiest':
+    'Najwięcej: {place}, {distance}, {count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}}',
+  'guide.busiestTitle': 'Tu dzieje się najwięcej',
+  'guide.place': 'ruchliwe miejsce',
+  'guide.takeMeThere': 'Zaprowadź mnie',
+  'guide.showOnMap': 'Pokaż na mapie',
+  'guide.nothingAround': 'W promieniu {distance} też nic. Zmień okno czasu lub filtry.',
+  'cluster.label':
+    '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} {distance} {direction}, poza Twoim promieniem. Zwiększ promień, by je zobaczyć.',
+  'chevron.label':
+    '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} {distance} {direction}. Przesuń tam mapę.',
+  'hotspot.label':
+    'Tu dzieje się najwięcej: {place}, {count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}}',
   offline: 'Offline — pokazujemy zapisane dane',
 };

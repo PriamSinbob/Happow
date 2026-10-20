@@ -7,7 +7,13 @@ import { eventToIcs } from '../src/ics';
 import { translate } from '../src/i18n';
 
 const now = new Date('2026-10-20T14:00:00Z');
-const repo = new StaticEventRepository(async () => seed, region, config.categories, 9, now);
+const repo = new StaticEventRepository(
+  async () => seed,
+  region,
+  config.categories,
+  config.app.h3,
+  now,
+);
 const day = {
   center: region.center,
   radiusM: 25000,

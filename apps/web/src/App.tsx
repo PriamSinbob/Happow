@@ -5,6 +5,7 @@ import { createRepository } from './data';
 import { formatDistance } from './format';
 import { useEventDetail } from './hooks/useEventDetail';
 import { useEvents } from './hooks/useEvents';
+import { useGuidance } from './hooks/useGuidance';
 import { useFilters } from './hooks/useFilters';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useDetailRoute } from './hooks/useHashRoute';
@@ -15,6 +16,7 @@ import { EventCard } from './components/EventCard';
 import { EventDetail } from './components/EventDetail';
 import { FilterBar, windowSummary } from './components/FilterBar';
 import { FilterSheet } from './components/FilterSheet';
+import { GuidanceCard } from './components/Guidance';
 import { ListView } from './components/ListView';
 import { MapView } from './components/MapView';
 import { RadiusControl } from './components/RadiusControl';
@@ -32,26 +34,37 @@ export function App() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filters = useFilters();
-  const { events, loading, error, now } = useEvents(
+  const { events, clusters, loading, error, now } = useEvents(
     repo,
     location.center,
     radius,
     region.timezone,
     filters.window,
     filters,
+    config.app.density.searchRadiusM,
   );
   const selected = events.find((e) => e.id === selectedId) ?? null;
+  const guidance = useGuidance(clusters, location.center, radius);
+  const [hotspotOpen, setHotspotOpen] = useState(false);
+  const filtered = filters.activeCount > 0;
   const [detailId, openDetail] = useDetailRoute();
   const detail = useEventDetail(repo, detailId, events, location.center);
   const saved = useSaved();
 
   const panel = useRef<HTMLElement>(null);
+  const sheet = useRef<HTMLDivElement>(null);
   const [panelHeight, setPanelHeight] = useState(180);
+  const [sheetHeight, setSheetHeight] = useState(200);
   useLayoutEffect(() => {
-    const el = panel.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setPanelHeight(el.offsetHeight));
-    ro.observe(el);
+    const p = panel.current;
+    const s = sheet.current;
+    if (!p || !s) return;
+    const ro = new ResizeObserver(() => {
+      setPanelHeight(p.offsetHeight);
+      setSheetHeight(s.offsetHeight);
+    });
+    ro.observe(p);
+    ro.observe(s);
     return () => ro.disconnect();
   }, []);
 
@@ -139,9 +152,20 @@ export function App() {
           events={events}
           now={now}
           selectedId={selectedId}
-          onSelect={setSelectedId}
+          onSelect={(id) => {
+            setSelectedId(id);
+            setHotspotOpen(false);
+          }}
           bottomInset={panelHeight}
+          overlayInset={sheetHeight}
           hidden={view !== 'map'}
+          clusters={clusters}
+          hotspot={guidance.hotspot}
+          onHotspot={() => {
+            setSelectedId(null);
+            setHotspotOpen(true);
+          }}
+          onExpand={setRadius}
         />
         {view === 'list' && (
           <div className="list-wrap" style={{ paddingBottom: panelHeight + 16 }}>
@@ -151,7 +175,8 @@ export function App() {
               now={now}
               radiusM={radius}
               nextRadiusM={nextRadius}
-              filtered={filters.activeCount > 0}
+              guidance={guidance}
+              filtered={filtered}
               onSelect={openDetail}
               onExpand={setRadius}
               onClearFilters={filters.clear}
@@ -160,8 +185,8 @@ export function App() {
         )}
       </main>
 
-      <div className="sheet">
-        {selected && (
+      <div className="sheet" ref={sheet}>
+        {selected ? (
           <div className="sheet__card">
             <EventCard
               ev={selected}
@@ -170,6 +195,38 @@ export function App() {
               onDetails={() => openDetail(selected.id)}
             />
           </div>
+        ) : view === 'map' && hotspotOpen && guidance.hotspot ? (
+          <div className="sheet__card">
+            <GuidanceCard
+              guidance={guidance}
+              radiusM={radius}
+              mode="hotspot"
+              filtered={filtered}
+              fallbackRadiusM={null}
+              onExpand={(r) => {
+                setRadius(r);
+                setHotspotOpen(false);
+              }}
+              onClearFilters={filters.clear}
+              onClose={() => setHotspotOpen(false)}
+            />
+          </div>
+        ) : (
+          view === 'map' &&
+          !loading &&
+          events.length === 0 && (
+            <div className="sheet__card">
+              <GuidanceCard
+                guidance={guidance}
+                radiusM={radius}
+                mode="empty"
+                filtered={filtered}
+                fallbackRadiusM={nextRadius}
+                onExpand={setRadius}
+                onClearFilters={filters.clear}
+              />
+            </div>
+          )
         )}
         <section className="panel" ref={panel} aria-label={t('radius.label')}>
           <div className="panel__summary" aria-live="polite">

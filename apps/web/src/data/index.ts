@@ -17,17 +17,13 @@ export function createRepository(): EventRepository {
   // The seed path pulls in h3-js; load it only when it is actually used.
   const repo = import('./static').then(
     ({ StaticEventRepository }) =>
-      new StaticEventRepository(
-        seedLoader(),
-        region,
-        config.categories,
-        config.app.h3.eventResolution,
-      ),
+      new StaticEventRepository(seedLoader(), region, config.categories, config.app.h3),
   );
   return {
     kind: 'static',
     near: async (q) => (await repo).near(q),
     byId: async (id, from) => (await repo).byId(id, from),
+    density: async (q) => (await repo).density(q),
   };
 }
 

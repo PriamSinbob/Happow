@@ -1,20 +1,20 @@
 # Happow
 
-Happening Now — a map-first app that shows every nearby event of any kind happening now, within hours, or today. Map overview with a list view, event-type filters (music, theatre, happening, festival, garage sale, etc.), event details (start, end, official site, price, rules, weather at the spot now and at the event's end). Default range is small (about 500 m) and adjustable.
+Happening Now — a map-first app that shows every nearby event of any kind happening now, within hours, or today. Map overview with a list view, event-type filters (music, theatre, happening, festival, garage sale, etc.), event details (start, end, official site, price, rules, source and last-verified time), and hints that point to the nearest and busiest spots when the circle is empty. Default range is small (about 500 m) and adjustable.
 
 See [docs/BRIEF.md](docs/BRIEF.md) for the full PoC build brief: scope, decisions, data sources, architecture and milestones. Milestone reports live in [docs/milestones](docs/milestones).
 
 ## Repository layout
 
-| Path                   | What                                                                                  |
-| ---------------------- | ------------------------------------------------------------------------------------- |
-| `apps/web`             | React + Vite PWA (MapLibre GL, OSM tiles via OpenFreeMap), Polish and English UI      |
-| `packages/core`        | Shared types, config schemas, geo/time/filter helpers, seed materializer              |
-| `packages/ingest`      | Source adapters (Ticketmaster, Meetup), normalizer, dedup, scheduler, `pnpm ingest`   |
-| `config/`              | Regions, categories, sources, map provider, app defaults — everything region-specific |
-| `data/seed/`           | Hand-entered demo events per region (times are offsets from now)                      |
-| `supabase/migrations/` | Postgres + PostGIS schema, `events_near` (filtered geo query) and `event_by_id`       |
-| `scripts/`             | `migrate`, `seed` and the database integration tests                                  |
+| Path                   | What                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| `apps/web`             | React + Vite PWA (MapLibre GL, OSM tiles via OpenFreeMap), Polish and English UI       |
+| `packages/core`        | Shared types, config schemas, geo/time/filter helpers, seed materializer               |
+| `packages/ingest`      | Source adapters (Ticketmaster, Meetup), normalizer, dedup, scheduler, `pnpm ingest`    |
+| `config/`              | Regions, categories, sources, map provider, app defaults — everything region-specific  |
+| `data/seed/`           | Hand-entered demo events per region (times are offsets from now)                       |
+| `supabase/migrations/` | Postgres + PostGIS schema, `events_near`, `event_by_id` and `density_near` (H3 counts) |
+| `scripts/`             | `migrate`, `seed` and the database integration tests                                   |
 
 ## Quick start
 
@@ -55,7 +55,7 @@ pnpm format:check && pnpm typecheck && pnpm test && pnpm build
 
 ## Configuration
 
-Adding a region is a config change: add it to `config/regions.json` (centre, bbox, timezone, country code, enabled sources, optional seed file), list it in each source's `regionIds`, and, if needed, set `defaultRegion` in `config/app.json` or `VITE_REGION_ID` at build time. Categories (labels, default durations, icons, colours) are in `config/categories.json`. Time-window chips, dedup thresholds and ingestion windows are in `config/app.json`. The map style and tile hosts are in `config/map.json`.
+Adding a region is a config change: add it to `config/regions.json` (centre, bbox, timezone, country code, enabled sources, optional seed file), list it in each source's `regionIds`, and, if needed, set `defaultRegion` in `config/app.json` or `VITE_REGION_ID` at build time. Categories (labels, default durations, icons, colours) are in `config/categories.json`. Time-window chips, dedup thresholds, ingestion windows and density settings (H3 resolution, search radius, hotspot minimum, chevron cap) are in `config/app.json`. The map style and tile hosts are in `config/map.json`.
 
 ## Deployment
 

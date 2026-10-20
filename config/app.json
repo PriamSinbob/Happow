@@ -4,7 +4,8 @@
   "fallbackLanguage": "en",
   "radius": { "minM": 100, "maxM": 25000, "defaultM": 500 },
   "walkingSpeedMPerMin": 80,
-  "h3": { "eventResolution": 9, "weatherResolution": 7 },
+  "h3": { "eventResolution": 9, "densityResolution": 8 },
+  "density": { "searchRadiusM": 5000, "hotspotMinEvents": 3, "maxChevrons": 6 },
   "timeWindows": [
     { "id": "now", "hours": 0 },
     { "id": "2h", "hours": 2 },

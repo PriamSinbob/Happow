@@ -7,7 +7,13 @@ import { formatDistance } from '../src/format';
 
 describe('StaticEventRepository', () => {
   const now = new Date('2026-10-20T14:00:00Z');
-  const repo = new StaticEventRepository(async () => seed, region, config.categories, 9, now);
+  const repo = new StaticEventRepository(
+    async () => seed,
+    region,
+    config.categories,
+    config.app.h3,
+    now,
+  );
 
   it('returns events in radius and time window, nearest first', async () => {
     const res = await repo.near({

@@ -67,4 +67,64 @@ describe.skipIf(!url)('events_near', () => {
       await db.query('rollback');
     }
   });
+
+  describe('density_near', () => {
+    const density = async (radius: number, search: number, categories: string[] | null = null) =>
+      (
+        await db.query(
+          `select * from density_near($1, $2, $3, $4, now(), now() + interval '1 day', $5)`,
+          [region.center.lat, region.center.lng, radius, search, categories],
+        )
+      ).rows;
+
+    it('counts the same events as events_near, per density cell', async () => {
+      const clusters = await density(500, 25000);
+      const total = clusters.reduce((n, c) => n + c.event_count, 0);
+      expect(total).toBe((await near(25000, 0, 24 * 60)).length);
+      expect(new Set(clusters.map((c) => c.cell)).size).toBe(clusters.length);
+      const counts = clusters.map((c) => c.event_count);
+      expect(counts).toEqual([...counts].sort((a, b) => b - a));
+    });
+
+    it('describes only events beyond the user radius as outside', async () => {
+      const clusters = await density(300, 25000);
+      const outside = clusters.filter((c) => c.outside_count > 0);
+      expect(outside.length).toBeGreaterThan(0);
+      for (const c of outside) {
+        expect(c.nearest_m).toBeGreaterThan(300);
+        expect(typeof c.nearest_lat).toBe('number');
+      }
+      for (const c of clusters.filter((x) => x.outside_count === 0)) expect(c.nearest_m).toBeNull();
+      const inside = (await near(300, 0, 24 * 60)).length;
+      const outsideTotal = clusters.reduce((n, c) => n + c.outside_count, 0);
+      expect(inside + outsideTotal).toBe((await near(25000, 0, 24 * 60)).length);
+    });
+
+    it('applies category filters and names the spot', async () => {
+      const music = await density(500, 25000, ['music']);
+      expect(music.length).toBeGreaterThan(0);
+      expect(music.some((c) => typeof c.top_venue === 'string')).toBe(true);
+      expect(music.reduce((n, c) => n + c.event_count, 0)).toBeLessThan(
+        (await density(500, 25000)).reduce((n, c) => n + c.event_count, 0),
+      );
+    });
+
+    it('seeded events carry a density cell and weather is gone', async () => {
+      const { rows } = await db.query(
+        `select count(*)::int as n from events where primary_source_id = 'seed' and density_cell is null`,
+      );
+      expect(rows[0].n).toBe(0);
+      const t = await db.query(`select to_regclass('public.weather_cache') as t`);
+      expect(t.rows[0].t).toBeNull();
+    });
+
+    it('is callable by the anon role', async () => {
+      await db.query('begin; set local role anon');
+      try {
+        expect((await density(500, 5000)).length).toBeGreaterThan(0);
+      } finally {
+        await db.query('rollback');
+      }
+    });
+  });
 });

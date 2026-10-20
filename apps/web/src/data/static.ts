@@ -1,10 +1,13 @@
 import { materializeSeed } from '@happow/core/seed';
 import {
+  densityClusters,
   distanceM,
   matchesFilters,
   nearby,
   overlaps,
   type Category,
+  type DensityCluster,
+  type DensityQuery,
   type EventQuery,
   type HappowEvent,
   type LatLng,
@@ -22,23 +25,27 @@ export class StaticEventRepository implements EventRepository {
     loadSeed: () => Promise<unknown>,
     region: Region,
     categories: Category[],
-    h3Resolution: number,
+    h3: { eventResolution: number; densityResolution: number },
     now = new Date(),
   ) {
     this.events = loadSeed().then((raw) =>
-      materializeSeed(raw, region, categories, now, h3Resolution),
+      materializeSeed(raw, region, categories, now, h3.eventResolution, h3.densityResolution),
+    );
+  }
+
+  private async matching(q: EventQuery): Promise<HappowEvent[]> {
+    return (await this.events).filter(
+      (e) => e.status !== 'cancelled' && overlaps(e, q.from, q.to) && matchesFilters(e, q),
     );
   }
 
   async near(q: EventQuery): Promise<NearbyEvent[]> {
-    const all = await this.events;
-    return nearby(
-      all.filter(
-        (e) => e.status !== 'cancelled' && overlaps(e, q.from, q.to) && matchesFilters(e, q),
-      ),
-      q.center,
-      q.radiusM,
-    );
+    return nearby(await this.matching(q), q.center, q.radiusM);
+  }
+
+  async density(q: DensityQuery): Promise<DensityCluster[]> {
+    const around = nearby(await this.matching(q), q.center, q.searchRadiusM);
+    return densityClusters(around, q.radiusM, (e) => e.densityCell ?? e.h3r9);
   }
 
   async byId(id: string, from: LatLng): Promise<NearbyEvent | null> {

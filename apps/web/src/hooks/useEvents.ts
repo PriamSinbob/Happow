@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   windowRange,
+  type DensityCluster,
   type EventFilters,
   type LatLng,
   type NearbyEvent,
@@ -10,6 +11,8 @@ import type { EventRepository } from '../data';
 
 export interface EventsState {
   events: NearbyEvent[];
+  /** Matching events around the user per density cell; empty when the density query fails. */
+  clusters: DensityCluster[];
   loading: boolean;
   error: boolean;
   now: Date;
@@ -17,7 +20,10 @@ export interface EventsState {
 
 const REFRESH_MS = 60_000;
 
-/** Events overlapping the time window (region timezone) within `radiusM` of `center`, filtered. */
+/**
+ * Events overlapping the time window (region timezone) within `radiusM` of `center`, filtered,
+ * plus density clusters within `searchRadiusM` for hints beyond the circle.
+ */
 export function useEvents(
   repo: EventRepository,
   center: LatLng,
@@ -25,9 +31,11 @@ export function useEvents(
   timeZone: string,
   timeWindow: TimeWindow,
   filters: EventFilters,
+  searchRadiusM: number,
 ): EventsState {
   const [state, setState] = useState<EventsState>({
     events: [],
+    clusters: [],
     loading: true,
     error: false,
     now: new Date(),
@@ -59,11 +67,18 @@ export function useEvents(
       const now = new Date();
       setState((s) => ({ ...s, loading: true }));
       try {
-        const events = await repo.near(
-          { ...query, ...windowRange(timeWindow, now, timeZone) },
-          ctrl.signal,
-        );
-        setState({ events, loading: false, error: false, now });
+        const q = { ...query, ...windowRange(timeWindow, now, timeZone) };
+        const [events, clusters] = await Promise.all([
+          repo.near(q, ctrl.signal),
+          // Hints are a bonus: their failure must not hide the events.
+          repo
+            .density({ ...q, searchRadiusM: Math.max(searchRadiusM, radiusM) }, ctrl.signal)
+            .catch((err) => {
+              if (!ctrl.signal.aborted) console.error(err);
+              return [] as DensityCluster[];
+            }),
+        ]);
+        setState({ events, clusters, loading: false, error: false, now });
       } catch (err) {
         if (ctrl.signal.aborted) return;
         console.error(err);
@@ -74,7 +89,7 @@ export function useEvents(
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [repo, query, timeZone, timeWindow, tick]);
+  }, [repo, query, timeZone, timeWindow, searchRadiusM, radiusM, tick]);
 
   return state;
 }
