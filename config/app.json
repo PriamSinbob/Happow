@@ -1,0 +1,8 @@
+{
+  "defaultRegion": "wroclaw",
+  "languages": ["pl", "en"],
+  "fallbackLanguage": "en",
+  "radius": { "minM": 100, "maxM": 25000, "defaultM": 500 },
+  "walkingSpeedMPerMin": 80,
+  "h3": { "eventResolution": 9, "weatherResolution": 7 }
+}

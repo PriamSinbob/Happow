@@ -1,0 +1,448 @@
+{
+  "$comment": "Hand-entered demo events for milestone 1. Real venues, fictional programmes. Times are offsets in minutes from the moment the seed is applied, so the demo always has something running now, soon and later today.",
+  "region": "wroclaw",
+  "venues": [
+    {
+      "id": "rynek",
+      "name": "Rynek",
+      "address": "Rynek, 50-106 Wrocław",
+      "lat": 51.1099,
+      "lng": 17.032,
+      "website": null
+    },
+    {
+      "id": "nfm",
+      "name": "Narodowe Forum Muzyki",
+      "address": "pl. Wolności 1, 50-071 Wrocław",
+      "lat": 51.1069,
+      "lng": 17.0254,
+      "website": "https://www.nfm.wroclaw.pl"
+    },
+    {
+      "id": "teatr-polski",
+      "name": "Teatr Polski",
+      "address": "ul. Gabrieli Zapolskiej 3, 50-032 Wrocław",
+      "lat": 51.1046,
+      "lng": 17.0283,
+      "website": "https://teatrpolski.wroc.pl"
+    },
+    {
+      "id": "opera",
+      "name": "Opera Wrocławska",
+      "address": "ul. Świdnicka 35, 50-066 Wrocław",
+      "lat": 51.105,
+      "lng": 17.0311,
+      "website": "https://www.opera.wroclaw.pl"
+    },
+    {
+      "id": "dcf",
+      "name": "Kino Nowe Horyzonty",
+      "address": "ul. Kazimierza Wielkiego 19a-21, 50-077 Wrocław",
+      "lat": 51.1083,
+      "lng": 17.0257,
+      "website": "https://www.kinonh.pl"
+    },
+    {
+      "id": "lalki",
+      "name": "Wrocławski Teatr Lalek",
+      "address": "pl. Teatralny 4, 50-051 Wrocław",
+      "lat": 51.1056,
+      "lng": 17.0337,
+      "website": "https://teatrlalek.wroclaw.pl"
+    },
+    {
+      "id": "hala-targowa",
+      "name": "Hala Targowa",
+      "address": "ul. Piaskowa 17, 50-158 Wrocław",
+      "lat": 51.1128,
+      "lng": 17.0386,
+      "website": null
+    },
+    {
+      "id": "leopoldina",
+      "name": "Uniwersytet Wrocławski — Aula Leopoldina",
+      "address": "pl. Uniwersytecki 1, 50-137 Wrocław",
+      "lat": 51.114,
+      "lng": 17.0343,
+      "website": "https://uwr.edu.pl"
+    },
+    {
+      "id": "wyspa-slodowa",
+      "name": "Wyspa Słodowa",
+      "address": "Wyspa Słodowa, 50-266 Wrocław",
+      "lat": 51.1166,
+      "lng": 17.0358,
+      "website": null
+    },
+    {
+      "id": "neon-side",
+      "name": "Neon Side",
+      "address": "ul. Ruska 46c, 50-079 Wrocław",
+      "lat": 51.1103,
+      "lng": 17.0222,
+      "website": null
+    },
+    {
+      "id": "synagoga",
+      "name": "Synagoga pod Białym Bocianem",
+      "address": "ul. Włodkowica 7, 50-072 Wrocław",
+      "lat": 51.1083,
+      "lng": 17.0246,
+      "website": "https://fbk.org.pl"
+    },
+    {
+      "id": "katedra",
+      "name": "Ostrów Tumski",
+      "address": "pl. Katedralny, 50-329 Wrocław",
+      "lat": 51.1141,
+      "lng": 17.0465,
+      "website": null
+    },
+    {
+      "id": "mnw",
+      "name": "Muzeum Narodowe we Wrocławiu",
+      "address": "pl. Powstańców Warszawy 5, 50-153 Wrocław",
+      "lat": 51.1105,
+      "lng": 17.0475,
+      "website": "https://mnwr.pl"
+    },
+    {
+      "id": "hydropolis",
+      "name": "Hydropolis",
+      "address": "ul. Na Grobli 17, 50-421 Wrocław",
+      "lat": 51.1047,
+      "lng": 17.0528,
+      "website": "https://hydropolis.pl"
+    },
+    {
+      "id": "capitol",
+      "name": "Teatr Muzyczny Capitol",
+      "address": "ul. Piłsudskiego 67, 50-019 Wrocław",
+      "lat": 51.1012,
+      "lng": 17.0276,
+      "website": "https://www.teatr-capitol.pl"
+    },
+    {
+      "id": "pergola",
+      "name": "Pergola i Fontanna Multimedialna",
+      "address": "ul. Wystawowa 1, 51-618 Wrocław",
+      "lat": 51.1083,
+      "lng": 17.076,
+      "website": null
+    },
+    {
+      "id": "nadodrze",
+      "name": "Podwórko na Nadodrzu",
+      "address": "ul. Ołbińska, 50-233 Wrocław",
+      "lat": 51.1203,
+      "lng": 17.0418,
+      "website": null
+    },
+    {
+      "id": "arena",
+      "name": "Tarczyński Arena",
+      "address": "al. Śląska 1, 54-118 Wrocław",
+      "lat": 51.1414,
+      "lng": 16.9436,
+      "website": "https://tarczynskiarena.pl"
+    },
+    {
+      "id": "browar",
+      "name": "Browar Mieszczański",
+      "address": "ul. Hubska 44, 50-502 Wrocław",
+      "lat": 51.096,
+      "lng": 17.045,
+      "website": null
+    }
+  ],
+  "events": [
+    {
+      "externalId": "seed-01",
+      "title": "Jarmark rękodzieła na Rynku",
+      "description": "Stoiska lokalnych twórców: ceramika, biżuteria, plakaty.",
+      "categoryIds": ["market"],
+      "venueId": "rynek",
+      "startOffsetMin": -120,
+      "durationMin": 360,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed",
+        "accessibility": "step-free"
+      }
+    },
+    {
+      "externalId": "seed-02",
+      "title": "Uliczny koncert jazzowy",
+      "description": "Trio jazzowe gra standardy pod pręgierzem.",
+      "categoryIds": ["music"],
+      "venueId": "rynek",
+      "startOffsetMin": -30,
+      "durationMin": 90,
+      "isFree": true,
+      "rules": {}
+    },
+    {
+      "externalId": "seed-03",
+      "title": "Symfonie Brahmsa — NFM Filharmonia",
+      "description": "Wieczór symfoniczny w Sali Głównej NFM.",
+      "categoryIds": ["music"],
+      "venueId": "nfm",
+      "startOffsetMin": 150,
+      "durationMin": 120,
+      "isFree": false,
+      "priceMin": 40,
+      "priceMax": 160,
+      "currency": "PLN",
+      "rules": {
+        "age": "6+",
+        "dress": "smart casual",
+        "accessibility": "wheelchair"
+      },
+      "ticketUrl": "https://www.nfm.wroclaw.pl"
+    },
+    {
+      "externalId": "seed-04",
+      "title": "Dziady — spektakl",
+      "description": "Klasyka w nowej inscenizacji.",
+      "categoryIds": ["theatre"],
+      "venueId": "teatr-polski",
+      "startOffsetMin": 180,
+      "durationMin": 170,
+      "isFree": false,
+      "priceMin": 50,
+      "priceMax": 110,
+      "currency": "PLN",
+      "rules": {
+        "age": "16+"
+      }
+    },
+    {
+      "externalId": "seed-05",
+      "title": "Carmen — przedstawienie operowe",
+      "description": "Opera Bizeta w trzech aktach.",
+      "categoryIds": ["music", "theatre"],
+      "venueId": "opera",
+      "startOffsetMin": 240,
+      "durationMin": 180,
+      "isFree": false,
+      "priceMin": 60,
+      "priceMax": 220,
+      "currency": "PLN",
+      "rules": {
+        "dress": "smart"
+      }
+    },
+    {
+      "externalId": "seed-06",
+      "title": "Pokaz przedpremierowy z dyskusją",
+      "description": "Film fabularny i rozmowa z reżyserką po seansie.",
+      "categoryIds": ["cinema", "talk"],
+      "venueId": "dcf",
+      "startOffsetMin": 45,
+      "durationMin": 150,
+      "isFree": false,
+      "priceMin": 24,
+      "priceMax": 24,
+      "currency": "PLN",
+      "rules": {
+        "age": "12+"
+      }
+    },
+    {
+      "externalId": "seed-07",
+      "title": "Bajki z pudełka — teatr lalek dla najmłodszych",
+      "description": "Spektakl dla dzieci od 3 lat.",
+      "categoryIds": ["kids", "theatre"],
+      "venueId": "lalki",
+      "startOffsetMin": 15,
+      "durationMin": 50,
+      "isFree": false,
+      "priceMin": 30,
+      "priceMax": 30,
+      "currency": "PLN",
+      "rules": {
+        "age": "3+"
+      }
+    },
+    {
+      "externalId": "seed-08",
+      "title": "Śniadanie targowe w Hali",
+      "description": "Degustacje lokalnych serów i pieczywa.",
+      "categoryIds": ["food", "market"],
+      "venueId": "hala-targowa",
+      "startOffsetMin": -60,
+      "durationMin": null,
+      "isFree": true,
+      "rules": {}
+    },
+    {
+      "externalId": "seed-09",
+      "title": "Wykład otwarty: miasto po powodzi",
+      "description": "Hydrolog o retencji i rzekach Wrocławia.",
+      "categoryIds": ["talk"],
+      "venueId": "leopoldina",
+      "startOffsetMin": 90,
+      "durationMin": 90,
+      "isFree": true,
+      "rules": {
+        "accessibility": "limited"
+      }
+    },
+    {
+      "externalId": "seed-10",
+      "title": "Joga o zachodzie słońca",
+      "description": "Weź matę, zajęcia dla każdego poziomu.",
+      "categoryIds": ["sport", "happening"],
+      "venueId": "wyspa-slodowa",
+      "startOffsetMin": 60,
+      "durationMin": 60,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "seed-11",
+      "title": "Nocne zwiedzanie neonów",
+      "description": "Spacer z przewodnikiem po historii wrocławskich neonów.",
+      "categoryIds": ["happening", "exhibition"],
+      "venueId": "neon-side",
+      "startOffsetMin": 300,
+      "durationMin": 90,
+      "isFree": false,
+      "priceMin": 35,
+      "priceMax": 35,
+      "currency": "PLN",
+      "rules": {}
+    },
+    {
+      "externalId": "seed-12",
+      "title": "Warsztaty kaligrafii",
+      "description": "Podstawy pisma hebrajskiego i łacińskiego.",
+      "categoryIds": ["talk"],
+      "venueId": "synagoga",
+      "startOffsetMin": -15,
+      "durationMin": 120,
+      "isFree": false,
+      "priceMin": 45,
+      "priceMax": 45,
+      "currency": "PLN",
+      "rules": {
+        "age": "14+"
+      }
+    },
+    {
+      "externalId": "seed-13",
+      "title": "Zapalanie latarni na Ostrowie Tumskim",
+      "description": "Latarnik zapala gazowe latarnie — codzienny rytuał.",
+      "categoryIds": ["happening"],
+      "venueId": "katedra",
+      "startOffsetMin": 120,
+      "durationMin": 45,
+      "isFree": true,
+      "rules": {}
+    },
+    {
+      "externalId": "seed-14",
+      "title": "Panorama w nowym świetle — wystawa",
+      "description": "Wystawa czasowa malarstwa XIX wieku.",
+      "categoryIds": ["exhibition"],
+      "venueId": "mnw",
+      "startOffsetMin": -240,
+      "durationMin": 480,
+      "isFree": false,
+      "priceMin": 0,
+      "priceMax": 30,
+      "currency": "PLN",
+      "rules": {
+        "accessibility": "wheelchair"
+      }
+    },
+    {
+      "externalId": "seed-15",
+      "title": "Rodzinne odkrywanie wody",
+      "description": "Interaktywne stanowiska i eksperymenty dla rodzin.",
+      "categoryIds": ["kids", "exhibition"],
+      "venueId": "hydropolis",
+      "startOffsetMin": -90,
+      "durationMin": null,
+      "isFree": false,
+      "priceMin": 25,
+      "priceMax": 39,
+      "currency": "PLN",
+      "rules": {}
+    },
+    {
+      "externalId": "seed-16",
+      "title": "Musical — pokaz wieczorny",
+      "description": "Musical na dużej scenie Capitolu.",
+      "categoryIds": ["theatre", "music"],
+      "venueId": "capitol",
+      "startOffsetMin": 210,
+      "durationMin": 165,
+      "isFree": false,
+      "priceMin": 70,
+      "priceMax": 190,
+      "currency": "PLN",
+      "rules": {
+        "age": "10+"
+      }
+    },
+    {
+      "externalId": "seed-17",
+      "title": "Pokaz fontanny multimedialnej",
+      "description": "Woda, światło i muzyka przy Pergoli.",
+      "categoryIds": ["happening", "music"],
+      "venueId": "pergola",
+      "startOffsetMin": 330,
+      "durationMin": 30,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "seed-18",
+      "title": "Wyprzedaż garażowa sąsiadów",
+      "description": "Książki, płyty, ubrania dziecięce i rowery z podwórka.",
+      "categoryIds": ["garage-sale"],
+      "venueId": "nadodrze",
+      "startOffsetMin": -45,
+      "durationMin": 240,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "seed-19",
+      "title": "Festiwal food trucków",
+      "description": "Kilkanaście food trucków, DJ i strefa chillu.",
+      "categoryIds": ["food", "festival"],
+      "venueId": "browar",
+      "startOffsetMin": 30,
+      "durationMin": 300,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed",
+        "accessibility": "step-free"
+      }
+    },
+    {
+      "externalId": "seed-20",
+      "title": "Mecz ligowy na stadionie",
+      "description": "Mecz piłkarski, otwarcie bram 90 min przed.",
+      "categoryIds": ["sport"],
+      "venueId": "arena",
+      "startOffsetMin": 1440,
+      "durationMin": 120,
+      "isFree": false,
+      "priceMin": 30,
+      "priceMax": 120,
+      "currency": "PLN",
+      "rules": {
+        "age": "all; under 13 with adult"
+      }
+    }
+  ]
+}

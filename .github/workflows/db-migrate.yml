@@ -1,0 +1,29 @@
+name: Database migrate + seed (Supabase)
+
+# Manual: applies supabase/migrations and (optionally) refreshes the demo seed on the hosted database.
+on:
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: Re-seed demo events (re-anchors seed times to now)
+        type: boolean
+        default: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - if: env.DATABASE_URL == ''
+        run: echo "::error::DATABASE_URL secret is not set" && exit 1
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - if: inputs.seed
+        run: pnpm db:seed

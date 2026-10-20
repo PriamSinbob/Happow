@@ -1,0 +1,14 @@
+{
+  "sources": [
+    {
+      "id": "seed",
+      "adapter": "manual-seed",
+      "regionIds": ["wroclaw"],
+      "schedule": null,
+      "rateLimit": null,
+      "trustLevel": "community",
+      "enabled": true,
+      "termsNotes": "Hand-entered demo events for the PoC skeleton (milestone 1). Fictional programmes at real venues."
+    }
+  ]
+}
