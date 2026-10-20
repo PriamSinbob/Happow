@@ -1,1 +1,1 @@
-# Happow
+App that shows every nearby event of any kind happening now, within hours, today. It should be an map overview with list possibility, type of event filters (music, theatre, happening, festiwal, garage sale etc), event details (start, end, official site info, price, rules, weather at spot now and at event end etc). The range by default should be small, around 500m, but would be adjustable. # Happow
