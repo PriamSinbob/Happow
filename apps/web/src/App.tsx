@@ -46,6 +46,7 @@ export function App() {
   const selected = events.find((e) => e.id === selectedId) ?? null;
   const guidance = useGuidance(clusters, location.center, radius);
   const [hotspotOpen, setHotspotOpen] = useState(false);
+  const [recenter, setRecenter] = useState(0);
   const filtered = filters.activeCount > 0;
   const [detailId, openDetail] = useDetailRoute();
   const detail = useEventDetail(repo, detailId, events, location.center);
@@ -120,6 +121,7 @@ export function App() {
             className="icon-btn icon-btn--raised"
             onClick={() => {
               setBannerDismissed(false);
+              setRecenter((n) => n + 1);
               location.retry();
             }}
             aria-label={t('header.locate')}
@@ -158,6 +160,7 @@ export function App() {
           }}
           bottomInset={panelHeight}
           overlayInset={sheetHeight}
+          recenter={recenter}
           hidden={view !== 'map'}
           clusters={clusters}
           hotspot={guidance.hotspot}

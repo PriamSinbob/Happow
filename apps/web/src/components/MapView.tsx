@@ -28,6 +28,8 @@ interface Props {
   onSelect: (id: string | null) => void;
   /** Pixels covered by the bottom panel, so the radius circle stays in the visible area. */
   bottomInset: number;
+  /** Incremented by the locate button: fit the view to the circle again even after panning. */
+  recenter: number;
   /** Pixels covered by everything at the bottom (cards included), kept clear of chevrons. */
   overlayInset: number;
   hidden?: boolean;
@@ -58,6 +60,8 @@ const HALF_W = 52;
 const HALF_H = 16;
 const { minM, maxM } = config.app.radius;
 const { searchRadiusM, maxChevrons } = config.app.density;
+/** Without panning, re-fit only once the user has walked this far (GPS jitter is smaller). */
+const REFIT_AFTER_M = 30;
 
 /**
  * Edge-of-screen pointers to clusters outside the visible map area: placed where the line from the
@@ -152,6 +156,13 @@ export function MapView(props: Props) {
   const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLButtonElement }>());
   const userMarker = useRef<maplibregl.Marker | null>(null);
   const hintMarkers = useRef<maplibregl.Marker[]>([]);
+  const userMoved = useRef(false);
+  const lastFit = useRef<{
+    center: LatLng;
+    radiusM: number;
+    bottomInset: number;
+    recenter: number;
+  } | null>(null);
   const [chevrons, setChevrons] = useState<Chevron[]>([]);
   const latest = useRef(props);
   latest.current = props;
@@ -207,6 +218,12 @@ export function MapView(props: Props) {
         ?.querySelector('.maplibregl-ctrl-attrib')
         ?.classList.remove('maplibregl-compact-show');
     });
+    // Gestures carry an originalEvent; our own fitBounds/easeTo calls do not.
+    const markMoved = (e: { originalEvent?: unknown }) => {
+      if (e.originalEvent) userMoved.current = true;
+    };
+    m.on('dragstart', markMoved);
+    m.on('zoomstart', markMoved);
     m.on('click', (e) => {
       if (!(e.originalEvent.target as HTMLElement).closest('.marker'))
         latest.current.onSelect(null);
@@ -221,13 +238,30 @@ export function MapView(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Radius circle + fit the view to it whenever the centre or radius changes.
+  // The radius circle always follows the user; the view fits to it only when that won't fight the
+  // user: on a new radius or layout, on "locate", or when the user has walked on while the map
+  // still shows the circle. GPS updates alone never yank back a map the user has panned or zoomed.
   useEffect(() => {
     const m = map.current;
     if (!m) return;
     (m.getSource(RADIUS_SOURCE) as GeoJSONSource | undefined)?.setData(
       radiusFeature(props.center, props.radiusM),
     );
+    const last = lastFit.current;
+    const forced =
+      !last ||
+      last.radiusM !== props.radiusM ||
+      last.bottomInset !== props.bottomInset ||
+      last.recenter !== props.recenter;
+    if (!forced && (userMoved.current || distanceM(last.center, props.center) < REFIT_AFTER_M))
+      return;
+    userMoved.current = false;
+    lastFit.current = {
+      center: props.center,
+      radiusM: props.radiusM,
+      bottomInset: props.bottomInset,
+      recenter: props.recenter,
+    };
     const [w, s, e, n] = circleBounds(props.center, props.radiusM);
     m.fitBounds(
       [
@@ -240,7 +274,7 @@ export function MapView(props: Props) {
         maxZoom: 17,
       },
     );
-  }, [props.center.lat, props.center.lng, props.radiusM, props.bottomInset]);
+  }, [props.center.lat, props.center.lng, props.radiusM, props.bottomInset, props.recenter]);
 
   // The map container may have been display:none while the list was open.
   useEffect(() => {

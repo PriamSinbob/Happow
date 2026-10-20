@@ -142,7 +142,7 @@ The schema follows schema.org/Event so crawled JSON-LD maps almost one-to-one an
 | Region | id, name, polygon, timezone, enabled\_sources\[\] |
 | Submission | id, url, form\_payload, extracted\_payload, status (pending / approved / rejected), moderator\_note, submitter\_hash |
 
-Personal data is minimal: no account required to browse; submissions store a salted device hash, not identity.
+Personal data is minimal: no account required to browse; submissions store a salted device hash, not identity. (The future private-events feature adds accounts, contacts and groups; see Future features.)
 
 ## Legal and compliance
 
@@ -198,6 +198,18 @@ Idea: weather at the spot now and at the event's end hour, plus a warning chip w
 | [Pirate Weather](https://pirateweather.net/) | Free 10,000 calls/month; small donation raises the cap | Allowed | Dark Sky-style API; useful fallback |
 
 Cost control: fetch weather per H3 cell (resolution 7, about 5 km²) and cache it for 30 min, not per event. A city-sized PoC then needs a few hundred calls per day, well inside every free tier. Run it as a scheduled job next to ingestion, since MET Norway requires an identifying User-Agent that browsers cannot send; keep the provider behind a `WeatherProvider` interface and show CC BY 4.0 attribution.
+
+### Private events with invitations
+
+Requested 2026-10-20. An organiser can mark an event as **private**: it is visible on the map, in the list and by link only to the people they invited. Everything public keeps working without an account.
+
+- **Accounts.** Login is needed only to create private events or to see ones you were invited to. Browsing public events stays anonymous. Use Supabase Auth (email magic link, optionally Google and Apple), which fits the current stack.
+- **Contacts and groups.** Each user keeps a contact list (people they invited or accepted) and can sort contacts into **groups** ("Family", "Running club"), so a whole group can be invited at once. Groups are the minimum contact management.
+- **Invitations.** Invite by group, by individual contact, or by a link or email for people without an account yet (they sign up on accepting). Invitees can accept or decline. The organiser can revoke an invitation, and edits or cancellations reach all invitees.
+- **Visibility.** Private events never appear in public queries, density counts, hotspots, chevrons or shares. Enforce this in Postgres row-level security (event visible if public, or if the viewer is the owner or an invitee), not in the client.
+- **Data model additions.** On events: `visibility` (public / private) and `owner_id`. New tables: users (from Supabase Auth), `contacts` (owner, contact user or email, display name), `groups` and `group_members`, and `invitations` (event, invitee user or email, status pending / accepted / declined / revoked, token for link invites).
+- **Privacy.** This adds personal data (emails, contact lists), so GDPR applies directly. It needs consent at sign-up, account and data deletion, data export, minimal retention for unaccepted email invites, and no use of contacts for anything else.
+- **Fits the business model.** It is a user feature, so it could later be part of the optional supporter tier. Public events stay free and equal.
 
 ## Open questions
 
