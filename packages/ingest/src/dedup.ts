@@ -126,6 +126,7 @@ export function mergeEvents(primary: HappowEvent, other: HappowEvent): HappowEve
     ...primary,
     description: pick('description'),
     venue: pick('venue'),
+    densityCell: primary.densityCell ?? other.densityCell,
     priceMin: pick('priceMin'),
     priceMax: pick('priceMax'),
     currency: pick('currency'),

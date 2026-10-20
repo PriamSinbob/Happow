@@ -1,4 +1,12 @@
-import type { EventQuery, EventStatus, LatLng, NearbyEvent, Trust } from '@happow/core';
+import type {
+  DensityCluster,
+  DensityQuery,
+  EventQuery,
+  EventStatus,
+  LatLng,
+  NearbyEvent,
+  Trust,
+} from '@happow/core';
 import type { EventRepository } from './repository';
 
 interface Row {
@@ -35,6 +43,32 @@ interface Row {
 }
 
 const num = (v: number | string | null) => (v === null ? null : Number(v));
+
+interface DensityRow {
+  cell: string;
+  center_lat: number;
+  center_lng: number;
+  event_count: number;
+  outside_count: number;
+  nearest_lat: number | null;
+  nearest_lng: number | null;
+  nearest_m: number | null;
+  top_venue: string | null;
+}
+
+export function rowToCluster(r: DensityRow): DensityCluster {
+  return {
+    cell: r.cell,
+    center: { lat: r.center_lat, lng: r.center_lng },
+    count: r.event_count,
+    outsideCount: r.outside_count,
+    nearestOutside:
+      r.nearest_m !== null && r.nearest_lat !== null && r.nearest_lng !== null
+        ? { point: { lat: r.nearest_lat, lng: r.nearest_lng }, distanceM: r.nearest_m }
+        : null,
+    topVenue: r.top_venue,
+  };
+}
 
 export function rowToEvent(r: Row): NearbyEvent {
   return {
@@ -82,7 +116,7 @@ export class SupabaseEventRepository implements EventRepository {
     private readonly anonKey: string,
   ) {}
 
-  private async rpc(name: string, body: object, signal?: AbortSignal): Promise<Row[]> {
+  private async rpc<T = Row>(name: string, body: object, signal?: AbortSignal): Promise<T[]> {
     const res = await fetch(`${this.url.replace(/\/$/, '')}/rest/v1/rpc/${name}`, {
       method: 'POST',
       signal,
@@ -94,7 +128,7 @@ export class SupabaseEventRepository implements EventRepository {
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`${name} failed: ${res.status}`);
-    return (await res.json()) as Row[];
+    return (await res.json()) as T[];
   }
 
   async near(q: EventQuery, signal?: AbortSignal): Promise<NearbyEvent[]> {
@@ -112,6 +146,24 @@ export class SupabaseEventRepository implements EventRepository {
       signal,
     );
     return rows.map(rowToEvent);
+  }
+
+  async density(q: DensityQuery, signal?: AbortSignal): Promise<DensityCluster[]> {
+    const rows = await this.rpc<DensityRow>(
+      'density_near',
+      {
+        lat: q.center.lat,
+        lng: q.center.lng,
+        radius_m: q.radiusM,
+        search_m: q.searchRadiusM,
+        from_ts: q.from.toISOString(),
+        to_ts: q.to.toISOString(),
+        categories: q.categories?.length ? q.categories : null,
+        price: q.price ?? 'any',
+      },
+      signal,
+    );
+    return rows.map(rowToCluster);
   }
 
   async byId(id: string, from: LatLng, signal?: AbortSignal): Promise<NearbyEvent | null> {

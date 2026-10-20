@@ -43,6 +43,8 @@ export interface HappowEvent {
   venue: { id: string; name: string; address: string | null; website?: string | null } | null;
   point: LatLng;
   h3r9: string;
+  /** H3 cell at `h3.densityResolution`, used to count events for hotspots and chevrons. */
+  densityCell?: string;
   priceMin: number | null;
   priceMax: number | null;
   currency: string | null;
@@ -78,4 +80,22 @@ export interface EventQuery extends Partial<EventFilters> {
   radiusM: number;
   from: Date;
   to: Date;
+}
+
+/** Events of one density cell (H3, coarser than event cells) that match the active filters. */
+export interface DensityCluster {
+  cell: string;
+  /** Centroid of the cell's matching events. */
+  center: LatLng;
+  count: number;
+  /** Events beyond the user's radius, and the nearest of them. */
+  outsideCount: number;
+  nearestOutside: { point: LatLng; distanceM: number } | null;
+  /** Most common venue name in the cell, to name the spot ("Rynek"). */
+  topVenue: string | null;
+}
+
+export interface DensityQuery extends EventQuery {
+  /** Clusters are searched this far around `center`; `radiusM` is the user's own circle. */
+  searchRadiusM: number;
 }

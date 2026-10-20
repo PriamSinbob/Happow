@@ -14,6 +14,8 @@ export interface NormalizeContext {
   region: Region;
   categories: Category[];
   h3Resolution: number;
+  /** Optional: coarser cell for density counts; omitted, the store keeps what it has. */
+  densityResolution?: number;
   descriptionMaxChars: number;
   now: Date;
 }
@@ -74,6 +76,9 @@ export function normalize(p: ParsedEvent, ctx: NormalizeContext): NormalizeResul
       : null,
     point,
     h3r9,
+    ...(ctx.densityResolution !== undefined && {
+      densityCell: h3Cell(point, ctx.densityResolution),
+    }),
     priceMin: isFree ? 0 : p.priceMin,
     priceMax: isFree ? 0 : (p.priceMax ?? p.priceMin),
     currency: p.currency,

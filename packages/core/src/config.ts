@@ -37,6 +37,10 @@ export function loadConfig(): HappowConfig {
   const { minM, maxM, defaultM } = app.radius;
   if (!(minM <= defaultM && defaultM <= maxM))
     errors.push('radius must satisfy minM ≤ defaultM ≤ maxM');
+  if (app.h3.densityResolution >= app.h3.eventResolution)
+    errors.push('h3.densityResolution must be coarser (lower) than h3.eventResolution');
+  if (app.density.searchRadiusM < app.radius.defaultM)
+    errors.push('density.searchRadiusM must be at least radius.defaultM');
   if (!app.timeWindows.some((w) => w.id === app.defaultTimeWindow))
     errors.push(`defaultTimeWindow "${app.defaultTimeWindow}" is not in timeWindows`);
   for (const d of dupes(app.timeWindows.map((w) => w.id)))

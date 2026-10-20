@@ -180,6 +180,7 @@ async function runSource(
       region,
       categories,
       h3Resolution: h3.eventResolution,
+      densityResolution: h3.densityResolution,
       descriptionMaxChars: ingest.descriptionMaxChars,
       now,
     });

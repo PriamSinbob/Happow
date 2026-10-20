@@ -16,13 +16,13 @@ Decisions taken (2026-10-20):
 | Geography | Local PoC (Wrocław), architecture region-agnostic from day one |
 | Data | Official APIs, web/social crawler and user submissions, all from the start |
 | Business model | Free; no monetization in the PoC; later only event add-ons and user features, never paid visibility |
-| Weather | Free or very cheap provider, swappable behind one interface |
+| Weather | Not in the PoC (decided 2026-10-20); kept as a future feature, see Future features |
 
 Why PWA is enough for the PoC: map, geolocation, list, filters, offline cache and install-to-home-screen all work on the web. Limits to accept: no background geofencing, and iOS web push only for installed home-screen apps. Neither blocks validating the core loop (open → see what is on near me → go).
 
 ## Competitive landscape
 
-The closest product, Ongeo, validates the AI-crawled "here and now" map but runs only in US beta cities; no European product combines a hyper-local radius, a strict now-window, informal events and per-event weather.
+The closest product, Ongeo, validates the AI-crawled "here and now" map but runs only in US beta cities; no European product combines a hyper-local radius, a strict now-window, informal events and density guidance.
 
 | Product | Market | What it does | Gap vs Happening Now |
 | --- | --- | --- | --- |
@@ -32,7 +32,7 @@ The closest product, Ongeo, validates the AI-crawled "here and now" map but runs
 | [DropIn](https://apps.apple.com/app/id1132386926) | US | Live map of local events, user-created events | Small, little traction |
 | Facebook Events / Local | Global | Nearby events map | Discontinued twice after interest faded ([tabletowo](https://www.tabletowo.pl/local-to-nowe-facebook-events)) |
 
-Differentiators to protect: 500 m default radius with density guidance, "now / next hours / today" as the primary axis, informal categories (garage sales, happenings), and weather at the spot for both start and end.
+Differentiators to protect: 500 m default radius with density guidance, "now / next hours / today" as the primary axis, and informal categories (garage sales, happenings).
 
 ## Core features
 
@@ -57,7 +57,6 @@ The PoC ships one loop: open the app, see what is on within 500 m now, and be gu
 
 - Title, category, start and end, venue and address, distance and walking time, price or "free", rules (age limit, dress code, pets, accessibility) when the source provides them.
 - Official site link and ticket link; source badge (API / crawled / community) and last-verified time.
-- Weather at the spot now and forecast at the event's end hour, plus a warning chip when an official alert covers the area.
 - Actions: navigate (hands off to the device map app), add to calendar (.ics), share, save, report as wrong or cancelled.
 
 **Add an event**
@@ -93,19 +92,6 @@ Ruled out: Eventbrite (public search shut off in February 2020; only lookups by 
 5. Deduplication: same H3 cell + start within 30 min + title similarity → merge, keeping the highest-trust source as primary.
 6. Freshness: each event keeps `last_seen_at`; events missing from two consecutive fetches of their source are flagged "possibly cancelled".
 
-## Weather
-
-Use MET Norway as the primary provider: it is free, needs no key and permits commercial use within fair use, so the free-to-paid transition costs nothing. Add IMGW for official Polish alerts and keep Open-Meteo as the upgrade path if 15-minute resolution is needed commercially.
-
-| Provider | Cost | Commercial use | Notes |
-| --- | --- | --- | --- |
-| [MET Norway Locationforecast](https://jentic.com/apis/api.met.no/met-no.md) | Free, no key | Allowed within fair use | Must send identifying User-Agent and honour cache headers; NLOD + CC BY 4.0 ([overview](https://slightfuture.com/devel/met-norway-api-endpoints)) |
-| [IMGW-PIB public data](https://glama.ai/mcp/servers/bartosz-kuc/honest-imgw-mcp/tree) | Free, no key | Public data | Current station readings and active meteo warnings for Poland |
-| [Open-Meteo](https://open-meteo.com/?lat=47.586&lon=1.3359) | Free non-commercial; $29/mo for 1M calls commercial ([pricing](https://openmeteo.substack.com/p/api-subscriptions-for-commercial)) | Paid plan only | 15-minutely data for Central Europe; best resolution for "weather at event end" |
-| [Pirate Weather](https://pirateweather.net/) | Free 10,000 calls/month; small donation raises the cap | Allowed | Dark Sky-style API; useful fallback |
-
-Cost control: weather is fetched per H3 cell (resolution 7, about 5 km²) and cached 30 min, not per event. A city-sized PoC then needs a few hundred calls per day, well inside every free tier. The provider sits behind a `WeatherProvider` interface so swapping is a config change.
-
 ## Architecture and stack
 
 For the PoC everything runs on free tiers: the PWA on Cloudflare Pages, Postgres + PostGIS on Supabase, and ingestion as scheduled GitHub Actions jobs. Code stays plain TypeScript on standard Postgres, so moving to a VPS later is a deploy change, not a rewrite. Development happens in Claude Code sessions on the GitHub repo; GitHub is where code lives, not where the app runs.
@@ -116,7 +102,6 @@ flowchart LR
     A1["Official event APIs<br/>Ticketmaster, Meetup"]
     A2["Crawl targets<br/>venues, city portal"]
     A3["Social APIs<br/>Threads, Instagram"]
-    A4["Weather<br/>MET Norway, IMGW"]
   end
   subgraph Workers["Ingestion workers"]
     W1["Scheduler<br/>GitHub Actions cron"] --> W2["Source adapters<br/>one per source, from config"]
@@ -124,7 +109,7 @@ flowchart LR
     W3 --> W4["Geocode + dedup<br/>H3 + title match"]
   end
   Sources --> Workers
-  W4 --> DB[("Postgres + PostGIS + H3<br/>events, raw payloads, weather")]
+  W4 --> DB[("Postgres + PostGIS + H3<br/>events, raw payloads")]
   DB -->|geo queries| API["API (Supabase)<br/>events, hotspots, submissions"]
   API -->|JSON over HTTPS| PWA["PWA (React + MapLibre)<br/>map, list, chevrons, add form"]
 ```
@@ -156,9 +141,8 @@ The schema follows schema.org/Event so crawled JSON-LD maps almost one-to-one an
 | Category | id, slug, labels {pl, en}, default\_duration\_min, icon |
 | Region | id, name, polygon, timezone, enabled\_sources\[\] |
 | Submission | id, url, form\_payload, extracted\_payload, status (pending / approved / rejected), moderator\_note, submitter\_hash |
-| WeatherCache | h3\_r7, provider, fetched\_at, hourly\[\] |
 
-Personal data is minimal: no account required to browse; submissions store a salted device hash, not identity.
+Personal data is minimal: no account required to browse; submissions store a salted device hash, not identity. (The future private-events feature adds accounts, contacts and groups; see Future features.)
 
 ## Legal and compliance
 
@@ -166,7 +150,7 @@ Prefer official APIs and published structured data; treat social scraping as the
 
 - **Social scraping.** A US court held in Meta v. Bright Data that Meta's terms do not bar logged-out scraping of public data ([Farella Braun](https://www.fbm.com/post/102kqw7/)), but practitioners note it may be appealed and is not a blanket permission ([Zyte](https://www.zyte.com/blog/california-court-meta-ruling)). It is a US ruling; EU/Polish law and GDPR apply to this app independently. PoC rule: no logged-in scraping, no personal data stored from posts (keep event facts, drop author identity), honour robots.txt.
 - **GDPR.** Location is processed on-device or sent coarse (H3 cell), never stored with an identifier. Privacy policy and cookie-free analytics (e.g. Plausible) from day one.
-- **Copyright and attribution.** Store facts (title, time, place, price) and link back; do not republish full descriptions or images from crawled pages without permission. Show the required attribution for MET Norway / Open-Meteo (CC BY 4.0) and map tiles (OpenStreetMap).
+- **Copyright and attribution.** Store facts (title, time, place, price) and link back; do not republish full descriptions or images from crawled pages without permission. Show the required attribution for map tiles (OpenStreetMap).
 - **API terms.** Ticketmaster, Meetup and Meta APIs have display and caching rules; the adapter config stores a `terms_notes` field and a max cache age per source.
 - **User submissions.** Terms of use, report button, moderation queue, and takedown contact (DSA-style notice and action).
 
@@ -175,7 +159,7 @@ Prefer official APIs and published structured data; treat social scraping as the
 Every event is shown equally: no paid placement, no paid ranking, no ads in the map. The PoC has no monetization; these are directions for later.
 
 - **Event add-ons:** optional extras an organizer can attach to their event card (timetable or lineup, live updates, photo gallery, ticket link). They enrich the card but never change its visibility or order.
-- **User features (optional supporter tier):** saved searches with alerts, weekend planner, a walking route through several events, offline city pack, home-screen widgets. Map, filters, details and weather stay free.
+- **User features (optional supporter tier):** saved searches with alerts, weekend planner, a walking route through several events, offline city pack, home-screen widgets. Map, filters and details stay free.
 - **Ticket affiliate links:** commission from ticket platforms, same price for the user, disclosed on the card.
 
 Ruled out: featured or sponsored pins, paid ranking, banner ads, selling location data.
@@ -186,7 +170,7 @@ Build in five increments, each deployable and demoable on a phone in Wrocław.
 
 1. **Skeleton.** Monorepo, PWA shell, MapLibre map with OSM tiles, geolocation, radius slider, list toggle, Postgres + PostGIS + H3, seed data for 20 hand-entered Wrocław events.
 2. **Official APIs.** Ticketmaster and Meetup adapters, normalizer, dedup, scheduler, time-window and category filters, event detail screen.
-3. **Weather and density.** MET Norway + IMGW alerts behind `WeatherProvider`; H3 hotspot computation; off-screen chevrons and empty-radius guidance.
+3. **Density.** H3 hotspot computation; off-screen chevrons and empty-radius guidance.
 4. **Crawler and submissions.** JSON-LD crawler with a target list in config, LLM extraction fallback, URL-autofill submission form, moderation screen.
 5. **Social signals.** Threads keyword and Instagram hashtag adapters (after app review), confidence scoring, "possibly cancelled" logic, analytics.
 
@@ -197,6 +181,35 @@ Instructions for the build agent:
 - Each adapter gets a contract test against recorded fixtures; no live calls in CI.
 - Ship the PWA mobile-first (380 px), Polish and English UI strings from the start.
 - Report after each milestone: what was built, what was skipped, open issues.
+
+## Future features (not in the PoC)
+
+### Weather
+
+Dropped from the PoC on 2026-10-20: it adds little to the core loop (open → see what is on near me → go). The research below is kept for when it returns.
+
+Idea: weather at the spot now and at the event's end hour, plus a warning chip when an official alert covers the area. MET Norway would be the primary provider (free, no key, commercial use within fair use), IMGW for official Polish alerts, and Open-Meteo as the upgrade path for 15-minute resolution.
+
+| Provider | Cost | Commercial use | Notes |
+| --- | --- | --- | --- |
+| [MET Norway Locationforecast](https://jentic.com/apis/api.met.no/met-no.md) | Free, no key | Allowed within fair use | Must send identifying User-Agent and honour cache headers; NLOD + CC BY 4.0 ([overview](https://slightfuture.com/devel/met-norway-api-endpoints)) |
+| [IMGW-PIB public data](https://glama.ai/mcp/servers/bartosz-kuc/honest-imgw-mcp/tree) | Free, no key | Public data | Current station readings and active meteo warnings for Poland |
+| [Open-Meteo](https://open-meteo.com/?lat=47.586&lon=1.3359) | Free non-commercial; $29/mo for 1M calls commercial ([pricing](https://openmeteo.substack.com/p/api-subscriptions-for-commercial)) | Paid plan only | 15-minutely data for Central Europe; best resolution for "weather at event end" |
+| [Pirate Weather](https://pirateweather.net/) | Free 10,000 calls/month; small donation raises the cap | Allowed | Dark Sky-style API; useful fallback |
+
+Cost control: fetch weather per H3 cell (resolution 7, about 5 km²) and cache it for 30 min, not per event. A city-sized PoC then needs a few hundred calls per day, well inside every free tier. Run it as a scheduled job next to ingestion, since MET Norway requires an identifying User-Agent that browsers cannot send; keep the provider behind a `WeatherProvider` interface and show CC BY 4.0 attribution.
+
+### Private events with invitations
+
+Requested 2026-10-20. An organiser can mark an event as **private**: it is visible on the map, in the list and by link only to the people they invited. Everything public keeps working without an account.
+
+- **Accounts.** Login is needed only to create private events or to see ones you were invited to. Browsing public events stays anonymous. Use Supabase Auth (email magic link, optionally Google and Apple), which fits the current stack.
+- **Contacts and groups.** Each user keeps a contact list (people they invited or accepted) and can sort contacts into **groups** ("Family", "Running club"), so a whole group can be invited at once. Groups are the minimum contact management.
+- **Invitations.** Invite by group, by individual contact, or by a link or email for people without an account yet (they sign up on accepting). Invitees can accept or decline. The organiser can revoke an invitation, and edits or cancellations reach all invitees.
+- **Visibility.** Private events never appear in public queries, density counts, hotspots, chevrons or shares. Enforce this in Postgres row-level security (event visible if public, or if the viewer is the owner or an invitee), not in the client.
+- **Data model additions.** On events: `visibility` (public / private) and `owner_id`. New tables: users (from Supabase Auth), `contacts` (owner, contact user or email, display name), `groups` and `group_members`, and `invitations` (event, invitee user or email, status pending / accepted / declined / revoked, token for link invites).
+- **Privacy.** This adds personal data (emails, contact lists), so GDPR applies directly. It needs consent at sign-up, account and data deletion, data export, minimal retention for unaccepted email invites, and no use of contacts for anything else.
+- **Fits the business model.** It is a user feature, so it could later be part of the optional supporter tier. Public events stay free and equal.
 
 ## Open questions
 

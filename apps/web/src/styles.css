@@ -192,6 +192,10 @@ button {
   position: absolute;
   inset: 0;
 }
+.map__canvas {
+  position: absolute;
+  inset: 0;
+}
 .list-wrap {
   position: absolute;
   inset: 0;
@@ -245,6 +249,144 @@ button {
   box-shadow:
     0 0 0 6px rgb(37 99 235 / 0.2),
     var(--shadow-sm);
+}
+
+/* ---------- Density hints ---------- */
+/* Edge-of-screen pointer to events off the visible map. */
+.chevron {
+  position: absolute;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 10px 0 7px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--text);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, -50%);
+  transition:
+    left 0.12s linear,
+    top 0.12s linear;
+}
+.chevron__arrow {
+  flex: none;
+  color: #fdba74;
+}
+/* Events beyond the radius but on screen: a count bubble; tap widens the radius. */
+.ghost {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px;
+  border: 2px dashed color-mix(in srgb, var(--text) 45%, white);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.88);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+}
+/* Busiest cell within reach. */
+.hotspot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.hotspot__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(249 115 22 / 0.5),
+    rgb(249 115 22 / 0.12) 62%,
+    transparent 70%
+  );
+  animation: hot 2.4s ease-in-out infinite;
+}
+.hotspot__count {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Empty-radius guidance and the hotspot card. */
+.guide {
+  background: var(--surface);
+  padding: 14px 16px 16px;
+}
+.guide__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.guide__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+.guide__line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.guide__arrow {
+  flex: none;
+  color: #2563eb;
+  transform: translateY(2px);
+}
+.guide__dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgb(249 115 22 / 0.25);
+  transform: translateY(-1px);
+}
+.guide__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.guide__actions .btn {
+  flex: 1 1 140px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+.list--empty .guide {
+  text-align: left;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
 }
 
 /* ---------- Bottom sheet ---------- */
@@ -960,19 +1102,7 @@ button {
   font-weight: 700;
 }
 .list--empty {
-  align-items: center;
-  text-align: center;
-  padding: 48px 24px;
-  color: var(--muted);
-}
-.list--empty .btn {
-  flex: none;
-  margin-top: 8px;
-}
-.empty__title {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--text);
+  padding-top: 8px;
 }
 
 /* Attribution (required by OSM) sits under the top bar, clear of the bottom sheet. */
@@ -998,6 +1128,12 @@ button {
       0 0 0 3px rgb(255 255 255 / 0.9),
       0 0 0 3px transparent,
       var(--shadow-sm);
+  }
+}
+@keyframes hot {
+  50% {
+    transform: scale(1.18);
+    opacity: 0.7;
   }
 }
 @keyframes blink {

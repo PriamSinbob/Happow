@@ -13,6 +13,7 @@ export function materializeSeed(
   categories: Category[],
   now: Date,
   h3Resolution: number,
+  densityResolution?: number,
 ): HappowEvent[] {
   const seed = seedFileSchema.parse(raw);
   const venues = new Map(seed.venues.map((v) => [v.id, v]));
@@ -45,6 +46,7 @@ export function materializeSeed(
       venue: { id: venue.id, name: venue.name, address: venue.address, website: venue.website },
       point,
       h3r9: h3Cell(point, h3Resolution),
+      ...(densityResolution !== undefined && { densityCell: h3Cell(point, densityResolution) }),
       priceMin: e.priceMin ?? (e.isFree ? 0 : null),
       priceMax: e.priceMax ?? (e.isFree ? 0 : null),
       currency: e.currency ?? null,

@@ -261,15 +261,16 @@ export class EventStore {
       e.lastSeenAt,
       owner.sourceId,
       owner.externalId,
+      e.densityCell ?? null,
     ];
     if (insert) {
       await this.db.query(
         `insert into events (id, region_id, title, description, category_ids, start_at, end_at,
            end_estimated, timezone, venue_id, point, h3_r9, price_min, price_max, currency, is_free,
            rules, official_url, ticket_url, image_url, status, trust, confidence, last_seen_at,
-           primary_source_id, primary_external_id, stale_after)
+           primary_source_id, primary_external_id, density_cell, stale_after)
          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, st_point($11, $12)::geography, $13, $14,
-           $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)`,
+           $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)`,
         [...values, staleAfter ?? null],
       );
       return;
@@ -281,7 +282,8 @@ export class EventStore {
          currency = $16, is_free = $17, rules = $18, official_url = $19, ticket_url = $20,
          image_url = $21, status = $22, trust = $23, confidence = $24, last_seen_at = $25,
          primary_source_id = $26, primary_external_id = $27,
-         stale_after = case when $28::boolean then $29::timestamptz else stale_after end
+         density_cell = coalesce($28, density_cell),
+         stale_after = case when $29::boolean then $30::timestamptz else stale_after end
        where id = $1`,
       [...values, staleAfter !== undefined, staleAfter ?? null],
     );
