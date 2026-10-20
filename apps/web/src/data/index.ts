@@ -24,7 +24,11 @@ export function createRepository(): EventRepository {
         config.app.h3.eventResolution,
       ),
   );
-  return { kind: 'static', near: async (q) => (await repo).near(q) };
+  return {
+    kind: 'static',
+    near: async (q) => (await repo).near(q),
+    byId: async (id, from) => (await repo).byId(id, from),
+  };
 }
 
 export type { EventRepository };

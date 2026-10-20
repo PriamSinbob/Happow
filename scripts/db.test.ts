@@ -22,7 +22,9 @@ describe.skipIf(!url)('events_near', () => {
     ).rows;
 
   it('loaded the seed and config', async () => {
-    const { rows } = await db.query('select count(*)::int as n from events');
+    const { rows } = await db.query(
+      `select count(*)::int as n from events where primary_source_id = 'seed'`,
+    );
     expect(rows[0].n).toBe(20);
     const cats = await db.query('select count(*)::int as n from categories');
     expect(cats.rows[0].n).toBe(config.categories.length);

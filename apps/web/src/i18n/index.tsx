@@ -9,20 +9,21 @@ const messages: Record<Language, Record<MessageKey, string>> = { en, pl };
 type Params = Record<string, string | number>;
 
 /**
- * Tiny ICU-ish formatter: {name} substitution and {n, plural, one {...} few {...} other {...}} with `#`.
+ * Tiny ICU-ish formatter: {name} substitution and {n, plural, =0 {...} one {...} few {...} other {...}}
+ * with `#`.
  * Enough for the PoC without pulling in a full i18n runtime.
  */
 export function format(template: string, params: Params, lang: Language): string {
   const plural = new Intl.PluralRules(lang);
   return template.replace(
-    /\{(\w+), plural,((?:\s*\w+\s*\{[^{}]*\})+)\s*\}|\{(\w+)\}/g,
+    /\{(\w+), plural,((?:\s*=?\w+\s*\{[^{}]*\})+)\s*\}|\{(\w+)\}/g,
     (_m, pName: string | undefined, branches: string | undefined, name: string | undefined) => {
       if (pName && branches) {
         const n = Number(params[pName]);
         const options = Object.fromEntries(
-          [...branches.matchAll(/(\w+)\s*\{([^{}]*)\}/g)].map((b) => [b[1], b[2]]),
+          [...branches.matchAll(/(=?\w+)\s*\{([^{}]*)\}/g)].map((b) => [b[1], b[2]]),
         );
-        const branch = options[plural.select(n)] ?? options.other ?? '';
+        const branch = options[`=${n}`] ?? options[plural.select(n)] ?? options.other ?? '';
         return branch.replace(/#/g, new Intl.NumberFormat(lang).format(n));
       }
       return String(params[name!] ?? `{${name}}`);

@@ -3,11 +3,18 @@ import { snapRadius, type Language } from '@happow/core';
 import { config, region } from './config';
 import { createRepository } from './data';
 import { formatDistance } from './format';
+import { useEventDetail } from './hooks/useEventDetail';
 import { useEvents } from './hooks/useEvents';
+import { useFilters } from './hooks/useFilters';
 import { useGeolocation } from './hooks/useGeolocation';
+import { useDetailRoute } from './hooks/useHashRoute';
 import { useRadius } from './hooks/useRadius';
+import { useSaved } from './hooks/useSaved';
 import { useI18n } from './i18n';
 import { EventCard } from './components/EventCard';
+import { EventDetail } from './components/EventDetail';
+import { FilterBar, windowSummary } from './components/FilterBar';
+import { FilterSheet } from './components/FilterSheet';
 import { ListView } from './components/ListView';
 import { MapView } from './components/MapView';
 import { RadiusControl } from './components/RadiusControl';
@@ -23,8 +30,20 @@ export function App() {
   const [view, setView] = useState<View>(() => (storage.get('view') === 'list' ? 'list' : 'map'));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
-  const { events, loading, error, now } = useEvents(repo, location.center, radius, region.timezone);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filters = useFilters();
+  const { events, loading, error, now } = useEvents(
+    repo,
+    location.center,
+    radius,
+    region.timezone,
+    filters.window,
+    filters,
+  );
   const selected = events.find((e) => e.id === selectedId) ?? null;
+  const [detailId, openDetail] = useDetailRoute();
+  const detail = useEventDetail(repo, detailId, events, location.center);
+  const saved = useSaved();
 
   const panel = useRef<HTMLElement>(null);
   const [panelHeight, setPanelHeight] = useState(180);
@@ -103,6 +122,13 @@ export function App() {
         </div>
       </header>
 
+      <FilterBar
+        window={filters.window}
+        onWindow={filters.setWindow}
+        activeCount={filters.activeCount}
+        onOpenFilters={() => setFiltersOpen(true)}
+      />
+
       {view === 'map' && bannerEl}
 
       <main className="stage">
@@ -125,8 +151,10 @@ export function App() {
               now={now}
               radiusM={radius}
               nextRadiusM={nextRadius}
-              onSelect={setSelectedId}
+              filtered={filters.activeCount > 0}
+              onSelect={openDetail}
               onExpand={setRadius}
+              onClearFilters={filters.clear}
             />
           </div>
         )}
@@ -135,7 +163,12 @@ export function App() {
       <div className="sheet">
         {selected && (
           <div className="sheet__card">
-            <EventCard ev={selected} now={now} onClose={() => setSelectedId(null)} />
+            <EventCard
+              ev={selected}
+              now={now}
+              onClose={() => setSelectedId(null)}
+              onDetails={() => openDetail(selected.id)}
+            />
           </div>
         )}
         <section className="panel" ref={panel} aria-label={t('radius.label')}>
@@ -150,7 +183,7 @@ export function App() {
                     radius: formatDistance(radius, lang),
                   })}
                 </strong>{' '}
-                <span className="muted">· {t('summary.today')}</span>
+                <span className="muted">· {windowSummary(t, filters.window)}</span>
               </>
             )}
             {error && <span className="panel__error">{t('summary.error')}</span>}
@@ -172,6 +205,25 @@ export function App() {
           </div>
         </section>
       </div>
+
+      {filtersOpen && (
+        <FilterSheet
+          filters={filters}
+          count={events.length}
+          loading={loading}
+          onClose={() => setFiltersOpen(false)}
+        />
+      )}
+      {detailId && (
+        <EventDetail
+          ev={detail.ev}
+          loading={detail.loading}
+          now={now}
+          saved={saved.isSaved(detailId)}
+          onToggleSave={() => saved.toggle(detailId)}
+          onClose={() => openDetail(null)}
+        />
+      )}
     </div>
   );
 }

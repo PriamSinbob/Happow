@@ -16,10 +16,12 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "db:reset": "tsx scripts/migrate.ts --reset && tsx scripts/seed.ts",
-    "test:db": "vitest run --root scripts"
+    "test:db": "vitest run --root scripts --no-file-parallelism",
+    "ingest": "tsx packages/ingest/src/cli.ts"
   },
   "devDependencies": {
     "@happow/core": "workspace:*",
+    "@happow/ingest": "workspace:*",
     "@types/node": "^22.10.0",
     "@types/pg": "^8.15.0",
     "dotenv": "^16.4.7",

@@ -43,8 +43,28 @@ function offsetMs(at: Date, timeZone: string): number {
 }
 
 function zonedMidnight(y: number, m: number, d: number, timeZone: string): Date {
-  const guess = Date.UTC(y, m - 1, d);
+  return zonedTime(y, m, d, 0, 0, timeZone);
+}
+
+/** The instant a wall-clock time in `timeZone` refers to. */
+export function zonedTime(
+  y: number,
+  m: number,
+  d: number,
+  hour: number,
+  minute: number,
+  timeZone: string,
+): Date {
+  const guess = Date.UTC(y, m - 1, d, hour, minute);
   const first = guess - offsetMs(new Date(guess), timeZone);
-  // Re-evaluate once in case midnight sits across a DST change.
+  // Re-evaluate once in case the time sits across a DST change.
   return new Date(guess - offsetMs(new Date(first), timeZone));
+}
+
+/** "2026-10-20" + optional "19:30:00" in `timeZone` → instant. Null when the date is malformed. */
+export function localToInstant(date: string, time: string | null, timeZone: string): Date | null {
+  const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!dm) return null;
+  const tm = time ? /^(\d{2}):(\d{2})/.exec(time) : null;
+  return zonedTime(+dm[1]!, +dm[2]!, +dm[3]!, tm ? +tm[1]! : 0, tm ? +tm[2]! : 0, timeZone);
 }

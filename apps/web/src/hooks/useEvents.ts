@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { dayBounds, type LatLng, type NearbyEvent } from '@happow/core';
+import {
+  windowRange,
+  type EventFilters,
+  type LatLng,
+  type NearbyEvent,
+  type TimeWindow,
+} from '@happow/core';
 import type { EventRepository } from '../data';
 
 export interface EventsState {
@@ -11,12 +17,14 @@ export interface EventsState {
 
 const REFRESH_MS = 60_000;
 
-/** Events overlapping the rest of today (region timezone) within `radiusM` of `center`. */
+/** Events overlapping the time window (region timezone) within `radiusM` of `center`, filtered. */
 export function useEvents(
   repo: EventRepository,
   center: LatLng,
   radiusM: number,
   timeZone: string,
+  timeWindow: TimeWindow,
+  filters: EventFilters,
 ): EventsState {
   const [state, setState] = useState<EventsState>({
     events: [],
@@ -29,7 +37,16 @@ export function useEvents(
   // GPS jitters; only refetch when the user has moved ~20 m.
   const lat = Math.round(center.lat * 5000) / 5000;
   const lng = Math.round(center.lng * 5000) / 5000;
-  const query = useMemo(() => ({ center: { lat, lng }, radiusM }), [lat, lng, radiusM]);
+  const categoryKey = [...filters.categories].sort().join(',');
+  const query = useMemo(
+    () => ({
+      center: { lat, lng },
+      radiusM,
+      categories: categoryKey ? categoryKey.split(',') : [],
+      price: filters.price,
+    }),
+    [lat, lng, radiusM, categoryKey, filters.price],
+  );
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), REFRESH_MS);
@@ -43,7 +60,7 @@ export function useEvents(
       setState((s) => ({ ...s, loading: true }));
       try {
         const events = await repo.near(
-          { ...query, from: now, to: dayBounds(now, timeZone).end },
+          { ...query, ...windowRange(timeWindow, now, timeZone) },
           ctrl.signal,
         );
         setState({ events, loading: false, error: false, now });
@@ -57,7 +74,7 @@ export function useEvents(
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [repo, query, timeZone, tick]);
+  }, [repo, query, timeZone, timeWindow, tick]);
 
   return state;
 }

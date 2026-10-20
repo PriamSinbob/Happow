@@ -42,7 +42,7 @@ export function materializeSeed(
       endAt: endAt.toISOString(),
       endEstimated,
       timezone: region.timezone,
-      venue: { id: venue.id, name: venue.name, address: venue.address },
+      venue: { id: venue.id, name: venue.name, address: venue.address, website: venue.website },
       point,
       h3r9: h3Cell(point, h3Resolution),
       priceMin: e.priceMin ?? (e.isFree ? 0 : null),
@@ -57,6 +57,8 @@ export function materializeSeed(
       trust: 'community',
       confidence: 1,
       lastSeenAt: new Date(now).toISOString(),
+      sourceId: 'seed',
+      sourceUrl: null,
     };
   });
 }

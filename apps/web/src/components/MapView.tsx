@@ -132,7 +132,7 @@ export function MapView(props: Props) {
         [e, n],
       ],
       {
-        padding: { top: 84, bottom: props.bottomInset + 24, left: 24, right: 24 },
+        padding: { top: 128, bottom: props.bottomInset + 24, left: 24, right: 24 },
         duration: 450,
         maxZoom: 17,
       },

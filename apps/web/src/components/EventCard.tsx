@@ -23,18 +23,34 @@ function ruleText(
   return value;
 }
 
+export function RuleList({ rules }: { rules: NearbyEvent['rules'] }) {
+  const { t } = useI18n();
+  const entries = Object.entries(rules).filter(([, v]) => v);
+  if (!entries.length) return null;
+  return (
+    <ul className="rules">
+      {entries.map(([k, v]) => (
+        <li key={k}>
+          <span aria-hidden>{RULE_ICONS[k] ?? '•'}</span> {ruleText(t, k, v!)}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function EventCard({
   ev,
   now,
   onClose,
+  onDetails,
 }: {
   ev: NearbyEvent;
   now: Date;
   onClose: () => void;
+  onDetails: () => void;
 }) {
   const { t, lang } = useI18n();
   const { running, when, price, distance, walk, categories } = useEventText(ev, now);
-  const rules = Object.entries(ev.rules).filter(([, v]) => v);
 
   return (
     <article className="event-card" aria-labelledby={`ev-${ev.id}`}>
@@ -45,7 +61,11 @@ export function EventCard({
             {categories.map((c) => c.labels[lang]).join(' · ')}
             <span className={`badge badge--${ev.trust}`}>{t(`event.source.${ev.trust}`)}</span>
           </div>
-          <h2 id={`ev-${ev.id}`}>{ev.title}</h2>
+          <h2 id={`ev-${ev.id}`}>
+            <button type="button" className="link-btn" onClick={onDetails}>
+              {ev.title}
+            </button>
+          </h2>
         </div>
         <button type="button" className="icon-btn" onClick={onClose} aria-label={t('event.close')}>
           ✕
@@ -66,16 +86,7 @@ export function EventCard({
       <p className="event-card__distance">
         {distance} · {walk}
       </p>
-      {ev.description && <p className="event-card__desc">{ev.description}</p>}
-      {rules.length > 0 && (
-        <ul className="rules">
-          {rules.map(([k, v]) => (
-            <li key={k}>
-              <span aria-hidden>{RULE_ICONS[k] ?? '•'}</span> {ruleText(t, k, v!)}
-            </li>
-          ))}
-        </ul>
-      )}
+      <RuleList rules={ev.rules} />
       {ev.endEstimated && <p className="footnote">* {t('event.endEstimated')}</p>}
 
       <div className="event-card__actions">
@@ -87,16 +98,9 @@ export function EventCard({
         >
           {t('event.navigate')}
         </a>
-        {ev.ticketUrl && (
-          <a className="btn" href={ev.ticketUrl} target="_blank" rel="noreferrer">
-            {t('event.tickets')}
-          </a>
-        )}
-        {ev.officialUrl && (
-          <a className="btn" href={ev.officialUrl} target="_blank" rel="noreferrer">
-            {t('event.website')}
-          </a>
-        )}
+        <button type="button" className="btn" onClick={onDetails}>
+          {t('event.details')}
+        </button>
       </div>
     </article>
   );

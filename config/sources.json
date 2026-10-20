@@ -2,6 +2,7 @@
   "sources": [
     {
       "id": "seed",
+      "name": "Happow demo",
       "adapter": "manual-seed",
       "regionIds": ["wroclaw"],
       "schedule": null,
@@ -9,6 +10,88 @@
       "trustLevel": "community",
       "enabled": true,
       "termsNotes": "Hand-entered demo events for the PoC skeleton (milestone 1). Fictional programmes at real venues."
+    },
+    {
+      "id": "ticketmaster",
+      "name": "Ticketmaster",
+      "adapter": "ticketmaster",
+      "regionIds": ["wroclaw"],
+      "schedule": "60m",
+      "rateLimit": "5/s",
+      "trustLevel": "api",
+      "enabled": true,
+      "secrets": ["TICKETMASTER_API_KEY"],
+      "maxCacheAgeHours": 24,
+      "termsNotes": "Discovery API v2. Free key: 5,000 calls/day, 5 req/s; deep paging capped at 1,000 results (size × page). Must link to the Ticketmaster event page for purchase and keep attribution; do not cache data beyond its freshness.",
+      "options": {
+        "endpoint": "https://app.ticketmaster.com/discovery/v2/events.json",
+        "pageSize": 200,
+        "maxPages": 5,
+        "locale": "*"
+      },
+      "defaultCategories": ["other"],
+      "categoryMap": {
+        "music": "music",
+        "sports": "sport",
+        "arts & theatre": "theatre",
+        "theatre": "theatre",
+        "opera": "music",
+        "classical": "music",
+        "dance": "theatre",
+        "comedy": "theatre",
+        "children's theatre": "kids",
+        "family": "kids",
+        "fine art": "exhibition",
+        "film": "cinema",
+        "fairs & festivals": "festival",
+        "festival": "festival",
+        "food & drink": "food",
+        "lecture/seminar": "talk",
+        "miscellaneous": "other"
+      }
+    },
+    {
+      "id": "meetup",
+      "name": "Meetup",
+      "adapter": "meetup",
+      "regionIds": ["wroclaw"],
+      "schedule": "120m",
+      "rateLimit": "3/s",
+      "trustLevel": "api",
+      "enabled": true,
+      "secrets": [
+        "MEETUP_CLIENT_KEY",
+        "MEETUP_MEMBER_ID",
+        "MEETUP_SIGNING_KEY_ID",
+        "MEETUP_PRIVATE_KEY"
+      ],
+      "maxCacheAgeHours": 24,
+      "termsNotes": "GraphQL API (gql-ext) with OAuth JWT bearer flow; API access is a Meetup Pro feature. 500 points per 60 s. Link back to the Meetup event page; no member data is stored.",
+      "options": {
+        "endpoint": "https://api.meetup.com/gql-ext",
+        "tokenEndpoint": "https://secure.meetup.com/oauth2/access",
+        "pageSize": 50,
+        "maxPages": 6
+      },
+      "defaultCategories": ["talk"],
+      "categoryMap": {
+        "music": "music",
+        "dancing": "music",
+        "sports & fitness": "sport",
+        "outdoors & adventure": "sport",
+        "art & culture": "exhibition",
+        "arts": "exhibition",
+        "movies & film": "cinema",
+        "parents & family": "kids",
+        "food & drink": "food",
+        "games": "happening",
+        "social activities": "happening",
+        "technology": "talk",
+        "career & business": "talk",
+        "science & education": "talk",
+        "writing": "talk",
+        "language & culture": "talk"
+      }
     }
   ]
 }

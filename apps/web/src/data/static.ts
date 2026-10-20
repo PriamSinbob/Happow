@@ -1,10 +1,13 @@
 import { materializeSeed } from '@happow/core/seed';
 import {
+  distanceM,
+  matchesFilters,
   nearby,
   overlaps,
   type Category,
   type EventQuery,
   type HappowEvent,
+  type LatLng,
   type NearbyEvent,
   type Region,
 } from '@happow/core';
@@ -30,9 +33,16 @@ export class StaticEventRepository implements EventRepository {
   async near(q: EventQuery): Promise<NearbyEvent[]> {
     const all = await this.events;
     return nearby(
-      all.filter((e) => e.status !== 'cancelled' && overlaps(e, q.from, q.to)),
+      all.filter(
+        (e) => e.status !== 'cancelled' && overlaps(e, q.from, q.to) && matchesFilters(e, q),
+      ),
       q.center,
       q.radiusM,
     );
+  }
+
+  async byId(id: string, from: LatLng): Promise<NearbyEvent | null> {
+    const e = (await this.events).find((x) => x.id === id);
+    return e ? { ...e, distanceM: distanceM(from, e.point) } : null;
   }
 }

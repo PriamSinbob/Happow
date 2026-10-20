@@ -1,0 +1,147 @@
+{
+  "_embedded": {
+    "events": [
+      {
+        "name": "Dawid Podsiadło – Trasa 2026",
+        "type": "event",
+        "id": "Z698xZb_Z17a0kE",
+        "url": "https://www.ticketmaster.pl/event/dawid-podsiadlo-trasa-bilety/36005",
+        "dates": {
+          "start": {
+            "localDate": "2026-10-24",
+            "localTime": "20:00:00",
+            "dateTime": "2026-10-24T18:00:00Z",
+            "dateTBA": false,
+            "timeTBA": false,
+            "noSpecificTime": false
+          },
+          "end": {
+            "localDate": "2026-10-24",
+            "localTime": "22:30:00",
+            "dateTime": "2026-10-24T20:30:00Z"
+          },
+          "status": { "code": "onsale" }
+        },
+        "classifications": [
+          { "primary": true, "segment": { "name": "Music" }, "genre": { "name": "Pop" } }
+        ],
+        "_embedded": {
+          "venues": [
+            {
+              "name": "Hala Stulecia",
+              "id": "Z598xZb_ZeAvF",
+              "postalCode": "51-618",
+              "city": { "name": "Wrocław" },
+              "address": { "line1": "ul. Wystawowa 1" },
+              "location": { "longitude": "17.0773", "latitude": "51.1069" }
+            }
+          ]
+        }
+      },
+      {
+        "name": "Pan Kleks – spektakl dla dzieci",
+        "type": "event",
+        "id": "Z698xZb_Z17a0kF",
+        "url": "https://www.ticketmaster.pl/event/pan-kleks-bilety/36006",
+        "dates": {
+          "start": {
+            "localDate": "2026-10-24",
+            "localTime": "11:00:00",
+            "dateTBA": false,
+            "timeTBA": false,
+            "noSpecificTime": false
+          },
+          "status": { "code": "onsale" }
+        },
+        "classifications": [
+          {
+            "primary": true,
+            "segment": { "name": "Arts & Theatre" },
+            "genre": { "name": "Children's Theatre" }
+          },
+          {
+            "primary": false,
+            "segment": { "name": "Miscellaneous" },
+            "genre": { "name": "Family" }
+          }
+        ],
+        "priceRanges": [{ "type": "standard", "currency": "PLN", "min": 0, "max": 0 }],
+        "_embedded": {
+          "venues": [
+            {
+              "name": "Wrocławski Teatr Lalek",
+              "id": "Z598xZb_ZeAvL",
+              "postalCode": "50-051",
+              "city": { "name": "Wrocław" },
+              "address": { "line1": "pl. Teatralny 4" },
+              "location": { "longitude": "17.0337", "latitude": "51.1056" }
+            }
+          ]
+        }
+      },
+      {
+        "name": "Tour Finale Poznań",
+        "type": "event",
+        "id": "Z698xZb_Z17a0kG",
+        "url": "https://www.ticketmaster.pl/event/finale-bilety/36007",
+        "dates": {
+          "start": {
+            "localDate": "2026-10-25",
+            "localTime": "20:00:00",
+            "dateTime": "2026-10-25T19:00:00Z",
+            "dateTBA": false,
+            "timeTBA": false,
+            "noSpecificTime": false
+          },
+          "status": { "code": "onsale" }
+        },
+        "classifications": [{ "primary": true, "segment": { "name": "Music" } }],
+        "_embedded": {
+          "venues": [
+            {
+              "name": "Arena Poznań",
+              "id": "Z598xZb_ZeAvX",
+              "city": { "name": "Poznań" },
+              "location": { "longitude": "16.9135", "latitude": "52.4079" }
+            }
+          ]
+        }
+      },
+      {
+        "name": "Secret Show",
+        "type": "event",
+        "id": "Z698xZb_Z17a0kH",
+        "url": "https://www.ticketmaster.pl/event/secret-bilety/36008",
+        "dates": {
+          "start": {
+            "localDate": "2026-10-24",
+            "localTime": "21:00:00",
+            "dateTime": "2026-10-24T19:00:00Z",
+            "dateTBA": false,
+            "timeTBA": false,
+            "noSpecificTime": false
+          },
+          "status": { "code": "onsale" }
+        },
+        "classifications": [{ "primary": true, "segment": { "name": "Music" } }],
+        "_embedded": {
+          "venues": [
+            { "name": "Location TBA", "id": "Z598xZb_ZeAvT", "city": { "name": "Wrocław" } }
+          ]
+        }
+      },
+      {
+        "name": "New Date Coming Soon",
+        "type": "event",
+        "id": "Z698xZb_Z17a0kI",
+        "url": "https://www.ticketmaster.pl/event/tba-bilety/36009",
+        "dates": {
+          "start": { "dateTBA": true, "dateTBD": true, "timeTBA": true, "noSpecificTime": false },
+          "status": { "code": "postponed" }
+        },
+        "classifications": [{ "primary": true, "segment": { "name": "Music" } }]
+      }
+    ]
+  },
+  "page": { "size": 200, "totalElements": 9, "totalPages": 2, "number": 1 }
+}

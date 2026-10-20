@@ -8,8 +8,11 @@ interface Props {
   now: Date;
   radiusM: number;
   nextRadiusM: number | null;
+  /** Category or price filters are narrowing the results. */
+  filtered: boolean;
   onSelect: (id: string) => void;
   onExpand: (radius: number) => void;
+  onClearFilters: () => void;
 }
 
 function Row({
@@ -51,7 +54,12 @@ export function ListView(props: Props) {
         <p className="empty__title">
           {t('list.empty.title', { radius: formatDistance(props.radiusM, lang) })}
         </p>
-        <p>{t('list.empty.body')}</p>
+        <p>{t(props.filtered ? 'list.empty.bodyFiltered' : 'list.empty.body')}</p>
+        {props.filtered && (
+          <button type="button" className="btn" onClick={props.onClearFilters}>
+            {t('list.empty.clear')}
+          </button>
+        )}
         {props.nextRadiusM && (
           <button
             type="button"
