@@ -199,6 +199,15 @@ Idea: weather at the spot now and at the event's end hour, plus a warning chip w
 
 Cost control: fetch weather per H3 cell (resolution 7, about 5 km²) and cache it for 30 min, not per event. A city-sized PoC then needs a few hundred calls per day, well inside every free tier. Run it as a scheduled job next to ingestion, since MET Norway requires an identifying User-Agent that browsers cannot send; keep the provider behind a `WeatherProvider` interface and show CC BY 4.0 attribution.
 
+### Automation add-on (paid): URL autofill
+
+Decided 2026-10-21: in the PoC, people add events by hand. Pasting a link to fill the form (schema.org data, Claude Haiku for pages without it) becomes part of a low-priced subscription for organisers and power users, priced to cover the AI cost per account. The code is built (M4) and switched off with `submissions.autofill: false`. Turning it on as an add-on needs:
+
+- **Accounts and entitlement:** a signed-in user with an active subscription (Supabase Auth plus a payments provider such as Stripe or Przelewy24), checked by `/api/autofill`.
+- **Per-account quota** instead of the global daily cap (`extraction.autofillLlmPerDay`), for example 100 links a month, with usage shown to the user.
+- **Cost model:** about $0.0005–0.001 per page at Haiku 5.5 rates, so even 500 autofills a month cost under $0.50 per account.
+- **Possible extras:** recurring imports from an organiser's own events page, and bulk add from a calendar feed (iCal).
+
 ### Private events with invitations
 
 Requested 2026-10-20. An organiser can mark an event as **private**: it is visible on the map, in the list and by link only to the people they invited. Everything public keeps working without an account.

@@ -84,6 +84,7 @@
   },
   "submissions": {
     "publishBeforeModeration": true,
+    "autofill": false,
     "maxPerDevicePerDay": 10,
     "autofillPerHourPerClient": 30,
     "reportsPerDayPerDevice": 20,

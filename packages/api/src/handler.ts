@@ -254,6 +254,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
 
   /** POST /api/autofill {url} → up to 5 prefills from the page (JSON-LD first, LLM fallback). */
   async function autofill(req: Request): Promise<Response> {
+    if (!limits.autofill) throw new ApiError(404, 'not_found');
     const { db, salt } = need();
     const { url, regionId } = await body(
       req,

@@ -97,6 +97,8 @@ export const appConfigSchema = z.object({
     schemaTypeMap: z.record(z.string()),
   }),
   submissions: z.object({
+    /** URL autofill on the add-event form (planned as a paid add-on; off in the PoC). */
+    autofill: z.boolean(),
     /** Show user submissions on the map (as unverified) before a moderator approves them. */
     publishBeforeModeration: z.boolean(),
     maxPerDevicePerDay: z.number().int().positive(),

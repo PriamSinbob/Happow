@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import type { Extractor, Geocoder } from '@happow/extract';
+import { loadConfig } from '@happow/core';
 import { createApi } from '../src';
 
 const page = (name: string) =>
@@ -49,6 +50,15 @@ function backend(b: Backend) {
 const geocoder: Geocoder = {
   geocode: async () => ({ point: { lat: 51.1079, lng: 17.0385 }, precision: 'venue', label: 'x' }),
 };
+// URL autofill is off in the PoC config (planned paid add-on); these tests switch it on.
+const base = loadConfig();
+const autofillOn = {
+  ...base,
+  app: { ...base.app, submissions: { ...base.app.submissions, autofill: true } },
+};
+const withAutofill = (...[env, deps]: Parameters<typeof createApi>) =>
+  createApi(env, { config: autofillOn, ...deps });
+
 const allow = { rate_limit_hit: () => ({ body: true }) };
 
 const post = (path: string, payload: unknown, headers: Record<string, string> = {}) =>
@@ -63,7 +73,7 @@ describe('POST /api/autofill', () => {
 
   it('prefills from JSON-LD, geocodes the place and rate-limits by hashed IP', async () => {
     const web = backend({ rpc: allow, pages: { [goUrl]: page('go-event-1.html') } });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = withAutofill(env, { fetch: web.fetch, now, geocoder, extractor: null });
     const res = await api(post('autofill', { url: goUrl }));
     expect(res.status).toBe(200);
     const data = await res.json();
@@ -118,7 +128,7 @@ describe('POST /api/autofill', () => {
       },
     ]);
     const web = backend({ rpc: allow, pages: { [url]: page('nfm-event.html') } });
-    const api = createApi(env, {
+    const api = withAutofill(env, {
       fetch: web.fetch,
       now,
       geocoder,
@@ -151,7 +161,7 @@ describe('POST /api/autofill', () => {
     });
     const deps = { now, geocoder, extractor: { id: 'fake', extract } };
     const off = await (
-      await createApi(env, { ...deps, fetch: capped.fetch })(post('autofill', { url }))
+      await withAutofill(env, { ...deps, fetch: capped.fetch })(post('autofill', { url }))
     ).json();
     expect(off).toMatchObject({ method: 'none', events: [] });
     expect(extract).not.toHaveBeenCalled();
@@ -161,7 +171,7 @@ describe('POST /api/autofill', () => {
     });
 
     const open = backend({ rpc: allow, pages: { [url]: page('nfm-event.html') } });
-    const res = await createApi(env, { ...deps, fetch: open.fetch })(post('autofill', { url }));
+    const res = await withAutofill(env, { ...deps, fetch: open.fetch })(post('autofill', { url }));
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ method: 'none', events: [] });
     expect(extract).toHaveBeenCalledOnce();
@@ -169,7 +179,7 @@ describe('POST /api/autofill', () => {
 
   it('refuses private addresses and reports unreachable pages', async () => {
     const web = backend({ rpc: allow });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = withAutofill(env, { fetch: web.fetch, now, geocoder, extractor: null });
     const bad = await api(post('autofill', { url: 'http://169.254.169.254/latest/meta-data' }));
     expect(bad.status).toBe(400);
     expect((await bad.json()).error).toBe('unsafe_url');
@@ -178,10 +188,10 @@ describe('POST /api/autofill', () => {
   });
 
   it('answers 503 until the server is configured, and 429 when over the limit', async () => {
-    const api503 = createApi({}, { now, geocoder, extractor: null });
+    const api503 = withAutofill({}, { now, geocoder, extractor: null });
     expect((await api503(post('autofill', { url: 'https://x.example' }))).status).toBe(503);
     const web = backend({ rpc: { rate_limit_hit: () => ({ body: false }) } });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = withAutofill(env, { fetch: web.fetch, now, geocoder, extractor: null });
     expect((await api(post('autofill', { url: 'https://x.example' }))).status).toBe(429);
   });
 });
@@ -332,6 +342,13 @@ describe('/api/moderation', () => {
       400,
     );
   });
+});
+
+it('answers 404 for autofill while the add-on is off', async () => {
+  const web = backend({ rpc: allow });
+  const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+  expect((await api(post('autofill', { url: 'https://x.example' }))).status).toBe(404);
+  expect(web.calls).toEqual([]);
 });
 
 it('answers 404 for unknown routes', async () => {

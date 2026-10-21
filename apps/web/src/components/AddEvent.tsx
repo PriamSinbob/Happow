@@ -257,64 +257,68 @@ export function AddEvent({
 
   return (
     <Screen title={t('add.title')} onClose={onClose}>
-      <form className="autofill" onSubmit={fill}>
-        <label className="field">
-          <span className="field__label">{t('add.linkLabel')}</span>
-          <span className="field__row">
-            <input
-              type="url"
-              inputMode="url"
-              placeholder="https://"
-              value={link}
-              onChange={(e) => setLink(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="btn btn--primary btn--inline"
-              disabled={!link.trim() || autofill.state === 'loading'}
-            >
-              <Icon name="link" size={16} />
-              {autofill.state === 'loading' ? t('add.filling') : t('add.fill')}
-            </button>
-          </span>
-          <span className="field__hint">{t('add.linkHint')}</span>
-        </label>
-        {autofill.state === 'error' && (
-          <p className="form-error" role="alert">
-            {autofill.message}
-          </p>
-        )}
-        {autofill.state === 'found' && (
-          <div className="found" aria-live="polite">
-            <p className="field__hint">
-              {found.length ? t('add.found', { count: found.length }) : t('add.notFound')}
-            </p>
-            {found.length > 1 && (
-              <ul className="found__list">
-                {found.map((p, i) => (
-                  <li key={i}>
-                    <button
-                      type="button"
-                      className={`choice${chosen === i ? ' is-on' : ''}`}
-                      onClick={() => apply(p, i)}
-                    >
-                      <strong>{p.title}</strong>
-                      <span>
-                        {p.start && localLabel(p.start, lang)}
-                        {p.venueName && ` · ${p.venueName}`}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+      {submissions.autofill && (
+        <>
+          <form className="autofill" onSubmit={fill}>
+            <label className="field">
+              <span className="field__label">{t('add.linkLabel')}</span>
+              <span className="field__row">
+                <input
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  className="btn btn--primary btn--inline"
+                  disabled={!link.trim() || autofill.state === 'loading'}
+                >
+                  <Icon name="link" size={16} />
+                  {autofill.state === 'loading' ? t('add.filling') : t('add.fill')}
+                </button>
+              </span>
+              <span className="field__hint">{t('add.linkHint')}</span>
+            </label>
+            {autofill.state === 'error' && (
+              <p className="form-error" role="alert">
+                {autofill.message}
+              </p>
             )}
-          </div>
-        )}
-      </form>
+            {autofill.state === 'found' && (
+              <div className="found" aria-live="polite">
+                <p className="field__hint">
+                  {found.length ? t('add.found', { count: found.length }) : t('add.notFound')}
+                </p>
+                {found.length > 1 && (
+                  <ul className="found__list">
+                    {found.map((p, i) => (
+                      <li key={i}>
+                        <button
+                          type="button"
+                          className={`choice${chosen === i ? ' is-on' : ''}`}
+                          onClick={() => apply(p, i)}
+                        >
+                          <strong>{p.title}</strong>
+                          <span>
+                            {p.start && localLabel(p.start, lang)}
+                            {p.venueName && ` · ${p.venueName}`}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </form>
 
-      <div className="divider">
-        <span>{t('add.manual')}</span>
-      </div>
+          <div className="divider">
+            <span>{t('add.manual')}</span>
+          </div>
+        </>
+      )}
 
       <form className="add-form" onSubmit={submit} noValidate>
         <label className="field">

@@ -111,12 +111,12 @@ The app runs as one **Cloudflare Worker** named `happow`. Cloudflare serves the 
 
 Prices: Claude Haiku 5.5 costs $0.10 per million input tokens and $0.50 per million output tokens. One event page is about 4,000 input tokens (the page text is cut to 12,000 characters) plus a few hundred output tokens, so roughly **$0.0005–0.001 per page**.
 
-| What calls Claude                      | How often                                                                | Bound                                                                              | Cost                                                   |
-| -------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| NFM crawl                              | Only pages that changed since the last crawl (content-hash cache)        | at most 25 pages per run, 1–2 runs a day                                           | a few cents a month                                    |
-| "Add an event" autofill                | Only for pasted links without structured data; most ticket sites have it | `extraction.autofillLlmPerDay` (300) across all users, plus 30 per hour per client | at most about $0.30 a day, about $9 a month at the cap |
-| Map, list, filters, detail, moderation | never                                                                    | —                                                                                  | $0                                                     |
+| What calls Claude                               | How often                                                                | Bound                                                                                       | Cost                |
+| ----------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- | ------------------- |
+| NFM crawl                                       | Only pages that changed since the last crawl (content-hash cache)        | at most 25 pages a day                                                                      | a few cents a month |
+| "Add an event" autofill                         | Off in the PoC (`submissions.autofill: false`); planned as a paid add-on | when on: `extraction.autofillLlmPerDay` (300) across all users, plus 30 per hour per client | $0 now              |
+| Map, list, filters, detail, reports, moderation | never                                                                    | —                                                                                           | $0                  |
 
-What grows with users is autofill, and the daily cap bounds it whatever the traffic or abuse. When the cap is used up, autofill still reads structured data and otherwise leaves the form for manual entry. Crawling grows with the number of **cities and sources**, not users: about $0.01–0.05 per city per month for an NFM-like source. The workspace spend limit (step 2.3) is the final backstop.
+So in the PoC the only Claude cost is crawling, and it grows with the number of **cities and sources**, not users: about $0.01–0.05 per city per month for an NFM-like source. The workspace spend limit (step 2.3) is the backstop.
 
 Your own Claude subscription (Claude.ai and Claude Code) is a different product with its own limits. The app never uses it, and building the app in Claude Code never touches the API key.
