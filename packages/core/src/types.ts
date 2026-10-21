@@ -70,9 +70,13 @@ export interface HappowEvent {
 export const FLAG_REASONS = ['cancelled', 'venue_closed', 'weather', 'moved'] as const;
 export type FlagReason = (typeof FLAG_REASONS)[number];
 
+/** Set by ingestion, not people: a source that lists everything stopped listing the event. */
+export const SOURCE_MISSING = 'source_missing';
+export type EventFlagReason = FlagReason | typeof SOURCE_MISSING;
+
 export interface EventFlag {
-  reason: FlagReason;
-  /** Devices with an open report of this kind. */
+  reason: EventFlagReason;
+  /** Devices with an open report of this kind (0 for source_missing). */
   count: number;
   /** Latest report, ISO 8601. */
   at: string;

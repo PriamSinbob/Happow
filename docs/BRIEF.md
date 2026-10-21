@@ -43,7 +43,7 @@ The PoC ships one loop: open the app, see what is on within 500 m now, and be gu
 - Map view by default, list toggle sorted by distance then start time; both share the same filter state.
 - Time window chips: Now (running), Next 2 h, Next 6 h, Today. "Now" means start ≤ now ≤ end; events without an end get a category default duration.
 - Radius slider 100 m to 25 km, default 500 m, remembered per device.
-- Category filters: music, theatre, cinema, exhibition, festival, happening, sport, market and fair, garage sale, kids and family, food, talk and workshop, other. Multi-select; taxonomy is data, not code.
+- Category filters: music, theatre, cinema, exhibition, festival, happening, sport, market and fair, garage sale, kids and family, food, talk and workshop, religious and ceremonies (added 2026-10-21), other. Multi-select; taxonomy is data, not code.
 - Price filter: free / paid / any.
 
 **Off-screen direction hints (GTA/Witcher-style)**
@@ -76,7 +76,6 @@ Every source is an adapter with one contract — `fetch(region, window) → RawE
 | City portal (wroclaw.pl/go/wydarzenia) | Crawl | No public API found; respect robots.txt, ask for a feed | Official city events | Core; request partnership |
 | Venue and ticketing sites (Going, eBilet, Eventim, theatres, clubs) | Crawl | schema.org/Event JSON-LD where published, LLM extraction otherwise | Long tail of venues | Core |
 | [Threads keyword search](https://developers.facebook.com/documentation/threads/keyword-search) | Official API | `threads_keyword_search` permission, about 500 queries per 7 days ([ppc.land](https://ppc.land/meta-introduces-new-search-and-analytics-features-to-threads-api-platform/)) | Informal announcements | Social signal |
-| [Instagram hashtag search](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/hashtag-search) | Official API | App Review; 30 unique hashtags per account per 7 days | #wyprzedazgarazowa, #pchlitarg, #wroclaw events | Social signal, narrow |
 | Public Facebook event and group pages | Crawl (logged-out) | Higher legal risk; see Legal | Garage sales, local happenings | Phase 2 after legal check |
 | [Google Events via SerpApi](https://www.serpapi.com/google-events-api) | Paid aggregator | Per-search pricing; needs precise location ([forum](https://forum.serpapi.com/bugs/p/google-events-api-returns-blank-results-occasionally)) | Broad | Optional gap-filler |
 | User submissions | In-app form + URL autofill | Moderation queue | Everything else | Core |
@@ -101,7 +100,7 @@ flowchart LR
   subgraph Sources["Sources (config)"]
     A1["Official event APIs<br/>Ticketmaster, Meetup"]
     A2["Crawl targets<br/>venues, city portal"]
-    A3["Social APIs<br/>Threads, Instagram"]
+    A3["Social APIs<br/>Threads"]
   end
   subgraph Workers["Ingestion workers"]
     W1["Scheduler<br/>GitHub Actions cron"] --> W2["Source adapters<br/>one per source, from config"]
@@ -172,7 +171,7 @@ Build in five increments, each deployable and demoable on a phone in Wrocław.
 2. **Official APIs.** Ticketmaster and Meetup adapters, normalizer, dedup, scheduler, time-window and category filters, event detail screen.
 3. **Density.** H3 hotspot computation; off-screen chevrons and empty-radius guidance.
 4. **Crawler and submissions.** JSON-LD crawler with a target list in config, LLM extraction fallback, URL-autofill submission form, moderation screen.
-5. **Social signals.** Threads keyword and Instagram hashtag adapters (after app review), confidence scoring, "possibly cancelled" logic, analytics.
+5. **Social signals.** Threads keyword adapter (after app review), confidence scoring, "possibly cancelled" logic, analytics. Instagram was dropped from the PoC on 2026-10-21 (see Future features → More venue and event data).
 
 Instructions for the build agent:
 
@@ -218,6 +217,19 @@ Requested 2026-10-21. The PoC is about what is on now and today. The full app sh
 
 What it needs: a time window that is not tied to "now" (the area snapshot already supports configurable hours, `refresh.areaHours`), a "Saved" list (saved events already exist per device), and accounts once agendas should sync across devices.
 
+### More venue and event data
+
+Decided 2026-10-21: Instagram is off for the PoC. These ideas could add venues and events later. Each one would be an adapter plus config, like the current sources.
+
+- **Instagram hashtag search** (dropped from M5). It would read recent posts with hashtags like #wyprzedazgarazowa or #pchlitarg and let Claude Haiku turn the captions into events. It needs an Instagram Business account linked to a Facebook Page, plus Meta App Review. It is limited to 30 hashtags per 7 days. Captions rarely give an exact place and time. It is also personal social content under GDPR, so the yield is low and the legal risk is the highest of any source.
+- **OpenStreetMap venues (Overpass).** OSM lists theatres, clubs, cinemas, community centres and places of worship. Each entry has a name, a point, a website and often opening hours and wheelchair access. That would fill in the Venue table, find event pages worth crawling (from each venue's `website` tag), and correct venue pins. The data is open (ODbL, with attribution).
+- **Regular services at places of worship.** OSM's `service_times` tag and parish websites give mass and service times. These could become recurring events in the "religious" category, generated from a weekly pattern rather than fetched each day.
+- **Venue calendar feeds (iCal / RSS).** Many venue sites publish a calendar feed, for example WordPress sites with The Events Calendar (`?ical=1`). These feeds are structured, cheap to read and low-risk. A feed adapter would take a list of URLs from config.
+- **Cultural institutions and universities.** City culture centres, libraries and university calendars. They are crawl targets like NFM, ideally with a feed agreement.
+- **Ticketing partner feeds** (Going, Eventim). Ask for an affiliate or partner feed instead of crawling.
+- **Organiser self-service.** Organisers claim their venue and publish events directly (fits the organiser accounts in "Organiser updates on the event page").
+- **Google Places.** Opening hours and popular times. It is paid and its terms forbid caching, so it is the last option.
+
 ### Walking routes at scale
 
 The PoC draws in-app routes with openrouteservice's free Standard plan (2,000 routes a day). Most people use the Google Maps button, which costs nothing, so the quota covers a city comfortably. When it doesn't:
@@ -256,7 +268,6 @@ Requested 2026-10-20. An organiser can mark an event as **private**: it is visib
 ## Open questions
 
 - [ ] Contact Wrocław city (ARAW) about an events feed or partnership?
-- [ ] Which Instagram Business account will run the hashtag adapter, and which 30 hashtags?
 - [ ] Is Facebook public-page crawling in scope at all, after a legal opinion under Polish/EU law?
 - [ ] Brand name: search HAPPOW / HAPPO / HAPOW in TMview (EUIPO + UPRP), WIPO Brand DB and IP Australia; consider filing "Happow" (classes 9, 35, 41, 42). happow.com is an Australian youth eLearning company (HAPPOW PTY LTD); a US "HAPPOW" mark exists in class 28 only.
 - [ ] Domain and email: register happow.app (Cloudflare Registrar) and happow.pl (Polish registrar), forward a contact address with Cloudflare Email Routing, set `legal.contactEmail`.

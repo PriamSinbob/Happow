@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { PriceFilter, TimeWindow } from '@happow/core';
+import { track } from '../analytics';
 import { categoriesById, config } from '../config';
 import { storage } from '../storage';
 
@@ -51,12 +52,16 @@ export function useFilters(): FiltersState {
   const setWindow = useCallback((id: string) => {
     const w = config.app.timeWindows.find((x) => x.id === id);
     if (w) setWindowState(w);
+    track('Filter', { type: 'window', value: id });
   }, []);
-  const toggleCategory = useCallback(
-    (id: string) =>
-      setCategories((cs) => (cs.includes(id) ? cs.filter((c) => c !== id) : [...cs, id])),
-    [],
-  );
+  const toggleCategory = useCallback((id: string) => {
+    setCategories((cs) => (cs.includes(id) ? cs.filter((c) => c !== id) : [...cs, id]));
+    track('Filter', { type: 'category', value: id });
+  }, []);
+  const choosePrice = useCallback((p: PriceFilter) => {
+    setPrice(p);
+    track('Filter', { type: 'price', value: p });
+  }, []);
   const clear = useCallback(() => {
     setCategories([]);
     setPrice('any');
@@ -68,7 +73,7 @@ export function useFilters(): FiltersState {
     categories,
     toggleCategory,
     price,
-    setPrice,
+    setPrice: choosePrice,
     activeCount: categories.length + (price === 'any' ? 0 : 1),
     clear,
   };

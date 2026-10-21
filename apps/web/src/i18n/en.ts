@@ -111,6 +111,7 @@ export const en = {
   'report.reason.venue_closed': 'The venue is closed',
   'report.reason.weather': 'Weather stopped it',
   'report.reason.moved': 'It moved or the time changed',
+  'report.reason.source_missing': 'Source stopped listing it',
   'report.group.status': 'Is it still on?',
   'report.group.other': 'Something else is wrong',
   'report.thanksFlag': 'Thanks! Others will see this warning now.',
@@ -124,6 +125,9 @@ export const en = {
   'flag.short.moved': 'Moved?',
   'flag.reported': '{count, plural, one {# person} other {# people}} · {ago}',
   'flag.unconfirmed': 'Not confirmed yet. Check with the organiser before you go.',
+  'flag.reason.source_missing': 'Possibly cancelled',
+  'flag.short.source_missing': 'Cancelled?',
+  'flag.sourceMissing': 'No longer listed by {source} · {ago}',
   'report.note': 'Details (optional)',
   'report.send': 'Send report',
   'report.thanks': 'Thanks, a moderator will check it.',
@@ -214,6 +218,8 @@ export const en = {
   'about.privacy.3':
     'When you add or report an event we keep a hashed device id to limit abuse, not your name or email.',
   'about.privacy.4': 'Your preferences (radius, filters, saved events) stay on your device.',
+  'about.privacy.analytics':
+    'We count visits and button taps with Plausible, without cookies, location or device ids.',
   'about.contact': 'Contact and takedown requests',
   'about.contactBody': 'To report illegal content or ask for removal, write to {email}.',
   'about.contactFallback':

@@ -36,6 +36,7 @@ export function About({ onClose, onModerate }: { onClose: () => void; onModerate
           {NUMBERS.map((n) => (
             <li key={n}>{t(`about.privacy.${n}`)}</li>
           ))}
+          {config.app.analytics.plausibleDomain && <li>{t('about.privacy.analytics')}</li>}
         </ul>
 
         <h2>{t('about.contact')}</h2>

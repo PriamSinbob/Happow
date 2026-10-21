@@ -12,6 +12,8 @@ export interface ApplyStats {
   merged: number;
   /** Low-confidence new events sent to the moderation queue instead of the map. */
   queued: number;
+  /** Events newly marked "possibly cancelled" because this source stopped listing them. */
+  missing: number;
 }
 
 export interface ApplyOptions {
@@ -19,6 +21,12 @@ export interface ApplyOptions {
   rank: (sourceId: string | null) => number;
   dedup: DedupConfig & { h3Ring: number };
   minConfidence: number;
+  /**
+   * For sources that return everything they have in the fetch window: listings of events
+   * starting in [from, to] that this run did not return count as missed, and an event whose
+   * primary listing was missed `afterRuns` runs in a row is marked "possibly cancelled".
+   */
+  missing?: { from: Date; to: Date; afterRuns: number } | null;
 }
 
 const EVENT_COLUMNS = `
@@ -129,19 +137,13 @@ export class EventStore {
 
   /** Store raw payloads, then insert, update or merge every event, all in one transaction. */
   async apply(items: NormalizedEvent[], raws: RawEvent[], opts: ApplyOptions): Promise<ApplyStats> {
-    const stats: ApplyStats = { inserted: 0, updated: 0, merged: 0, queued: 0 };
+    const stats: ApplyStats = { inserted: 0, updated: 0, merged: 0, queued: 0, missing: 0 };
     await this.db.query('begin');
     try {
       for (const raw of raws) await this.saveRaw(raw);
       for (const item of items) {
         const listing = { sourceId: item.sourceId, externalId: item.externalId };
         const linked = await this.linked(item);
-        // Unsure extractions wait for a moderator, unless a moderator already approved the listing.
-        if (!linked && item.event.confidence < opts.minConfidence) {
-          await this.queueForReview(item, opts.regionId);
-          stats.queued++;
-          continue;
-        }
         const d = decide(
           item.event,
           listing,
@@ -150,6 +152,13 @@ export class EventStore {
           opts.rank,
           opts.dedup,
         );
+        // Unsure extractions wait for a moderator, unless a moderator already approved the
+        // listing or another source already lists the same event (corroboration).
+        if (!linked && d.action === 'insert' && item.event.confidence < opts.minConfidence) {
+          await this.queueForReview(item, opts.regionId);
+          stats.queued++;
+          continue;
+        }
         if (item.venue) await this.saveVenue(item);
         if (d.action === 'insert') {
           await this.writeEvent(d.event, opts.regionId, d.owner, item.staleAfter, true);
@@ -171,7 +180,8 @@ export class EventStore {
           `insert into event_sources (event_id, source_id, external_id, source_url, raw_payload_ref, fetched_at)
            values ($1, $2, $3, $4, $5, now())
            on conflict (source_id, external_id) do update set event_id = excluded.event_id,
-             source_url = excluded.source_url, raw_payload_ref = excluded.raw_payload_ref, fetched_at = now()`,
+             source_url = excluded.source_url, raw_payload_ref = excluded.raw_payload_ref, fetched_at = now(),
+             missed_runs = 0`,
           [
             d.event.id,
             item.sourceId,
@@ -181,12 +191,59 @@ export class EventStore {
           ],
         );
       }
+      // An empty run is more likely an outage or an API change than every event being called off.
+      if (opts.missing && raws.length) {
+        stats.missing = await this.markMissing(raws, opts.regionId, opts.missing);
+      }
       await this.db.query('commit');
     } catch (err) {
       await this.db.query('rollback');
       throw err;
     }
     return stats;
+  }
+
+  /** Counts missed listings and sets or clears `source_missing_at`; returns events newly marked. */
+  private async markMissing(
+    raws: RawEvent[],
+    regionId: string,
+    { from, to, afterRuns }: NonNullable<ApplyOptions['missing']>,
+  ): Promise<number> {
+    const sourceId = raws[0]!.sourceId;
+    // Every listing the source still returns counts as seen, even ones normalization rejected.
+    const seen = raws.map((r) => r.externalId);
+    await this.db.query(
+      `update event_sources set missed_runs = 0
+       where source_id = $1 and external_id = any($2::text[]) and missed_runs > 0`,
+      [sourceId, seen],
+    );
+    const marked = await this.db.query<{ id: string }>(
+      `with missed as (
+         update event_sources es set missed_runs = es.missed_runs + 1
+         from events e
+         where es.event_id = e.id and es.source_id = $1 and e.region_id = $2
+           and not (es.external_id = any($3::text[]))
+           and e.start_at >= $4 and e.start_at <= $5 and e.status = 'scheduled'
+         returning es.event_id, es.external_id, es.missed_runs
+       )
+       update events e set source_missing_at = now()
+       from missed m
+       where e.id = m.event_id and e.primary_source_id = $1 and e.primary_external_id = m.external_id
+         and m.missed_runs >= $6 and e.source_missing_at is null
+       returning e.id`,
+      [sourceId, regionId, seen, from, to, afterRuns],
+    );
+    const found = await this.db.query<{ id: string }>(
+      `update events set source_missing_at = null
+       where primary_source_id = $1 and primary_external_id = any($2::text[])
+         and source_missing_at is not null
+       returning id`,
+      [sourceId, seen],
+    );
+    for (const { id } of [...marked.rows, ...found.rows]) {
+      await this.db.query('select refresh_event_flag($1)', [id]);
+    }
+    return marked.rows.length;
   }
 
   /** Pending crawl submission; refreshed while pending, never revived once reviewed. */

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { FLAG_REASONS, type FlagReason, type NearbyEvent } from '@happow/core';
+import { track } from '../analytics';
 import { config } from '../config';
 import { formatAgo, formatDay, formatTime, isSameDay } from '../format';
 import { eventUrl } from '../hooks/useHashRoute';
@@ -294,6 +295,7 @@ function DetailBody({
           onClose={() => setReporting(false)}
           onSent={(reason) => {
             setReporting(false);
+            track('Report', { reason });
             const status = (FLAG_REASONS as readonly string[]).includes(reason);
             if (status) onReported(ev.id, reason as FlagReason);
             setToast(t(status ? 'report.thanksFlag' : 'report.thanks'));

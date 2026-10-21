@@ -146,6 +146,25 @@ export const appConfigSchema = z.object({
     reportsPerDayPerDevice: z.number().int().positive(),
     maxDescriptionChars: z.number().int().positive(),
   }),
+  /** Inputs to scoreConfidence (see confidence.ts); each is a factor between 0 and 1. */
+  confidence: z.object({
+    /** By the source's trust level. */
+    trust: z.object({
+      api: z.number().min(0).max(1),
+      crawled: z.number().min(0).max(1),
+      community: z.number().min(0).max(1),
+    }),
+    /** When the source gives no end time. */
+    missingEnd: z.number().min(0).max(1),
+    /** When the source names no venue, only a street or an area. */
+    missingVenue: z.number().min(0).max(1),
+  }),
+  analytics: z.object({
+    /** Plausible site domain; null = no analytics script at all. */
+    plausibleDomain: z.string().min(1).nullable(),
+    /** Plausible's manual-pageview script (page views carry screen names, not URLs). */
+    scriptUrl: z.string().url(),
+  }),
   legal: z.object({
     /** Takedown / DSA notice contact shown on the About page. */
     contactEmail: z.string().email().nullable(),
@@ -157,6 +176,8 @@ export const appConfigSchema = z.object({
     lookaheadHours: z.number().positive(),
     /** Identifies our crawler/API client to providers. */
     userAgent: z.string().min(1),
+    /** Runs in a row a complete-listing source must miss an event before it is "possibly cancelled". */
+    missedRunsToFlag: z.number().int().min(1),
   }),
 });
 
@@ -204,6 +225,11 @@ export const sourceSchema = z.object({
   /** Crawled pages: facts only. Store the page's description / images only where allowed. */
   republishDescription: z.boolean().default(true),
   republishImages: z.boolean().default(true),
+  /**
+   * The source returns every event it has in the fetch window (official APIs), so an event it
+   * stops returning may be off: after `ingest.missedRunsToFlag` runs it shows "possibly cancelled".
+   */
+  completeListing: z.boolean().default(false),
 });
 export const sourcesConfigSchema = z.object({ sources: z.array(sourceSchema) });
 

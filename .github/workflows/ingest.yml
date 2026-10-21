@@ -33,6 +33,8 @@ jobs:
       MEETUP_PRIVATE_KEY: ${{ secrets.MEETUP_PRIVATE_KEY }}
       # LLM fallback for crawled pages without structured data (sources with llmFallback).
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Threads keyword search (source off in config until Meta App Review).
+      THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
       SOURCE: ${{ inputs.source }}
       FORCE: ${{ inputs.force && '1' || '' }}
     steps:

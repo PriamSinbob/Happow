@@ -29,6 +29,7 @@
         "ebilet",
         "wroclaw-go",
         "nfm",
+        "threads",
         "submissions"
       ],
       "seedFile": "data/seed/wroclaw.events.json"

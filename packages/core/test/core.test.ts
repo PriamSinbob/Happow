@@ -19,7 +19,7 @@ const config = loadConfig();
 
 describe('config', () => {
   it('loads and cross-checks every config file', () => {
-    expect(config.categories).toHaveLength(13);
+    expect(config.categories).toHaveLength(14);
     expect(getRegion(config).id).toBe(config.app.defaultRegion);
     expect(getRegion(config, 'nope').id).toBe(config.app.defaultRegion);
   });

@@ -116,6 +116,7 @@ export const pl: Record<MessageKey, string> = {
   'report.reason.venue_closed': 'Miejsce jest zamknięte',
   'report.reason.weather': 'Odwołane przez pogodę',
   'report.reason.moved': 'Przeniesione lub zmieniona godzina',
+  'report.reason.source_missing': 'Źródło przestało je pokazywać',
   'report.group.status': 'Czy to się odbywa?',
   'report.group.other': 'Inny problem',
   'report.thanksFlag': 'Dzięki! Inni zobaczą już to ostrzeżenie.',
@@ -130,6 +131,9 @@ export const pl: Record<MessageKey, string> = {
   'flag.reported':
     '{count, plural, one {# osoba} few {# osoby} many {# osób} other {# osoby}} · {ago}',
   'flag.unconfirmed': 'Niepotwierdzone. Sprawdź u organizatora, zanim wyjdziesz.',
+  'flag.reason.source_missing': 'Możliwe, że odwołane',
+  'flag.short.source_missing': 'Odwołane?',
+  'flag.sourceMissing': 'Zniknęło z listy {source} · {ago}',
   'report.note': 'Szczegóły (opcjonalnie)',
   'report.send': 'Wyślij zgłoszenie',
   'report.thanks': 'Dziękujemy, moderator to sprawdzi.',
@@ -223,6 +227,8 @@ export const pl: Record<MessageKey, string> = {
     'Gdy dodajesz lub zgłaszasz wydarzenie, zapisujemy zahaszowany identyfikator urządzenia, by ograniczać nadużycia, a nie Twoje imię czy e-mail.',
   'about.privacy.4':
     'Ustawienia (promień, filtry, zapisane wydarzenia) zostają na Twoim urządzeniu.',
+  'about.privacy.analytics':
+    'Liczymy wizyty i kliknięcia przez Plausible, bez ciasteczek, lokalizacji i identyfikatorów urządzeń.',
   'about.contact': 'Kontakt i zgłoszenia naruszeń',
   'about.contactBody': 'Aby zgłosić nielegalne treści lub poprosić o usunięcie, napisz na {email}.',
   'about.contactFallback':
