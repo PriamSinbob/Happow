@@ -84,6 +84,7 @@ The app runs as one **Cloudflare Worker** named `happow`. Cloudflare serves the 
    - `SUPABASE_URL`: Project URL (1.3)
    - `SUPABASE_SERVICE_ROLE_KEY`: secret / service_role key (1.3)
    - `SUBMITTER_SALT`: a long random string you create once, for example the output of `openssl rand -hex 32` or 40 random characters from a password manager. It makes stored device and IP hashes unlinkable. Keep it stable: changing it resets rate limits and breaks "one report per device".
+   - `ORS_API_KEY` (optional): walking routes for "Route in Happow". Sign up at account.heigit.org (openrouteservice by HeiGIT); the free **Standard** plan gives 2,000 routes a day and 40 a minute. Copy the API key from the dashboard. Without it, or when the daily quota runs out, the in-app route is drawn as a direct line, and the Google Maps button works as always.
 6. **Deployments → Retry** (or push to `main`). The app is then at `https://happow.<your-subdomain>.workers.dev`, shown on the Worker's overview page. A custom domain is added later under **Settings → Domains & Routes**.
 
 **Logs:** errors from `/api` appear under the Worker's **Observability → Logs**, and failed builds under **Deployments → View build**.

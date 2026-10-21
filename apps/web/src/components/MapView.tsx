@@ -20,7 +20,6 @@ import { useI18n, type MessageKey } from '../i18n';
 
 interface Props {
   center: LatLng;
-  userPosition: LatLng | null;
   radiusM: number;
   events: NearbyEvent[];
   now: Date;
@@ -154,7 +153,6 @@ export function MapView(props: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLButtonElement }>());
-  const userMarker = useRef<maplibregl.Marker | null>(null);
   const hintMarkers = useRef<maplibregl.Marker[]>([]);
   const userMoved = useRef(false);
   const lastFit = useRef<{
@@ -235,7 +233,6 @@ export function MapView(props: Props) {
       m.remove();
       map.current = null;
       markers.current.clear();
-      userMarker.current = null;
       hintMarkers.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -283,28 +280,6 @@ export function MapView(props: Props) {
   useEffect(() => {
     if (!props.hidden) map.current?.resize();
   }, [props.hidden]);
-
-  // User position dot.
-  useEffect(() => {
-    const m = map.current;
-    if (!m) return;
-    if (!props.userPosition) {
-      userMarker.current?.remove();
-      userMarker.current = null;
-      return;
-    }
-    if (!userMarker.current) {
-      const el = document.createElement('div');
-      el.className = 'user-dot';
-      el.setAttribute('role', 'img');
-      el.setAttribute('aria-label', t('map.you'));
-      userMarker.current = new maplibregl.Marker({ element: el })
-        .setLngLat(props.userPosition)
-        .addTo(m);
-    } else {
-      userMarker.current.setLngLat(props.userPosition);
-    }
-  }, [props.userPosition, t]);
 
   // Event markers: diff by id; nudge markers that share a spot so all stay tappable.
   useEffect(() => {

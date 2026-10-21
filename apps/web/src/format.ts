@@ -21,12 +21,9 @@ export function formatPrice(amount: number, currency: string | null, lang: Langu
   }).format(amount);
 }
 
-/** Hand-off to the device's map app for walking directions. */
+/** Walking directions in Google Maps (its app when installed, the website otherwise). */
 export function navigationUrl(lat: number, lng: number): string {
-  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  return ios
-    ? `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=w`
-    : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
 }
 
 /** "Sat, 24 Oct" / "sob., 24 paź" in the event's timezone. */

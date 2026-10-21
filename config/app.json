@@ -26,6 +26,22 @@
     "areaHours": 24,
     "areaMaxEvents": 1000
   },
+  "navigation": {
+    "routing": {
+      "provider": "openrouteservice",
+      "endpoint": "https://api.heigit.org/openrouteservice/v2/directions/foot-walking/geojson",
+      "secret": "ORS_API_KEY",
+      "attribution": "© openrouteservice by HeiGIT | Data from OpenStreetMap"
+    },
+    "routesPerHourPerClient": 30,
+    "maxRouteKm": 30,
+    "arriveM": 40,
+    "offRouteM": 50,
+    "rerouteMinSeconds": 30,
+    "maxReroutes": 10,
+    "maxMinutes": 45,
+    "eventRefreshSeconds": 60
+  },
   "timeWindows": [
     {
       "id": "now",

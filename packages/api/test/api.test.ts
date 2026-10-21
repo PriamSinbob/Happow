@@ -428,3 +428,71 @@ describe('GET /api/area', () => {
     expect((await createApi({}, { now: at })(get('lat=51.1&lng=17.05&r=5000'))).status).toBe(503);
   });
 });
+
+describe('POST /api/route', () => {
+  const from = { lat: 51.1085, lng: 17.03 };
+  const to = { lat: 51.1101, lng: 17.0325 };
+  const routed = { ...env, ORS_API_KEY: 'ors-key' };
+  const orsBody = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [17.03, 51.1085],
+            [17.031, 51.109],
+            [17.0325, 51.1101],
+          ],
+        },
+        properties: { summary: { distance: 312.4, duration: 224.9 } },
+      },
+    ],
+  };
+  const withRouting = (status: number, body: unknown) => {
+    const web = backend({ rpc: allow });
+    const calls: { url: string; init: RequestInit }[] = [];
+    const fetch = (async (input: string | URL | Request, init: RequestInit = {}) => {
+      const url = String(input);
+      if (!url.includes('openrouteservice')) return web.fetch(input, init);
+      calls.push({ url, init });
+      return new Response(JSON.stringify(body), { status });
+    }) as typeof globalThis.fetch;
+    return { web, calls, fetch };
+  };
+
+  it('asks openrouteservice for a walking route with the key server-side', async () => {
+    const { calls, fetch } = withRouting(200, orsBody);
+    const res = await createApi(routed, { fetch, now, geocoder, extractor: null })(
+      post('route', { from, to }),
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      path: [from, { lat: 51.109, lng: 17.031 }, to],
+      distanceM: 312,
+      durationS: 225,
+      attribution: '© openrouteservice by HeiGIT | Data from OpenStreetMap',
+    });
+    expect(calls[0]!.url).toBe(
+      'https://api.heigit.org/openrouteservice/v2/directions/foot-walking/geojson',
+    );
+    expect(new Headers(calls[0]!.init.headers).get('authorization')).toBe('ors-key');
+    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({
+      coordinates: [
+        [17.03, 51.1085],
+        [17.0325, 51.1101],
+      ],
+    });
+  });
+
+  it('answers so the app can draw a direct line: no key, used-up quota, bad input', async () => {
+    const api = (e: object, status = 200, body: unknown = orsBody) =>
+      createApi(e, { fetch: withRouting(status, body).fetch, now, geocoder, extractor: null });
+    expect((await api(env)(post('route', { from, to }))).status).toBe(503);
+    expect((await api(routed, 403, {})(post('route', { from, to }))).status).toBe(429);
+    expect((await api(routed, 500, {})(post('route', { from, to }))).status).toBe(503);
+    expect((await api(routed)(post('route', { from, to: { lat: 40, lng: -74 } }))).status).toBe(
+      400,
+    );
+  });
+});

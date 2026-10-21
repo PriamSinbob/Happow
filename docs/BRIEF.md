@@ -208,6 +208,25 @@ Decided 2026-10-21: in the PoC, people add events by hand. Pasting a link to fil
 - **Cost model:** about $0.0005–0.001 per page at Haiku 5.5 rates, so even 500 autofills a month cost under $0.50 per account.
 - **Possible extras:** recurring imports from an organiser's own events page, and bulk add from a calendar feed (iCal).
 
+### Plan ahead: a "Later" window
+
+Requested 2026-10-21. The PoC is about what is on now and today. The full app should also handle events further ahead:
+- **A "Later" time filter** next to Now / 2 h / 6 h / Today, with a date picker for "this weekend" or a chosen evening.
+- **Saved and accepted events in one agenda.** This includes invitations to private events once those exist.
+- **An evening queue:** several events in a row, with walking times between them and a warning when two overlap or one ends too late to make the next.
+- **Reminders** before an event starts (web push from the installed PWA).
+
+What it needs: a time window that is not tied to "now" (the area snapshot already supports configurable hours, `refresh.areaHours`), a "Saved" list (saved events already exist per device), and accounts once agendas should sync across devices.
+
+### Walking routes at scale
+
+The PoC draws in-app routes with openrouteservice's free Standard plan (2,000 routes a day). Most people use the Google Maps button, which costs nothing, so the quota covers a city comfortably. When it doesn't:
+- **Hosted alternatives:** Geoapify (3,000 a day free, commercial use allowed) or Mapbox (100,000 a month free, then $2 per 1,000).
+- **Self-hosting** an open-source engine on Hetzner: Valhalla for Poland on a CX33/CX43 (€8.49–15.99 a month), all of Europe on 32–64 GB (€29–57 a month).
+  - Traffic barely changes the cost: a walking route takes milliseconds of CPU, and a small server answers hundreds a second. The map data in memory sets the size.
+  - OSM data is rebuilt weekly or monthly by a scheduled job.
+- The routing provider is config (`navigation.routing`), so switching is a small adapter, not a rewrite.
+
 ### Organiser updates on the event page
 
 Requested 2026-10-21. The event page gets a small feed of short posts from the event's organiser, for example "Happy hour until 20:00", "Start moved to 19:30", "Entrance from Ruska street only" or "Bring ID, bag checks at the door".

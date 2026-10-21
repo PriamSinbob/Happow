@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { FLAG_REASONS, type FlagReason, type NearbyEvent } from '@happow/core';
 import { config } from '../config';
-import { formatAgo, formatDay, formatTime, isSameDay, navigationUrl } from '../format';
+import { formatAgo, formatDay, formatTime, isSameDay } from '../format';
 import { eventUrl } from '../hooks/useHashRoute';
 import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
-import { CategoryIcon, FlagNotice, useEventText } from './EventMeta';
+import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
 import { RuleList } from './EventCard';
 import { Icon } from './Icons';
 import { ReportDialog } from './ReportDialog';
@@ -21,6 +21,8 @@ interface Props {
   onClose: () => void;
   /** A status report from this device, so the warning shows here before the next reload. */
   onReported: (id: string, reason: FlagReason) => void;
+  /** Opens "Going there" (route inside the app). */
+  onGo: () => void;
 }
 
 /** Wall-clock midnight to midnight: a day-long listing (exhibitions, fairs). */
@@ -35,7 +37,16 @@ function isDayLong(ev: NearbyEvent): boolean {
   return !ev.endEstimated && midnight(ev.startAt) && midnight(ev.endAt);
 }
 
-export function EventDetail({ ev, loading, now, saved, onToggleSave, onClose, onReported }: Props) {
+export function EventDetail({
+  ev,
+  loading,
+  now,
+  saved,
+  onToggleSave,
+  onClose,
+  onReported,
+  onGo,
+}: Props) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
 
@@ -72,6 +83,7 @@ export function EventDetail({ ev, loading, now, saved, onToggleSave, onClose, on
           saved={saved}
           onToggleSave={onToggleSave}
           onReported={onReported}
+          onGo={onGo}
         />
       ) : (
         <p className="detail__empty" id="detail-title" aria-live="polite">
@@ -88,12 +100,14 @@ function DetailBody({
   saved,
   onToggleSave,
   onReported,
+  onGo,
 }: {
   ev: NearbyEvent;
   now: Date;
   saved: boolean;
   onToggleSave: () => void;
   onReported: Props['onReported'];
+  onGo: () => void;
 }) {
   const { t, lang } = useI18n();
   const { running, price, distance, walk, categories } = useEventText(ev, now);
@@ -205,14 +219,9 @@ function DetailBody({
         </ul>
 
         <div className="event-card__actions">
-          <a
-            className="btn btn--primary"
-            href={navigationUrl(ev.point.lat, ev.point.lng)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <Icon name="navigate" size={16} /> {t('event.navigate')}
-          </a>
+          <GoButtons ev={ev} onGo={onGo} />
+        </div>
+        <div className="event-card__actions event-card__actions--links">
           {ev.ticketUrl && (
             <a className="btn" href={ev.ticketUrl} target="_blank" rel="noreferrer">
               <Icon name="ticket" size={16} /> {t('event.tickets')}

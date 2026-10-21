@@ -18,6 +18,7 @@ import { About } from './components/About';
 import { AddEvent } from './components/AddEvent';
 import { EventCard } from './components/EventCard';
 import { EventDetail } from './components/EventDetail';
+import { GoThere } from './components/GoThere';
 import { FilterBar, windowSummary } from './components/FilterBar';
 import { FilterSheet } from './components/FilterSheet';
 import { GuidanceCard } from './components/Guidance';
@@ -67,9 +68,10 @@ export function App() {
   const filtered = filters.activeCount > 0;
   const [route, go] = useRoute();
   const detailId = route?.name === 'event' ? route.id : null;
+  const goId = route?.name === 'go' ? route.id : null;
   const openDetail = (id: string) => go({ name: 'event', id });
   const close = useCallback(() => go(null), [go]);
-  const detail = useEventDetail(repo, detailId, events, searchCenter);
+  const detail = useEventDetail(repo, detailId ?? goId, events, searchCenter);
   const saved = useSaved();
 
   const panel = useRef<HTMLElement>(null);
@@ -182,7 +184,6 @@ export function App() {
       <main className="stage">
         <MapView
           center={searchCenter}
-          userPosition={location.position}
           radiusM={radius}
           events={events}
           now={now}
@@ -229,6 +230,7 @@ export function App() {
               now={now}
               onClose={() => setSelectedId(null)}
               onDetails={() => openDetail(selected.id)}
+              onGo={() => go({ name: 'go', id: selected.id })}
             />
           </div>
         ) : view === 'map' && hotspotOpen && guidance.hotspot ? (
@@ -316,6 +318,16 @@ export function App() {
           onToggleSave={() => saved.toggle(detailId)}
           onClose={close}
           onReported={addMyReport}
+          onGo={() => go({ name: 'go', id: detailId })}
+        />
+      )}
+      {goId && (
+        <GoThere
+          key={goId}
+          ev={detail.ev && withFlag(detail.ev, myReports)}
+          now={clock}
+          refresh={(id, from) => repo.byId(id, from)}
+          onClose={close}
         />
       )}
       {route?.name === 'add' && (

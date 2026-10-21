@@ -117,3 +117,16 @@ Oct 20, 2026
 - **Map:** expired tiles are not re-downloaded (they are cached for a week), and there are no tile fade-ins.
 - **Calm UI:** the endless animations are gone (pulsing pins for running events, blinking "Now" dots, the pulsing hotspot) and replaced by a static halo and dot. Only short one-time transitions remain, plus the spinner during the one precise location fix.
 - **Pin fix:** MapLibre overwrote the pin's rotation, which tilted category icons 45° and disabled the "selected" enlargement. The shape now lives on an inner element.
+
+## Follow-up 4 (Oct 21): getting there
+
+- **Overview without a "you" dot.** The circle's centre is the user, so the 5-minute location updates can't look laggy. The locate button recentres with a fresh precise fix.
+- **Two buttons** on the event card and detail: a small one for "Route in Happow" and a wide one for Google Maps. Google Maps now opens on every platform, not Apple Maps on iOS.
+- **"Going there" (`#/go/<id>`):**
+  - A trip map with the walking route (`POST /api/route` → openrouteservice `foot-walking` via the Worker, key `ORS_API_KEY`), the venue's pin, and a live dot.
+  - Shows the distance and walking time left, plus the event's status and community warnings. The event is re-read every 60 s while on the way.
+  - Continuous precise GPS runs only during the trip and only while the app is on screen. It stops on arrival (40 m), when the event ends or is cancelled, after 45 minutes, or on Stop; Resume restarts it.
+  - Re-routes when the walker is 50 m off the line, at most every 30 s and 10 times per trip.
+  - Without a key, when the quota is used up (403/429) or the provider fails, it draws a dashed direct line.
+  - Settings in `config/app.json` → `navigation`.
+- Uses openrouteservice's new host (`api.heigit.org`); the old `api.openrouteservice.org` shuts down in early November 2026.

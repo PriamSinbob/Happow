@@ -1,7 +1,6 @@
 import type { NearbyEvent } from '@happow/core';
-import { navigationUrl } from '../format';
 import { useI18n, type MessageKey } from '../i18n';
-import { CategoryIcon, FlagNotice, useEventText } from './EventMeta';
+import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
 import { en as RULE_KEYS } from '../i18n/en';
 
 const RULE_ICONS: Record<string, string> = {
@@ -43,11 +42,14 @@ export function EventCard({
   now,
   onClose,
   onDetails,
+  onGo,
 }: {
   ev: NearbyEvent;
   now: Date;
   onClose: () => void;
   onDetails: () => void;
+  /** Opens "Going there" (route inside the app). */
+  onGo: () => void;
 }) {
   const { t, lang } = useI18n();
   const { running, when, price, distance, walk, categories } = useEventText(ev, now);
@@ -94,14 +96,7 @@ export function EventCard({
       {ev.endEstimated && <p className="footnote">* {t('event.endEstimated')}</p>}
 
       <div className="event-card__actions">
-        <a
-          className="btn btn--primary"
-          href={navigationUrl(ev.point.lat, ev.point.lng)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t('event.navigate')}
-        </a>
+        <GoButtons ev={ev} onGo={onGo} />
         <button type="button" className="btn" onClick={onDetails}>
           {t('event.details')}
         </button>

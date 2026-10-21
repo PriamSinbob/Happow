@@ -1654,3 +1654,114 @@ label.choice input {
   letter-spacing: 0.05em;
   color: var(--muted);
 }
+
+/* ---------- Getting there ---------- */
+.btn--square {
+  flex: none;
+  width: 42px;
+  padding: 0;
+  color: #2563eb;
+}
+.event-card__actions--links {
+  margin-top: 8px;
+}
+.event-card__actions--links:empty {
+  display: none;
+}
+.go {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--bg);
+}
+.go__map {
+  position: absolute;
+  inset: 0;
+}
+.go__top {
+  position: absolute;
+  z-index: 2;
+  top: calc(12px + var(--safe-top));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px 12px 10px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+.go__titles {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.go__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.go__titles h1 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.go__meta {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e40af;
+}
+.go__notices {
+  position: absolute;
+  z-index: 2;
+  top: calc(102px + var(--safe-top));
+  left: 12px;
+  right: 12px;
+  display: grid;
+  gap: 6px;
+}
+.go__notices .status-banner,
+.go__notices .flag-line {
+  margin: 0;
+  box-shadow: var(--shadow-sm);
+}
+.go__bottom {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + var(--safe-bottom));
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+.go-buttons {
+  display: flex;
+  gap: 8px;
+}
+.go-buttons .btn {
+  height: 48px;
+}
+.go-buttons__maps {
+  flex: 2;
+}
+.go__note {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.go__credit {
+  margin: 8px 0 0;
+  font-size: 10px;
+  color: var(--muted);
+}
+.marker.is-target .marker__pin {
+  transform: rotate(-45deg) scale(1.15);
+}

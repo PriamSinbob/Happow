@@ -1,7 +1,8 @@
 import { isRunning, walkingMinutes, type NearbyEvent } from '@happow/core';
 import { categoriesById, config } from '../config';
-import { formatAgo, formatDistance, formatPrice, formatTime } from '../format';
+import { formatAgo, formatDistance, formatPrice, formatTime, navigationUrl } from '../format';
 import { useI18n } from '../i18n';
+import { Icon } from './Icons';
 
 export function useEventText(ev: NearbyEvent, now: Date) {
   const { t, lang } = useI18n();
@@ -78,5 +79,34 @@ export function FlagNotice({
         <span className="flag-banner__note">{t('flag.unconfirmed')}</span>
       </div>
     </div>
+  );
+}
+
+/**
+ * Getting there: a small button for the route inside Happow (live location, event updates on the
+ * way) and a wide one handing off to Google Maps, which most people prefer.
+ */
+export function GoButtons({ ev, onGo }: { ev: NearbyEvent; onGo: () => void }) {
+  const { t } = useI18n();
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn--square"
+        onClick={onGo}
+        aria-label={t('nav.inApp')}
+        title={t('nav.inApp')}
+      >
+        <Icon name="navigate" size={18} />
+      </button>
+      <a
+        className="btn btn--primary"
+        href={navigationUrl(ev.point.lat, ev.point.lng)}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {t('nav.googleMaps')}
+      </a>
+    </>
   );
 }

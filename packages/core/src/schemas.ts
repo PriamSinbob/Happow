@@ -96,6 +96,28 @@ export const appConfigSchema = z.object({
     areaHours: z.number().positive().max(48),
     areaMaxEvents: z.number().int().positive(),
   }),
+  /** "Going there": in-app walking route with live location, only while the user asks for it. */
+  navigation: z.object({
+    routing: z.object({
+      provider: z.literal('openrouteservice'),
+      endpoint: z.string().url(),
+      /** Environment variable with the API key; without it the app draws a direct line. */
+      secret: z.string().regex(/^[A-Z][A-Z0-9_]*$/),
+      attribution: z.string(),
+    }),
+    routesPerHourPerClient: z.number().int().positive(),
+    maxRouteKm: z.number().positive(),
+    /** Within this distance of the venue the trip ends and GPS stops. */
+    arriveM: z.number().positive(),
+    /** Farther than this from the route line asks for a new route (rate-limited below). */
+    offRouteM: z.number().positive(),
+    rerouteMinSeconds: z.number().positive(),
+    maxReroutes: z.number().int().nonnegative(),
+    /** Safety cap: live GPS stops after this long. */
+    maxMinutes: z.number().positive(),
+    /** How often the event itself is re-read while on the way (flags, time changes). */
+    eventRefreshSeconds: z.number().positive(),
+  }),
   extraction: z.object({
     provider: z.literal('anthropic'),
     model: z.string().min(1),

@@ -231,5 +231,20 @@ export const pl: Record<MessageKey, string> = {
   'about.attribution':
     'Dane mapy © współtwórcy OpenStreetMap, kafelki OpenFreeMap. Informacje o wydarzeniach © ich organizatorzy i źródła.',
   'about.moderate': 'Logowanie moderatora',
+  'nav.inApp': 'Trasa w Happow',
+  'nav.googleMaps': 'Mapy Google',
+  'nav.title': 'W drodze',
+  'nav.locating': 'Ustalamy Twoją pozycję…',
+  'nav.remaining':
+    '{distance} · {minutes, plural, one {# min} few {# min} many {# min} other {# min}} pieszo',
+  'nav.direct': 'Linia prosta: trasa piesza jest teraz niedostępna.',
+  'nav.arrived': 'Jesteś na miejscu.',
+  'nav.ended': 'To wydarzenie już się skończyło.',
+  'nav.stopped': 'Lokalizacja na żywo wyłączona, by oszczędzać baterię.',
+  'nav.resume': 'Wznów',
+  'nav.stop': 'Zakończ',
+  'nav.close': 'Zamknij',
+  'nav.noLocation': 'Lokalizacja jest wyłączona. Włącz ją albo użyj Map Google.',
+  'nav.you': 'Ty',
   offline: 'Offline — pokazujemy zapisane dane',
 };

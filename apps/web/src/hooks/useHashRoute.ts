@@ -2,16 +2,22 @@ import { useCallback, useEffect, useState } from 'react';
 
 /** Screens that live in the URL hash, so they can be linked, shared and closed with Back. */
 export type Route =
-  { name: 'event'; id: string } | { name: 'add' } | { name: 'moderate' } | { name: 'about' };
+  | { name: 'event'; id: string }
+  | { name: 'go'; id: string }
+  | { name: 'add' }
+  | { name: 'moderate' }
+  | { name: 'about' };
 
-const EVENT = '#/e/';
+/** Screens about one event: its detail, and "Going there". */
+const WITH_ID = { event: '#/e/', go: '#/go/' } as const;
 
 function read(): Route | null {
   const h = window.location.hash;
-  if (h.startsWith(EVENT)) {
+  for (const [name, prefix] of Object.entries(WITH_ID) as [keyof typeof WITH_ID, string][]) {
+    if (!h.startsWith(prefix)) continue;
     try {
-      const id = decodeURIComponent(h.slice(EVENT.length));
-      return id ? { name: 'event', id } : null;
+      const id = decodeURIComponent(h.slice(prefix.length));
+      return id ? { name, id } : null;
     } catch {
       return null;
     }
@@ -23,7 +29,9 @@ function read(): Route | null {
 }
 
 export function routeHref(route: Route): string {
-  return route.name === 'event' ? `${EVENT}${encodeURIComponent(route.id)}` : `#/${route.name}`;
+  return 'id' in route
+    ? `${WITH_ID[route.name]}${encodeURIComponent(route.id)}`
+    : `#/${route.name}`;
 }
 
 export function eventHref(id: string): string {

@@ -222,6 +222,20 @@ export const en = {
   'about.attribution':
     'Map data © OpenStreetMap contributors, tiles by OpenFreeMap. Event details © their organisers and sources.',
   'about.moderate': 'Moderator sign-in',
+  'nav.inApp': 'Route in Happow',
+  'nav.googleMaps': 'Google Maps',
+  'nav.title': 'On the way',
+  'nav.locating': 'Finding your position…',
+  'nav.remaining': '{distance} · {minutes, plural, one {# min} other {# min}} walk',
+  'nav.direct': 'Direct line: the walking route is not available right now.',
+  'nav.arrived': "You're there.",
+  'nav.ended': 'This event has ended.',
+  'nav.stopped': 'Live location stopped to save battery.',
+  'nav.resume': 'Resume',
+  'nav.stop': 'Stop',
+  'nav.close': 'Close',
+  'nav.noLocation': 'Location is off. Turn it on, or use Google Maps.',
+  'nav.you': 'You',
   offline: 'Offline — showing cached data',
 } as const;
 
