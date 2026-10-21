@@ -17,12 +17,14 @@ const fixture = (p: string) =>
 
 const page0 = fixture('ticketmaster/page-0.json');
 const page1 = fixture('ticketmaster/page-1.json');
-// Starts 15:30; later events stay listed, so its absence falls inside the checked window.
-const GONE = 'Z698xZb_Z17a0kC';
-/** Page 0 without one event, as the only page. */
+// Mayday, on sale, 17:00 UTC; a later event stays listed, so its absence falls inside the
+// checked window. (The 15:30 match in the fixture is already cancelled, so it is never checked.)
+const GONE = 'Z698xZb_Z17a0kB';
+/** Every listing from both pages except one, as a single page. */
 const without = (() => {
   const p = JSON.parse(page0);
-  p._embedded.events = p._embedded.events.filter((e: { id: string }) => e.id !== GONE);
+  const all = [...p._embedded.events, ...JSON.parse(page1)._embedded.events];
+  p._embedded.events = all.filter((e: { id: string }) => e.id !== GONE);
   p.page.totalPages = 1;
   return JSON.stringify(p);
 })();
