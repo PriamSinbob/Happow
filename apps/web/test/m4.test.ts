@@ -110,4 +110,12 @@ describe('community flags', () => {
     expect(visibleFlag(none, mine)).toEqual({ reason: 'weather', count: 1, at: mine.e1.at });
     expect(withFlag(base, {})).toBe(base); // unchanged events keep their identity
   });
+
+  it('shows "possibly cancelled" from the source, below community reports', () => {
+    const src = rowToEvent({ ...row, flag_reason: 'source_missing', flag_count: 0 });
+    expect(src.flag).toEqual({ reason: 'source_missing', count: 0, at: '2026-10-20T10:30:00Z' });
+    expect(visibleFlag(src, {})).toEqual(src.flag);
+    const mine = { e1: { reason: 'moved' as const, at: '2026-10-20T11:00:00Z' } };
+    expect(visibleFlag(src, mine)).toEqual({ reason: 'moved', count: 1, at: mine.e1.at });
+  });
 });

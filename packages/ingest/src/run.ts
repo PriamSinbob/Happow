@@ -1,6 +1,7 @@
 import {
   intervalMs,
   rateLimitIntervalMs,
+  scoreConfidence,
   type Category,
   type HappowConfig,
   type Region,
@@ -49,6 +50,7 @@ export interface SourceRunSummary {
   reason?: string;
   fetched?: number;
   dropped?: number;
+  missing?: number;
   rejected?: Partial<Record<RejectReason, number>>;
   geocoded?: number;
   inserted?: number;
@@ -128,8 +130,11 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
             rank,
             dedup: config.app.dedup,
             minConfidence: config.app.extraction.minConfidence,
+            missing: source.completeListing
+              ? missedWindow(result.window, result.events, config.app.ingest.missedRunsToFlag)
+              : null,
           })
-        : { inserted: 0, updated: 0, merged: 0, queued: 0 };
+        : { inserted: 0, updated: 0, merged: 0, queued: 0, missing: 0 };
       const stats = {
         fetched: result.raws.length,
         dropped: result.dropped,
@@ -141,6 +146,7 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
       log(
         `✓ ${source.id}@${region.id}: fetched ${stats.fetched}, inserted ${stats.inserted}, ` +
           `updated ${stats.updated}, merged ${stats.merged}, queued ${stats.queued}, ` +
+          `missing ${stats.missing}, ` +
           `geocoded ${stats.geocoded}, dropped ${stats.dropped}, rejected ${JSON.stringify(stats.rejected)}`,
       );
       summaries.push({ ...base, status: 'ok', ...stats, events: result.events });
@@ -154,6 +160,20 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
   return summaries;
 }
 
+/**
+ * Where a missing listing means something: the fetch window, but only up to the latest start
+ * this run returned, since paged APIs sorted by date may cut off the tail of a busy window.
+ */
+export function missedWindow(
+  window: { from: Date; to: Date },
+  events: NormalizedEvent[],
+  afterRuns: number,
+): { from: Date; to: Date; afterRuns: number } | null {
+  if (!events.length) return null;
+  const latest = Math.max(...events.map((e) => Date.parse(e.event.startAt)));
+  return { from: window.from, to: new Date(Math.min(window.to.getTime(), latest)), afterRuns };
+}
+
 async function runSource(
   adapter: SourceAdapter,
   source: Source,
@@ -163,6 +183,7 @@ async function runSource(
   opts: IngestOptions,
 ): Promise<{
   raws: RawEvent[];
+  window: { from: Date; to: Date };
   events: NormalizedEvent[];
   dropped: number;
   geocoded: number;
@@ -227,6 +248,19 @@ async function runSource(
         };
       }
     }
+    parsed = {
+      ...parsed,
+      confidence: scoreConfidence(
+        {
+          extracted: parsed.confidence ?? 1,
+          trust: source.trustLevel,
+          hasEnd: parsed.endAt !== null,
+          // Crawled items without a venue name use the address as the name.
+          hasVenue: !!parsed.venue && parsed.venue.name !== parsed.venue.address,
+        },
+        config.app.confidence,
+      ),
+    };
     const res = normalize(parsed, {
       source,
       region,
@@ -240,5 +274,5 @@ async function runSource(
     if (res.ok) events.push(res.value);
     else rejected[res.reason] = (rejected[res.reason] ?? 0) + 1;
   }
-  return { raws, events, dropped, geocoded, rejected };
+  return { raws, window, events, dropped, geocoded, rejected };
 }

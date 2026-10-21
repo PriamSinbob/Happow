@@ -85,6 +85,13 @@
       "color": "#4338ca"
     },
     {
+      "id": "religious",
+      "labels": { "pl": "Religia i uroczystości", "en": "Religious & ceremonies" },
+      "defaultDurationMin": 90,
+      "icon": "🕯️",
+      "color": "#0d9488"
+    },
+    {
       "id": "other",
       "labels": { "pl": "Inne", "en": "Other" },
       "defaultDurationMin": 120,

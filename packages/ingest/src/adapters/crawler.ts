@@ -12,6 +12,7 @@ import {
 } from '@happow/extract';
 import { HttpError } from '../http.js';
 import type { AdapterContext, ParsedEvent, RawEvent, SourceAdapter } from '../types.js';
+import { inRegion, llmExtract, localDate, sha256 } from './extraction.js';
 
 /** What a crawled item carries into raw_payloads: the page it came from and the extraction. */
 export interface CrawlPayload {
@@ -50,25 +51,6 @@ function options(ctx: AdapterContext): CrawlOptions {
   };
 }
 
-async function sha256(text: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-const norm = (s: string) =>
-  s.normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l').toLowerCase().trim();
-
-/**
- * Listings often include other cities' shows. Keep an item when it names no city, or a city
- * the region config lists (`localities`, else the region's own names).
- */
-function inRegion(e: ExtractedEvent, ctx: AdapterContext): boolean {
-  const city = e.address.city;
-  if (!city) return true;
-  const names = ctx.region.localities ?? Object.values(ctx.region.name);
-  return names.some((n) => norm(n) === norm(city));
-}
-
 /**
  * Generic crawler for venues, ticketing sites and portals. Reads schema.org Event JSON-LD from
  * the start pages and from linked event pages; pages without it go to LLM extraction when the
@@ -100,29 +82,16 @@ export const crawler: SourceAdapter = {
 
     const out: RawEvent[] = [];
     const fetchedAt = ctx.now.toISOString();
-    const today = new Intl.DateTimeFormat('en-CA', { timeZone: ctx.region.timezone }).format(
-      ctx.now,
-    );
+    const today = localDate(ctx.now, ctx.region.timezone);
 
     const extract = async (url: string, html: string): Promise<ExtractedEvent[]> => {
       const found = eventsFromJsonLd(extractJsonLd(html), url);
-      if (found.length || !opts.llmFallback || !services.extractor) return found;
-      const text = htmlToText(html, services.maxInputChars);
-      const key = await sha256(`${services.extractor.id}\n${text}`);
-      const cached = await services.extractionCache.get(key);
-      if (cached) return cached;
-      const events = await services.extractor.extract({
+      if (found.length || !opts.llmFallback) return found;
+      return llmExtract(services, ctx, {
         url,
-        text,
+        text: htmlToText(html, services.maxInputChars),
         today,
-        timeZone: ctx.region.timezone,
-        categories: services.categories.map((c) => ({
-          id: c.id,
-          label: c.labels[ctx.region.locale],
-        })),
       });
-      await services.extractionCache.set(key, events);
-      return events;
     };
 
     const earliest = ctx.window.from.getTime() - 24 * 3_600_000;

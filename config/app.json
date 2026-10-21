@@ -70,7 +70,8 @@
     "descriptionMaxChars": 600,
     "lookbackHours": 8,
     "lookaheadHours": 48,
-    "userAgent": "Happow/0.4 (+https://github.com/PriamSinbob/Happow/blob/main/docs/CRAWLER.md)"
+    "userAgent": "Happow/0.4 (+https://github.com/PriamSinbob/Happow/blob/main/docs/CRAWLER.md)",
+    "missedRunsToFlag": 2
   },
   "geocoding": {
     "provider": "nominatim",
@@ -115,6 +116,15 @@
     "autofillPerHourPerClient": 30,
     "reportsPerDayPerDevice": 20,
     "maxDescriptionChars": 600
+  },
+  "confidence": {
+    "trust": { "api": 1, "crawled": 0.95, "community": 0.85 },
+    "missingEnd": 0.95,
+    "missingVenue": 0.9
+  },
+  "analytics": {
+    "plausibleDomain": null,
+    "scriptUrl": "https://plausible.io/js/script.manual.js"
   },
   "legal": {
     "contactEmail": null

@@ -1,8 +1,11 @@
-import { isRunning, walkingMinutes, type NearbyEvent } from '@happow/core';
+import { isRunning, SOURCE_MISSING, walkingMinutes, type NearbyEvent } from '@happow/core';
+import { track } from '../analytics';
 import { categoriesById, config } from '../config';
 import { formatAgo, formatDistance, formatPrice, formatTime, navigationUrl } from '../format';
 import { useI18n } from '../i18n';
 import { Icon } from './Icons';
+
+const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
 
 export function useEventText(ev: NearbyEvent, now: Date) {
   const { t, lang } = useI18n();
@@ -58,10 +61,14 @@ export function FlagNotice({
   const { t, lang } = useI18n();
   const flag = ev.flag;
   if (!flag) return null;
-  const reported = t('flag.reported', {
-    count: flag.count,
-    ago: formatAgo(flag.at, now, lang, t('time.justNow')),
-  });
+  const ago = formatAgo(flag.at, now, lang, t('time.justNow'));
+  const reported =
+    flag.reason === SOURCE_MISSING
+      ? t('flag.sourceMissing', {
+          source: (ev.sourceId && sourceNames.get(ev.sourceId)) || t(`event.source.${ev.trust}`),
+          ago,
+        })
+      : t('flag.reported', { count: flag.count, ago });
   if (compact)
     return (
       <p className="flag-line" role="status">
@@ -93,7 +100,10 @@ export function GoButtons({ ev, onGo }: { ev: NearbyEvent; onGo: () => void }) {
       <button
         type="button"
         className="btn btn--square"
-        onClick={onGo}
+        onClick={() => {
+          track('Directions', { via: 'happow' });
+          onGo();
+        }}
         aria-label={t('nav.inApp')}
         title={t('nav.inApp')}
       >
@@ -104,6 +114,7 @@ export function GoButtons({ ev, onGo }: { ev: NearbyEvent; onGo: () => void }) {
         href={navigationUrl(ev.point.lat, ev.point.lng)}
         target="_blank"
         rel="noreferrer"
+        onClick={() => track('Directions', { via: 'google' })}
       >
         {t('nav.googleMaps')}
       </a>

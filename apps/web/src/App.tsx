@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { snapRadius, type Language } from '@happow/core';
+import { trackView } from './analytics';
 import { config, region } from './config';
 import { createRepository } from './data';
 import { withFlag, useMyReports } from './flags';
@@ -72,6 +73,7 @@ export function App() {
   const openDetail = (id: string) => go({ name: 'event', id });
   const close = useCallback(() => go(null), [go]);
   const detail = useEventDetail(repo, detailId ?? goId, events, searchCenter);
+  useEffect(() => trackView(route?.name ?? 'map'), [route?.name]);
   const saved = useSaved();
 
   const panel = useRef<HTMLElement>(null);

@@ -9,3 +9,4 @@ export * from './density.js';
 export * from './config.js';
 // h3-js-dependent helpers live in '@happow/core/seed' (includes h3Cell) to keep client bundles small.
 export * from './area.js';
+export * from './confidence.js';

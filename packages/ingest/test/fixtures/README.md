@@ -11,6 +11,9 @@ pnpm ingest --dry-run --source ticketmaster --record packages/ingest/test/fixtur
 pnpm ingest --dry-run --source meetup --record packages/ingest/test/fixtures
 ```
 
+`threads/` is hand-built from the documented `keyword_search` response (no token yet; the
+source waits for Meta App Review). Usernames in the permalinks are placeholders.
+
 Recording writes `<source>/page-N.json`, masks `apikey=` values, and never stores OAuth token
 responses. Recorded pages hold real event times, so after re-recording, update the test's
 `now` and the expected values.

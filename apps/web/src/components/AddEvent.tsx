@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Language, LatLng } from '@happow/core';
+import { track } from '../analytics';
 import { api, deviceId } from '../api';
 import { config, region } from '../config';
 import { errorText } from '../errors';
@@ -206,6 +207,7 @@ export function AddEvent({
         },
       });
       setDone(res);
+      track('Event added');
     } catch (err) {
       setError(errorText(t, err, lang));
     } finally {

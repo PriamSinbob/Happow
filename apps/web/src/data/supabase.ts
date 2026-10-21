@@ -1,18 +1,19 @@
 import {
   FLAG_REASONS,
+  SOURCE_MISSING,
   type DensityCluster,
   type DensityQuery,
   type EventQuery,
   type EventStatus,
-  type FlagReason,
+  type EventFlagReason,
   type LatLng,
   type NearbyEvent,
   type Trust,
 } from '@happow/core';
 import type { EventRepository } from './repository';
 
-const isFlagReason = (r: string): r is FlagReason =>
-  (FLAG_REASONS as readonly string[]).includes(r);
+const isFlagReason = (r: string): r is EventFlagReason =>
+  r === SOURCE_MISSING || (FLAG_REASONS as readonly string[]).includes(r);
 
 /** A row from events_near / event_by_id, or a compact events_area row (no long fields). */
 export interface Row {
@@ -118,8 +119,11 @@ export function rowToEvent(r: Row): NearbyEvent {
     sourceUrl: r.source_url ?? null,
     verified: r.verified ?? true,
     flag:
-      r.flag_count && r.flag_reason && r.flag_at && isFlagReason(r.flag_reason)
-        ? { reason: r.flag_reason, count: r.flag_count, at: r.flag_at }
+      r.flag_reason &&
+      r.flag_at &&
+      isFlagReason(r.flag_reason) &&
+      (r.flag_count || r.flag_reason === SOURCE_MISSING)
+        ? { reason: r.flag_reason, count: r.flag_count ?? 0, at: r.flag_at }
         : null,
     distanceM: r.distance_m ?? 0,
   };

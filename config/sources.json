@@ -20,6 +20,7 @@
       "rateLimit": "5/s",
       "trustLevel": "api",
       "enabled": true,
+      "completeListing": true,
       "secrets": ["TICKETMASTER_API_KEY"],
       "maxCacheAgeHours": 24,
       "termsNotes": "Discovery API v2. Free key: 5,000 calls/day, 5 req/s; deep paging capped at 1,000 results (size × page). Must link to the Ticketmaster event page for purchase and keep attribution; do not cache data beyond its freshness.",
@@ -47,6 +48,7 @@
         "festival": "festival",
         "food & drink": "food",
         "lecture/seminar": "talk",
+        "religious": "religious",
         "miscellaneous": "other"
       }
     },
@@ -59,6 +61,7 @@
       "rateLimit": "3/s",
       "trustLevel": "api",
       "enabled": true,
+      "completeListing": true,
       "secrets": [
         "MEETUP_CLIENT_KEY",
         "MEETUP_MEMBER_ID",
@@ -90,7 +93,8 @@
         "career & business": "talk",
         "science & education": "talk",
         "writing": "talk",
-        "language & culture": "talk"
+        "language & culture": "talk",
+        "religion & spirituality": "religious"
       }
     },
     {
@@ -179,6 +183,39 @@
         "llmFallback": true
       },
       "defaultCategories": ["music"],
+      "categoryMap": {}
+    },
+    {
+      "id": "threads",
+      "name": "Threads",
+      "adapter": "threads",
+      "regionIds": ["wroclaw"],
+      "schedule": "120m",
+      "rateLimit": "1/s",
+      "trustLevel": "community",
+      "enabled": false,
+      "secrets": ["THREADS_ACCESS_TOKEN", "ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 48,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "Threads API keyword search; needs the threads_keyword_search permission (Meta App Review), until then it only finds the token owner's own posts. Quota checked from config (queriesPer7Days). Only event facts and the post's link are stored: no author, no post text, no images. Off until App Review and a legal check of social sources.",
+      "options": {
+        "endpoint": "https://graph.threads.net/v1.0/keyword_search",
+        "searchType": "RECENT",
+        "limit": 25,
+        "postLookbackHours": 72,
+        "queriesPer7Days": 500,
+        "keywords": {
+          "wroclaw": [
+            "wyprzedaż garażowa Wrocław",
+            "pchli targ Wrocław",
+            "koncert podwórkowy Wrocław",
+            "potańcówka Wrocław",
+            "happening Wrocław"
+          ]
+        }
+      },
+      "defaultCategories": ["happening"],
       "categoryMap": {}
     },
     {

@@ -1,5 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
-import { coveringCircle, geohash, HttpClient, HttpError, isDue, plannedRuns, redact } from '../src';
+import {
+  coveringCircle,
+  geohash,
+  HttpClient,
+  HttpError,
+  isDue,
+  missedWindow,
+  plannedRuns,
+  redact,
+  type NormalizedEvent,
+} from '../src';
 import { config, region, source } from './helpers';
 
 describe('scheduling', () => {
@@ -75,5 +85,19 @@ describe('HttpClient', () => {
 
   it('redacts credentials in URLs', () => {
     expect(redact('https://x/?apikey=abc&page=1')).toBe('https://x/?apikey=***&page=1');
+  });
+});
+
+describe('possibly cancelled window', () => {
+  const window = { from: new Date('2026-10-24T00:00:00Z'), to: new Date('2026-10-26T00:00:00Z') };
+  const at = (startAt: string) => ({ event: { startAt } }) as unknown as NormalizedEvent;
+
+  it('checks only up to the latest start the run returned (paged APIs cut the tail)', () => {
+    const w = missedWindow(window, [at('2026-10-24T18:00:00Z'), at('2026-10-25T09:00:00Z')], 2);
+    expect(w).toEqual({ from: window.from, to: new Date('2026-10-25T09:00:00Z'), afterRuns: 2 });
+  });
+
+  it('checks nothing after an empty run', () => {
+    expect(missedWindow(window, [], 2)).toBeNull();
   });
 });
