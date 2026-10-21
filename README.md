@@ -9,7 +9,7 @@ See [docs/BRIEF.md](docs/BRIEF.md) for the full PoC build brief: scope, decision
 | Path                   | What                                                                                   |
 | ---------------------- | -------------------------------------------------------------------------------------- |
 | `apps/web`             | React + Vite PWA (MapLibre GL, OSM tiles via OpenFreeMap), Polish and English UI       |
-| `apps/web/functions`   | Cloudflare Pages Function that serves `/api/*` from `packages/api`                     |
+| `apps/web/worker`      | Cloudflare Worker entry that serves `/api/*` from `packages/api` (`wrangler.jsonc`)    |
 | `packages/core`        | Shared types, config schemas, geo/time/filter helpers, seed materializer               |
 | `packages/ingest`      | Source adapters (Ticketmaster, Meetup, crawler), normalizer, dedup, `pnpm ingest`      |
 | `packages/extract`     | JSON-LD parsing, robots.txt, SSRF-safe fetch, Nominatim geocoder, Claude extractor     |
@@ -76,12 +76,13 @@ Adding a region is a config change: add it to `config/regions.json` (centre, bbo
 
 ## Deployment
 
-| Workflow                                                                      | Needs                                                                                                                                                                                                                                                                                                                                  |
-| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yml` — format, typecheck, tests, build, PostGIS integration test          | nothing                                                                                                                                                                                                                                                                                                                                |
-| `deploy-web.yml` — Cloudflare Pages (app + `/api` function) on push to `main` | secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; optional `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`; optional variable `CLOUDFLARE_PAGES_PROJECT` (default `happow`). In the Pages project (Settings → Variables and Secrets): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUBMITTER_SALT`, optional `ANTHROPIC_API_KEY` |
-| `db-migrate.yml` — manual migrate + seed                                      | secret `DATABASE_URL`                                                                                                                                                                                                                                                                                                                  |
-| `ingest.yml` — every 15 min, runs due sources                                 | secret `DATABASE_URL`; per source `TICKETMASTER_API_KEY`, `MEETUP_CLIENT_KEY`, `MEETUP_MEMBER_ID`, `MEETUP_SIGNING_KEY_ID`, `MEETUP_PRIVATE_KEY`; `ANTHROPIC_API_KEY` for LLM fallback                                                                                                                                                 |
+The app and its `/api` deploy as one Cloudflare Worker (`wrangler.jsonc`) through Cloudflare's GitHub integration on every push to `main`; see [docs/SETUP.md](docs/SETUP.md) for the build settings and secrets. GitHub Actions run the rest:
+
+| Workflow                                                             | Needs                                                                                                                                                                                  |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml` — format, typecheck, tests, build, PostGIS integration test | nothing                                                                                                                                                                                |
+| `db-migrate.yml` — manual migrate + seed                             | secret `DATABASE_URL`                                                                                                                                                                  |
+| `ingest.yml` — every 15 min, runs due sources                        | secret `DATABASE_URL`; per source `TICKETMASTER_API_KEY`, `MEETUP_CLIENT_KEY`, `MEETUP_MEMBER_ID`, `MEETUP_SIGNING_KEY_ID`, `MEETUP_PRIVATE_KEY`; `ANTHROPIC_API_KEY` for LLM fallback |
 
 Secrets live only in GitHub Secrets or a local `.env` (never committed).
 

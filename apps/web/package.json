@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "tsc --noEmit && tsc --noEmit -p functions && vite build",
+    "build": "tsc --noEmit && tsc --noEmit -p worker && vite build",
     "preview": "vite preview --host",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p functions",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p worker",
     "test": "vitest run"
   },
   "dependencies": {

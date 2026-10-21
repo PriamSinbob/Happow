@@ -142,14 +142,14 @@ function offers(v: unknown, isFreeFlag: unknown, base: string) {
     currency ??= text(o.priceCurrency)?.toUpperCase().slice(0, 3) ?? null;
     ticketUrl ??= url(o.url, base);
   }
-  const free =
-    isFreeFlag === true ||
-    isFreeFlag === 'true' ||
-    (prices.length > 0 && Math.max(...prices) === 0);
+  const free = isFreeFlag === true || isFreeFlag === 'true';
+  // Ticket shops put 0 on offers with no price yet or sold out, so 0 alone does not mean free:
+  // only an explicit isAccessibleForFree does. Real prices win over placeholder zeros.
+  const paid = prices.filter((p) => p > 0);
   return {
-    isFree: free ? true : prices.length ? false : null,
-    priceMin: prices.length ? Math.min(...prices) : null,
-    priceMax: prices.length ? Math.max(...prices) : null,
+    isFree: free ? true : paid.length ? false : null,
+    priceMin: free ? 0 : paid.length ? Math.min(...paid) : null,
+    priceMax: free ? 0 : paid.length ? Math.max(...paid) : null,
     currency,
     ticketUrl,
   };

@@ -94,7 +94,7 @@ Ruled out: Eventbrite (public search shut off in February 2020; only lookups by 
 
 ## Architecture and stack
 
-For the PoC everything runs on free tiers: the PWA on Cloudflare Pages, Postgres + PostGIS on Supabase, and ingestion as scheduled GitHub Actions jobs. Code stays plain TypeScript on standard Postgres, so moving to a VPS later is a deploy change, not a rewrite. Development happens in Claude Code sessions on the GitHub repo; GitHub is where code lives, not where the app runs.
+For the PoC everything runs on free tiers: the PWA and its small API on Cloudflare Workers, Postgres + PostGIS on Supabase, and ingestion as scheduled GitHub Actions jobs. Code stays plain TypeScript on standard Postgres, so moving to a VPS later is a deploy change, not a rewrite. Development happens in Claude Code sessions on the GitHub repo; GitHub is where code lives, not where the app runs.
 
 ```mermaid
 flowchart LR
@@ -116,8 +116,8 @@ flowchart LR
 
 | Layer | PoC choice (free) | Scale-up path |
 | --- | --- | --- |
-| Client | React + Vite PWA, MapLibre GL, OSM-based tiles, hosted on Cloudflare Pages | Same, plus a Capacitor wrapper for store apps |
-| API | Supabase auto-generated REST + Postgres functions for geo queries (events near point, hotspots); write endpoints (URL autofill, submissions, reports, moderation) as one Cloudflare Pages Function on the PWA's origin, calling service-role-only Postgres functions (M4: chosen over a Supabase Edge Function so it shares the monorepo's TypeScript and needs no CORS) | Node + Fastify container behind a CDN |
+| Client | React + Vite PWA, MapLibre GL, OSM-based tiles, hosted on Cloudflare Workers (static assets) | Same, plus a Capacitor wrapper for store apps |
+| API | Supabase auto-generated REST + Postgres functions for geo queries (events near point, hotspots); write endpoints (URL autofill, submissions, reports, moderation) as one Cloudflare Worker on the PWA's origin, calling service-role-only Postgres functions (M4: chosen over a Supabase Edge Function so it shares the monorepo's TypeScript and needs no CORS) | Node + Fastify container behind a CDN |
 | Workers | GitHub Actions scheduled workflows, one job per adapter group, writing to Supabase. Free plan gives 2,000 min/month on private repos, unlimited on public ([GitHub](https://docs.github.com/en/billing/concepts/product-billing/github-actions)); a 1-min run every 30 min uses about 1,440 min | BullMQ on Redis on a VPS |
 | Storage | Supabase Free: 500 MB Postgres, pauses after 1 week without activity ([Supabase](https://supabase.com/pricing)); scheduled ingestion keeps it busy. H3 indexes computed in code (h3-js) and stored as columns | Supabase Pro ($25/mo, 8 GB, no pause) or self-hosted Postgres |
 | LLM extraction | Claude Haiku 5.5 behind an `Extractor` interface: $0.10 in / $0.50 out per million tokens, half that via the Batch API ([pricing](https://platform.claude.com/docs/en/about-claude/pricing)) | Same model; volume discounts if needed |

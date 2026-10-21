@@ -178,3 +178,36 @@ describe('resolveInstant', () => {
     expect(resolveInstant('soon', 'Europe/Warsaw')).toBeNull();
   });
 });
+
+describe('offer prices', () => {
+  const priced = (offers: unknown, extra: object = {}) =>
+    eventsFromJsonLd(
+      [
+        {
+          '@type': 'MusicEvent',
+          name: 'Gig',
+          startDate: '2026-11-01T20:00',
+          location: { '@type': 'Place', name: 'Club', address: 'Ruska 1, Wrocław' },
+          offers,
+          ...extra,
+        },
+      ],
+      'https://x.example',
+    )[0]!;
+
+  it('ignores ticket-shop placeholder zeros next to real prices', () => {
+    expect(priced([{ price: 0 }, { price: 117.9, priceCurrency: 'PLN' }])).toMatchObject({
+      isFree: false,
+      priceMin: 117.9,
+      priceMax: 117.9,
+    });
+  });
+
+  it('does not call an event free on zero prices alone', () => {
+    expect(priced([{ price: 0 }])).toMatchObject({ isFree: null, priceMin: null });
+    expect(priced([{ price: 0 }], { isAccessibleForFree: true })).toMatchObject({
+      isFree: true,
+      priceMin: 0,
+    });
+  });
+});

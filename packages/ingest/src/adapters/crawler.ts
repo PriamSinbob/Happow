@@ -24,6 +24,12 @@ interface CrawlOptions {
   followPattern: RegExp | null;
   maxFollow: number;
   llmFallback: boolean;
+  /**
+   * The start pages list one summary item per show or tour (first date, several cities), not
+   * performances: store nothing from them and follow each item's own page (matching
+   * `followPattern`) for the real dates and venues.
+   */
+  summaryListing: boolean;
   /** Occurrences further ahead than this are not stored (series can list a year of dates). */
   horizonDays: number;
 }
@@ -39,6 +45,7 @@ function options(ctx: AdapterContext): CrawlOptions {
     followPattern: typeof o.followPattern === 'string' ? new RegExp(o.followPattern) : null,
     maxFollow: typeof o.maxFollow === 'number' ? o.maxFollow : 0,
     llmFallback: o.llmFallback === true,
+    summaryListing: o.summaryListing === true,
     horizonDays: typeof o.horizonDays === 'number' ? o.horizonDays : 60,
   };
 }
@@ -144,10 +151,15 @@ export const crawler: SourceAdapter = {
     for (const start of opts.startUrls) {
       if (!(await allowed(start))) continue;
       const html = await ctx.http.text(start);
-      await collect(start, await extract(start, html));
-      if (opts.followPattern)
-        for (const link of findLinks(html, start, opts.followPattern))
-          if (!follow.includes(link) && !opts.startUrls.includes(link)) follow.push(link);
+      const listed = await extract(start, html);
+      const links = opts.summaryListing
+        ? listed.flatMap((e) => (e.url && opts.followPattern?.test(e.url) ? [e.url] : []))
+        : opts.followPattern
+          ? findLinks(html, start, opts.followPattern)
+          : [];
+      if (!opts.summaryListing) await collect(start, listed);
+      for (const link of links)
+        if (!follow.includes(link) && !opts.startUrls.includes(link)) follow.push(link);
     }
     for (const link of follow.slice(0, opts.maxFollow)) {
       if (!(await allowed(link))) continue;

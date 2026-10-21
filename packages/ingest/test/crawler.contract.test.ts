@@ -49,10 +49,13 @@ const withEbilet = {
 };
 
 describe('crawler (contract, recorded pages)', () => {
-  it('reads eBilet JSON-LD, keeps only the region, geocodes and stores facts only', async () => {
+  it('treats the eBilet listing as a summary and reads each show page for Wrocław dates', async () => {
     const web = site({
       'https://www.ebilet.pl/robots.txt': page('ebilet-robots.txt'),
       'https://www.ebilet.pl/miasto/wroclaw': page('ebilet-listing.html'),
+      // Other followed show pages are missing here and answer 404, which the crawl skips.
+      'https://www.ebilet.pl/muzyka/hard-heavy/metallica-symfonicznie': page('ebilet-event-1.html'),
+      'https://www.ebilet.pl/muzyka/rock/pidzama-porno': page('ebilet-event-2.html'),
     });
     geocoder.calls = [];
     const [s] = await runIngest({
@@ -63,28 +66,31 @@ describe('crawler (contract, recorded pages)', () => {
       geocoder,
     });
     expect(s).toMatchObject({ status: 'ok' });
-    expect(s!.fetched).toBeGreaterThan(5);
-    expect(s!.fetched).toBeLessThan(25); // other cities' shows dropped before geocoding
+    // Listing summaries (tours with a first date in another city) are not stored.
+    const events = s!.events!.map((e) => e.event);
+    expect(events.map((e) => e.title).sort()).toEqual([
+      'Muzyka zespołu Metallica symfonicznie',
+      'Pidżama Porno',
+    ]);
+    expect(web.requested.filter((u) => u.includes('/muzyka/')).length).toBeGreaterThan(10);
     expect(geocoder.calls.every((q) => q.city === 'Wrocław')).toBe(true);
-    const events = s!.events!;
-    expect(events.length).toBe(s!.fetched! - (s!.dropped ?? 0));
-    for (const { event } of events) {
+    const metallica = events.find((e) => e.title.startsWith('Muzyka'))!;
+    expect(metallica).toMatchObject({
+      startAt: '2026-11-11T18:00:00.000Z',
+      venue: expect.objectContaining({ name: 'Sala Koncertowa Radia Wrocław' }),
+      priceMin: 159.9,
+      currency: 'PLN',
+      isFree: false,
+    });
+    expect(metallica.ticketUrl).toMatch(/^https:\/\/www\.ebilet\.pl\//);
+    for (const event of events) {
       expect(event.trust).toBe('crawled');
       expect(event.description).toBeNull(); // republishDescription: false
       expect(event.imageUrl).toBeNull(); // republishImages: false
       expect(event.officialUrl).toMatch(/^https:\/\/www\.ebilet\.pl\//);
-      expect(event.confidence).toBeCloseTo(0.9, 5); // street-level geocode keeps JSON-LD confidence
       expect(event.timezone).toBe('Europe/Warsaw');
+      expect(event.categoryIds).toContain('music'); // "/muzyka/…" path segment
     }
-    // URL path segments map to categories ("/muzyka/…" → music).
-    expect(events.some(({ event }) => event.categoryIds.includes('music'))).toBe(true);
-    // Multi-date runs lose their far end date and get a category estimate instead.
-    expect(
-      events.every(
-        ({ event }) =>
-          new Date(event.endAt).getTime() - new Date(event.startAt).getTime() <= 24 * 3_600_000,
-      ),
-    ).toBe(true);
   });
 
   it('follows city-portal event links, skips vanished pages, and asks robots.txt first', async () => {

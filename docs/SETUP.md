@@ -13,7 +13,7 @@ There are four accounts, and each one owns some of the secrets:
 
 Optional: **Ticketmaster** and **Meetup** API keys (see the README). Each source is skipped while its key is missing, so you can add them later.
 
-Never paste a secret into an issue, a commit, a chat or a file in the repo. Secrets go only into the three places named below: GitHub → Settings → Secrets, the Cloudflare Pages project settings, and your local `.env`, which git ignores.
+Never paste a secret into an issue, a commit, a chat or a file in the repo. Secrets go only into the three places named below: GitHub → Settings → Secrets, the Cloudflare Worker settings, and your local `.env`, which git ignores.
 
 ## 1. Supabase: database and sign-in
 
@@ -24,7 +24,7 @@ Never paste a secret into an issue, a commit, a chat or a file in the repo. Secr
    - the **publishable** key (`sb_publishable_…`), or the legacy **anon** key. This is **`VITE_SUPABASE_ANON_KEY`**. It is public by design: it ships inside the app and can only call what the database allows anonymous users to call.
    - the **secret** key (`sb_secret_…`), or the legacy **service_role** key. This is **`SUPABASE_SERVICE_ROLE_KEY`**. It bypasses all security rules: keep it server-side only and never put it in a variable whose name starts with `VITE_`.
 4. **Sign-in settings.** Open **Authentication → Sign In / Providers** and turn off **Allow new users to sign up**: moderators are invited and nobody else can sign up. Then open **Authentication → URL Configuration**:
-   - Set **Site URL** to the deployed app, for example `https://happow.pages.dev` (later your own domain).
+   - Set **Site URL** to the deployed app, for example `https://happow.<your-subdomain>.workers.dev` (later your own domain).
    - Add the same URL and `http://localhost:5173` to **Redirect URLs**.
 
 ## 2. Anthropic: Claude API key
@@ -62,43 +62,43 @@ They then sign in from the app: **About → Moderator sign-in**, or `/#/moderate
 
 ## 5. Cloudflare: hosting the app and the `/api`
 
-1. Sign up at dash.cloudflare.com (free plan). Your **Account ID** is shown in the right-hand column of **Workers & Pages**, or under **Account home → ⋯ → Copy account ID**. This is **`CLOUDFLARE_ACCOUNT_ID`**.
-2. **API token.** Open **My Profile → API Tokens → Create Token → Custom token**:
-   - Permissions: **Account → Cloudflare Pages → Edit**.
-   - Account resources: your account.
+The app runs as one **Cloudflare Worker** named `happow`. Cloudflare serves the built PWA as static files, and only `/api/*` runs code (`apps/web/worker/index.ts`). The settings live in `wrangler.jsonc` at the repo root. Cloudflare builds and deploys it from GitHub on every push to `main` (Workers Builds); no GitHub Action or Cloudflare token is involved.
 
-   Create it and copy the token. This is **`CLOUDFLARE_API_TOKEN`**.
+1. Sign up at dash.cloudflare.com (free plan).
+2. **Workers & Pages → Create → Import a repository →** pick `PriamSinbob/Happow`, then name the Worker `happow`.
+3. **Settings → Build** (the Worker's **Settings** tab, **Build** section):
 
-3. **Create the Pages project.** The first deploy creates it, but the server secrets must be set on it, so create it first:
-   1. Open **Workers & Pages → Create → Pages → Use direct upload**.
-   2. Name it `happow`. The app's address becomes `https://happow.pages.dev`.
-   3. Upload any small placeholder folder; the workflow replaces it.
-4. **Server secrets.** Open the project → **Settings → Variables and Secrets** → for the **Production** environment add each of these as type **Secret**:
-   - `SUPABASE_URL` (Project URL from step 1.3)
-   - `SUPABASE_SERVICE_ROLE_KEY` (secret / service_role key from step 1.3)
+   | Setting           | Value                             |
+   | ----------------- | --------------------------------- |
+   | Root directory    | `/` (leave empty)                 |
+   | Build command     | `pnpm --filter @happow/web build` |
+   | Deploy command    | `npx wrangler deploy`             |
+   | Production branch | `main`                            |
+
+   Cloudflare installs dependencies itself (it sees `pnpm-lock.yaml`), and uses Node 22 from `.node-version`.
+
+4. **Build variables** (same **Build** section → **Variables and secrets**). These are baked into the app when it is built:
+   - `VITE_SUPABASE_URL`: Project URL (1.3)
+   - `VITE_SUPABASE_ANON_KEY`: publishable / anon key (1.3)
+5. **Runtime secrets** (**Settings → Variables and Secrets**, type **Secret**). Only the `/api` code can read these:
+   - `SUPABASE_URL`: Project URL (1.3)
+   - `SUPABASE_SERVICE_ROLE_KEY`: secret / service_role key (1.3)
    - `SUBMITTER_SALT`: a long random string you create once, for example the output of `openssl rand -hex 32` or 40 random characters from a password manager. It makes stored device and IP hashes unlinkable. Keep it stable: changing it resets rate limits and breaks "one report per device".
-   - `ANTHROPIC_API_KEY`, the same key as step 2.4 (optional; without it autofill uses structured data only).
+6. **Deployments → Retry** (or push to `main`). The app is then at `https://happow.<your-subdomain>.workers.dev`, shown on the Worker's overview page. A custom domain is added later under **Settings → Domains & Routes**.
 
-## 6. GitHub: the remaining secrets
+**Logs:** errors from `/api` appear under the Worker's **Observability → Logs**, and failed builds under **Deployments → View build**.
 
-**Settings → Secrets and variables → Actions**:
+## 6. GitHub: secrets for the scheduled jobs
 
-| Name                               | Where it comes from                   | Used by                     |
-| ---------------------------------- | ------------------------------------- | --------------------------- |
-| `DATABASE_URL`                     | Supabase connection string (1.2)      | migrate, ingest             |
-| `VITE_SUPABASE_URL`                | Supabase Project URL (1.3)            | deploy (baked into the app) |
-| `VITE_SUPABASE_ANON_KEY`           | Supabase publishable / anon key (1.3) | deploy                      |
-| `CLOUDFLARE_API_TOKEN`             | Cloudflare token (5.2)                | deploy                      |
-| `CLOUDFLARE_ACCOUNT_ID`            | Cloudflare account id (5.1)           | deploy                      |
-| `ANTHROPIC_API_KEY`                | Anthropic Console (2.4)               | ingest (NFM crawl)          |
-| `TICKETMASTER_API_KEY`, `MEETUP_*` | optional, see README                  | ingest                      |
+**Settings → Secrets and variables → Actions → New repository secret**:
 
-Optional **Variables** tab: `CLOUDFLARE_PAGES_PROJECT` if you named the project something other than `happow`, and `VITE_REGION_ID`.
+| Name                               | Where it comes from              | Used by            |
+| ---------------------------------- | -------------------------------- | ------------------ |
+| `DATABASE_URL`                     | Supabase connection string (1.2) | migrate, ingest    |
+| `ANTHROPIC_API_KEY`                | Anthropic Console (2.4)          | ingest (NFM crawl) |
+| `TICKETMASTER_API_KEY`, `MEETUP_*` | optional, see README             | ingest             |
 
-After that:
-
-- **Deploy:** **Actions → Deploy web (Cloudflare Pages) → Run workflow**. It also runs on every push to `main`. Open `https://happow.pages.dev`.
-- **Ingest:** runs every 15 minutes by itself. Each source decides whether it is due, so most runs finish in seconds. **Actions → Ingest sources → Run workflow** with **force** runs everything now.
+**Ingest** runs every 15 minutes by itself. Each source decides whether it is due, so most runs finish in seconds. To run everything now: **Actions → Ingest sources → Run workflow** with **force** ticked.
 
 ## 7. Check that it works
 
