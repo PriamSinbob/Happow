@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
+import { FLAG_REASONS, type FlagReason } from '@happow/core';
 import { api, deviceId } from '../api';
 import { errorText } from '../errors';
 import { useI18n } from '../i18n';
 import { Icon } from './Icons';
 
-const REASONS = ['wrong_info', 'cancelled', 'inappropriate', 'other'] as const;
-type Reason = (typeof REASONS)[number];
+/** Off or changed: everyone sees a warning at once. The rest go to moderators only. */
+const OTHER_REASONS = ['wrong_info', 'inappropriate', 'other'] as const;
+type Reason = FlagReason | (typeof OTHER_REASONS)[number];
+const GROUPS = [
+  { title: 'report.group.status', reasons: FLAG_REASONS },
+  { title: 'report.group.other', reasons: OTHER_REASONS },
+] as const;
 
 /** "Report a problem" sheet: one reason, an optional note, sent to the moderation queue. */
 export function ReportDialog({
@@ -15,7 +21,8 @@ export function ReportDialog({
 }: {
   eventId: string;
   onClose: () => void;
-  onSent: () => void;
+  /** The reason, so a status report can show on this device straight away. */
+  onSent: (reason: Reason) => void;
 }) {
   const { t, lang } = useI18n();
   const dialog = useRef<HTMLFormElement>(null);
@@ -44,7 +51,7 @@ export function ReportDialog({
       await api('reports', {
         body: { deviceId: deviceId(), eventId, reason, note: note.trim() || null },
       });
-      onSent();
+      onSent(reason);
     } catch (err) {
       setError(errorText(t, err, lang));
       setSending(false);
@@ -74,21 +81,23 @@ export function ReportDialog({
             <Icon name="close" size={18} />
           </button>
         </header>
-        <fieldset className="choices">
-          <legend className="visually-hidden">{t('report.title')}</legend>
-          {REASONS.map((r) => (
-            <label key={r} className={`choice${reason === r ? ' is-on' : ''}`}>
-              <input
-                type="radio"
-                name="reason"
-                value={r}
-                checked={reason === r}
-                onChange={() => setReason(r)}
-              />
-              {t(`report.reason.${r}`)}
-            </label>
-          ))}
-        </fieldset>
+        {GROUPS.map((g) => (
+          <fieldset key={g.title} className="choices">
+            <legend className="choices__title">{t(g.title)}</legend>
+            {g.reasons.map((r) => (
+              <label key={r} className={`choice${reason === r ? ' is-on' : ''}`}>
+                <input
+                  type="radio"
+                  name="reason"
+                  value={r}
+                  checked={reason === r}
+                  onChange={() => setReason(r)}
+                />
+                {t(`report.reason.${r}`)}
+              </label>
+            ))}
+          </fieldset>
+        ))}
         <label className="field">
           <span className="field__label">{t('report.note')}</span>
           <textarea

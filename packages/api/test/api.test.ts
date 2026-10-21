@@ -259,6 +259,22 @@ describe('POST /api/submissions', () => {
 });
 
 describe('POST /api/reports', () => {
+  it('accepts the status reasons that flag an event for everyone', async () => {
+    const web = backend({ rpc: { ...allow, report_event: () => ({ body: true }) } });
+    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    for (const reason of ['venue_closed', 'weather', 'moved']) {
+      const res = await api(
+        post('reports', { deviceId: 'device-0123456789', eventId: 'seed:1', reason }),
+      );
+      expect(res.status).toBe(201);
+    }
+    expect(web.calls.filter((c) => c.name === 'report_event').map((c) => c.args.p_reason)).toEqual([
+      'venue_closed',
+      'weather',
+      'moved',
+    ]);
+  });
+
   it('stores a report and maps unknown events to 404', async () => {
     const web = backend({
       rpc: {

@@ -1,13 +1,18 @@
-import type {
-  DensityCluster,
-  DensityQuery,
-  EventQuery,
-  EventStatus,
-  LatLng,
-  NearbyEvent,
-  Trust,
+import {
+  FLAG_REASONS,
+  type DensityCluster,
+  type DensityQuery,
+  type EventQuery,
+  type EventStatus,
+  type FlagReason,
+  type LatLng,
+  type NearbyEvent,
+  type Trust,
 } from '@happow/core';
 import type { EventRepository } from './repository';
+
+const isFlagReason = (r: string): r is FlagReason =>
+  (FLAG_REASONS as readonly string[]).includes(r);
 
 interface Row {
   id: string;
@@ -23,6 +28,9 @@ interface Row {
   venue_address: string | null;
   venue_website?: string | null;
   verified?: boolean;
+  flag_reason?: string | null;
+  flag_count?: number;
+  flag_at?: string | null;
   lat: number;
   lng: number;
   h3_r9: string;
@@ -106,6 +114,10 @@ export function rowToEvent(r: Row): NearbyEvent {
     sourceId: r.primary_source_id ?? null,
     sourceUrl: r.source_url ?? null,
     verified: r.verified ?? true,
+    flag:
+      r.flag_count && r.flag_reason && r.flag_at && isFlagReason(r.flag_reason)
+        ? { reason: r.flag_reason, count: r.flag_count, at: r.flag_at }
+        : null,
     distanceM: r.distance_m ?? 0,
   };
 }

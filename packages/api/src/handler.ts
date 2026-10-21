@@ -112,7 +112,15 @@ const submissionSchema = z.object({
 const reportSchema = z.object({
   deviceId,
   eventId: z.string().min(1).max(300),
-  reason: z.enum(['wrong_info', 'cancelled', 'inappropriate', 'other']),
+  reason: z.enum([
+    'cancelled',
+    'venue_closed',
+    'weather',
+    'moved',
+    'wrong_info',
+    'inappropriate',
+    'other',
+  ]),
   note: z.string().trim().max(500).nullable().optional(),
 });
 

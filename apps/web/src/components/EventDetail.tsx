@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import type { NearbyEvent } from '@happow/core';
+import { FLAG_REASONS, type FlagReason, type NearbyEvent } from '@happow/core';
 import { config } from '../config';
 import { formatAgo, formatDay, formatTime, isSameDay, navigationUrl } from '../format';
 import { eventUrl } from '../hooks/useHashRoute';
 import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
-import { CategoryIcon, useEventText } from './EventMeta';
+import { CategoryIcon, FlagNotice, useEventText } from './EventMeta';
 import { RuleList } from './EventCard';
 import { Icon } from './Icons';
 import { ReportDialog } from './ReportDialog';
@@ -19,6 +19,8 @@ interface Props {
   saved: boolean;
   onToggleSave: () => void;
   onClose: () => void;
+  /** A status report from this device, so the warning shows here before the next reload. */
+  onReported: (id: string, reason: FlagReason) => void;
 }
 
 /** Wall-clock midnight to midnight: a day-long listing (exhibitions, fairs). */
@@ -33,7 +35,7 @@ function isDayLong(ev: NearbyEvent): boolean {
   return !ev.endEstimated && midnight(ev.startAt) && midnight(ev.endAt);
 }
 
-export function EventDetail({ ev, loading, now, saved, onToggleSave, onClose }: Props) {
+export function EventDetail({ ev, loading, now, saved, onToggleSave, onClose, onReported }: Props) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
 
@@ -64,7 +66,13 @@ export function EventDetail({ ev, loading, now, saved, onToggleSave, onClose }: 
         </button>
       </header>
       {ev ? (
-        <DetailBody ev={ev} now={now} saved={saved} onToggleSave={onToggleSave} />
+        <DetailBody
+          ev={ev}
+          now={now}
+          saved={saved}
+          onToggleSave={onToggleSave}
+          onReported={onReported}
+        />
       ) : (
         <p className="detail__empty" id="detail-title" aria-live="polite">
           {loading ? t('event.loading') : t('event.notFound')}
@@ -79,11 +87,13 @@ function DetailBody({
   now,
   saved,
   onToggleSave,
+  onReported,
 }: {
   ev: NearbyEvent;
   now: Date;
   saved: boolean;
   onToggleSave: () => void;
+  onReported: Props['onReported'];
 }) {
   const { t, lang } = useI18n();
   const { running, price, distance, walk, categories } = useEventText(ev, now);
@@ -143,6 +153,7 @@ function DetailBody({
         </div>
         <h1 id="detail-title">{ev.title}</h1>
 
+        <FlagNotice ev={ev} now={now} />
         {ev.status !== 'scheduled' && (
           <p className={`status-banner status-banner--${ev.status}`}>{t(`event.${ev.status}`)}</p>
         )}
@@ -272,9 +283,11 @@ function DetailBody({
         <ReportDialog
           eventId={ev.id}
           onClose={() => setReporting(false)}
-          onSent={() => {
+          onSent={(reason) => {
             setReporting(false);
-            setToast(t('report.thanks'));
+            const status = (FLAG_REASONS as readonly string[]).includes(reason);
+            if (status) onReported(ev.id, reason as FlagReason);
+            setToast(t(status ? 'report.thanksFlag' : 'report.thanks'));
           }}
         />
       )}

@@ -1,7 +1,7 @@
 import type { NearbyEvent } from '@happow/core';
 import { navigationUrl } from '../format';
 import { useI18n, type MessageKey } from '../i18n';
-import { CategoryIcon, useEventText } from './EventMeta';
+import { CategoryIcon, FlagNotice, useEventText } from './EventMeta';
 import { en as RULE_KEYS } from '../i18n/en';
 
 const RULE_ICONS: Record<string, string> = {
@@ -75,6 +75,7 @@ export function EventCard({
         </button>
       </header>
 
+      <FlagNotice ev={ev} now={now} compact />
       <p className="event-card__when">
         {running && <span className="now-pill">{t('event.now')}</span>}
         {when}

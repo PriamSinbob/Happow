@@ -101,6 +101,8 @@ export const appConfigSchema = z.object({
     autofill: z.boolean(),
     /** Show user submissions on the map (as unverified) before a moderator approves them. */
     publishBeforeModeration: z.boolean(),
+    /** Devices that must report an event as off (cancelled, venue closed…) before everyone sees it. */
+    flagThreshold: z.number().int().min(1),
     maxPerDevicePerDay: z.number().int().positive(),
     autofillPerHourPerClient: z.number().int().positive(),
     reportsPerDayPerDevice: z.number().int().positive(),

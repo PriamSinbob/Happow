@@ -40,6 +40,9 @@ function Row({
             )}
           </span>
           <span className="row__when">
+            {ev.flag && (
+              <span className="badge badge--flag">⚠ {t(`flag.short.${ev.flag.reason}`)}</span>
+            )}
             {running && <span className="now-pill">{t('event.now')}</span>}
             {when}
           </span>

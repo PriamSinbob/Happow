@@ -1602,3 +1602,82 @@ label.choice input {
   flex: 1 1 auto;
   white-space: nowrap;
 }
+
+/* ---------- Community flags (reported cancelled, venue closed…) ---------- */
+.flag-banner {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fef3c7;
+  color: #78350f;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.flag-banner__icon {
+  font-size: 18px;
+  line-height: 1.2;
+}
+.flag-banner strong,
+.flag-banner__meta,
+.flag-banner__note {
+  display: block;
+}
+.flag-banner__meta {
+  font-size: 13px;
+}
+.flag-banner__note {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #92400e;
+}
+.flag-line {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #fef3c7;
+  color: #78350f;
+  font-size: 13px;
+}
+.badge--flag {
+  background: #fef3c7;
+  color: #92400e;
+}
+.row__title .badge--flag {
+  margin-left: 6px;
+}
+.marker.is-flagged {
+  /* Above neighbouring pins so the warning badge is never covered. */
+  z-index: 5;
+  filter: saturate(0.4);
+}
+.marker.is-flagged::after {
+  content: '!';
+  position: absolute;
+  /* The pin is rotated -45°: its top-right corner points straight up. */
+  top: -7px;
+  right: -7px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #fff;
+  font:
+    800 10px/1 system-ui,
+    sans-serif;
+  transform: rotate(45deg);
+  filter: none;
+}
+.choices__title {
+  padding: 0;
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}

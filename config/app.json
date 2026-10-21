@@ -84,6 +84,7 @@
   },
   "submissions": {
     "publishBeforeModeration": true,
+    "flagThreshold": 1,
     "autofill": false,
     "maxPerDevicePerDay": 10,
     "autofillPerHourPerClient": 30,

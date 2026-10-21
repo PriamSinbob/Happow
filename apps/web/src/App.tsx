@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { snapRadius, type Language } from '@happow/core';
 import { config, region } from './config';
 import { createRepository } from './data';
+import { withFlag, useMyReports } from './flags';
 import { formatDistance } from './format';
 import { useEventDetail } from './hooks/useEventDetail';
 import { useEvents } from './hooks/useEvents';
@@ -38,7 +39,7 @@ export function App() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filters = useFilters();
-  const { events, clusters, loading, error, now } = useEvents(
+  const loaded = useEvents(
     repo,
     location.center,
     radius,
@@ -46,6 +47,13 @@ export function App() {
     filters.window,
     filters,
     config.app.density.searchRadiusM,
+  );
+  const { clusters, loading, error, now } = loaded;
+  // Status reports from this device show at once; everyone else's arrive with the next reload.
+  const [myReports, addMyReport] = useMyReports();
+  const events = useMemo(
+    () => loaded.events.map((e) => withFlag(e, myReports)),
+    [loaded.events, myReports],
   );
   const selected = events.find((e) => e.id === selectedId) ?? null;
   const guidance = useGuidance(clusters, location.center, radius);
@@ -296,12 +304,13 @@ export function App() {
       )}
       {detailId && (
         <EventDetail
-          ev={detail.ev}
+          ev={detail.ev && withFlag(detail.ev, myReports)}
           loading={detail.loading}
           now={now}
           saved={saved.isSaved(detailId)}
           onToggleSave={() => saved.toggle(detailId)}
           onClose={close}
+          onReported={addMyReport}
         />
       )}
       {route?.name === 'add' && (

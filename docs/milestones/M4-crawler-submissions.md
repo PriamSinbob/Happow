@@ -95,3 +95,10 @@ Oct 20, 2026
 - After a legal review of the three targets, **eBilet is paused** (`enabled: false`): its terms limit use to personal use without written consent. wroclaw.pl GO and NFM now run once a day with 5 s between requests (`12/m`), and crawled events stay visible for 72 h without a re-check. The crawler's policy and opt-out are public in `docs/CRAWLER.md`, and the User-Agent links to it.
 - URL autofill has a global daily cap on LLM calls (`extraction.autofillLlmPerDay`, 300), and falls back to the manual form if the call fails or the cap is reached.
 - `docs/SETUP.md` walks through every account and secret.
+
+## Follow-up 2 (Oct 21)
+
+- **Hosting moved to Cloudflare Workers** (static assets + `/api` Worker, `wrangler.jsonc`), deployed by Cloudflare's GitHub integration. This replaces the Pages Function and the `deploy-web` workflow, because new Cloudflare projects are Workers.
+- **URL autofill is off** for the PoC (`submissions.autofill: false`); it is planned as a paid add-on (see the brief's Future features).
+- **eBilet is back on** for evaluation. Its listing holds one summary per show or tour, so the crawler now follows each show's page (`summaryListing`). There it finds the Wrocław dates, venue, street address, price and ticket link. The live run on Oct 21 gave 17 Wrocław performances from 35 requests. Placeholder 0 prices on ticket offers no longer show as "Free".
+- **Community status flags (migration 5).** Anyone can report an event as cancelled, venue closed, stopped by weather, or moved. Open status reports are summed on the event, and the map, list, card and detail show a warning ("Venue reported closed · 2 people · 10 min ago, not confirmed yet"). The threshold is `submissions.flagThreshold` (1 in the PoC). Other users see it on their next refresh, within 60 s; the reporter sees it at once. A device can change its report. Moderators confirm (mark cancelled or hide) or dismiss, and dismissing clears the warning.

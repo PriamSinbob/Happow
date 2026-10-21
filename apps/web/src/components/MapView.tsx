@@ -341,6 +341,7 @@ export function MapView(props: Props) {
       entry.el.setAttribute('aria-label', ev.title);
       entry.el.classList.toggle('is-now', isRunning(ev, props.now));
       entry.el.classList.toggle('is-selected', ev.id === props.selectedId);
+      entry.el.classList.toggle('is-flagged', !!ev.flag);
       entry.marker.setOffset([n * 18, -n * 6]);
       entry.el.style.zIndex = ev.id === props.selectedId ? '10' : '';
     }

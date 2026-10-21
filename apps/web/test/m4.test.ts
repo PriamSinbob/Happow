@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { ApiError } from '../src/api';
 import { errorText } from '../src/errors';
+import { visibleFlag, withFlag } from '../src/flags';
 import { routeHref, useRoute } from '../src/hooks/useHashRoute';
 import { translate } from '../src/i18n';
 import { rowToEvent } from '../src/data/supabase';
@@ -66,4 +67,47 @@ it('treats rows without the verified column as verified', () => {
   } as unknown as Parameters<typeof rowToEvent>[0];
   expect(rowToEvent(row).verified).toBe(true);
   expect(rowToEvent({ ...row, verified: false }).verified).toBe(false);
+});
+
+describe('community flags', () => {
+  type Row = Parameters<typeof rowToEvent>[0];
+  const row = {
+    id: 'e1',
+    title: 'T',
+    description: null,
+    category_ids: [],
+    start_at: '2026-10-20T10:00:00Z',
+    end_at: '2026-10-20T12:00:00Z',
+    end_estimated: false,
+    timezone: 'Europe/Warsaw',
+    venue_id: null,
+    lat: 51,
+    lng: 17,
+    h3_r9: 'x',
+    is_free: true,
+    rules: {},
+    status: 'scheduled',
+    trust: 'api',
+    confidence: 1,
+    last_seen_at: '2026-10-20T10:00:00Z',
+    flag_reason: 'venue_closed',
+    flag_count: 2,
+    flag_at: '2026-10-20T10:30:00Z',
+  } as unknown as Row;
+  const base = rowToEvent(row);
+
+  it('maps open status reports from the database', () => {
+    expect(base.flag).toEqual({ reason: 'venue_closed', count: 2, at: '2026-10-20T10:30:00Z' });
+    expect(rowToEvent({ ...row, flag_count: 0 }).flag).toBeNull();
+    expect(rowToEvent({ ...row, flag_reason: 'nonsense' }).flag).toBeNull();
+  });
+
+  it("shows the server's flag at the threshold, and this device's own report at once", () => {
+    expect(visibleFlag(base, {})).toEqual(base.flag);
+    const none = { ...base, flag: null };
+    expect(visibleFlag(none, {})).toBeNull();
+    const mine = { e1: { reason: 'weather' as const, at: '2026-10-20T11:00:00Z' } };
+    expect(visibleFlag(none, mine)).toEqual({ reason: 'weather', count: 1, at: mine.e1.at });
+    expect(withFlag(base, {})).toBe(base); // unchanged events keep their identity
+  });
 });

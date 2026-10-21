@@ -85,10 +85,13 @@ describe.skipIf(!url)('milestone 4 in Postgres', () => {
       fetch: site({
         'https://www.ebilet.pl/robots.txt': page('ebilet-robots.txt'),
         'https://www.ebilet.pl/miasto/wroclaw': page('ebilet-listing.html'),
+        'https://www.ebilet.pl/muzyka/hard-heavy/metallica-symfonicznie':
+          page('ebilet-event-1.html'),
+        'https://www.ebilet.pl/muzyka/rock/pidzama-porno': page('ebilet-event-2.html'),
       }),
     });
     expect(s).toMatchObject({ status: 'ok', queued: 0 });
-    expect(s!.inserted).toBeGreaterThan(5);
+    expect(s!.inserted).toBe(2);
     const { rows } = await db.query(
       `select trust, description, image_url, verified from events where primary_source_id = 'ebilet'`,
     );
@@ -215,7 +218,7 @@ describe.skipIf(!url)('milestone 4 in Postgres', () => {
     const near = async () =>
       (
         await db.query(
-          `select id, verified from events_near($1, $2, 300, now(), now() + interval '1 hour')`,
+          `select id, verified, flag_reason, flag_count, flag_at from events_near($1, $2, 300, now(), now() + interval '1 hour')`,
           [region.center.lat, region.center.lng],
         )
       ).rows;
@@ -257,24 +260,54 @@ describe.skipIf(!url)('milestone 4 in Postgres', () => {
         published,
       ]);
       await db.query(`select report_event($1, 'cancelled', null, 'r2')`, [published]);
-      await db.query(`select report_event($1, 'wrong_info', null, 'r1')`, [published]); // same device: ignored
+      // The map shows the open status reports at once (count of devices, most reported reason).
+      expect((await near()).find((e) => e.id === published)).toMatchObject({
+        flag_reason: 'cancelled',
+        flag_count: 2,
+      });
+      // Same device again: its report is updated, not doubled; wrong_info is for moderators only.
+      await db.query(`select report_event($1, 'wrong_info', null, 'r1')`, [published]);
+      await db.query(`select report_event($1, 'weather', 'Burza, plener odwołany', 'r3')`, [
+        published,
+      ]);
+      expect((await near()).find((e) => e.id === published)).toMatchObject({
+        flag_count: 2, // r2 cancelled + r3 weather
+        flag_reason: 'weather', // tie broken by the latest report
+      });
       await expect(db.query(`select report_event('nope', 'other', null, 'r1')`)).rejects.toThrow(
         /unknown event/,
       );
       const q = (await db.query(`select moderation_queue() as q`)).rows[0].q;
       const r = q.reports.find((x: { event_id: string }) => x.event_id === published);
       expect(r).toMatchObject({
-        count: 2,
-        reasons: { cancelled: 2 },
-        notes: ['Odwołane, kartka na drzwiach'],
+        count: 3,
+        reasons: { cancelled: 1, wrong_info: 1, weather: 1 },
+        notes: ['Burza, plener odwołany', 'Odwołane, kartka na drzwiach'],
       });
       const n = (
         await db.query(`select resolve_reports($1, 'cancel', null, 'm') as n`, [published])
       ).rows[0].n;
-      expect(n).toBe(2);
+      expect(n).toBe(3);
       expect((await near()).some((e) => e.id === published)).toBe(false); // cancelled events are not listed
       const after = (await db.query(`select moderation_queue() as q`)).rows[0].q;
       expect(after.reports.some((x: { event_id: string }) => x.event_id === published)).toBe(false);
+    });
+
+    it('clears the flag when a moderator dismisses the reports', async () => {
+      const p = submission('Koncert w parku');
+      await db.query(`select submit_event($1, 'device-hash-3', 'wroclaw', true)`, [p]);
+      const id = `submissions:${p.id}`;
+      await db.query(`select report_event($1, 'venue_closed', null, 'x1')`, [id]);
+      expect((await near()).find((e) => e.id === id)).toMatchObject({
+        flag_reason: 'venue_closed',
+        flag_count: 1,
+      });
+      await db.query(`select resolve_reports($1, 'dismiss', null, 'm')`, [id]);
+      expect((await near()).find((e) => e.id === id)).toMatchObject({
+        flag_reason: null,
+        flag_count: 0,
+        flag_at: null,
+      });
     });
 
     it('rate-limits per actor and window, and knows its moderators', async () => {
