@@ -28,7 +28,8 @@ export class Supabase {
   private headers(extra: Record<string, string> = {}) {
     return {
       apikey: this.serviceKey,
-      Authorization: `Bearer ${this.serviceKey}`,
+      // Legacy keys are JWTs and also go in Authorization; new sb_secret_ keys go in apikey only.
+      ...(this.serviceKey.startsWith('eyJ') && { Authorization: `Bearer ${this.serviceKey}` }),
       'Content-Type': 'application/json',
       ...extra,
     };

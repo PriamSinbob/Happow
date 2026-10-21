@@ -91,6 +91,8 @@ export const appConfigSchema = z.object({
     /** Extractions below this go to the moderation queue instead of the map. */
     minConfidence: z.number().min(0).max(1),
     maxPageBytes: z.number().int().positive(),
+    /** Most LLM calls URL autofill may make per day across all users (cost cap). */
+    autofillLlmPerDay: z.number().int().nonnegative(),
     /** schema.org Event subtypes (lower-case) → category ids, for every crawled page and URL autofill. */
     schemaTypeMap: z.record(z.string()),
   }),

@@ -124,7 +124,8 @@ export class SupabaseEventRepository implements EventRepository {
       signal,
       headers: {
         apikey: this.anonKey,
-        Authorization: `Bearer ${this.anonKey}`,
+        // Legacy anon keys are JWTs; new sb_publishable_ keys go in apikey only.
+        ...(this.anonKey.startsWith('eyJ') && { Authorization: `Bearer ${this.anonKey}` }),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),

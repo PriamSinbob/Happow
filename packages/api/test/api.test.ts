@@ -136,6 +136,37 @@ describe('POST /api/autofill', () => {
     });
   });
 
+  it('skips the LLM once the global daily cap is used up, or when it fails', async () => {
+    const url = 'https://www.nfm.wroclaw.pl/pl/component/nfmcalendar/event/1';
+    const extract = vi.fn(async () => {
+      throw new Error('credit balance too low');
+    });
+    const capped = backend({
+      rpc: {
+        rate_limit_hit: (args: Record<string, unknown>) => ({
+          body: args.p_bucket !== 'autofill-llm',
+        }),
+      },
+      pages: { [url]: page('nfm-event.html') },
+    });
+    const deps = { now, geocoder, extractor: { id: 'fake', extract } };
+    const off = await (
+      await createApi(env, { ...deps, fetch: capped.fetch })(post('autofill', { url }))
+    ).json();
+    expect(off).toMatchObject({ method: 'none', events: [] });
+    expect(extract).not.toHaveBeenCalled();
+    expect(capped.calls.find((c) => c.args.p_bucket === 'autofill-llm')!.args).toMatchObject({
+      p_actor: 'global',
+      p_window_seconds: 86_400,
+    });
+
+    const open = backend({ rpc: allow, pages: { [url]: page('nfm-event.html') } });
+    const res = await createApi(env, { ...deps, fetch: open.fetch })(post('autofill', { url }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ method: 'none', events: [] });
+    expect(extract).toHaveBeenCalledOnce();
+  });
+
   it('refuses private addresses and reports unreachable pages', async () => {
     const web = backend({ rpc: allow });
     const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });

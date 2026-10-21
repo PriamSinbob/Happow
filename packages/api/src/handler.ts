@@ -254,7 +254,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
 
   /** POST /api/autofill {url} → up to 5 prefills from the page (JSON-LD first, LLM fallback). */
   async function autofill(req: Request): Promise<Response> {
-    const { salt } = need();
+    const { db, salt } = need();
     const { url, regionId } = await body(
       req,
       z.object({ url: z.string().min(4).max(2000), regionId: z.string().optional() }),
@@ -276,15 +276,31 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
 
     let method: 'jsonld' | 'llm' | 'none' = 'jsonld';
     let events = eventsFromJsonLd(extractJsonLd(page.html), page.url);
-    if (!events.length && extractor) {
+    // The LLM is a paid fallback: a global daily cap bounds the bill however many people paste
+    // links, and any failure (cap, outage, spend limit) just leaves the form for manual entry.
+    if (
+      !events.length &&
+      extractor &&
+      (await db.rpc<boolean>('rate_limit_hit', {
+        p_bucket: 'autofill-llm',
+        p_actor: 'global',
+        p_window_seconds: 86_400,
+        p_max: extraction.autofillLlmPerDay,
+      }))
+    ) {
       method = 'llm';
-      events = await extractor.extract({
-        url: page.url,
-        text: htmlToText(page.html, extraction.maxInputChars),
-        today: localInputValue(now(), region.timezone).slice(0, 10),
-        timeZone: region.timezone,
-        categories: config.categories.map((c) => ({ id: c.id, label: c.labels[region.locale] })),
-      });
+      try {
+        events = await extractor.extract({
+          url: page.url,
+          text: htmlToText(page.html, extraction.maxInputChars),
+          today: localInputValue(now(), region.timezone).slice(0, 10),
+          timeZone: region.timezone,
+          categories: config.categories.map((c) => ({ id: c.id, label: c.labels[region.locale] })),
+        });
+      } catch (err) {
+        console.error('autofill extraction failed', (err as Error).message);
+        events = [];
+      }
     }
     const soon = now().getTime() - 6 * 3_600_000;
     const usable = events

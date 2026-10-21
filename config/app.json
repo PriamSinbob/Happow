@@ -62,6 +62,7 @@
     "maxTokens": 16000,
     "minConfidence": 0.7,
     "maxPageBytes": 3000000,
+    "autofillLlmPerDay": 300,
     "schemaTypeMap": {
       "musicevent": "music",
       "danceevent": "music",
