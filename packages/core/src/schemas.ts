@@ -80,6 +80,22 @@ export const appConfigSchema = z.object({
     minIntervalMs: z.number().int().nonnegative(),
     cacheDays: z.number().positive(),
   }),
+  /**
+   * Battery and data budget: how often the app reloads events and asks for a location fix, and
+   * the shared "area" snapshot the server caches (a grid square + radius bucket, the next hours).
+   */
+  refresh: z.object({
+    dataMinutes: z.number().positive(),
+    locationMinutes: z.number().positive(),
+    /** The search centre follows the user only after they move this far. */
+    moveThresholdM: z.number().positive(),
+    /** Grid step (degrees) that snaps the user's position to a shared cache key. */
+    areaGridDeg: z.number().positive().max(1),
+    /** Snapshot radii; the smallest one covering max(radius, density search radius) is used. */
+    areaRadiiM: z.array(z.number().positive()).min(1),
+    areaHours: z.number().positive().max(48),
+    areaMaxEvents: z.number().int().positive(),
+  }),
   extraction: z.object({
     provider: z.literal('anthropic'),
     model: z.string().min(1),

@@ -202,6 +202,8 @@ button {
 }
 
 /* ---------- Markers ---------- */
+/* MapLibre positions .marker with an inline transform, so the pin shape lives on an inner
+   element: rotating .marker itself would be overwritten. */
 .marker {
   --cat: #475569;
   display: grid;
@@ -209,6 +211,15 @@ button {
   width: 34px;
   height: 34px;
   padding: 0;
+  border: 0;
+  background: none;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
+.marker__pin {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
   border: 2.5px solid var(--cat);
   border-radius: 50% 50% 50% 4px;
   transform: rotate(-45deg);
@@ -218,21 +229,18 @@ button {
   line-height: 1;
   transition: transform 0.15s ease;
 }
-.marker.is-now {
+.marker.is-now .marker__pin {
   background: var(--cat);
+  /* Running now: filled pin with a quiet halo. Static on purpose: calm, and no redraws. */
   box-shadow:
-    0 0 0 4px rgb(255 255 255 / 0.9),
-    0 0 0 0 var(--cat),
+    0 0 0 3px rgb(255 255 255 / 0.95),
+    0 0 0 6px color-mix(in srgb, var(--cat) 28%, transparent),
     var(--shadow-sm);
-  animation: pulse 2.2s ease-out infinite;
 }
-.marker.is-selected {
+.marker.is-selected .marker__pin {
   transform: rotate(-45deg) scale(1.25);
 }
-.marker {
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
-}
-.marker > span {
+.marker__pin > span {
   display: block;
   transform: rotate(45deg);
 }
@@ -310,7 +318,6 @@ button {
     rgb(249 115 22 / 0.12) 62%,
     transparent 70%
   );
-  animation: hot 2.4s ease-in-out infinite;
 }
 .hotspot__count {
   position: relative;
@@ -635,7 +642,6 @@ button {
   height: 6px;
   border-radius: 50%;
   background: var(--now);
-  animation: blink 1.6s ease-in-out infinite;
 }
 .btn {
   flex: 1;
@@ -723,7 +729,6 @@ button {
   height: 7px;
   border-radius: 50%;
   background: var(--now);
-  animation: blink 1.6s ease-in-out infinite;
 }
 .chip--filters {
   height: 40px;
@@ -1106,37 +1111,6 @@ button {
   top: calc(106px + var(--safe-top));
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow:
-      0 0 0 3px rgb(255 255 255 / 0.9),
-      0 0 0 3px var(--cat),
-      var(--shadow-sm);
-  }
-  70% {
-    box-shadow:
-      0 0 0 3px rgb(255 255 255 / 0.9),
-      0 0 0 14px transparent,
-      var(--shadow-sm);
-  }
-  100% {
-    box-shadow:
-      0 0 0 3px rgb(255 255 255 / 0.9),
-      0 0 0 3px transparent,
-      var(--shadow-sm);
-  }
-}
-@keyframes hot {
-  50% {
-    transform: scale(1.18);
-    opacity: 0.7;
-  }
-}
-@keyframes blink {
-  50% {
-    opacity: 0.3;
-  }
-}
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -1650,14 +1624,15 @@ label.choice input {
 .marker.is-flagged {
   /* Above neighbouring pins so the warning badge is never covered. */
   z-index: 5;
+}
+.marker.is-flagged .marker__pin {
   filter: saturate(0.4);
 }
 .marker.is-flagged::after {
   content: '!';
   position: absolute;
-  /* The pin is rotated -45°: its top-right corner points straight up. */
-  top: -7px;
-  right: -7px;
+  top: -8px;
+  right: -8px;
   display: grid;
   place-items: center;
   width: 16px;
@@ -1669,8 +1644,6 @@ label.choice input {
   font:
     800 10px/1 system-ui,
     sans-serif;
-  transform: rotate(45deg);
-  filter: none;
 }
 .choices__title {
   padding: 0;

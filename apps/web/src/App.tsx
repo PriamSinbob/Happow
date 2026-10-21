@@ -8,7 +8,8 @@ import { useEventDetail } from './hooks/useEventDetail';
 import { useEvents } from './hooks/useEvents';
 import { useGuidance } from './hooks/useGuidance';
 import { useFilters } from './hooks/useFilters';
-import { useGeolocation } from './hooks/useGeolocation';
+import { useGeolocation, useStableCenter } from './hooks/useGeolocation';
+import { useMinuteClock } from './hooks/useClock';
 import { useRoute } from './hooks/useHashRoute';
 import { useRadius } from './hooks/useRadius';
 import { useSaved } from './hooks/useSaved';
@@ -39,14 +40,18 @@ export function App() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filters = useFilters();
+  // Searches move only after ~100 m; labels and windows follow a minute clock, not downloads.
+  const searchCenter = useStableCenter(location.center, config.app.refresh.moveThresholdM);
+  const clock = useMinuteClock();
   const loaded = useEvents(
     repo,
-    location.center,
+    searchCenter,
     radius,
     region.timezone,
     filters.window,
     filters,
     config.app.density.searchRadiusM,
+    clock,
   );
   const { clusters, loading, error, now } = loaded;
   // Status reports from this device show at once; everyone else's arrive with the next reload.
@@ -56,7 +61,7 @@ export function App() {
     [loaded.events, myReports],
   );
   const selected = events.find((e) => e.id === selectedId) ?? null;
-  const guidance = useGuidance(clusters, location.center, radius);
+  const guidance = useGuidance(clusters, searchCenter, radius);
   const [hotspotOpen, setHotspotOpen] = useState(false);
   const [recenter, setRecenter] = useState(0);
   const filtered = filters.activeCount > 0;
@@ -64,7 +69,7 @@ export function App() {
   const detailId = route?.name === 'event' ? route.id : null;
   const openDetail = (id: string) => go({ name: 'event', id });
   const close = useCallback(() => go(null), [go]);
-  const detail = useEventDetail(repo, detailId, events, location.center);
+  const detail = useEventDetail(repo, detailId, events, searchCenter);
   const saved = useSaved();
 
   const panel = useRef<HTMLElement>(null);
@@ -176,7 +181,7 @@ export function App() {
 
       <main className="stage">
         <MapView
-          center={location.center}
+          center={searchCenter}
           userPosition={location.position}
           radiusM={radius}
           events={events}

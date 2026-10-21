@@ -377,3 +377,67 @@ it('answers 404 for unknown routes', async () => {
   expect((await api(post('nope', {}))).status).toBe(404);
   expect((await api(new Request('https://happow.example/api/autofill'))).status).toBe(404);
 });
+
+describe('GET /api/area', () => {
+  const get = (q: string, headers: Record<string, string> = {}) =>
+    new Request(`https://happow.example/api/area?${q}`, { headers });
+  const at = () => new Date('2026-10-20T20:03:30Z');
+  const rows = [{ id: 'seed:1', title: 'Gig', lat: 51.11, lng: 17.03 }];
+
+  /** In-memory stand-in for Cloudflare's edge cache. */
+  function memoryCache() {
+    const store = new Map<string, Response>();
+    return {
+      store,
+      match: async (r: RequestInfo | URL) => store.get(String((r as Request).url ?? r))?.clone(),
+      put: async (r: RequestInfo | URL, res: Response) => {
+        store.set(String((r as Request).url ?? r), res.clone());
+      },
+    };
+  }
+
+  it('serves one snapshot per grid square, radius and 5-minute step from the edge cache', async () => {
+    const web = backend({ rpc: { events_area: () => ({ body: rows }) } });
+    const cache = memoryCache();
+    const api = createApi(env, { fetch: web.fetch, now: at, cache: cache as never });
+    const res = await api(get('lat=51.1&lng=17.05&r=5000'));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      from: '2026-10-20T20:00:00.000Z',
+      to: '2026-10-21T20:00:00.000Z',
+      events: rows,
+    });
+    // Expires at the end of the step, for everyone at once.
+    expect(res.headers.get('cache-control')).toBe('public, max-age=90');
+    const call = web.calls.find((c) => c.name === 'events_area')!;
+    expect(call.args).toMatchObject({
+      lat: 51.1,
+      lng: 17.05,
+      from_ts: '2026-10-20T20:00:00.000Z',
+      to_ts: '2026-10-21T20:00:00.000Z',
+      max_events: 1000,
+    });
+    // The snapshot radius covers users anywhere in the grid square.
+    expect(call.args.radius_m as number).toBeGreaterThan(5000 + 2500);
+
+    // A second phone in the same square: no database call, and a 304 when it has the copy.
+    const etag = res.headers.get('etag')!;
+    const again = await api(get('lat=51.1&lng=17.05&r=5000', { 'if-none-match': etag }));
+    expect(again.status).toBe(304);
+    expect(web.calls.filter((c) => c.name === 'events_area')).toHaveLength(1);
+  });
+
+  it('refuses keys off the grid, unknown radii and places outside every region', async () => {
+    const web = backend({ rpc: { events_area: () => ({ body: [] }) } });
+    const api = createApi(env, { fetch: web.fetch, now: at });
+    for (const q of [
+      'lat=51.11&lng=17.05&r=5000', // off the grid
+      'lat=51.1&lng=17.05&r=7000', // not a snapshot radius
+      'lat=40&lng=-74&r=5000', // outside the regions
+      'lat=x&lng=17.05&r=5000',
+    ])
+      expect((await api(get(q))).status).toBe(400);
+    expect(web.calls).toEqual([]);
+    expect((await createApi({}, { now: at })(get('lat=51.1&lng=17.05&r=5000'))).status).toBe(503);
+  });
+});

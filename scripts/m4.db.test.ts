@@ -293,6 +293,33 @@ describe.skipIf(!url)('milestone 4 in Postgres', () => {
       expect(after.reports.some((x: { event_id: string }) => x.event_id === published)).toBe(false);
     });
 
+    it('serves a compact area snapshot with flags and density cells, without hidden events', async () => {
+      const p = submission('Potańcówka');
+      await db.query(`select submit_event($1, 'device-hash-4', 'wroclaw', true)`, [p]);
+      const id = `submissions:${p.id}`;
+      await db.query(`select report_event($1, 'weather', null, 'w1')`, [id]);
+      const area = async () =>
+        (
+          await db.query(
+            `select * from events_area($1, $2, 5000, now(), now() + interval '24 hours')`,
+            [region.center.lat, region.center.lng],
+          )
+        ).rows;
+      const rows = await area();
+      const row = rows.find((e) => e.id === id);
+      expect(row).toMatchObject({ verified: false, flag_reason: 'weather', flag_count: 1 });
+      expect(row.density_cell).toMatch(/^[0-9a-f]{15}$/);
+      // Long fields come with the detail view only.
+      expect(Object.keys(row)).not.toContain('description');
+      expect(Object.keys(row)).not.toContain('image_url');
+      await db.query(
+        `select moderate_submission(s.id, 'reject', null, 'm') from submissions s
+        where s.event_id = $1`,
+        [id],
+      );
+      expect((await area()).some((e) => e.id === id)).toBe(false);
+    });
+
     it('clears the flag when a moderator dismisses the reports', async () => {
       const p = submission('Koncert w parku');
       await db.query(`select submit_event($1, 'device-hash-3', 'wroclaw', true)`, [p]);

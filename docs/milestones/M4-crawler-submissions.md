@@ -102,3 +102,18 @@ Oct 20, 2026
 - **URL autofill is off** for the PoC (`submissions.autofill: false`); it is planned as a paid add-on (see the brief's Future features).
 - **eBilet is back on** for evaluation. Its listing holds one summary per show or tour, so the crawler now follows each show's page (`summaryListing`). There it finds the Wrocław dates, venue, street address, price and ticket link. The live run on Oct 21 gave 17 Wrocław performances from 35 requests. Placeholder 0 prices on ticket offers no longer show as "Free".
 - **Community status flags (migration 5).** Anyone can report an event as cancelled, venue closed, stopped by weather, or moved. Open status reports are summed on the event, and the map, list, card and detail show a warning ("Venue reported closed · 2 people · 10 min ago, not confirmed yet"). The threshold is `submissions.flagThreshold` (1 in the PoC). Other users see it on their next refresh, within 60 s; the reporter sees it at once. A device can change its report. Moderators confirm (mark cancelled or hide) or dismiss, and dismissing clears the warning.
+
+## Follow-up 3 (Oct 21): battery and calm UI
+
+- **Location:** no continuous GPS watch. One precise fix when the app opens and on the locate button, then a cheap network-based fix every 5 minutes while the app is on screen and when it returns after a while. Nothing runs in the background. A coarse fix that still contains a better earlier one is ignored, and the search centre moves only after 100 m (`refresh.locationMinutes`, `refresh.moveThresholdM`).
+- **One cached download per area (migration 6, `GET /api/area`):**
+  - The phone downloads one compact snapshot: everything within a radius bucket of a 0.05° grid point for the next 24 h, without long fields.
+  - The list, radius, time windows, filters and hotspot counts are all computed locally, so changing them costs no request.
+  - Snapshots refresh on 5-minute step boundaries that are shared by everyone. Cloudflare's edge cache serves the same snapshot to everyone in the area, and an unchanged snapshot comes back as a tiny 304 (ETag).
+  - The event list and the hotspot counts now come from one request instead of two.
+  - Event detail always reads that one event fresh, so warnings and cancellations are current where people decide whether to go.
+  - Older servers fall back to direct queries.
+- **Clock:** a minute clock on the minute, paused while the app is hidden, drives labels and local filtering only. The old 60-second download timer is gone. Measured in a 12-minute browser run: 3 area downloads, 3 location requests, 0 GPS watches and 0 running animations.
+- **Map:** expired tiles are not re-downloaded (they are cached for a week), and there are no tile fade-ins.
+- **Calm UI:** the endless animations are gone (pulsing pins for running events, blinking "Now" dots, the pulsing hotspot) and replaced by a static halo and dot. Only short one-time transitions remain, plus the spinner during the one precise location fix.
+- **Pin fix:** MapLibre overwrote the pin's rotation, which tilted category icons 45° and disabled the "selected" enlargement. The shape now lives on an inner element.

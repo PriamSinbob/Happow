@@ -106,6 +106,17 @@ export default defineConfig(({ mode }) => {
                 cacheableResponse: { statuses: [0, 200] },
               },
             },
+            {
+              // Area snapshots: the network (and its HTTP cache / 304s) first, the last copy
+              // offline.
+              urlPattern: ({ url }: { url: URL }) => url.pathname === '/api/area',
+              handler: 'NetworkFirst' as const,
+              options: {
+                cacheName: 'area',
+                networkTimeoutSeconds: 8,
+                expiration: { maxEntries: 10, maxAgeSeconds: 24 * 3600 },
+              },
+            },
             ...(apiHost
               ? [
                   {

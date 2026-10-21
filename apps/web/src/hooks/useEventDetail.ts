@@ -3,8 +3,10 @@ import type { LatLng, NearbyEvent } from '@happow/core';
 import type { EventRepository } from '../data';
 
 /**
- * The event behind the detail screen: taken from the loaded list when it is there (instant),
- * otherwise fetched by id (shared links, events outside the current filters).
+ * The event behind the detail screen. The copy from the loaded list shows at once; the event is
+ * then read fresh by id (one small request when the screen opens), so a cancellation or a
+ * community warning is never a refresh step late where someone decides whether to go, and the
+ * long fields (description, image, links) the list leaves out are filled in.
  */
 export function useEventDetail(
   repo: EventRepository,
@@ -16,7 +18,7 @@ export function useEventDetail(
   const [fetched, setFetched] = useState<{ id: string; ev: NearbyEvent | null } | null>(null);
 
   useEffect(() => {
-    if (!id || inList) return;
+    if (!id) return;
     const ctrl = new AbortController();
     repo
       .byId(id, from, ctrl.signal)
@@ -27,11 +29,16 @@ export function useEventDetail(
         setFetched({ id, ev: null });
       });
     return () => ctrl.abort();
-    // `from` changes with GPS jitter; the distance is refreshed when the list reloads.
+    // Once per opened event: `from` moves with location updates, which must not refetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [repo, id, inList === null]);
+  }, [repo, id]);
 
   if (!id) return { ev: null, loading: false };
+  const fresh = fetched?.id === id ? fetched : null;
+  if (fresh?.ev) {
+    // Keep the list's distance (measured from the current search centre).
+    return { ev: inList ? { ...fresh.ev, distanceM: inList.distanceM } : fresh.ev, loading: false };
+  }
   if (inList) return { ev: inList, loading: false };
-  return fetched?.id === id ? { ev: fetched.ev, loading: false } : { ev: null, loading: true };
+  return fresh ? { ev: null, loading: false } : { ev: null, loading: true };
 }

@@ -17,6 +17,15 @@
     "hotspotMinEvents": 3,
     "maxChevrons": 6
   },
+  "refresh": {
+    "dataMinutes": 5,
+    "locationMinutes": 5,
+    "moveThresholdM": 100,
+    "areaGridDeg": 0.05,
+    "areaRadiiM": [5000, 10000, 25000],
+    "areaHours": 24,
+    "areaMaxEvents": 1000
+  },
   "timeWindows": [
     {
       "id": "now",

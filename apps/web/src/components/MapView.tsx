@@ -179,6 +179,9 @@ export function MapView(props: Props) {
       attributionControl: false,
       dragRotate: false,
       pitchWithRotate: false,
+      // Battery and data: tiles cached for a week are good enough; don't re-download them.
+      refreshExpiredTiles: false,
+      fadeDuration: 0,
     });
     m.touchZoomRotate.disableRotation();
     // OSM attribution is required; top-right keeps it clear of the bottom sheet.
@@ -333,9 +336,9 @@ export function MapView(props: Props) {
       const icon = cat?.icon ?? '📍';
       if (entry.el.dataset.icon !== icon) {
         entry.el.dataset.icon = icon;
-        entry.el.replaceChildren(
-          Object.assign(document.createElement('span'), { textContent: icon }),
-        );
+        const pin = Object.assign(document.createElement('span'), { className: 'marker__pin' });
+        pin.append(Object.assign(document.createElement('span'), { textContent: icon }));
+        entry.el.replaceChildren(pin);
       }
       entry.el.style.setProperty('--cat', cat?.color ?? '#475569');
       entry.el.setAttribute('aria-label', ev.title);

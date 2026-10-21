@@ -14,10 +14,11 @@ import type { EventRepository } from './repository';
 const isFlagReason = (r: string): r is FlagReason =>
   (FLAG_REASONS as readonly string[]).includes(r);
 
-interface Row {
+/** A row from events_near / event_by_id, or a compact events_area row (no long fields). */
+export interface Row {
   id: string;
   title: string;
-  description: string | null;
+  description?: string | null;
   category_ids: string[];
   start_at: string;
   end_at: string;
@@ -41,7 +42,8 @@ interface Row {
   rules: NearbyEvent['rules'];
   official_url: string | null;
   ticket_url: string | null;
-  image_url: string | null;
+  image_url?: string | null;
+  density_cell?: string | null;
   status: EventStatus;
   trust: Trust;
   confidence: number;
@@ -83,7 +85,7 @@ export function rowToEvent(r: Row): NearbyEvent {
   return {
     id: r.id,
     title: r.title,
-    description: r.description,
+    description: r.description ?? null,
     categoryIds: r.category_ids,
     startAt: r.start_at,
     endAt: r.end_at,
@@ -99,6 +101,7 @@ export function rowToEvent(r: Row): NearbyEvent {
       : null,
     point: { lat: r.lat, lng: r.lng },
     h3r9: r.h3_r9,
+    ...(r.density_cell && { densityCell: r.density_cell }),
     priceMin: num(r.price_min),
     priceMax: num(r.price_max),
     currency: r.currency,
@@ -106,7 +109,7 @@ export function rowToEvent(r: Row): NearbyEvent {
     rules: r.rules ?? {},
     officialUrl: r.official_url,
     ticketUrl: r.ticket_url,
-    imageUrl: r.image_url,
+    imageUrl: r.image_url ?? null,
     status: r.status,
     trust: r.trust,
     confidence: r.confidence,
