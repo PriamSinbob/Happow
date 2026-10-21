@@ -87,4 +87,4 @@ Secrets live only in GitHub Secrets or a local `.env` (never committed).
 
 ## Attribution
 
-Map data © OpenStreetMap contributors; tiles by OpenFreeMap / OpenMapTiles. Geocoding by Nominatim (© OpenStreetMap contributors). Every event links back to its source listing (Ticketmaster, Meetup, eBilet, wroclaw.pl GO, NFM); crawled pages contribute facts only.
+Map data © OpenStreetMap contributors; tiles by OpenFreeMap / OpenMapTiles. Geocoding by Nominatim (© OpenStreetMap contributors). Every event links back to its source listing (Ticketmaster, Meetup, wroclaw.pl GO, NFM); crawled pages contribute facts only.

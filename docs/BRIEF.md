@@ -216,5 +216,12 @@ Requested 2026-10-20. An organiser can mark an event as **private**: it is visib
 - [ ] Contact Wrocław city (ARAW) about an events feed or partnership?
 - [ ] Which Instagram Business account will run the hashtag adapter, and which 30 hashtags?
 - [ ] Is Facebook public-page crawling in scope at all, after a legal opinion under Polish/EU law?
-- [ ] Brand name check: "Happening Now" domain and store-name availability.
+- [ ] Brand name: search HAPPOW / HAPPO / HAPOW in TMview (EUIPO + UPRP), WIPO Brand DB and IP Australia; consider filing "Happow" (classes 9, 35, 41, 42). happow.com is an Australian youth eLearning company (HAPPOW PTY LTD); a US "HAPPOW" mark exists in class 28 only.
+- [ ] Domain and email: register happow.app (Cloudflare Registrar) and happow.pl (Polish registrar), forward a contact address with Cloudflare Email Routing, set `legal.contactEmail`.
+
+## Before public launch (to-do)
+
+- [ ] **Legal texts** (Claude to draft when the app is feature-complete): terms of use, privacy policy (GDPR: hashed device ids, performer/organiser names under legitimate interest, art. 14 notice), takedown procedure, cookie/storage note. Replace the draft bullets on the About page.
+- [ ] **Crawl permissions:** email eBilet for written consent or a partner feed (source paused until then); email ARAW (wroclaw.pl/go) for consent or a feed; courtesy email to NFM. Crawler policy is public in `docs/CRAWLER.md`.
+- [ ] **Crawler politeness:** conditional requests (ETag / If-Modified-Since), skip unchanged detail pages, respect TDM reservations (`/.well-known/tdmrep.json`, `tdm-reservation` meta) before sending page text to the LLM, add the contact email to the User-Agent.
 - [ ] Under the Plumbi umbrella or standalone?

@@ -45,7 +45,7 @@
     "descriptionMaxChars": 600,
     "lookbackHours": 8,
     "lookaheadHours": 48,
-    "userAgent": "Happow/0.4 (+https://github.com/PriamSinbob/Happow)"
+    "userAgent": "Happow/0.4 (+https://github.com/PriamSinbob/Happow/blob/main/docs/CRAWLER.md)"
   },
   "geocoding": {
     "provider": "nominatim",

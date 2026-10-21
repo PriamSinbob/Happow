@@ -89,3 +89,9 @@ Oct 20, 2026
 - **Selectors drift.** The GO `followPattern` and NFM's event URL pattern are in config. Watch `source_runs.stats` (`fetched` dropping to 0) after site redesigns.
 - **Nominatim usage policy.** 1 request/s with an identifying User-Agent and caching is within policy for this volume. Self-hosted Photon is the path if submissions grow.
 - **Abuse.** Device ids are client-generated. Rate limits per IP hash back them up, but a determined spammer can still post a handful a day before moderation. Switch `publishBeforeModeration` off if that happens.
+
+## Follow-up (Oct 21)
+
+- After a legal review of the three targets, **eBilet is paused** (`enabled: false`): its terms limit use to personal use without written consent. wroclaw.pl GO and NFM now run once a day with 5 s between requests (`12/m`), and crawled events stay visible for 72 h without a re-check. The crawler's policy and opt-out are public in `docs/CRAWLER.md`, and the User-Agent links to it.
+- URL autofill has a global daily cap on LLM calls (`extraction.autofillLlmPerDay`, 300), and falls back to the manual form if the call fails or the cap is reached.
+- `docs/SETUP.md` walks through every account and secret.

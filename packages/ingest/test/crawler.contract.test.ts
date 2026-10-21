@@ -42,6 +42,11 @@ const geocoder: Geocoder & { calls: GeoQuery[] } = {
 
 const now = new Date('2026-10-20T22:40:00Z');
 const base = { config, env: {}, now, store: null, force: true, sleep: noSleep, log: () => {} };
+// eBilet is paused in config until it consents; its page shape stays covered here.
+const withEbilet = {
+  ...config,
+  sources: config.sources.map((s) => (s.id === 'ebilet' ? { ...s, enabled: true } : s)),
+};
 
 describe('crawler (contract, recorded pages)', () => {
   it('reads eBilet JSON-LD, keeps only the region, geocodes and stores facts only', async () => {
@@ -50,7 +55,13 @@ describe('crawler (contract, recorded pages)', () => {
       'https://www.ebilet.pl/miasto/wroclaw': page('ebilet-listing.html'),
     });
     geocoder.calls = [];
-    const [s] = await runIngest({ ...base, sourceIds: ['ebilet'], fetch: web.fetch, geocoder });
+    const [s] = await runIngest({
+      ...base,
+      config: withEbilet,
+      sourceIds: ['ebilet'],
+      fetch: web.fetch,
+      geocoder,
+    });
     expect(s).toMatchObject({ status: 'ok' });
     expect(s!.fetched).toBeGreaterThan(5);
     expect(s!.fetched).toBeLessThan(25); // other cities' shows dropped before geocoding
