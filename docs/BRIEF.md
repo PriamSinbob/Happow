@@ -208,6 +208,20 @@ Decided 2026-10-21: in the PoC, people add events by hand. Pasting a link to fil
 - **Cost model:** about $0.0005–0.001 per page at Haiku 5.5 rates, so even 500 autofills a month cost under $0.50 per account.
 - **Possible extras:** recurring imports from an organiser's own events page, and bulk add from a calendar feed (iCal).
 
+### Organiser updates on the event page
+
+Requested 2026-10-21. The event page gets a small feed of short posts from the event's organiser, for example "Happy hour until 20:00", "Start moved to 19:30", "Entrance from Ruska street only" or "Bring ID, bag checks at the door".
+
+- **Who can post:** a verified organiser of that event. That means organiser accounts plus a way to claim an event, such as a code sent to the email or site in the listing, or moderator approval.
+- **Post types:**
+  - **Schedule change.** It updates the event's own time or status, so the map, list and calendar stay right.
+  - **Safety / important.** Pinned to the top, with a highlighted style.
+  - **Promo / info.** Normal posts.
+- **Reaching people:** people who saved the event see a badge in the app. Web push notifications come later (on iOS they need the installed PWA).
+- **Paid tier:** promos and extra posts are part of the organiser subscription. Schedule changes and safety notices should stay free, because they protect visitors and keep the map accurate.
+- **Moderation:** posts can be reported like events, with a length limit and no external images in the PoC.
+- **Battery and data:** posts load with the event's detail view, not with the map, so they add no background traffic.
+
 ### Private events with invitations
 
 Requested 2026-10-20. An organiser can mark an event as **private**: it is visible on the map, in the list and by link only to the people they invited. Everything public keeps working without an account.
