@@ -48,13 +48,6 @@ export interface ApiDeps {
   /** Overrides for tests. */
   geocoder?: Geocoder;
   extractor?: Extractor | null;
-  /** Shared response cache (Cloudflare's `caches.default` in the Worker); none in dev and tests. */
-  cache?: Pick<Cache, 'match' | 'put'>;
-}
-
-/** Lets a cache write finish after the response is sent (the Worker's `ctx.waitUntil`). */
-export interface ExecutionCtx {
-  waitUntil(promise: Promise<unknown>): void;
 }
 
 class ApiError extends Error {
@@ -513,10 +506,11 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
 
   /**
    * GET /api/area?lat&lng&r → every listed event within r of a grid point for the next hours.
-   * One snapshot per grid square, radius and 5-minute step: Supabase is asked once per busy area
-   * per step, however many people look, and phones get a 304 when nothing changed.
+   * The response is public and expires at the end of the 5-minute step, so Cloudflare's Workers
+   * Caching (wrangler.jsonc) answers everyone in the same grid square without running this, and
+   * Supabase is asked about once per busy area per step. Revalidations get a 304 via the ETag.
    */
-  async function area(req: Request, ctx?: ExecutionCtx): Promise<Response> {
+  async function area(req: Request): Promise<Response> {
     if (!db) throw new ApiError(503, 'not_configured');
     const u = new URL(req.url);
     const key = {
@@ -541,42 +535,16 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     // Everyone's copy expires at the same step boundary, so caches and phones refresh together.
     const expires = from.getTime() + refresh.dataMinutes * 60_000;
     const maxAge = Math.max(15, Math.round((expires - t.getTime()) / 1000));
-    const cacheKey = new Request(
-      `${u.origin}/api/area?lat=${key.lat}&lng=${key.lng}&r=${key.radiusM}&t=${from.getTime()}`,
-    );
-
-    let body: string;
-    let etag: string;
-    const hit = await deps.cache?.match(cacheKey);
-    if (hit) {
-      body = await hit.text();
-      etag = hit.headers.get('etag') ?? `"${(await sha256(body)).slice(0, 16)}"`;
-    } else {
-      const events = await db.rpc<unknown>('events_area', {
-        lat: key.lat,
-        lng: key.lng,
-        radius_m: key.radiusM + areaSlackM(key.lat, refresh),
-        from_ts: from.toISOString(),
-        to_ts: to.toISOString(),
-        max_events: refresh.areaMaxEvents,
-      });
-      body = JSON.stringify({ from: from.toISOString(), to: to.toISOString(), events });
-      etag = `"${(await sha256(body)).slice(0, 16)}"`;
-      if (deps.cache) {
-        const put = deps.cache.put(
-          cacheKey,
-          new Response(body, {
-            headers: {
-              'content-type': 'application/json',
-              etag,
-              'cache-control': `public, max-age=${maxAge}`,
-            },
-          }),
-        );
-        if (ctx) ctx.waitUntil(put);
-        else await put;
-      }
-    }
+    const events = await db.rpc<unknown>('events_area', {
+      lat: key.lat,
+      lng: key.lng,
+      radius_m: key.radiusM + areaSlackM(key.lat, refresh),
+      from_ts: from.toISOString(),
+      to_ts: to.toISOString(),
+      max_events: refresh.areaMaxEvents,
+    });
+    const body = JSON.stringify({ from: from.toISOString(), to: to.toISOString(), events });
+    const etag = `"${(await sha256(body)).slice(0, 16)}"`;
     const headers = {
       'content-type': 'application/json',
       etag,
@@ -588,7 +556,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   }
 
   /** Routes /api/*. Everything else is 404. */
-  return async function handle(req: Request, ctx?: ExecutionCtx): Promise<Response> {
+  return async function handle(req: Request): Promise<Response> {
     const path = new URL(req.url).pathname
       .replace(/^\/api\/?/, '')
       .split('/')
@@ -598,7 +566,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       for (let i = 0; i < path.length; i++) path[i] = decodeURIComponent(path[i]!);
       const [head, ...rest] = path;
       if (head === 'moderation') return await moderation(req, rest);
-      if (head === 'area' && req.method === 'GET' && !rest.length) return await area(req, ctx);
+      if (head === 'area' && req.method === 'GET' && !rest.length) return await area(req);
       if (req.method !== 'POST' || rest.length) throw new ApiError(404, 'not_found');
       if (head === 'autofill') return await autofill(req);
       if (head === 'geocode') return await geocode(req);

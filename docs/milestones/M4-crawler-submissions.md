@@ -109,7 +109,7 @@ Oct 20, 2026
 - **One cached download per area (migration 6, `GET /api/area`):**
   - The phone downloads one compact snapshot: everything within a radius bucket of a 0.05° grid point for the next 24 h, without long fields.
   - The list, radius, time windows, filters and hotspot counts are all computed locally, so changing them costs no request.
-  - Snapshots refresh on 5-minute step boundaries that are shared by everyone. Cloudflare's edge cache serves the same snapshot to everyone in the area, and an unchanged snapshot comes back as a tiny 304 (ETag).
+  - Snapshots refresh on 5-minute step boundaries that are shared by everyone. Cloudflare's Workers Caching (`cache.enabled` in `wrangler.jsonc`, which also merges simultaneous requests) serves the same snapshot to everyone in the area, and an unchanged snapshot comes back as a tiny 304 (ETag).
   - The event list and the hotspot counts now come from one request instead of two.
   - Event detail always reads that one event fresh, so warnings and cancellations are current where people decide whether to go.
   - Older servers fall back to direct queries.

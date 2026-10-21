@@ -384,22 +384,9 @@ describe('GET /api/area', () => {
   const at = () => new Date('2026-10-20T20:03:30Z');
   const rows = [{ id: 'seed:1', title: 'Gig', lat: 51.11, lng: 17.03 }];
 
-  /** In-memory stand-in for Cloudflare's edge cache. */
-  function memoryCache() {
-    const store = new Map<string, Response>();
-    return {
-      store,
-      match: async (r: RequestInfo | URL) => store.get(String((r as Request).url ?? r))?.clone(),
-      put: async (r: RequestInfo | URL, res: Response) => {
-        store.set(String((r as Request).url ?? r), res.clone());
-      },
-    };
-  }
-
-  it('serves one snapshot per grid square, radius and 5-minute step from the edge cache', async () => {
+  it('serves one public snapshot per grid square, radius and 5-minute step', async () => {
     const web = backend({ rpc: { events_area: () => ({ body: rows }) } });
-    const cache = memoryCache();
-    const api = createApi(env, { fetch: web.fetch, now: at, cache: cache as never });
+    const api = createApi(env, { fetch: web.fetch, now: at });
     const res = await api(get('lat=51.1&lng=17.05&r=5000'));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
@@ -420,11 +407,11 @@ describe('GET /api/area', () => {
     // The snapshot radius covers users anywhere in the grid square.
     expect(call.args.radius_m as number).toBeGreaterThan(5000 + 2500);
 
-    // A second phone in the same square: no database call, and a 304 when it has the copy.
+    // Revalidating an unchanged snapshot (Cloudflare's cache or a phone) costs a bodiless 304.
     const etag = res.headers.get('etag')!;
     const again = await api(get('lat=51.1&lng=17.05&r=5000', { 'if-none-match': etag }));
     expect(again.status).toBe(304);
-    expect(web.calls.filter((c) => c.name === 'events_area')).toHaveLength(1);
+    expect(await again.text()).toBe('');
   });
 
   it('refuses keys off the grid, unknown radii and places outside every region', async () => {
