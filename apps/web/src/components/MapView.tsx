@@ -20,7 +20,6 @@ import { useI18n, type MessageKey } from '../i18n';
 
 interface Props {
   center: LatLng;
-  userPosition: LatLng | null;
   radiusM: number;
   events: NearbyEvent[];
   now: Date;
@@ -124,7 +123,7 @@ function computeChevrons(m: maplibregl.Map, p: Props): Chevron[] {
 
 const RADIUS_SOURCE = 'radius';
 
-function rasterStyle(): StyleSpecification {
+export function rasterStyle(): StyleSpecification {
   const r = config.map.fallbackRaster;
   return {
     version: 8,
@@ -154,7 +153,6 @@ export function MapView(props: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLButtonElement }>());
-  const userMarker = useRef<maplibregl.Marker | null>(null);
   const hintMarkers = useRef<maplibregl.Marker[]>([]);
   const userMoved = useRef(false);
   const lastFit = useRef<{
@@ -179,6 +177,9 @@ export function MapView(props: Props) {
       attributionControl: false,
       dragRotate: false,
       pitchWithRotate: false,
+      // Battery and data: tiles cached for a week are good enough; don't re-download them.
+      refreshExpiredTiles: false,
+      fadeDuration: 0,
     });
     m.touchZoomRotate.disableRotation();
     // OSM attribution is required; top-right keeps it clear of the bottom sheet.
@@ -232,7 +233,6 @@ export function MapView(props: Props) {
       m.remove();
       map.current = null;
       markers.current.clear();
-      userMarker.current = null;
       hintMarkers.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -281,28 +281,6 @@ export function MapView(props: Props) {
     if (!props.hidden) map.current?.resize();
   }, [props.hidden]);
 
-  // User position dot.
-  useEffect(() => {
-    const m = map.current;
-    if (!m) return;
-    if (!props.userPosition) {
-      userMarker.current?.remove();
-      userMarker.current = null;
-      return;
-    }
-    if (!userMarker.current) {
-      const el = document.createElement('div');
-      el.className = 'user-dot';
-      el.setAttribute('role', 'img');
-      el.setAttribute('aria-label', t('map.you'));
-      userMarker.current = new maplibregl.Marker({ element: el })
-        .setLngLat(props.userPosition)
-        .addTo(m);
-    } else {
-      userMarker.current.setLngLat(props.userPosition);
-    }
-  }, [props.userPosition, t]);
-
   // Event markers: diff by id; nudge markers that share a spot so all stay tappable.
   useEffect(() => {
     const m = map.current;
@@ -333,14 +311,15 @@ export function MapView(props: Props) {
       const icon = cat?.icon ?? '📍';
       if (entry.el.dataset.icon !== icon) {
         entry.el.dataset.icon = icon;
-        entry.el.replaceChildren(
-          Object.assign(document.createElement('span'), { textContent: icon }),
-        );
+        const pin = Object.assign(document.createElement('span'), { className: 'marker__pin' });
+        pin.append(Object.assign(document.createElement('span'), { textContent: icon }));
+        entry.el.replaceChildren(pin);
       }
       entry.el.style.setProperty('--cat', cat?.color ?? '#475569');
       entry.el.setAttribute('aria-label', ev.title);
       entry.el.classList.toggle('is-now', isRunning(ev, props.now));
       entry.el.classList.toggle('is-selected', ev.id === props.selectedId);
+      entry.el.classList.toggle('is-flagged', !!ev.flag);
       entry.marker.setOffset([n * 18, -n * 6]);
       entry.el.style.zIndex = ev.id === props.selectedId ? '10' : '';
     }

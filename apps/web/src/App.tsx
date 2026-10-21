@@ -1,24 +1,31 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { snapRadius, type Language } from '@happow/core';
 import { config, region } from './config';
 import { createRepository } from './data';
+import { withFlag, useMyReports } from './flags';
 import { formatDistance } from './format';
 import { useEventDetail } from './hooks/useEventDetail';
 import { useEvents } from './hooks/useEvents';
 import { useGuidance } from './hooks/useGuidance';
 import { useFilters } from './hooks/useFilters';
-import { useGeolocation } from './hooks/useGeolocation';
-import { useDetailRoute } from './hooks/useHashRoute';
+import { useGeolocation, useStableCenter } from './hooks/useGeolocation';
+import { useMinuteClock } from './hooks/useClock';
+import { useRoute } from './hooks/useHashRoute';
 import { useRadius } from './hooks/useRadius';
 import { useSaved } from './hooks/useSaved';
 import { useI18n } from './i18n';
+import { About } from './components/About';
+import { AddEvent } from './components/AddEvent';
 import { EventCard } from './components/EventCard';
 import { EventDetail } from './components/EventDetail';
+import { GoThere } from './components/GoThere';
 import { FilterBar, windowSummary } from './components/FilterBar';
 import { FilterSheet } from './components/FilterSheet';
 import { GuidanceCard } from './components/Guidance';
 import { ListView } from './components/ListView';
 import { MapView } from './components/MapView';
+import { Moderation } from './components/Moderation';
+import { Icon } from './components/Icons';
 import { RadiusControl } from './components/RadiusControl';
 import { storage } from './storage';
 
@@ -34,22 +41,37 @@ export function App() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filters = useFilters();
-  const { events, clusters, loading, error, now } = useEvents(
+  // Searches move only after ~100 m; labels and windows follow a minute clock, not downloads.
+  const searchCenter = useStableCenter(location.center, config.app.refresh.moveThresholdM);
+  const clock = useMinuteClock();
+  const loaded = useEvents(
     repo,
-    location.center,
+    searchCenter,
     radius,
     region.timezone,
     filters.window,
     filters,
     config.app.density.searchRadiusM,
+    clock,
+  );
+  const { clusters, loading, error, now } = loaded;
+  // Status reports from this device show at once; everyone else's arrive with the next reload.
+  const [myReports, addMyReport] = useMyReports();
+  const events = useMemo(
+    () => loaded.events.map((e) => withFlag(e, myReports)),
+    [loaded.events, myReports],
   );
   const selected = events.find((e) => e.id === selectedId) ?? null;
-  const guidance = useGuidance(clusters, location.center, radius);
+  const guidance = useGuidance(clusters, searchCenter, radius);
   const [hotspotOpen, setHotspotOpen] = useState(false);
   const [recenter, setRecenter] = useState(0);
   const filtered = filters.activeCount > 0;
-  const [detailId, openDetail] = useDetailRoute();
-  const detail = useEventDetail(repo, detailId, events, location.center);
+  const [route, go] = useRoute();
+  const detailId = route?.name === 'event' ? route.id : null;
+  const goId = route?.name === 'go' ? route.id : null;
+  const openDetail = (id: string) => go({ name: 'event', id });
+  const close = useCallback(() => go(null), [go]);
+  const detail = useEventDetail(repo, detailId ?? goId, events, searchCenter);
   const saved = useSaved();
 
   const panel = useRef<HTMLElement>(null);
@@ -100,12 +122,25 @@ export function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">
+        <button
+          type="button"
+          className="brand"
+          onClick={() => go({ name: 'about' })}
+          aria-label={`${t('header.about')}, ${regionName}`}
+        >
           <span className="brand__dot" aria-hidden />
           <span className="brand__name">Happow</span>
           <span className="brand__region">{regionName}</span>
-        </div>
+        </button>
         <div className="topbar__actions">
+          <button
+            type="button"
+            className="icon-btn icon-btn--raised"
+            onClick={() => go({ name: 'add' })}
+            aria-label={t('header.add')}
+          >
+            <Icon name="plus" />
+          </button>
           {otherLang && (
             <button
               type="button"
@@ -148,8 +183,7 @@ export function App() {
 
       <main className="stage">
         <MapView
-          center={location.center}
-          userPosition={location.position}
+          center={searchCenter}
           radiusM={radius}
           events={events}
           now={now}
@@ -196,6 +230,7 @@ export function App() {
               now={now}
               onClose={() => setSelectedId(null)}
               onDetails={() => openDetail(selected.id)}
+              onGo={() => go({ name: 'go', id: selected.id })}
             />
           </div>
         ) : view === 'map' && hotspotOpen && guidance.hotspot ? (
@@ -276,13 +311,31 @@ export function App() {
       )}
       {detailId && (
         <EventDetail
-          ev={detail.ev}
+          ev={detail.ev && withFlag(detail.ev, myReports)}
           loading={detail.loading}
           now={now}
           saved={saved.isSaved(detailId)}
           onToggleSave={() => saved.toggle(detailId)}
-          onClose={() => openDetail(null)}
+          onClose={close}
+          onReported={addMyReport}
+          onGo={() => go({ name: 'go', id: detailId })}
         />
+      )}
+      {goId && (
+        <GoThere
+          key={goId}
+          ev={detail.ev && withFlag(detail.ev, myReports)}
+          now={clock}
+          refresh={(id, from) => repo.byId(id, from)}
+          onClose={close}
+        />
+      )}
+      {route?.name === 'add' && (
+        <AddEvent onClose={close} onOpenEvent={(id) => go({ name: 'event', id }, true)} />
+      )}
+      {route?.name === 'moderate' && <Moderation onClose={close} />}
+      {route?.name === 'about' && (
+        <About onClose={close} onModerate={() => go({ name: 'moderate' }, true)} />
       )}
     </div>
   );

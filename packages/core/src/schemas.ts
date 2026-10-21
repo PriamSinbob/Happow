@@ -24,6 +24,10 @@ export const regionSchema = z.object({
   locale: languageSchema,
   /** ISO 3166-1 alpha-2, passed to sources that filter by country. */
   countryCode: z.string().length(2).optional(),
+  /** City names that count as this region on crawled pages (listings also carry other cities). */
+  localities: z.array(z.string().min(1)).optional(),
+  /** ISO 4217 code that prices typed into the add-event form are in. */
+  currency: z.string().length(3).default('EUR'),
   center: latLngSchema,
   defaultZoom: z.number().min(0).max(22),
   bbox: z.object({ west: z.number(), south: z.number(), east: z.number(), north: z.number() }),
@@ -69,6 +73,82 @@ export const appConfigSchema = z.object({
     titleSimilarity: z.number().min(0).max(1),
     /** H3 rings around the event's cell to search, so venues on a cell edge still match. */
     h3Ring: z.number().int().min(0).max(3),
+  }),
+  geocoding: z.object({
+    provider: z.literal('nominatim'),
+    endpoint: z.string().url(),
+    minIntervalMs: z.number().int().nonnegative(),
+    cacheDays: z.number().positive(),
+  }),
+  /**
+   * Battery and data budget: how often the app reloads events and asks for a location fix, and
+   * the shared "area" snapshot the server caches (a grid square + radius bucket, the next hours).
+   */
+  refresh: z.object({
+    dataMinutes: z.number().positive(),
+    locationMinutes: z.number().positive(),
+    /** The search centre follows the user only after they move this far. */
+    moveThresholdM: z.number().positive(),
+    /** Grid step (degrees) that snaps the user's position to a shared cache key. */
+    areaGridDeg: z.number().positive().max(1),
+    /** Snapshot radii; the smallest one covering max(radius, density search radius) is used. */
+    areaRadiiM: z.array(z.number().positive()).min(1),
+    areaHours: z.number().positive().max(48),
+    areaMaxEvents: z.number().int().positive(),
+  }),
+  /** "Going there": in-app walking route with live location, only while the user asks for it. */
+  navigation: z.object({
+    routing: z.object({
+      provider: z.literal('openrouteservice'),
+      endpoint: z.string().url(),
+      /** Environment variable with the API key; without it the app draws a direct line. */
+      secret: z.string().regex(/^[A-Z][A-Z0-9_]*$/),
+      attribution: z.string(),
+    }),
+    routesPerHourPerClient: z.number().int().positive(),
+    maxRouteKm: z.number().positive(),
+    /** Within this distance of the venue the trip ends and GPS stops. */
+    arriveM: z.number().positive(),
+    /** Farther than this from the route line asks for a new route (rate-limited below). */
+    offRouteM: z.number().positive(),
+    rerouteMinSeconds: z.number().positive(),
+    maxReroutes: z.number().int().nonnegative(),
+    /** Safety cap: live GPS stops after this long. */
+    maxMinutes: z.number().positive(),
+    /** How often the event itself is re-read while on the way (flags, time changes). */
+    eventRefreshSeconds: z.number().positive(),
+  }),
+  extraction: z.object({
+    provider: z.literal('anthropic'),
+    model: z.string().min(1),
+    effort: z.enum(['low', 'medium', 'high']),
+    /** Environment variable holding the API key; without it, LLM extraction is off. */
+    secret: z.string().regex(/^[A-Z][A-Z0-9_]*$/),
+    maxInputChars: z.number().int().positive(),
+    maxTokens: z.number().int().positive(),
+    /** Extractions below this go to the moderation queue instead of the map. */
+    minConfidence: z.number().min(0).max(1),
+    maxPageBytes: z.number().int().positive(),
+    /** Most LLM calls URL autofill may make per day across all users (cost cap). */
+    autofillLlmPerDay: z.number().int().nonnegative(),
+    /** schema.org Event subtypes (lower-case) → category ids, for every crawled page and URL autofill. */
+    schemaTypeMap: z.record(z.string()),
+  }),
+  submissions: z.object({
+    /** URL autofill on the add-event form (planned as a paid add-on; off in the PoC). */
+    autofill: z.boolean(),
+    /** Show user submissions on the map (as unverified) before a moderator approves them. */
+    publishBeforeModeration: z.boolean(),
+    /** Devices that must report an event as off (cancelled, venue closed…) before everyone sees it. */
+    flagThreshold: z.number().int().min(1),
+    maxPerDevicePerDay: z.number().int().positive(),
+    autofillPerHourPerClient: z.number().int().positive(),
+    reportsPerDayPerDevice: z.number().int().positive(),
+    maxDescriptionChars: z.number().int().positive(),
+  }),
+  legal: z.object({
+    /** Takedown / DSA notice contact shown on the About page. */
+    contactEmail: z.string().email().nullable(),
   }),
   ingest: z.object({
     descriptionMaxChars: z.number().int().positive(),
@@ -121,6 +201,9 @@ export const sourceSchema = z.object({
   categoryMap: z.record(z.string()).default({}),
   /** Categories used when no label maps. */
   defaultCategories: z.array(z.string()).default(['other']),
+  /** Crawled pages: facts only. Store the page's description / images only where allowed. */
+  republishDescription: z.boolean().default(true),
+  republishImages: z.boolean().default(true),
 });
 export const sourcesConfigSchema = z.object({ sources: z.array(sourceSchema) });
 

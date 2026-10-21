@@ -23,7 +23,7 @@ concurrency:
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
@@ -31,6 +31,8 @@ jobs:
       MEETUP_MEMBER_ID: ${{ secrets.MEETUP_MEMBER_ID }}
       MEETUP_SIGNING_KEY_ID: ${{ secrets.MEETUP_SIGNING_KEY_ID }}
       MEETUP_PRIVATE_KEY: ${{ secrets.MEETUP_PRIVATE_KEY }}
+      # LLM fallback for crawled pages without structured data (sources with llmFallback).
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       SOURCE: ${{ inputs.source }}
       FORCE: ${{ inputs.force && '1' || '' }}
     steps:

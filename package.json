@@ -17,10 +17,12 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:reset": "tsx scripts/migrate.ts --reset && tsx scripts/seed.ts",
     "test:db": "vitest run --root scripts --no-file-parallelism",
-    "ingest": "tsx packages/ingest/src/cli.ts"
+    "ingest": "tsx packages/ingest/src/cli.ts",
+    "deploy": "pnpm --filter @happow/web build && wrangler deploy"
   },
   "devDependencies": {
     "@happow/core": "workspace:*",
+    "@happow/extract": "workspace:*",
     "@happow/ingest": "workspace:*",
     "@types/node": "^22.10.0",
     "@types/pg": "^8.15.0",
@@ -29,6 +31,7 @@
     "prettier": "^3.6.0",
     "tsx": "^4.20.0",
     "typescript": "~5.9.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "wrangler": "4.151.3"
   }
 }

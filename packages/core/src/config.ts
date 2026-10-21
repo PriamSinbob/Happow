@@ -60,6 +60,12 @@ export function loadConfig(): HappowConfig {
       if (label !== label.toLowerCase())
         errors.push(`source "${s.id}" categoryMap key "${label}" must be lower-case`);
   }
+  for (const [type, c] of Object.entries(app.extraction.schemaTypeMap))
+    if (!categoryIds.has(c))
+      errors.push(`extraction.schemaTypeMap maps "${type}" to unknown category "${c}"`);
+  const widest = Math.max(...app.refresh.areaRadiiM);
+  if (widest < Math.max(app.radius.maxM, app.density.searchRadiusM))
+    errors.push('refresh.areaRadiiM must cover radius.maxM and density.searchRadiusM');
   for (const r of regions) {
     for (const s of r.enabledSources)
       if (!sources.some((src) => src.id === s))

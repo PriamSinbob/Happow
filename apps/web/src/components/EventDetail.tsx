@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import type { NearbyEvent } from '@happow/core';
+import { FLAG_REASONS, type FlagReason, type NearbyEvent } from '@happow/core';
 import { config } from '../config';
-import { formatAgo, formatDay, formatTime, isSameDay, navigationUrl } from '../format';
+import { formatAgo, formatDay, formatTime, isSameDay } from '../format';
 import { eventUrl } from '../hooks/useHashRoute';
 import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
-import { CategoryIcon, useEventText } from './EventMeta';
+import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
 import { RuleList } from './EventCard';
 import { Icon } from './Icons';
+import { ReportDialog } from './ReportDialog';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
 
@@ -18,6 +19,10 @@ interface Props {
   saved: boolean;
   onToggleSave: () => void;
   onClose: () => void;
+  /** A status report from this device, so the warning shows here before the next reload. */
+  onReported: (id: string, reason: FlagReason) => void;
+  /** Opens "Going there" (route inside the app). */
+  onGo: () => void;
 }
 
 /** Wall-clock midnight to midnight: a day-long listing (exhibitions, fairs). */
@@ -32,7 +37,16 @@ function isDayLong(ev: NearbyEvent): boolean {
   return !ev.endEstimated && midnight(ev.startAt) && midnight(ev.endAt);
 }
 
-export function EventDetail({ ev, loading, now, saved, onToggleSave, onClose }: Props) {
+export function EventDetail({
+  ev,
+  loading,
+  now,
+  saved,
+  onToggleSave,
+  onClose,
+  onReported,
+  onGo,
+}: Props) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
 
@@ -63,7 +77,14 @@ export function EventDetail({ ev, loading, now, saved, onToggleSave, onClose }: 
         </button>
       </header>
       {ev ? (
-        <DetailBody ev={ev} now={now} saved={saved} onToggleSave={onToggleSave} />
+        <DetailBody
+          ev={ev}
+          now={now}
+          saved={saved}
+          onToggleSave={onToggleSave}
+          onReported={onReported}
+          onGo={onGo}
+        />
       ) : (
         <p className="detail__empty" id="detail-title" aria-live="polite">
           {loading ? t('event.loading') : t('event.notFound')}
@@ -78,15 +99,20 @@ function DetailBody({
   now,
   saved,
   onToggleSave,
+  onReported,
+  onGo,
 }: {
   ev: NearbyEvent;
   now: Date;
   saved: boolean;
   onToggleSave: () => void;
+  onReported: Props['onReported'];
+  onGo: () => void;
 }) {
   const { t, lang } = useI18n();
   const { running, price, distance, walk, categories } = useEventText(ev, now);
   const [toast, setToast] = useState<string | null>(null);
+  const [reporting, setReporting] = useState(false);
   const url = eventUrl(ev.id);
   const ended = new Date(ev.endAt) < now;
   const dayLong = isDayLong(ev);
@@ -135,9 +161,13 @@ function DetailBody({
         <div className="event-card__cats">
           {categories.map((c) => c.labels[lang]).join(' · ')}
           <span className={`badge badge--${ev.trust}`}>{t(`event.source.${ev.trust}`)}</span>
+          {ev.verified === false && (
+            <span className="badge badge--unverified">{t('event.unverified')}</span>
+          )}
         </div>
         <h1 id="detail-title">{ev.title}</h1>
 
+        <FlagNotice ev={ev} now={now} />
         {ev.status !== 'scheduled' && (
           <p className={`status-banner status-banner--${ev.status}`}>{t(`event.${ev.status}`)}</p>
         )}
@@ -189,14 +219,9 @@ function DetailBody({
         </ul>
 
         <div className="event-card__actions">
-          <a
-            className="btn btn--primary"
-            href={navigationUrl(ev.point.lat, ev.point.lng)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <Icon name="navigate" size={16} /> {t('event.navigate')}
-          </a>
+          <GoButtons ev={ev} onGo={onGo} />
+        </div>
+        <div className="event-card__actions event-card__actions--links">
           {ev.ticketUrl && (
             <a className="btn" href={ev.ticketUrl} target="_blank" rel="noreferrer">
               <Icon name="ticket" size={16} /> {t('event.tickets')}
@@ -259,7 +284,22 @@ function DetailBody({
             </>
           )}
         </p>
+        <button type="button" className="report-link" onClick={() => setReporting(true)}>
+          <Icon name="flag" size={16} /> {t('event.report')}
+        </button>
       </div>
+      {reporting && (
+        <ReportDialog
+          eventId={ev.id}
+          onClose={() => setReporting(false)}
+          onSent={(reason) => {
+            setReporting(false);
+            const status = (FLAG_REASONS as readonly string[]).includes(reason);
+            if (status) onReported(ev.id, reason as FlagReason);
+            setToast(t(status ? 'report.thanksFlag' : 'report.thanks'));
+          }}
+        />
+      )}
       {toast && (
         <div className="toast" role="status">
           {toast}

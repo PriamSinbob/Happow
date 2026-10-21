@@ -18,6 +18,8 @@ export interface NormalizeContext {
   densityResolution?: number;
   descriptionMaxChars: number;
   now: Date;
+  /** Labels every source understands (schema.org event types), under the source's own map. */
+  sharedCategoryMap?: Record<string, string>;
 }
 
 export type RejectReason = 'no-title' | 'bad-date' | 'no-location' | 'outside-region';
@@ -44,7 +46,11 @@ export function normalize(p: ParsedEvent, ctx: NormalizeContext): NormalizeResul
   if (!point) return reject('no-location');
   if (!isInBbox(point, ctx.region.bbox)) return reject('outside-region');
 
-  const categoryIds = mapCategories(p.categoryLabels, ctx.source);
+  const known = new Set(ctx.categories.map((c) => c.id));
+  const direct = (p.categoryIds ?? []).filter((c) => known.has(c));
+  const categoryIds = direct.length
+    ? direct
+    : mapCategories(p.categoryLabels, ctx.source, ctx.sharedCategoryMap);
   const durations = new Map(ctx.categories.map((c) => [c.id, c.defaultDurationMin]));
   const { endAt, endEstimated } = resolveEnd(start, end, categoryIds, (c) => durations.get(c));
 
@@ -65,7 +71,10 @@ export function normalize(p: ParsedEvent, ctx: NormalizeContext): NormalizeResul
   const event: HappowEvent = {
     id: `${ctx.source.id}:${p.externalId}`,
     title,
-    description: p.description ? truncate(stripHtml(p.description), ctx.descriptionMaxChars) : null,
+    description:
+      p.description && ctx.source.republishDescription
+        ? truncate(stripHtml(p.description), ctx.descriptionMaxChars)
+        : null,
     categoryIds,
     startAt: start.toISOString(),
     endAt: endAt.toISOString(),
@@ -86,10 +95,10 @@ export function normalize(p: ParsedEvent, ctx: NormalizeContext): NormalizeResul
     rules: p.rules,
     officialUrl: p.officialUrl,
     ticketUrl: p.ticketUrl,
-    imageUrl: p.imageUrl,
+    imageUrl: ctx.source.republishImages ? p.imageUrl : null,
     status: p.status,
     trust: ctx.source.trustLevel,
-    confidence: 1,
+    confidence: p.confidence ?? 1,
     lastSeenAt: nowIso,
   };
   const staleAfter = ctx.source.maxCacheAgeHours
@@ -114,11 +123,18 @@ export function normalize(p: ParsedEvent, ctx: NormalizeContext): NormalizeResul
  * second category next to its genre ("Fine Art"). "other" is dropped when anything more specific
  * matched; nothing matched → the source default.
  */
-export function mapCategories(classifications: string[][], source: Source): string[] {
+export function mapCategories(
+  classifications: string[][],
+  source: Source,
+  shared: Record<string, string> = {},
+): string[] {
   const out: string[] = [];
   for (const labels of classifications) {
     const id = labels
-      .map((l) => source.categoryMap[l.trim().toLowerCase()])
+      .map((l) => {
+        const key = l.trim().toLowerCase();
+        return source.categoryMap[key] ?? shared[key];
+      })
       .find((c): c is string => !!c);
     if (id && !out.includes(id)) out.push(id);
   }

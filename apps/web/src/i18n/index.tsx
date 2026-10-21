@@ -45,10 +45,12 @@ export function detectLanguage(supported: Language[], fallback: Language): Langu
   return fallback;
 }
 
+export type Translate = (key: MessageKey, params?: Params) => string;
+
 interface I18n {
   lang: Language;
   setLang: (l: Language) => void;
-  t: (key: MessageKey, params?: Params) => string;
+  t: Translate;
 }
 
 const Ctx = createContext<I18n | null>(null);

@@ -33,7 +33,8 @@ export class HttpClient {
   private readonly sleep: (ms: number) => Promise<void>;
 
   constructor(private readonly opts: HttpOptions) {
-    this.fetchImpl = opts.fetch ?? fetch;
+    // Through a closure: the global fetch must not be called as a method (Workers, some runtimes).
+    this.fetchImpl = (input, init) => (opts.fetch ?? globalThis.fetch)(input, init);
     this.sleep = opts.sleep ?? defaultSleep;
   }
 

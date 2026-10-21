@@ -94,7 +94,7 @@ Ruled out: Eventbrite (public search shut off in February 2020; only lookups by 
 
 ## Architecture and stack
 
-For the PoC everything runs on free tiers: the PWA on Cloudflare Pages, Postgres + PostGIS on Supabase, and ingestion as scheduled GitHub Actions jobs. Code stays plain TypeScript on standard Postgres, so moving to a VPS later is a deploy change, not a rewrite. Development happens in Claude Code sessions on the GitHub repo; GitHub is where code lives, not where the app runs.
+For the PoC everything runs on free tiers: the PWA and its small API on Cloudflare Workers, Postgres + PostGIS on Supabase, and ingestion as scheduled GitHub Actions jobs. Code stays plain TypeScript on standard Postgres, so moving to a VPS later is a deploy change, not a rewrite. Development happens in Claude Code sessions on the GitHub repo; GitHub is where code lives, not where the app runs.
 
 ```mermaid
 flowchart LR
@@ -116,8 +116,8 @@ flowchart LR
 
 | Layer | PoC choice (free) | Scale-up path |
 | --- | --- | --- |
-| Client | React + Vite PWA, MapLibre GL, OSM-based tiles, hosted on Cloudflare Pages | Same, plus a Capacitor wrapper for store apps |
-| API | Supabase auto-generated REST + Postgres functions for geo queries (events near point, hotspots); one Edge Function for URL-autofill extraction | Node + Fastify container behind a CDN |
+| Client | React + Vite PWA, MapLibre GL, OSM-based tiles, hosted on Cloudflare Workers (static assets) | Same, plus a Capacitor wrapper for store apps |
+| API | Supabase auto-generated REST + Postgres functions for geo queries (events near point, hotspots); write endpoints (URL autofill, submissions, reports, moderation) as one Cloudflare Worker on the PWA's origin, calling service-role-only Postgres functions (M4: chosen over a Supabase Edge Function so it shares the monorepo's TypeScript and needs no CORS) | Node + Fastify container behind a CDN |
 | Workers | GitHub Actions scheduled workflows, one job per adapter group, writing to Supabase. Free plan gives 2,000 min/month on private repos, unlimited on public ([GitHub](https://docs.github.com/en/billing/concepts/product-billing/github-actions)); a 1-min run every 30 min uses about 1,440 min | BullMQ on Redis on a VPS |
 | Storage | Supabase Free: 500 MB Postgres, pauses after 1 week without activity ([Supabase](https://supabase.com/pricing)); scheduled ingestion keeps it busy. H3 indexes computed in code (h3-js) and stored as columns | Supabase Pro ($25/mo, 8 GB, no pause) or self-hosted Postgres |
 | LLM extraction | Claude Haiku 5.5 behind an `Extractor` interface: $0.10 in / $0.50 out per million tokens, half that via the Batch API ([pricing](https://platform.claude.com/docs/en/about-claude/pricing)) | Same model; volume discounts if needed |
@@ -199,6 +199,48 @@ Idea: weather at the spot now and at the event's end hour, plus a warning chip w
 
 Cost control: fetch weather per H3 cell (resolution 7, about 5 km²) and cache it for 30 min, not per event. A city-sized PoC then needs a few hundred calls per day, well inside every free tier. Run it as a scheduled job next to ingestion, since MET Norway requires an identifying User-Agent that browsers cannot send; keep the provider behind a `WeatherProvider` interface and show CC BY 4.0 attribution.
 
+### Automation add-on (paid): URL autofill
+
+Decided 2026-10-21: in the PoC, people add events by hand. Pasting a link to fill the form (schema.org data, Claude Haiku for pages without it) becomes part of a low-priced subscription for organisers and power users, priced to cover the AI cost per account. The code is built (M4) and switched off with `submissions.autofill: false`. Turning it on as an add-on needs:
+
+- **Accounts and entitlement:** a signed-in user with an active subscription (Supabase Auth plus a payments provider such as Stripe or Przelewy24), checked by `/api/autofill`.
+- **Per-account quota** instead of the global daily cap (`extraction.autofillLlmPerDay`), for example 100 links a month, with usage shown to the user.
+- **Cost model:** about $0.0005–0.001 per page at Haiku 5.5 rates, so even 500 autofills a month cost under $0.50 per account.
+- **Possible extras:** recurring imports from an organiser's own events page, and bulk add from a calendar feed (iCal).
+
+### Plan ahead: a "Later" window
+
+Requested 2026-10-21. The PoC is about what is on now and today. The full app should also handle events further ahead:
+- **A "Later" time filter** next to Now / 2 h / 6 h / Today, with a date picker for "this weekend" or a chosen evening.
+- **Saved and accepted events in one agenda.** This includes invitations to private events once those exist.
+- **An evening queue:** several events in a row, with walking times between them and a warning when two overlap or one ends too late to make the next.
+- **Reminders** before an event starts (web push from the installed PWA).
+
+What it needs: a time window that is not tied to "now" (the area snapshot already supports configurable hours, `refresh.areaHours`), a "Saved" list (saved events already exist per device), and accounts once agendas should sync across devices.
+
+### Walking routes at scale
+
+The PoC draws in-app routes with openrouteservice's free Standard plan (2,000 routes a day). Most people use the Google Maps button, which costs nothing, so the quota covers a city comfortably. When it doesn't:
+- **Hosted alternatives:** Geoapify (3,000 a day free, commercial use allowed) or Mapbox (100,000 a month free, then $2 per 1,000).
+- **Self-hosting** an open-source engine on Hetzner: Valhalla for Poland on a CX33/CX43 (€8.49–15.99 a month), all of Europe on 32–64 GB (€29–57 a month).
+  - Traffic barely changes the cost: a walking route takes milliseconds of CPU, and a small server answers hundreds a second. The map data in memory sets the size.
+  - OSM data is rebuilt weekly or monthly by a scheduled job.
+- The routing provider is config (`navigation.routing`), so switching is a small adapter, not a rewrite.
+
+### Organiser updates on the event page
+
+Requested 2026-10-21. The event page gets a small feed of short posts from the event's organiser, for example "Happy hour until 20:00", "Start moved to 19:30", "Entrance from Ruska street only" or "Bring ID, bag checks at the door".
+
+- **Who can post:** a verified organiser of that event. That means organiser accounts plus a way to claim an event, such as a code sent to the email or site in the listing, or moderator approval.
+- **Post types:**
+  - **Schedule change.** It updates the event's own time or status, so the map, list and calendar stay right.
+  - **Safety / important.** Pinned to the top, with a highlighted style.
+  - **Promo / info.** Normal posts.
+- **Reaching people:** people who saved the event see a badge in the app. Web push notifications come later (on iOS they need the installed PWA).
+- **Paid tier:** promos and extra posts are part of the organiser subscription. Schedule changes and safety notices should stay free, because they protect visitors and keep the map accurate.
+- **Moderation:** posts can be reported like events, with a length limit and no external images in the PoC.
+- **Battery and data:** posts load with the event's detail view, not with the map, so they add no background traffic.
+
 ### Private events with invitations
 
 Requested 2026-10-20. An organiser can mark an event as **private**: it is visible on the map, in the list and by link only to the people they invited. Everything public keeps working without an account.
@@ -216,5 +258,12 @@ Requested 2026-10-20. An organiser can mark an event as **private**: it is visib
 - [ ] Contact Wrocław city (ARAW) about an events feed or partnership?
 - [ ] Which Instagram Business account will run the hashtag adapter, and which 30 hashtags?
 - [ ] Is Facebook public-page crawling in scope at all, after a legal opinion under Polish/EU law?
-- [ ] Brand name check: "Happening Now" domain and store-name availability.
+- [ ] Brand name: search HAPPOW / HAPPO / HAPOW in TMview (EUIPO + UPRP), WIPO Brand DB and IP Australia; consider filing "Happow" (classes 9, 35, 41, 42). happow.com is an Australian youth eLearning company (HAPPOW PTY LTD); a US "HAPPOW" mark exists in class 28 only.
+- [ ] Domain and email: register happow.app (Cloudflare Registrar) and happow.pl (Polish registrar), forward a contact address with Cloudflare Email Routing, set `legal.contactEmail`.
+
+## Before public launch (to-do)
+
+- [ ] **Legal texts** (Claude to draft when the app is feature-complete): terms of use, privacy policy (GDPR: hashed device ids, performer/organiser names under legitimate interest, art. 14 notice), takedown procedure, cookie/storage note. Replace the draft bullets on the About page.
+- [ ] **Crawl permissions:** email eBilet for written consent or a partner feed (source paused until then); email ARAW (wroclaw.pl/go) for consent or a feed; courtesy email to NFM. Crawler policy is public in `docs/CRAWLER.md`.
+- [ ] **Crawler politeness:** conditional requests (ETag / If-Modified-Since), skip unchanged detail pages, respect TDM reservations (`/.well-known/tdmrep.json`, `tdm-reservation` meta) before sending page text to the LLM, add the contact email to the User-Agent.
 - [ ] Under the Plumbi umbrella or standalone?

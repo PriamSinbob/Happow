@@ -6,6 +6,14 @@ import {
   type Region,
   type Source,
 } from '@happow/core';
+import {
+  MemoryCache,
+  PRECISION_CONFIDENCE,
+  type ExtractedEvent,
+  type Extractor,
+  type Geocoder,
+  type KeyValueCache,
+} from '@happow/extract';
 import { adapters } from './adapters/index.js';
 import { sourceRanker } from './dedup.js';
 import { HttpClient, redact } from './http.js';
@@ -27,6 +35,11 @@ export interface IngestOptions {
   sleep?: (ms: number) => Promise<void>;
   onResponse?: (sourceId: string, url: string, body: string) => void;
   log?: (msg: string) => void;
+  /** Address lookup for sources without coordinates; null = such events are rejected. */
+  geocoder?: Geocoder | null;
+  /** LLM extraction for crawled pages without structured data; null = off. */
+  extractor?: Extractor | null;
+  extractionCache?: KeyValueCache<ExtractedEvent[]>;
 }
 
 export interface SourceRunSummary {
@@ -37,9 +50,11 @@ export interface SourceRunSummary {
   fetched?: number;
   dropped?: number;
   rejected?: Partial<Record<RejectReason, number>>;
+  geocoded?: number;
   inserted?: number;
   updated?: number;
   merged?: number;
+  queued?: number;
   events?: NormalizedEvent[];
 }
 
@@ -74,6 +89,8 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
   const log = opts.log ?? console.log;
   const rank = sourceRanker(config.sources);
   const summaries: SourceRunSummary[] = [];
+  // New sources and regions in config must exist before their events are written.
+  if (store) await store.syncConfig(config);
 
   for (const { region, source } of plannedRuns(config)) {
     if (opts.regionIds?.length && !opts.regionIds.includes(region.id)) continue;
@@ -110,19 +127,21 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
             regionId: region.id,
             rank,
             dedup: config.app.dedup,
+            minConfidence: config.app.extraction.minConfidence,
           })
-        : { inserted: 0, updated: 0, merged: 0 };
+        : { inserted: 0, updated: 0, merged: 0, queued: 0 };
       const stats = {
         fetched: result.raws.length,
         dropped: result.dropped,
+        geocoded: result.geocoded,
         rejected: result.rejected,
         ...applied,
       };
       if (runId !== null) await store!.finishRun(runId, 'ok', stats);
       log(
         `✓ ${source.id}@${region.id}: fetched ${stats.fetched}, inserted ${stats.inserted}, ` +
-          `updated ${stats.updated}, merged ${stats.merged}, dropped ${stats.dropped}, ` +
-          `rejected ${JSON.stringify(stats.rejected)}`,
+          `updated ${stats.updated}, merged ${stats.merged}, queued ${stats.queued}, ` +
+          `geocoded ${stats.geocoded}, dropped ${stats.dropped}, rejected ${JSON.stringify(stats.rejected)}`,
       );
       summaries.push({ ...base, status: 'ok', ...stats, events: result.events });
     } catch (err) {
@@ -146,9 +165,10 @@ async function runSource(
   raws: RawEvent[];
   events: NormalizedEvent[];
   dropped: number;
+  geocoded: number;
   rejected: Partial<Record<RejectReason, number>>;
 }> {
-  const { ingest, h3 } = config.app;
+  const { ingest, h3, extraction } = config.app;
   const http = new HttpClient({
     userAgent: ingest.userAgent,
     minIntervalMs: source.rateLimit ? rateLimitIntervalMs(source.rateLimit) : 0,
@@ -160,20 +180,52 @@ async function runSource(
     from: new Date(now.getTime() - ingest.lookbackHours * 3_600_000),
     to: new Date(now.getTime() + ingest.lookaheadHours * 3_600_000),
   };
-  const raws = await adapter.fetch({ source, region, window, http, env: opts.env, now });
+  const raws = await adapter.fetch({
+    source,
+    region,
+    window,
+    http,
+    env: opts.env,
+    now,
+    services: {
+      extractor: opts.extractor ?? null,
+      extractionCache: opts.extractionCache ?? new MemoryCache(),
+      categories: config.categories,
+      userAgent: ingest.userAgent,
+      maxInputChars: extraction.maxInputChars,
+      maxPageBytes: extraction.maxPageBytes,
+    },
+  });
 
   const categories: Category[] = config.categories;
   const events: NormalizedEvent[] = [];
   const rejected: Partial<Record<RejectReason, number>> = {};
   let dropped = 0;
+  let geocoded = 0;
   const seen = new Set<string>();
   for (const raw of raws) {
     if (seen.has(raw.externalId)) continue; // overlapping pages
     seen.add(raw.externalId);
-    const parsed = adapter.parse(raw, { source, region });
+    let parsed = adapter.parse(raw, { source, region });
     if (!parsed) {
       dropped++;
       continue;
+    }
+    // Pipeline step 4: places without coordinates are geocoded; a coarse match lowers confidence.
+    if (!parsed.point && !parsed.venue?.point && parsed.locationQuery && opts.geocoder) {
+      const hit = await opts.geocoder.geocode(
+        { ...parsed.locationQuery, countryCode: region.countryCode },
+        region.bbox,
+      );
+      if (hit) {
+        geocoded++;
+        parsed = {
+          ...parsed,
+          point: hit.point,
+          venue: parsed.venue && { ...parsed.venue, point: hit.point },
+          confidence: (parsed.confidence ?? 1) * PRECISION_CONFIDENCE[hit.precision],
+        };
+      }
     }
     const res = normalize(parsed, {
       source,
@@ -183,9 +235,10 @@ async function runSource(
       densityResolution: h3.densityResolution,
       descriptionMaxChars: ingest.descriptionMaxChars,
       now,
+      sharedCategoryMap: extraction.schemaTypeMap,
     });
     if (res.ok) events.push(res.value);
     else rejected[res.reason] = (rejected[res.reason] ?? 0) + 1;
   }
-  return { raws, events, dropped, rejected };
+  return { raws, events, dropped, geocoded, rejected };
 }

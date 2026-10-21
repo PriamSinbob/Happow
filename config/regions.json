@@ -9,6 +9,8 @@
       "timezone": "Europe/Warsaw",
       "locale": "pl",
       "countryCode": "PL",
+      "localities": ["Wrocław"],
+      "currency": "PLN",
       "center": {
         "lat": 51.1101,
         "lng": 17.0326
@@ -20,7 +22,15 @@
         "east": 17.176,
         "north": 51.211
       },
-      "enabledSources": ["seed", "ticketmaster", "meetup"],
+      "enabledSources": [
+        "seed",
+        "ticketmaster",
+        "meetup",
+        "ebilet",
+        "wroclaw-go",
+        "nfm",
+        "submissions"
+      ],
       "seedFile": "data/seed/wroclaw.events.json"
     }
   ]

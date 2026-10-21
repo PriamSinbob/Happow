@@ -6,6 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { loadConfig } from '@happow/core';
 import { h3Cell, materializeSeed, seedVenues } from '@happow/core/seed';
+import { EventStore } from '@happow/ingest';
 import { withClient } from './db.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -15,55 +16,7 @@ const now = new Date();
 await withClient(async (db) => {
   await db.query('begin');
   try {
-    for (const r of config.regions) {
-      const { west: w, south: s, east: e, north: n } = r.bbox;
-      await db.query(
-        `insert into regions (id, name, timezone, center, polygon, enabled_sources, updated_at)
-         values ($1, $2, $3, st_point($4, $5)::geography,
-                 st_geomfromtext($6, 4326)::geography, $7, now())
-         on conflict (id) do update set name = excluded.name, timezone = excluded.timezone,
-           center = excluded.center, polygon = excluded.polygon,
-           enabled_sources = excluded.enabled_sources, updated_at = now()`,
-        [
-          r.id,
-          r.name,
-          r.timezone,
-          r.center.lng,
-          r.center.lat,
-          `POLYGON((${w} ${s}, ${e} ${s}, ${e} ${n}, ${w} ${n}, ${w} ${s}))`,
-          r.enabledSources,
-        ],
-      );
-    }
-    for (const [i, c] of config.categories.entries()) {
-      await db.query(
-        `insert into categories (id, labels, default_duration_min, icon, color, sort_order)
-         values ($1, $2, $3, $4, $5, $6)
-         on conflict (id) do update set labels = excluded.labels,
-           default_duration_min = excluded.default_duration_min, icon = excluded.icon,
-           color = excluded.color, sort_order = excluded.sort_order`,
-        [c.id, c.labels, c.defaultDurationMin, c.icon, c.color, i],
-      );
-    }
-    for (const s of config.sources) {
-      await db.query(
-        `insert into sources (id, adapter, region_ids, schedule, rate_limit, trust_level, enabled, terms_notes)
-         values ($1, $2, $3, $4, $5, $6, $7, $8)
-         on conflict (id) do update set adapter = excluded.adapter, region_ids = excluded.region_ids,
-           schedule = excluded.schedule, rate_limit = excluded.rate_limit,
-           trust_level = excluded.trust_level, enabled = excluded.enabled, terms_notes = excluded.terms_notes`,
-        [
-          s.id,
-          s.adapter,
-          s.regionIds,
-          s.schedule,
-          s.rateLimit,
-          s.trustLevel,
-          s.enabled,
-          s.termsNotes,
-        ],
-      );
-    }
+    await new EventStore(db).syncConfig(config);
 
     // Replace previous seed events so offsets re-anchor to now.
     await db.query(

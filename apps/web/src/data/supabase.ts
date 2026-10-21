@@ -1,18 +1,24 @@
-import type {
-  DensityCluster,
-  DensityQuery,
-  EventQuery,
-  EventStatus,
-  LatLng,
-  NearbyEvent,
-  Trust,
+import {
+  FLAG_REASONS,
+  type DensityCluster,
+  type DensityQuery,
+  type EventQuery,
+  type EventStatus,
+  type FlagReason,
+  type LatLng,
+  type NearbyEvent,
+  type Trust,
 } from '@happow/core';
 import type { EventRepository } from './repository';
 
-interface Row {
+const isFlagReason = (r: string): r is FlagReason =>
+  (FLAG_REASONS as readonly string[]).includes(r);
+
+/** A row from events_near / event_by_id, or a compact events_area row (no long fields). */
+export interface Row {
   id: string;
   title: string;
-  description: string | null;
+  description?: string | null;
   category_ids: string[];
   start_at: string;
   end_at: string;
@@ -22,6 +28,10 @@ interface Row {
   venue_name: string | null;
   venue_address: string | null;
   venue_website?: string | null;
+  verified?: boolean;
+  flag_reason?: string | null;
+  flag_count?: number;
+  flag_at?: string | null;
   lat: number;
   lng: number;
   h3_r9: string;
@@ -32,7 +42,8 @@ interface Row {
   rules: NearbyEvent['rules'];
   official_url: string | null;
   ticket_url: string | null;
-  image_url: string | null;
+  image_url?: string | null;
+  density_cell?: string | null;
   status: EventStatus;
   trust: Trust;
   confidence: number;
@@ -74,7 +85,7 @@ export function rowToEvent(r: Row): NearbyEvent {
   return {
     id: r.id,
     title: r.title,
-    description: r.description,
+    description: r.description ?? null,
     categoryIds: r.category_ids,
     startAt: r.start_at,
     endAt: r.end_at,
@@ -90,6 +101,7 @@ export function rowToEvent(r: Row): NearbyEvent {
       : null,
     point: { lat: r.lat, lng: r.lng },
     h3r9: r.h3_r9,
+    ...(r.density_cell && { densityCell: r.density_cell }),
     priceMin: num(r.price_min),
     priceMax: num(r.price_max),
     currency: r.currency,
@@ -97,13 +109,18 @@ export function rowToEvent(r: Row): NearbyEvent {
     rules: r.rules ?? {},
     officialUrl: r.official_url,
     ticketUrl: r.ticket_url,
-    imageUrl: r.image_url,
+    imageUrl: r.image_url ?? null,
     status: r.status,
     trust: r.trust,
     confidence: r.confidence,
     lastSeenAt: r.last_seen_at,
     sourceId: r.primary_source_id ?? null,
     sourceUrl: r.source_url ?? null,
+    verified: r.verified ?? true,
+    flag:
+      r.flag_count && r.flag_reason && r.flag_at && isFlagReason(r.flag_reason)
+        ? { reason: r.flag_reason, count: r.flag_count, at: r.flag_at }
+        : null,
     distanceM: r.distance_m ?? 0,
   };
 }
@@ -122,7 +139,8 @@ export class SupabaseEventRepository implements EventRepository {
       signal,
       headers: {
         apikey: this.anonKey,
-        Authorization: `Bearer ${this.anonKey}`,
+        // Legacy anon keys are JWTs; new sb_publishable_ keys go in apikey only.
+        ...(this.anonKey.startsWith('eyJ') && { Authorization: `Bearer ${this.anonKey}` }),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),

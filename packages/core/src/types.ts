@@ -60,6 +60,22 @@ export interface HappowEvent {
   /** The source whose listing fills the primary fields, and that listing's page. */
   sourceId?: string | null;
   sourceUrl?: string | null;
+  /** False for community submissions no moderator has checked yet. */
+  verified?: boolean;
+  /** Open community reports that the event is off or changed, not yet confirmed by a moderator. */
+  flag?: EventFlag | null;
+}
+
+/** Report reasons that say an event is off or changed; shown to everyone as a warning. */
+export const FLAG_REASONS = ['cancelled', 'venue_closed', 'weather', 'moved'] as const;
+export type FlagReason = (typeof FLAG_REASONS)[number];
+
+export interface EventFlag {
+  reason: FlagReason;
+  /** Devices with an open report of this kind. */
+  count: number;
+  /** Latest report, ISO 8601. */
+  at: string;
 }
 
 /** An event plus its distance from the query point. */

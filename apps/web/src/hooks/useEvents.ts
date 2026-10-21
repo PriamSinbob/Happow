@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   windowRange,
   type DensityCluster,
@@ -18,11 +18,13 @@ export interface EventsState {
   now: Date;
 }
 
-const REFRESH_MS = 60_000;
-
 /**
  * Events overlapping the time window (region timezone) within `radiusM` of `center`, filtered,
  * plus density clusters within `searchRadiusM` for hints beyond the circle.
+ *
+ * Re-evaluated when the query changes and when the minute clock moves. The repository decides
+ * whether that needs the network: the area repository answers from its cached snapshot and
+ * downloads only when the refresh step (5 min) has passed or the user left the area.
  */
 export function useEvents(
   repo: EventRepository,
@@ -32,40 +34,34 @@ export function useEvents(
   timeWindow: TimeWindow,
   filters: EventFilters,
   searchRadiusM: number,
+  now: Date,
 ): EventsState {
   const [state, setState] = useState<EventsState>({
     events: [],
     clusters: [],
     loading: true,
     error: false,
-    now: new Date(),
+    now,
   });
-  const [tick, setTick] = useState(0);
 
-  // GPS jitters; only refetch when the user has moved ~20 m.
-  const lat = Math.round(center.lat * 5000) / 5000;
-  const lng = Math.round(center.lng * 5000) / 5000;
   const categoryKey = [...filters.categories].sort().join(',');
   const query = useMemo(
     () => ({
-      center: { lat, lng },
+      center,
       radiusM,
       categories: categoryKey ? categoryKey.split(',') : [],
       price: filters.price,
     }),
-    [lat, lng, radiusM, categoryKey, filters.price],
+    [center, radiusM, categoryKey, filters.price],
   );
-
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), REFRESH_MS);
-    return () => clearInterval(id);
-  }, []);
+  // A new question shows "loading"; the minute clock re-evaluating the same one does not.
+  const shown = useRef<object | null>(null);
 
   useEffect(() => {
     const ctrl = new AbortController();
+    const fresh = shown.current !== query || shown.current === null;
     const timer = setTimeout(async () => {
-      const now = new Date();
-      setState((s) => ({ ...s, loading: true }));
+      if (fresh) setState((s) => ({ ...s, loading: true }));
       try {
         const q = { ...query, ...windowRange(timeWindow, now, timeZone) };
         const [events, clusters] = await Promise.all([
@@ -78,6 +74,8 @@ export function useEvents(
               return [] as DensityCluster[];
             }),
         ]);
+        if (ctrl.signal.aborted) return;
+        shown.current = query;
         setState({ events, clusters, loading: false, error: false, now });
       } catch (err) {
         if (ctrl.signal.aborted) return;
@@ -89,7 +87,7 @@ export function useEvents(
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [repo, query, timeZone, timeWindow, searchRadiusM, radiusM, tick]);
+  }, [repo, query, timeZone, timeWindow, searchRadiusM, radiusM, now]);
 
   return state;
 }

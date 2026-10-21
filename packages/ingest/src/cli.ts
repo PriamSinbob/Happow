@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import pg from 'pg';
 import { loadConfig } from '@happow/core';
+import { CachedGeocoder, ClaudeExtractor, MemoryCache, NominatimGeocoder } from '@happow/extract';
 import { runIngest } from './run.js';
 import { EventStore } from './store.js';
 
@@ -51,11 +52,35 @@ const onResponse = recordDir
     }
   : undefined;
 
+const store = client ? new EventStore(client) : null;
+const { geocoding, extraction, ingest } = config.app;
+const geocoder = new CachedGeocoder(
+  new NominatimGeocoder({
+    endpoint: geocoding.endpoint,
+    userAgent: ingest.userAgent,
+    minIntervalMs: geocoding.minIntervalMs,
+  }),
+  store ? store.geocodeCache(geocoding.provider, geocoding.cacheDays) : new MemoryCache(),
+);
+const apiKey = process.env[extraction.secret];
+const extractor = apiKey
+  ? new ClaudeExtractor({
+      apiKey,
+      model: extraction.model,
+      effort: extraction.effort,
+      maxInputChars: extraction.maxInputChars,
+      maxTokens: extraction.maxTokens,
+    })
+  : null;
+
 try {
   const summaries = await runIngest({
     config,
     env: process.env,
-    store: client ? new EventStore(client) : null,
+    store,
+    geocoder,
+    extractor,
+    extractionCache: extractor && store ? store.extractionCache(extractor.id) : undefined,
     sourceIds: values.source,
     regionIds: values.region,
     force: values.force || dryRun,

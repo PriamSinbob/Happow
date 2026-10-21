@@ -1,0 +1,18 @@
+// Cloudflare Workers deploy for the PWA and its /api (Workers Builds: root directory = repo root).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "happow",
+  "main": "apps/web/worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "apps/web/dist",
+    // Client-side routes (#/e/…) fall back to index.html; only /api/* runs the Worker.
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  // Workers Caching: GET responses marked public (the /api/area snapshots, 5 min, aligned to the
+  // refresh step) are answered from Cloudflare's cache, with request collapsing. Everything else
+  // the API returns is no-store or a POST, so it is never cached.
+  "cache": { "enabled": true },
+  "observability": { "enabled": true },
+}

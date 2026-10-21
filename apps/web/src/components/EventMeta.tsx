@@ -1,7 +1,8 @@
 import { isRunning, walkingMinutes, type NearbyEvent } from '@happow/core';
 import { categoriesById, config } from '../config';
-import { formatDistance, formatPrice, formatTime } from '../format';
+import { formatAgo, formatDistance, formatPrice, formatTime, navigationUrl } from '../format';
 import { useI18n } from '../i18n';
+import { Icon } from './Icons';
 
 export function useEventText(ev: NearbyEvent, now: Date) {
   const { t, lang } = useI18n();
@@ -41,5 +42,71 @@ export function CategoryIcon({ ev, size = 40 }: { ev: NearbyEvent; size?: number
     >
       {cat?.icon ?? '📍'}
     </span>
+  );
+}
+
+/** Community warning ("venue reported closed · 2 people · 10 min ago"); null when there is none. */
+export function FlagNotice({
+  ev,
+  now,
+  compact = false,
+}: {
+  ev: NearbyEvent;
+  now: Date;
+  compact?: boolean;
+}) {
+  const { t, lang } = useI18n();
+  const flag = ev.flag;
+  if (!flag) return null;
+  const reported = t('flag.reported', {
+    count: flag.count,
+    ago: formatAgo(flag.at, now, lang, t('time.justNow')),
+  });
+  if (compact)
+    return (
+      <p className="flag-line" role="status">
+        <span aria-hidden>⚠</span> <strong>{t(`flag.reason.${flag.reason}`)}</strong> · {reported}
+      </p>
+    );
+  return (
+    <div className="flag-banner" role="status">
+      <span className="flag-banner__icon" aria-hidden>
+        ⚠
+      </span>
+      <div>
+        <strong>{t(`flag.reason.${flag.reason}`)}</strong>
+        <span className="flag-banner__meta">{reported}</span>
+        <span className="flag-banner__note">{t('flag.unconfirmed')}</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Getting there: a small button for the route inside Happow (live location, event updates on the
+ * way) and a wide one handing off to Google Maps, which most people prefer.
+ */
+export function GoButtons({ ev, onGo }: { ev: NearbyEvent; onGo: () => void }) {
+  const { t } = useI18n();
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn--square"
+        onClick={onGo}
+        aria-label={t('nav.inApp')}
+        title={t('nav.inApp')}
+      >
+        <Icon name="navigate" size={18} />
+      </button>
+      <a
+        className="btn btn--primary"
+        href={navigationUrl(ev.point.lat, ev.point.lng)}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {t('nav.googleMaps')}
+      </a>
+    </>
   );
 }
