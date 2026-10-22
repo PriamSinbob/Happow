@@ -56,6 +56,8 @@ export const pl: Record<MessageKey, string> = {
   'window.now': 'Teraz',
   'window.today': 'Dziś',
   'window.hours': '{hours} h',
+  'window.days': '{days} dni',
+  'summary.window.days': 'w ciągu {days} dni',
   'summary.window.now': 'trwa teraz',
   'summary.window.hours': 'w ciągu {hours} h',
   'summary.window.today': 'dziś',

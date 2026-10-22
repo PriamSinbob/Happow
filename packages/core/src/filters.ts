@@ -1,5 +1,5 @@
 import type { EventFilters, HappowEvent, TimeWindow } from './types.js';
-import { dayBounds } from './time.js';
+import { dayBounds, daysBounds } from './time.js';
 
 export const DEFAULT_FILTERS: EventFilters = { categories: [], price: 'any' };
 
@@ -25,6 +25,7 @@ export function windowRange(
   timeZone: string,
 ): { from: Date; to: Date } {
   if ('endOfDay' in window) return { from: now, to: dayBounds(now, timeZone).end };
+  if ('days' in window) return { from: now, to: daysBounds(now, timeZone, window.days).end };
   return { from: now, to: new Date(now.getTime() + window.hours * 3_600_000) };
 }
 

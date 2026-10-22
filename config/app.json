@@ -24,7 +24,8 @@
     "areaGridDeg": 0.05,
     "areaRadiiM": [5000, 10000, 25000],
     "areaHours": 24,
-    "areaMaxEvents": 1000
+    "areaMaxEvents": 1000,
+    "longCacheMinutes": 30
   },
   "navigation": {
     "routing": {
@@ -58,6 +59,14 @@
     {
       "id": "today",
       "endOfDay": true
+    },
+    {
+      "id": "week",
+      "days": 7
+    },
+    {
+      "id": "later",
+      "days": 14
     }
   ],
   "defaultTimeWindow": "today",
@@ -69,7 +78,7 @@
   "ingest": {
     "descriptionMaxChars": 600,
     "lookbackHours": 8,
-    "lookaheadHours": 48,
+    "lookaheadHours": 360,
     "userAgent": "Happow/0.4 (+https://happow.krasnoroda.workers.dev/crawler)",
     "missedRunsToFlag": 2,
     "dispatch": {

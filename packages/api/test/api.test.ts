@@ -427,6 +427,34 @@ describe('GET /api/area', () => {
     expect(web.calls).toEqual([]);
     expect((await createApi({}, { now: at })(get('lat=51.1&lng=17.05&r=5000'))).status).toBe(503);
   });
+
+  it('serves the Week and Later ranges to local midnight across the DST change, for 30 minutes', async () => {
+    const web = backend({ rpc: { events_area: () => ({ body: rows }) } });
+    const api = createApi(env, { fetch: web.fetch, now: at });
+    // 22:03 on Tue 20 Oct in Wrocław (CEST); summer time ends on Sun 25 Oct.
+    const week = await api(get('lat=51.1&lng=17.05&r=5000&range=week'));
+    expect(week.status).toBe(200);
+    expect(await week.json()).toMatchObject({
+      from: '2026-10-20T20:00:00.000Z',
+      // End of Mon 26 Oct, local midnight in CET (UTC+1), not 7 × 24 h later.
+      to: '2026-10-26T22:59:59.999Z',
+    });
+    expect(week.headers.get('cache-control')).toBe('public, max-age=1590');
+    const later = await api(get('lat=51.1&lng=17.05&r=5000&range=later'));
+    expect(await later.json()).toMatchObject({ to: '2026-11-02T22:59:59.999Z' });
+    expect(web.calls.filter((c) => c.name === 'events_area').map((c) => c.args.to_ts)).toEqual([
+      '2026-10-26T22:59:59.999Z',
+      '2026-11-02T22:59:59.999Z',
+    ]);
+  });
+
+  it('refuses ranges that are not multi-day time windows', async () => {
+    const web = backend({ rpc: { events_area: () => ({ body: [] }) } });
+    const api = createApi(env, { fetch: web.fetch, now: at });
+    for (const range of ['today', '2h', 'month', ''])
+      expect((await api(get(`lat=51.1&lng=17.05&r=5000&range=${range}`))).status).toBe(400);
+    expect(web.calls).toEqual([]);
+  });
 });
 
 describe('POST /api/route', () => {
