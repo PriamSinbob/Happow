@@ -7,12 +7,14 @@ type T = (key: MessageKey, params?: Record<string, string | number>) => string;
 
 export function windowLabel(t: T, w: TimeWindow): string {
   if ('endOfDay' in w) return t('window.today');
+  if ('days' in w) return t('window.days', { days: w.days });
   return w.hours === 0 ? t('window.now') : t('window.hours', { hours: w.hours });
 }
 
 /** Lower-case phrase for the summary line: "happening now", "next 2 h", "today". */
 export function windowSummary(t: T, w: TimeWindow): string {
   if ('endOfDay' in w) return t('summary.window.today');
+  if ('days' in w) return t('summary.window.days', { days: w.days });
   return w.hours === 0 ? t('summary.window.now') : t('summary.window.hours', { hours: w.hours });
 }
 

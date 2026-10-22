@@ -45,6 +45,9 @@ export function loadConfig(): HappowConfig {
     errors.push(`defaultTimeWindow "${app.defaultTimeWindow}" is not in timeWindows`);
   for (const d of dupes(app.timeWindows.map((w) => w.id)))
     errors.push(`duplicate time window "${d}"`);
+  for (const w of app.timeWindows)
+    if ('days' in w && w.days * 24 > app.ingest.lookaheadHours)
+      errors.push(`time window "${w.id}" reaches past ingest.lookaheadHours`);
   for (const d of dupes(sources.map((s) => s.id))) errors.push(`duplicate source "${d}"`);
   const categoryIds = new Set(categories.map((c) => c.id));
   for (const s of sources) {

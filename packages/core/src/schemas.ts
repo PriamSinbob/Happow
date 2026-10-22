@@ -39,6 +39,11 @@ export const regionsConfigSchema = z.object({ regions: z.array(regionSchema).min
 export const timeWindowSchema = z.union([
   z.object({ id: z.string().regex(/^[a-z0-9-]+$/), hours: z.number().nonnegative() }),
   z.object({ id: z.string().regex(/^[a-z0-9-]+$/), endOfDay: z.literal(true) }),
+  /**
+   * Today plus the next days − 1 calendar days in the region's time zone ("week" = 7), so every
+   * day starts and ends at local midnight, DST changes included. Served by a longer snapshot.
+   */
+  z.object({ id: z.string().regex(/^[a-z0-9-]+$/), days: z.number().int().min(1).max(60) }),
 ]);
 
 export const appConfigSchema = z.object({
@@ -95,6 +100,8 @@ export const appConfigSchema = z.object({
     areaRadiiM: z.array(z.number().positive()).min(1),
     areaHours: z.number().positive().max(48),
     areaMaxEvents: z.number().int().positive(),
+    /** Snapshot step for the multi-day windows: future events change slowly. */
+    longCacheMinutes: z.number().positive(),
   }),
   /** "Going there": in-app walking route with live location, only while the user asks for it. */
   navigation: z.object({

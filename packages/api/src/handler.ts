@@ -2,6 +2,7 @@ import {
   areaFrom,
   distanceM,
   areaSlackM,
+  daysBounds,
   getRegion,
   isAreaKey,
   isInBbox,
@@ -510,10 +511,12 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   }
 
   /**
-   * GET /api/area?lat&lng&r → every listed event within r of a grid point for the next hours.
-   * The response is public and expires at the end of the 5-minute step, so Cloudflare's Workers
-   * Caching (wrangler.jsonc) answers everyone in the same grid square without running this, and
-   * Supabase is asked about once per busy area per step. Revalidations get a 304 via the ETag.
+   * GET /api/area?lat&lng&r[&range] → every listed event within r of a grid point for the next
+   * hours, or with `range` (a multi-day time window: week, later) up to the end of that window's
+   * last day. The response is public and expires at the end of its step (5 min; 30 min for a
+   * range), so Cloudflare's Workers Caching (wrangler.jsonc) answers everyone in the same grid
+   * square without running this, and Supabase is asked about once per busy area per step.
+   * Revalidations get a 304 via the ETag.
    */
   async function area(req: Request): Promise<Response> {
     if (!db) throw new ApiError(503, 'not_configured');
@@ -523,7 +526,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       lng: Number(u.searchParams.get('lng')),
       radiusM: Number(u.searchParams.get('r')),
     };
-    const inAnyRegion = config.regions.some((r) =>
+    const region = config.regions.find((r) =>
       isInBbox(key, {
         west: r.bbox.west - refresh.areaGridDeg,
         south: r.bbox.south - refresh.areaGridDeg,
@@ -531,14 +534,21 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         north: r.bbox.north + refresh.areaGridDeg,
       }),
     );
-    if (!Object.values(key).every(Number.isFinite) || !isAreaKey(key, refresh) || !inAnyRegion)
+    if (!Object.values(key).every(Number.isFinite) || !isAreaKey(key, refresh) || !region)
       throw new ApiError(400, 'invalid_input', 'area');
+    const rangeId = u.searchParams.get('range');
+    const range = rangeId === null ? null : config.app.timeWindows.find((w) => w.id === rangeId);
+    if (range !== null && !(range && 'days' in range))
+      throw new ApiError(400, 'invalid_input', 'range');
 
     const t = now();
-    const from = areaFrom(t, refresh.dataMinutes);
-    const to = new Date(from.getTime() + refresh.areaHours * 3_600_000);
+    const stepMinutes = range ? refresh.longCacheMinutes : refresh.dataMinutes;
+    const from = areaFrom(t, stepMinutes);
+    const to = range
+      ? daysBounds(t, region.timezone, range.days).end
+      : new Date(from.getTime() + refresh.areaHours * 3_600_000);
     // Everyone's copy expires at the same step boundary, so caches and phones refresh together.
-    const expires = from.getTime() + refresh.dataMinutes * 60_000;
+    const expires = from.getTime() + stepMinutes * 60_000;
     const maxAge = Math.max(15, Math.round((expires - t.getTime()) / 1000));
     const events = await db.rpc<unknown>('events_area', {
       lat: key.lat,

@@ -1,5 +1,14 @@
 /** Start and end of the calendar day containing `now`, in the given IANA timezone. */
 export function dayBounds(now: Date, timeZone: string): { start: Date; end: Date } {
+  return daysBounds(now, timeZone, 1);
+}
+
+/**
+ * Start of today and end of the `days`-th calendar day from today ("week" = 7 days), in the given
+ * IANA timezone. Days are counted on the calendar, so a 23- or 25-hour DST day still ends at
+ * local midnight.
+ */
+export function daysBounds(now: Date, timeZone: string, days: number): { start: Date; end: Date } {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat('en-CA', {
       timeZone,
@@ -12,7 +21,7 @@ export function dayBounds(now: Date, timeZone: string): { start: Date; end: Date
   );
   const start = zonedMidnight(Number(parts.year), Number(parts.month), Number(parts.day), timeZone);
   const next = new Date(
-    Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day) + 1),
+    Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day) + days),
   );
   const end = zonedMidnight(
     next.getUTCFullYear(),

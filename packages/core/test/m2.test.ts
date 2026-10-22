@@ -26,6 +26,14 @@ describe('time windows', () => {
     const { to } = windowRange({ id: 'today', endOfDay: true }, now, 'Europe/Warsaw');
     expect(to.toISOString()).toBe('2026-10-24T21:59:59.999Z');
   });
+  it('"week" and "later" count calendar days, ending at local midnight after the DST change', () => {
+    // Sat 24 Oct (CEST); summer time ends on Sun 25 Oct, so the last day ends at 23:00 UTC.
+    const week = windowRange({ id: 'week', days: 7 }, now, 'Europe/Warsaw');
+    expect(week.from).toEqual(now);
+    expect(week.to.toISOString()).toBe('2026-10-30T22:59:59.999Z');
+    const later = windowRange({ id: 'later', days: 14 }, now, 'Europe/Warsaw');
+    expect(later.to.toISOString()).toBe('2026-11-06T22:59:59.999Z');
+  });
   it('config windows are valid and include the default', () => {
     expect(config.app.timeWindows.map((w) => w.id)).toContain(config.app.defaultTimeWindow);
   });

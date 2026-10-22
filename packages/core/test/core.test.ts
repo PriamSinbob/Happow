@@ -4,6 +4,7 @@ import {
   circleRing,
   compareByDistanceThenStart,
   dayBounds,
+  daysBounds,
   distanceM,
   getRegion,
   isRunning,
@@ -125,5 +126,22 @@ describe('dayBounds', () => {
     const dst = dayBounds(new Date('2026-10-25T12:00:00Z'), 'Europe/Warsaw');
     expect(dst.start.toISOString()).toBe('2026-10-24T22:00:00.000Z');
     expect(dst.end.toISOString()).toBe('2026-10-25T22:59:59.999Z');
+  });
+});
+
+describe('daysBounds', () => {
+  it('steps by calendar day, so DST weeks are 167 or 169 hours long', () => {
+    // Week of the autumn change (25 Oct 2026): one 25-hour day.
+    const autumn = daysBounds(new Date('2026-10-20T10:00:00Z'), 'Europe/Warsaw', 7);
+    expect(autumn.start.toISOString()).toBe('2026-10-19T22:00:00.000Z');
+    expect(autumn.end.toISOString()).toBe('2026-10-26T22:59:59.999Z');
+    expect((autumn.end.getTime() + 1 - autumn.start.getTime()) / 3_600_000).toBe(169);
+    // Week of the spring change (29 Mar 2026): one 23-hour day.
+    const spring = daysBounds(new Date('2026-03-27T10:00:00Z'), 'Europe/Warsaw', 7);
+    expect(spring.end.toISOString()).toBe('2026-04-02T21:59:59.999Z');
+    expect((spring.end.getTime() + 1 - spring.start.getTime()) / 3_600_000).toBe(167);
+    // One day is the same as dayBounds.
+    const d = new Date('2026-10-25T12:00:00Z');
+    expect(daysBounds(d, 'Europe/Warsaw', 1)).toEqual(dayBounds(d, 'Europe/Warsaw'));
   });
 });

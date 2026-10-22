@@ -53,6 +53,8 @@ export const en = {
   'window.now': 'Now',
   'window.today': 'Today',
   'window.hours': '{hours} h',
+  'window.days': '{days} days',
+  'summary.window.days': 'next {days} days',
   'summary.window.now': 'happening now',
   'summary.window.hours': 'next {hours} h',
   'summary.window.today': 'today',

@@ -67,7 +67,11 @@ export function useEvents(
     const timer = setTimeout(async () => {
       if (fresh) setState((s) => ({ ...s, loading: true }));
       try {
-        const q = { ...query, ...windowRange(timeWindow, now, timeZone) };
+        const q = {
+          ...query,
+          ...windowRange(timeWindow, now, timeZone),
+          range: 'days' in timeWindow ? timeWindow.id : undefined,
+        };
         // One query out to the search area, split at the circle: nothing extra to download.
         const reach = Math.max(searchRadiusM, radiusM);
         const [all, clusters] = await Promise.all([

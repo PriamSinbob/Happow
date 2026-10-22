@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** in progress: §14 built (slice A); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
+**Status:** in progress: §14 built (slice A), §13 data built (slice B); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
 ## Supersedes in the brief
 
@@ -300,6 +300,13 @@ Added 2026-10-22, so the map is useful for planning and fills up while few event
   - It is cached for 30 minutes (`refresh.longCacheMinutes`), since future events change slowly.
   - The 24-hour snapshot stays as it is, so everyday use costs nothing extra.
 - **Cap.** The 1,000-nearest-events cap per snapshot stays. Target payload < 100 KB gzipped.
+- **Built** (slice B, 2026-10-22): §13.1 and §13.4.
+  - `days` time windows, with `daysBounds` in `packages/core/src/time.ts` and tests for both DST weeks.
+  - `/api/area?range=week|later`: other values get a 400. The range ends at the region's local midnight, on a 30-minute step.
+  - The web client keeps one snapshot per range.
+  - Config check: no window reaches past `ingest.lookaheadHours`.
+  - Interim UI until the scrubber (§13.2, §13.3, slice F): Week and Later appear as "7 dni" / "14 dni" chips next to Today, and cards already name the day of later starts.
+  - Open: the payload size of a real 14-day snapshot is not yet measured against the 100 KB target.
 
 ### 13.5 Display
 

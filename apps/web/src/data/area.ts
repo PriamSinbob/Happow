@@ -16,7 +16,9 @@ import type { EventRepository } from './repository';
 import { rowToEvent, type Row, type SupabaseEventRepository } from './supabase';
 
 const { refresh, density } = config.app;
-const STEP_MS = refresh.dataMinutes * 60_000;
+/** The 24-hour snapshot follows the data step; Week and Later ones change slowly. */
+const stepMs = (range: string | undefined) =>
+  (range ? refresh.longCacheMinutes : refresh.dataMinutes) * 60_000;
 
 interface Snapshot {
   key: string;
@@ -32,10 +34,13 @@ class AreaUnavailable extends Error {}
  * (`/api/area`), from which the list, the radius, time windows, filters and hotspot counts are all
  * worked out on the phone. Changing a filter or the radius, or a minute passing, costs no request.
  * Detail views still read one event fresh, so a cancellation is never 5 minutes late there.
+ * The Week and Later windows read their own longer snapshot, downloaded only when chosen and
+ * kept for 30 minutes; the everyday 24-hour one is unaffected.
  */
 export class AreaEventRepository implements EventRepository {
   readonly kind = 'supabase' as const;
-  private snap: Snapshot | null = null;
+  /** One snapshot per range ('' = the 24-hour one), so switching back and forth is free. */
+  private snaps = new Map<string, Snapshot>();
   private pending: { key: string; promise: Promise<Snapshot> } | null = null;
   /** Older servers without /api/area: fall back to per-query database calls. */
   private direct = false;
@@ -46,11 +51,11 @@ export class AreaEventRepository implements EventRepository {
     private readonly clock: () => number = Date.now,
   ) {}
 
-  private async area(center: LatLng, needM: number): Promise<HappowEvent[]> {
+  private async area(center: LatLng, needM: number, range?: string): Promise<HappowEvent[]> {
     const k = areaKey(center, needM, refresh);
-    const key = `lat=${k.lat}&lng=${k.lng}&r=${k.radiusM}`;
-    const snap = this.snap;
-    if (snap && snap.key === key && this.clock() < snap.from + STEP_MS) return snap.events;
+    const key = `lat=${k.lat}&lng=${k.lng}&r=${k.radiusM}${range ? `&range=${range}` : ''}`;
+    const snap = this.snaps.get(range ?? '');
+    if (snap && snap.key === key && this.clock() < snap.from + stepMs(range)) return snap.events;
     if (this.pending?.key === key) return (await this.pending.promise).events;
     // Not tied to one caller's abort signal: the list and the hotspot counts share this request.
     const promise = this.doFetch(`/api/area?${key}`).then(async (res) => {
@@ -61,8 +66,9 @@ export class AreaEventRepository implements EventRepository {
     });
     this.pending = { key, promise };
     try {
-      this.snap = await promise;
-      return this.snap.events;
+      const fresh = await promise;
+      this.snaps.set(range ?? '', fresh);
+      return fresh.events;
     } finally {
       if (this.pending?.promise === promise) this.pending = null;
     }
@@ -71,7 +77,7 @@ export class AreaEventRepository implements EventRepository {
   private async matching(q: EventQuery): Promise<HappowEvent[] | null> {
     if (this.direct) return null;
     try {
-      const all = await this.area(q.center, Math.max(q.radiusM, density.searchRadiusM));
+      const all = await this.area(q.center, Math.max(q.radiusM, density.searchRadiusM), q.range);
       return all.filter(
         (e) => e.status !== 'cancelled' && overlaps(e, q.from, q.to) && matchesFilters(e, q),
       );
