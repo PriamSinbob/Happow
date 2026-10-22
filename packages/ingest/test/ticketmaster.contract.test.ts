@@ -87,12 +87,18 @@ describe('Ticketmaster adapter (contract, recorded fixtures)', () => {
     );
     expect(e.imageUrl).toContain('RETINA_LANDSCAPE_16_9');
     expect(e.rules.accessibility).toContain('wózkach');
+    // legalAgeEnforced: false says nothing about age.
+    expect(e).toMatchObject({ ageMin: null, family: null, entry: null });
     expect(e.h3r9).toMatch(/^89/);
   });
 
   it('maps genres, statuses, day-long listings and local-only times', async () => {
     const { raws } = await fetchAll();
-    expect(normalized('Z698xZb_Z17a0kB', raws).categoryIds).toEqual(['theatre']);
+    expect(normalized('Z698xZb_Z17a0kB', raws)).toMatchObject({
+      categoryIds: ['theatre'],
+      ageMin: 18, // legalAgeEnforced: true
+      rules: {},
+    });
     const match = normalized('Z698xZb_Z17a0kC', raws);
     expect(match).toMatchObject({
       status: 'cancelled',

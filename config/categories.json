@@ -4,6 +4,8 @@
       "id": "music",
       "labels": { "pl": "Muzyka", "en": "Music" },
       "defaultDurationMin": 150,
+      "entry": "fixed",
+      "graceMin": 15,
       "icon": "🎵",
       "color": "#7c3aed"
     },
@@ -11,6 +13,8 @@
       "id": "theatre",
       "labels": { "pl": "Teatr", "en": "Theatre" },
       "defaultDurationMin": 150,
+      "entry": "fixed",
+      "graceMin": 5,
       "icon": "🎭",
       "color": "#be123c"
     },
@@ -18,6 +22,8 @@
       "id": "cinema",
       "labels": { "pl": "Kino", "en": "Cinema" },
       "defaultDurationMin": 120,
+      "entry": "fixed",
+      "graceMin": 25,
       "icon": "🎬",
       "color": "#334155"
     },
@@ -25,6 +31,9 @@
       "id": "exhibition",
       "labels": { "pl": "Wystawa", "en": "Exhibition" },
       "defaultDurationMin": 480,
+      "entry": "open",
+      "graceMin": 0,
+      "family": "likely",
       "icon": "🖼️",
       "color": "#0e7490"
     },
@@ -32,6 +41,9 @@
       "id": "festival",
       "labels": { "pl": "Festiwal", "en": "Festival" },
       "defaultDurationMin": 480,
+      "entry": "open",
+      "graceMin": 0,
+      "family": "likely",
       "icon": "🎪",
       "color": "#c2410c"
     },
@@ -39,6 +51,8 @@
       "id": "happening",
       "labels": { "pl": "Happening", "en": "Happening" },
       "defaultDurationMin": 120,
+      "entry": "open",
+      "graceMin": 0,
       "icon": "✨",
       "color": "#db2777"
     },
@@ -46,6 +60,9 @@
       "id": "sport",
       "labels": { "pl": "Sport", "en": "Sport" },
       "defaultDurationMin": 120,
+      "entry": "fixed",
+      "graceMin": 15,
+      "family": "likely",
       "icon": "⚽",
       "color": "#15803d"
     },
@@ -53,6 +70,9 @@
       "id": "market",
       "labels": { "pl": "Targi i jarmarki", "en": "Market & fair" },
       "defaultDurationMin": 360,
+      "entry": "open",
+      "graceMin": 0,
+      "family": "likely",
       "icon": "🧺",
       "color": "#a16207"
     },
@@ -60,6 +80,9 @@
       "id": "garage-sale",
       "labels": { "pl": "Wyprzedaż garażowa", "en": "Garage sale" },
       "defaultDurationMin": 240,
+      "entry": "open",
+      "graceMin": 0,
+      "family": "likely",
       "icon": "📦",
       "color": "#92400e"
     },
@@ -67,6 +90,9 @@
       "id": "kids",
       "labels": { "pl": "Dzieci i rodzina", "en": "Kids & family" },
       "defaultDurationMin": 120,
+      "entry": "fixed",
+      "graceMin": 5,
+      "family": "yes",
       "icon": "🧸",
       "color": "#0284c7"
     },
@@ -74,6 +100,9 @@
       "id": "food",
       "labels": { "pl": "Jedzenie", "en": "Food" },
       "defaultDurationMin": 180,
+      "entry": "open",
+      "graceMin": 0,
+      "family": "likely",
       "icon": "🍽️",
       "color": "#ea580c"
     },
@@ -81,6 +110,8 @@
       "id": "talk",
       "labels": { "pl": "Wykłady i warsztaty", "en": "Talks & workshops" },
       "defaultDurationMin": 90,
+      "entry": "fixed",
+      "graceMin": 10,
       "icon": "🎤",
       "color": "#4338ca"
     },
@@ -88,6 +119,8 @@
       "id": "religious",
       "labels": { "pl": "Religia i uroczystości", "en": "Religious & ceremonies" },
       "defaultDurationMin": 90,
+      "entry": "fixed",
+      "graceMin": 15,
       "icon": "🕯️",
       "color": "#0d9488"
     },
@@ -95,6 +128,8 @@
       "id": "other",
       "labels": { "pl": "Inne", "en": "Other" },
       "defaultDurationMin": 120,
+      "entry": "open",
+      "graceMin": 0,
       "icon": "📍",
       "color": "#475569"
     }

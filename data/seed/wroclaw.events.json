@@ -194,10 +194,10 @@
       "priceMax": 160,
       "currency": "PLN",
       "rules": {
-        "age": "6+",
         "dress": "smart casual",
         "accessibility": "wheelchair"
       },
+      "ageMin": 6,
       "ticketUrl": "https://www.nfm.wroclaw.pl"
     },
     {
@@ -212,9 +212,7 @@
       "priceMin": 50,
       "priceMax": 110,
       "currency": "PLN",
-      "rules": {
-        "age": "16+"
-      }
+      "ageMin": 16
     },
     {
       "externalId": "seed-05",
@@ -244,9 +242,7 @@
       "priceMin": 24,
       "priceMax": 24,
       "currency": "PLN",
-      "rules": {
-        "age": "12+"
-      }
+      "ageMin": 12
     },
     {
       "externalId": "seed-07",
@@ -260,9 +256,7 @@
       "priceMin": 30,
       "priceMax": 30,
       "currency": "PLN",
-      "rules": {
-        "age": "3+"
-      }
+      "ageMin": 3
     },
     {
       "externalId": "seed-08",
@@ -327,9 +321,7 @@
       "priceMin": 45,
       "priceMax": 45,
       "currency": "PLN",
-      "rules": {
-        "age": "14+"
-      }
+      "ageMin": 14
     },
     {
       "externalId": "seed-13",
@@ -384,9 +376,7 @@
       "priceMin": 70,
       "priceMax": 190,
       "currency": "PLN",
-      "rules": {
-        "age": "10+"
-      }
+      "ageMin": 10
     },
     {
       "externalId": "seed-17",
@@ -440,9 +430,7 @@
       "priceMin": 30,
       "priceMax": 120,
       "currency": "PLN",
-      "rules": {
-        "age": "all; under 13 with adult"
-      }
+      "ageMin": 0
     }
   ]
 }

@@ -52,9 +52,10 @@ await withClient(async (db) => {
           `insert into events (id, region_id, title, description, category_ids, start_at, end_at,
              end_estimated, timezone, venue_id, point, h3_r9, price_min, price_max, currency, is_free,
              rules, official_url, ticket_url, image_url, status, trust, confidence, last_seen_at,
-             primary_source_id, primary_external_id, density_cell)
+             primary_source_id, primary_external_id, density_cell, entry, grace_min, age_min, family)
            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, st_point($11, $12)::geography, $13, $14,
-             $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, 'seed', $1, $26)`,
+             $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, 'seed', $1, $26, $27, $28, $29,
+             $30)`,
           [
             e.id,
             region.id,
@@ -82,6 +83,10 @@ await withClient(async (db) => {
             e.confidence,
             e.lastSeenAt,
             e.densityCell ?? null,
+            e.entry,
+            e.graceMin,
+            e.ageMin,
+            e.family,
           ],
         );
         await db.query(

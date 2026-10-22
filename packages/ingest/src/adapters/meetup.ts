@@ -188,6 +188,9 @@ export const meetup: SourceAdapter = {
       priceMax: paid ? fee!.amount! : 0,
       currency: fee?.currency ? fee.currency.toUpperCase() : null,
       rules: {},
+      ageMin: null,
+      family: null,
+      entry: null,
       officialUrl: safeUrl(e.eventUrl),
       ticketUrl: null,
       imageUrl:

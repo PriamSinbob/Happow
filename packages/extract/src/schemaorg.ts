@@ -1,4 +1,4 @@
-import type { ExtractedEvent } from './types.js';
+import { validAge, type ExtractedEvent } from './types.js';
 import { decodeEntities } from './html.js';
 
 type Node = Record<string, unknown>;
@@ -155,6 +155,49 @@ function offers(v: unknown, isFreeFlag: unknown, base: string) {
   };
 }
 
+/** Upper age of family events: "7-12" is for children, "16-25" is not. */
+const FAMILY_MAX_AGE = 12;
+
+/**
+ * Age limits from `typicalAgeRange` ("18-", "18+", "7-12") and `audience` (suggestedMinAge,
+ * requiredMinAge, suggestedMaxAge). An upper bound of 12 or less marks a family event.
+ */
+function ages(node: Node): Pick<ExtractedEvent, 'ageMin' | 'family'> {
+  let min: number | null = null;
+  let max: number | null = null;
+  const range = /^\s*(\d{1,2})\s*(?:[-–+]\s*(\d{1,2})?)?\s*$/.exec(
+    text(node.typicalAgeRange) ?? '',
+  );
+  if (range) {
+    min = Number(range[1]);
+    max = range[2] === undefined ? null : Number(range[2]);
+  }
+  for (const a of asArray(node.audience as unknown).filter(isNode)) {
+    min ??= num(a.requiredMinAge) ?? num(a.suggestedMinAge);
+    max ??= num(a.suggestedMaxAge) ?? num(a.requiredMaxAge);
+  }
+  const ageMin = validAge(min);
+  const family = max !== null && max <= FAMILY_MAX_AGE && (ageMin === null || ageMin <= max);
+  return { ageMin, family: family ? true : null };
+}
+
+/**
+ * Doors before the start mean a set start time (a seated concert, a play): fixed entry. Doors
+ * at the start say nothing, so the category default applies.
+ */
+function entry(doorTime: unknown, start: string): ExtractedEvent['entry'] {
+  const door = text(doorTime);
+  if (!door) return null;
+  const offset = /(Z|[+-]\d{2}:?\d{2})$/;
+  if (DATE.test(door) && offset.test(door) && offset.test(start))
+    return Date.parse(door) < Date.parse(start) ? 'fixed' : null;
+  // Otherwise compare wall clocks: doorTime is often a bare "18:30".
+  const clock = (v: string) => /(?:T|^)(\d{2}:\d{2})/.exec(v)?.[1] ?? null;
+  const d = clock(door);
+  const st = clock(start);
+  return d && st && d < st ? 'fixed' : null;
+}
+
 /** schema.org Events in a page's JSON-LD, mapped to the common extraction shape. */
 export function eventsFromJsonLd(docs: unknown[], pageUrl: string): ExtractedEvent[] {
   const out: ExtractedEvent[] = [];
@@ -184,6 +227,8 @@ export function eventsFromJsonLd(docs: unknown[], pageUrl: string): ExtractedEve
       url: url(node.url, pageUrl),
       imageUrl: url(asArray(node.image as unknown)[0], pageUrl),
       status: status(node.eventStatus),
+      ...ages(node),
+      entry: entry(node.doorTime, start),
       online:
         mode === 'onlineeventattendancemode' ||
         (loc.virtual && mode !== 'mixedeventattendancemode'),

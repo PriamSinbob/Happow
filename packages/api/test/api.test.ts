@@ -120,6 +120,9 @@ describe('POST /api/autofill', () => {
         ticketUrl: null,
         imageUrl: null,
         status: 'scheduled',
+        ageMin: 6,
+        family: true,
+        entry: 'fixed',
         online: false,
         categoryHints: [],
         categoryIds: ['kids', 'music'],
@@ -139,6 +142,9 @@ describe('POST /api/autofill', () => {
     expect(data.events[0]).toMatchObject({
       title: 'Pustynne portato',
       categoryIds: ['kids', 'music'],
+      ageMin: 6,
+      family: true,
+      entry: 'fixed',
     });
     expect(extract.mock.calls[0]![0]).toMatchObject({
       today: '2026-10-20',
@@ -236,9 +242,25 @@ describe('POST /api/submissions', () => {
       trust: 'community',
       isFree: true,
       categoryIds: ['garage-sale'],
+      // Not given: no age data, and the category default decides the entry type.
+      ageMin: null,
+      family: null,
+      entry: null,
+      graceMin: null,
     });
     expect(n.event.h3r9).toMatch(/^89/);
     expect(n.event.densityCell).toMatch(/^88/);
+  });
+
+  it('passes the age choice, family toggle and entry type to the event', async () => {
+    const web = backend({ rpc: { ...allow, submit_event: () => ({ body: 'uuid' }) } });
+    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const event = { ...valid.event, ageMin: 0, family: true, entry: 'fixed' };
+    const res = await api(post('submissions', { ...valid, event }));
+    expect(res.status).toBe(201);
+    const call = web.calls.find((c) => c.name === 'submit_event')!;
+    const p = call.args.p as { normalized: { event: Record<string, unknown> } };
+    expect(p.normalized.event).toMatchObject({ ageMin: 0, family: true, entry: 'fixed' });
   });
 
   it.each([
@@ -248,6 +270,8 @@ describe('POST /api/submissions', () => {
     ['with an unknown category', { categoryIds: ['nope'] }, 'invalid_input'],
     ['with a private link', { url: 'http://localhost/x' }, 'unsafe_url'],
     ['without a title', { title: ' ' }, 'invalid_input'],
+    ['with an impossible age', { ageMin: 99 }, 'invalid_input'],
+    ['with an unknown entry type', { entry: 'maybe' }, 'invalid_input'],
   ])('rejects an event %s', async (_name, change, error) => {
     const web = backend({ rpc: { ...allow, submit_event: () => ({ body: 'uuid' }) } });
     const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });

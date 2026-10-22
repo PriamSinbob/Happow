@@ -43,11 +43,16 @@ export const parsedEventSchema = z.object({
   priceMax: z.number().nonnegative().nullable(),
   currency: z.string().length(3).nullable(),
   rules: z.object({
-    age: z.string().optional(),
     pets: z.string().optional(),
     accessibility: z.string().optional(),
     dress: z.string().optional(),
   }),
+  /** Youngest age let in (0 = all ages, 18 = 18+); null when the source says nothing. */
+  ageMin: z.number().int().min(0).max(21).nullable().default(null),
+  /** Explicitly for children or families. */
+  family: z.boolean().nullable().default(null),
+  /** Fixed start or come-and-go; null leaves it to the category default. */
+  entry: z.enum(['fixed', 'open']).nullable().default(null),
   officialUrl: z.string().url().nullable(),
   ticketUrl: z.string().url().nullable(),
   imageUrl: z.string().url().nullable(),

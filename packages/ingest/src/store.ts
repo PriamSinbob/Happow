@@ -34,7 +34,8 @@ const EVENT_COLUMNS = `
   e.venue_id, v.name as venue_name, v.address as venue_address,
   st_y(e.point::geometry) as lat, st_x(e.point::geometry) as lng, e.h3_r9, e.price_min,
   e.price_max, e.currency, e.is_free, e.rules, e.official_url, e.ticket_url, e.image_url,
-  e.status, e.trust, e.confidence, e.last_seen_at, e.primary_source_id, e.primary_external_id`;
+  e.status, e.trust, e.confidence, e.last_seen_at, e.primary_source_id, e.primary_external_id,
+  e.entry, e.grace_min, e.age_min, e.family`;
 
 interface EventRow {
   id: string;
@@ -65,6 +66,10 @@ interface EventRow {
   last_seen_at: Date;
   primary_source_id: string | null;
   primary_external_id: string | null;
+  entry: HappowEvent['entry'];
+  grace_min: number | null;
+  age_min: number | null;
+  family: boolean | null;
 }
 
 function toStored(r: EventRow): StoredEvent {
@@ -91,6 +96,10 @@ function toStored(r: EventRow): StoredEvent {
       currency: r.currency?.trim() ?? null,
       isFree: r.is_free,
       rules: r.rules ?? {},
+      entry: r.entry,
+      graceMin: r.grace_min,
+      ageMin: r.age_min,
+      family: r.family,
       officialUrl: r.official_url,
       ticketUrl: r.ticket_url,
       imageUrl: r.image_url,
@@ -455,15 +464,21 @@ export class EventStore {
       owner.sourceId,
       owner.externalId,
       e.densityCell ?? null,
+      e.entry,
+      e.graceMin,
+      e.ageMin,
+      e.family,
     ];
     if (insert) {
       await this.db.query(
         `insert into events (id, region_id, title, description, category_ids, start_at, end_at,
            end_estimated, timezone, venue_id, point, h3_r9, price_min, price_max, currency, is_free,
            rules, official_url, ticket_url, image_url, status, trust, confidence, last_seen_at,
-           primary_source_id, primary_external_id, density_cell, stale_after)
+           primary_source_id, primary_external_id, density_cell, entry, grace_min, age_min, family,
+           stale_after)
          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, st_point($11, $12)::geography, $13, $14,
-           $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)`,
+           $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31,
+           $32, $33)`,
         [...values, staleAfter ?? null],
       );
       return;
@@ -475,8 +490,9 @@ export class EventStore {
          currency = $16, is_free = $17, rules = $18, official_url = $19, ticket_url = $20,
          image_url = $21, status = $22, trust = $23, confidence = $24, last_seen_at = $25,
          primary_source_id = $26, primary_external_id = $27,
-         density_cell = coalesce($28, density_cell),
-         stale_after = case when $29::boolean then $30::timestamptz else stale_after end
+         density_cell = coalesce($28, density_cell), entry = $29, grace_min = $30, age_min = $31,
+         family = $32,
+         stale_after = case when $33::boolean then $34::timestamptz else stale_after end
        where id = $1`,
       [...values, staleAfter !== undefined, staleAfter ?? null],
     );

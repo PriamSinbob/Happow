@@ -24,6 +24,12 @@ export interface ExtractedEvent {
   ticketUrl: string | null;
   imageUrl: string | null;
   status: 'scheduled' | 'cancelled' | 'postponed';
+  /** Youngest age let in: 0 = explicitly all ages, 18 = 18+; null when the page says nothing. */
+  ageMin: number | null;
+  /** Explicitly for children or families; null when not said. */
+  family: boolean | null;
+  /** Fixed start (a seated concert, a play) or come-and-go (a club night, a fair); null = not said. */
+  entry: 'fixed' | 'open' | null;
   /** Online-only events cannot be placed on the map. */
   online: boolean;
   /** Source vocabulary to map through a categoryMap (e.g. "musicevent"). */
@@ -33,6 +39,14 @@ export interface ExtractedEvent {
   method: 'jsonld' | 'llm';
   /** 0–1: how sure the extraction is about title, time and place. */
   confidence: number;
+}
+
+/** Oldest `ageMin` we store; higher numbers on a page are something else (a year, a price). */
+export const MAX_AGE_MIN = 21;
+
+/** An age the event model accepts, or null. */
+export function validAge(n: number | null | undefined): number | null {
+  return typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= MAX_AGE_MIN ? n : null;
 }
 
 /** A small async key-value cache (Postgres in workers, PostgREST in the API, a Map in tests). */

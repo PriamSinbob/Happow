@@ -8,6 +8,13 @@
     "defaultM": 500
   },
   "walkingSpeedMPerMin": 80,
+  "arrival": {
+    "detourFactor": 1.3,
+    "openLastEntryMin": 5
+  },
+  "family": {
+    "latestEnd": "21:00"
+  },
   "h3": {
     "eventResolution": 9,
     "densityResolution": 8

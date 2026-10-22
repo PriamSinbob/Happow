@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod/v4';
 import { boundFetch } from './fetch.js';
-import type { ExtractedEvent } from './types.js';
+import { validAge, type ExtractedEvent } from './types.js';
 
 export interface ExtractInput {
   url: string;
@@ -32,6 +32,10 @@ Report only what the page states. Use null when the page does not say (for examp
 
 Keep titles in the page's language and as written, without prices or ticket text. category_ids must come from the given list; pick one, or two if both clearly apply.
 
+Age and audience: age_min is the youngest age let in, as a number. Polish pages say it as "od 18 lat", "18+", "wstęp od 16 lat", "dozwolone od lat 16" or "bilety od 13 lat z opiekunem" (13); "0+", "bez ograniczeń wiekowych" or "dla każdego wieku" mean 0. Use null when the page gives no age, and do not read ages from prices, dates, spans of time ("pierwsza płyta od 15 lat") or performer bios. family is true when the event is explicitly meant for children or families ("dla dzieci", "rodzinny", "dla rodzin z dziećmi", "spektakl dla najmłodszych", "warsztaty dla dzieci"); otherwise null. Use false only when the page says it is not for children.
+
+entry is "fixed" when the event has a set start that people should be there for (a play, a film, a seated or ticketed concert, a talk, a match, "początek o 19:00", "wpuszczanie do 18:50") and "open" when people come and go while it runs (a club night or DJ set, a fair, a market, an exhibition, a festival day, "wstęp wolny przez cały dzień"). A concert is fixed, a club night is open. Use null when you cannot tell.
+
 confidence is how sure you are about the title, date, start time and place together: about 0.9 when all are stated plainly, 0.6 when one had to be inferred, 0.3 or lower when the page is ambiguous.`;
 
 // Enums are not enforced by the structured-output schema the SDK derives from zod (they become
@@ -56,6 +60,9 @@ function schema(categoryIds: string[]) {
     status: z.enum(['scheduled', 'cancelled', 'postponed']),
     online_only: z.boolean(),
     category_ids: z.array(z.string()).describe(`Ids from: ${categoryIds.join(', ')}`),
+    age_min: z.number().nullable().describe('Youngest age let in: 18 for "18+", 0 for "0+"'),
+    family: z.boolean().nullable().describe('Explicitly for children or families'),
+    entry: z.string().nullable().describe('"fixed" (set start) or "open" (come and go)'),
     confidence: z.number().describe('0 to 1'),
   });
   return z.object({ events: z.array(event) });
@@ -157,6 +164,9 @@ export class ClaudeExtractor implements Extractor {
           ticketUrl: safeUrl(e.ticket_url, input.url),
           imageUrl: null,
           status: e.status,
+          ageMin: validAge(e.age_min),
+          family: e.family,
+          entry: e.entry === 'fixed' || e.entry === 'open' ? e.entry : null,
           online: e.online_only,
           categoryHints: [],
           categoryIds: [...new Set(e.category_ids.filter((c) => ids.includes(c)))].slice(0, 2),

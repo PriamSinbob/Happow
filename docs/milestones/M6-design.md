@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** in progress: §14 built (slice A), §13 data built (slice B); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
+**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
 ## Build plan
 
@@ -14,8 +14,8 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | ----- | ----------------------- | -------------------------------------------------------- | ----- | ---------------------------------------- |
 | A     | §14                     | Default venue for single-venue sources                   | —     | merged (#9)                              |
 | B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest     | —     | merged (#10)                             |
-| C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | next                                     |
-| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     |                                          |
+| C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | in review                                |
+| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | next                                     |
 | E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  |                                          |
 | F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  |                                          |
 | G     | §4.4 UI, §7             | Family-mode filter and chip; dice                        | C, F  |                                          |
@@ -214,6 +214,16 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
   - The live counter, dice, hotspot and edge dots all respect it.
 - **Privacy.** Family mode is a setting on the device; nothing about the user's children is sent or stored.
 - **Tier.** Free for everyone, no account needed.
+- **Built** (slice C, 2026-10-22): §4.2 and §4.4 data. No pin, badge or family-mode UI yet (slices E and G).
+  - **Database.** Migration `20261022000008_entry_age.sql` adds four nullable columns: `entry` ('fixed' / 'open'), `grace_min`, `age_min` (0–21), `family`. Typed columns rather than `rules` jsonb, so Postgres checks the values (owner's call). `rules.age` moves into `age_min` ("16+" → 16, "all …" → 0; other text is dropped) and the key is removed. `events_public`, `events_near`, `event_by_id`, `events_area` and `publish_event` (used by `submit_event`) carry the fields. **Apply the migration to Supabase on deploy.**
+  - **Defaults are applied when read, not stored** (owner's call): events keep only what their source said; `entryOf` in `packages/core/src/entry.ts` fills in the category's `entry` / `graceMin`. Category `kids` counts as family through its `family: "yes"`, not a stored flag.
+  - **Config.** `config/categories.json`: `entry`, `graceMin` and `family` per category. Grace minutes set by the owner: cinema 25 (adverts), religious 15, music 15, sport 15, talk 10, theatre 5, kids 5 (strict about late entry); open categories 0. `config/app.json`: `family.latestEnd` "21:00" and `arrival` (`detourFactor` 1.3, `openLastEntryMin` 5).
+  - **Sources.** Ticketmaster `legalAgeEnforced` → `ageMin: 18`. schema.org `typicalAgeRange` / `audience` → `ageMin`, an upper bound ≤ 12 → `family: true`, `doorTime` before `startDate` → fixed. The Claude extractor's schema gains `age_min`, `family` and `entry`, prompted with the Polish cues and "a concert is fixed, a club night is open". Duplicate merges fill missing values from the other listing.
+  - **Add-event form.** Fixed / come-and-go toggle (preselected from the category; stored only when it differs), age choice (not stated / 0+ / 12+ / 16+ / 18+, plus a prefilled page value such as 6+) and a family checkbox; URL autofill prefills all three. Cards and details show "Wiek 18+" / "Ages 18+", "Bez ograniczeń wieku" / "All ages" and "Dla dzieci i rodzin" / "For children and families".
+  - **Core helpers** (unit-tested, no UI): `entryOf`, `arrivalAt`, `isLate`, `minutesAfterStart` ("+N min"), `familyMatch` ('show' / 'unconfirmed' / 'hide', with `latestEnd` across the 25 Oct DST change).
+  - **Tests.** Contract tests on fixtures: Ticketmaster (the recorded fixture only had `legalAgeEnforced: false`, so the Mayday listing in `page-0.json` was given `true` by hand), crawler LLM path, schema.org inputs, extractor reply parsing; API submit and autofill; database tests for the columns. The `rules.age` move was checked by hand on a local PostGIS database with old-style rows.
+  - Skipped: no per-event `graceMin` source yet (the column is there for overrides; no source or form field sets it).
+  - Open: schema.org `doorTime` equal to the start says nothing, so such events keep the category default; check on live crawls whether the extractor tells concerts from club nights reliably.
 
 ## 5. Layout and controls (portrait)
 

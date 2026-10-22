@@ -204,6 +204,10 @@ export const crawler: SourceAdapter = {
       priceMax: e.priceMax,
       currency: e.currency,
       rules: {},
+      // Extractions cached before these fields existed lack them.
+      ageMin: e.ageMin ?? null,
+      family: e.family ?? null,
+      entry: e.entry ?? null,
       officialUrl: e.url ?? pageUrl,
       ticketUrl: e.ticketUrl,
       imageUrl: e.imageUrl,
