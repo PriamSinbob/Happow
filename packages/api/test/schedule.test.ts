@@ -24,6 +24,8 @@ function fake(rows: unknown[], dispatchStatus = 204) {
   return vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
     const url = String(input);
     if (url.startsWith(`${SB}/rest/v1/source_runs?`)) return Response.json(rows);
+    if (url.startsWith('https://api.github.com/') && !url.endsWith('/dispatches'))
+      return Response.json({ id: 1, name: 'Ingest sources' });
     if (url.startsWith('https://api.github.com/'))
       return new Response(dispatchStatus === 204 ? null : '{"message":"Bad credentials"}', {
         status: dispatchStatus,
@@ -101,8 +103,24 @@ describe('dispatchDueIngest', () => {
       dispatched: false,
       tokenSet: true,
       reason: 'dry run',
+      tokenCheck: { status: 200 },
     });
-    expect(f).toHaveBeenCalledTimes(1);
+    // The workflow is read with the token, never dispatched.
+    const urls = f.mock.calls.map(([u]) => String(u));
+    expect(urls.filter((u) => u.endsWith('/dispatches'))).toEqual([]);
+    expect(urls).toContain(
+      'https://api.github.com/repos/PriamSinbob/happow/actions/workflows/ingest.yml',
+    );
+  });
+
+  it('dry run passes on GitHub’s reason when the token cannot see the workflow', async () => {
+    const f = vi.fn(async (input: string | URL | Request) =>
+      String(input).startsWith(SB)
+        ? Response.json([])
+        : Response.json({ message: 'Bad credentials' }, { status: 401 }),
+    );
+    const r = await dispatchDueIngest(env, now, { fetch: f, config }, { dryRun: true });
+    expect(r.tokenCheck).toEqual({ status: 401, message: 'Bad credentials' });
   });
 
   it('serves the dry run at GET /api/ingest/status without exposing the token', async () => {
@@ -118,6 +136,6 @@ describe('dispatchDueIngest', () => {
       tokenSet: true,
     });
     expect(body).not.toContain(env.GITHUB_DISPATCH_TOKEN === 'gh' ? '"gh"' : 'x');
-    expect(f.mock.calls.some(([u]) => String(u).startsWith('https://api.github.com/'))).toBe(false);
+    expect(f.mock.calls.some(([u]) => String(u).endsWith('/dispatches'))).toBe(false);
   });
 });

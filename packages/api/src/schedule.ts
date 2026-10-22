@@ -30,6 +30,11 @@ export interface DispatchResult {
   tokenSet: boolean;
   /** Why nothing was dispatched, when that was not simply "nothing due". */
   reason?: string;
+  /**
+   * Dry run only: GitHub's answer to a read of the workflow with the token (200 = the token can
+   * see the workflow), with GitHub's own error message otherwise. Never includes the token.
+   */
+  tokenCheck?: { status: number; message?: string };
 }
 
 interface RunRow {
@@ -102,22 +107,28 @@ export async function dispatchDueIngest(
   if (!due.length) return { due, dispatched: false, tokenSet };
   if (!tokenSet)
     return { due, dispatched: false, tokenSet, reason: `${dispatch.tokenSecret} not set` };
-  if (opts.dryRun) return { due, dispatched: false, tokenSet, reason: 'dry run' };
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    Authorization: `Bearer ${token}`,
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': userAgent,
+  };
+  const workflowUrl = `https://api.github.com/repos/${dispatch.repo}/actions/workflows/${dispatch.workflow}`;
+  if (opts.dryRun) {
+    const check = await doFetch(workflowUrl, { headers });
+    const tokenCheck: DispatchResult['tokenCheck'] = { status: check.status };
+    if (!check.ok) {
+      const body = (await check.json().catch(() => ({}))) as { message?: string };
+      if (body.message) tokenCheck.message = body.message;
+    }
+    return { due, dispatched: false, tokenSet, reason: 'dry run', tokenCheck };
+  }
 
-  const gh = await doFetch(
-    `https://api.github.com/repos/${dispatch.repo}/actions/workflows/${dispatch.workflow}/dispatches`,
-    {
-      method: 'POST',
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${token}`,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'User-Agent': userAgent,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ref: dispatch.ref }),
-    },
-  );
+  const gh = await doFetch(`${workflowUrl}/dispatches`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: dispatch.ref }),
+  });
   if (gh.status !== 204)
     throw new Error(`workflow dispatch failed: ${gh.status} ${await gh.text()}`);
   return { due, dispatched: true, tokenSet };
