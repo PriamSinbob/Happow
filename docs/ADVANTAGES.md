@@ -98,6 +98,14 @@ Why someone would use Happow over a listings site, a ticket app or Google Maps. 
 - **Add an event from a link.** Paste the event's page and the form fills itself (structured data first, AI as fallback); you only confirm. `Live`
 - **Report problems** in two taps. `Live`
 
+## Bring people along
+
+- **Share an event, not a map pin.** A shared link opens the event in Happow, with its card and the in-app walking route; no account or install needed to open it. `Live`
+- **Rich previews in WhatsApp, Messenger, X.** The preview shows the event's title, time, place and a map card instead of a generic app link. `Later`
+- **Say you're going.** Tap "I'm going" on a shared event. The sharer sees how many people from their link are going, without names unless both choose to. `Later`
+- **Share as an image or QR code.** A ready-made card for Instagram Stories, and a QR code for posters and flyers. `Later`
+- **Old links still work.** A link to an ended event shows what's on now near that place. `Later`
+
 ## Your city, lit up
 
 - **A personal map.** The map is grey by default; your reach and the places you've actually been to glow in colour, with soft cloud-like edges. `M6`
