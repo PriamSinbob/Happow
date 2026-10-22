@@ -26,6 +26,8 @@ export interface ScheduleDeps {
 export interface DispatchResult {
   due: string[];
   dispatched: boolean;
+  /** Whether the dispatch token secret is present (its value is never returned). */
+  tokenSet: boolean;
   /** Why nothing was dispatched, when that was not simply "nothing due". */
   reason?: string;
 }
@@ -56,15 +58,19 @@ export async function dispatchDueIngest(
   env: ScheduleEnv,
   now: Date,
   deps: ScheduleDeps = {},
+  /** Work out what is due without starting anything (the status endpoint). */
+  opts: { dryRun?: boolean } = {},
 ): Promise<DispatchResult> {
   const config = deps.config ?? scheduleConfig();
   const doFetch = deps.fetch ?? fetch;
   const { dispatch, userAgent } = (deps.config?.app ?? appJson).ingest;
   const token = env[dispatch.tokenSecret];
+  const tokenSet = typeof token === 'string' && token.length > 0;
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)
     return {
       due: [],
       dispatched: false,
+      tokenSet,
       reason: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set',
     };
 
@@ -93,9 +99,10 @@ export async function dispatchDueIngest(
   }));
 
   const due = dueForDispatch(config, runs, now, dispatch);
-  if (!due.length) return { due, dispatched: false };
-  if (typeof token !== 'string' || !token)
-    return { due, dispatched: false, reason: `${dispatch.tokenSecret} not set` };
+  if (!due.length) return { due, dispatched: false, tokenSet };
+  if (!tokenSet)
+    return { due, dispatched: false, tokenSet, reason: `${dispatch.tokenSecret} not set` };
+  if (opts.dryRun) return { due, dispatched: false, tokenSet, reason: 'dry run' };
 
   const gh = await doFetch(
     `https://api.github.com/repos/${dispatch.repo}/actions/workflows/${dispatch.workflow}/dispatches`,
@@ -113,5 +120,5 @@ export async function dispatchDueIngest(
   );
   if (gh.status !== 204)
     throw new Error(`workflow dispatch failed: ${gh.status} ${await gh.text()}`);
-  return { due, dispatched: true };
+  return { due, dispatched: true, tokenSet };
 }

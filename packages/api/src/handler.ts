@@ -31,6 +31,7 @@ import {
 } from '@happow/extract';
 import { normalize } from '@happow/ingest/normalize';
 import { z } from 'zod';
+import { dispatchDueIngest, type ScheduleEnv } from './schedule.js';
 import { Supabase, SupabaseError } from './supabase.js';
 
 /** Secrets and settings from the host (Cloudflare Pages env, or .env in development). */
@@ -606,6 +607,23 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     });
   }
 
+  /**
+   * GET /api/ingest/status → what the Cron Trigger would start right now, and whether its token
+   * is configured. Read-only; reveals source ids only, never the token or run errors.
+   */
+  async function ingestStatus(): Promise<Response> {
+    const t = now();
+    const r = await dispatchDueIngest(
+      env as ScheduleEnv,
+      t,
+      { fetch: doFetch, config },
+      { dryRun: true },
+    );
+    return new Response(JSON.stringify({ checkedAt: t.toISOString(), ...r }), {
+      headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+    });
+  }
+
   /** Routes /api/*. Everything else is 404. */
   return async function handle(req: Request): Promise<Response> {
     const path = new URL(req.url).pathname
@@ -618,6 +636,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       const [head, ...rest] = path;
       if (head === 'moderation') return await moderation(req, rest);
       if (head === 'area' && req.method === 'GET' && !rest.length) return await area(req);
+      if (head === 'ingest' && req.method === 'GET' && rest.join('/') === 'status')
+        return await ingestStatus();
       if (req.method !== 'POST' || rest.length) throw new ApiError(404, 'not_found');
       if (head === 'autofill') return await autofill(req);
       if (head === 'geocode') return await geocode(req);

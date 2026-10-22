@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '@happow/core';
 import { dueForDispatch } from '@happow/ingest/schedule';
-import { dispatchDueIngest } from '../src';
+import { createApi, dispatchDueIngest } from '../src';
 import { scheduleConfig } from '../src/schedule';
 
 const config = loadConfig();
@@ -36,7 +36,7 @@ describe('dispatchDueIngest', () => {
   it('does not start the workflow when nothing is due', async () => {
     const f = fake(allFresh);
     const r = await dispatchDueIngest(env, now, { fetch: f, config });
-    expect(r).toEqual({ due: [], dispatched: false });
+    expect(r).toEqual({ due: [], dispatched: false, tokenSet: true });
     expect(f).toHaveBeenCalledTimes(1);
     const url = new URL(String(f.mock.calls[0]![0]));
     expect(url.searchParams.get('started_at')).toBe('gte.2026-10-23T11:00:00.000Z');
@@ -45,7 +45,7 @@ describe('dispatchDueIngest', () => {
   it('dispatches the configured workflow when a source is due', async () => {
     const f = fake(allFresh.filter((r) => r.source_id !== 'nfm'));
     const r = await dispatchDueIngest(env, now, { fetch: f, config });
-    expect(r).toEqual({ due: ['nfm@wroclaw'], dispatched: true });
+    expect(r).toEqual({ due: ['nfm@wroclaw'], dispatched: true, tokenSet: true });
     const [url, init] = f.mock.calls[1]!;
     expect(String(url)).toBe(
       'https://api.github.com/repos/PriamSinbob/happow/actions/workflows/ingest.yml/dispatches',
@@ -65,6 +65,7 @@ describe('dispatchDueIngest', () => {
     });
     expect(r.dispatched).toBe(false);
     expect(r.reason).toBe('GITHUB_DISPATCH_TOKEN not set');
+    expect(r.tokenSet).toBe(false);
     expect(r.due.length).toBeGreaterThan(0);
   });
 
@@ -90,5 +91,33 @@ describe('dispatchDueIngest', () => {
         dueForDispatch(config, [], t, policy),
       );
     }
+  });
+
+  it('dry run reports what is due without dispatching', async () => {
+    const f = fake(allFresh.filter((r) => r.source_id !== 'nfm'));
+    const r = await dispatchDueIngest(env, now, { fetch: f, config }, { dryRun: true });
+    expect(r).toEqual({
+      due: ['nfm@wroclaw'],
+      dispatched: false,
+      tokenSet: true,
+      reason: 'dry run',
+    });
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
+  it('serves the dry run at GET /api/ingest/status without exposing the token', async () => {
+    const f = fake(allFresh.filter((r) => r.source_id !== 'nfm'));
+    const api = createApi(env, { fetch: f, config, now: () => now });
+    const res = await api(new Request('https://app.test/api/ingest/status'));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    const body = await res.text();
+    expect(JSON.parse(body)).toMatchObject({
+      due: ['nfm@wroclaw'],
+      dispatched: false,
+      tokenSet: true,
+    });
+    expect(body).not.toContain(env.GITHUB_DISPATCH_TOKEN === 'gh' ? '"gh"' : 'x');
+    expect(f.mock.calls.some(([u]) => String(u).startsWith('https://api.github.com/'))).toBe(false);
   });
 });
