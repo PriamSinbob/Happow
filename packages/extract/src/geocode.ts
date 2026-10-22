@@ -80,16 +80,21 @@ export class NominatimGeocoder implements Geocoder {
     if (postal) attempts.push(['postcode', { postalcode: postal, ...(city && { city }) }]);
 
     for (const [precision, params] of attempts) {
-      const hit = await this.search(params, q.countryCode, bbox);
+      const hit = await this.search(params, q.countryCode, bbox, postal);
       if (hit) return { ...hit, precision };
     }
     return null;
   }
 
+  /**
+   * One lookup. A hit whose postcode differs from the one we know is a same-named street
+   * elsewhere in the bbox (a village's "Wolności 1" for the city's "pl. Wolności 1"): not a match.
+   */
   private async search(
     params: Record<string, string>,
     countryCode: string | null | undefined,
     bbox: Bbox,
+    postal: string | null,
   ): Promise<{ point: LatLng; label: string } | null> {
     const wait = this.next - Date.now();
     if (wait > 0) await this.sleep(wait);
@@ -101,6 +106,7 @@ export class NominatimGeocoder implements Geocoder {
       limit: '1',
       viewbox: `${bbox.west},${bbox.north},${bbox.east},${bbox.south}`,
       bounded: '1',
+      addressdetails: '1',
       ...(countryCode && { countrycodes: countryCode.toLowerCase() }),
       ...(this.opts.language && { 'accept-language': this.opts.language }),
     });
@@ -109,9 +115,16 @@ export class NominatimGeocoder implements Geocoder {
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) throw new Error(`Nominatim returned ${res.status}`);
-    const rows = (await res.json()) as { lat: string; lon: string; display_name: string }[];
+    const rows = (await res.json()) as {
+      lat: string;
+      lon: string;
+      display_name: string;
+      address?: { postcode?: string };
+    }[];
     const r = rows[0];
     if (!r) return null;
+    const digits = (s: string) => s.replace(/\D/g, '');
+    if (postal && r.address?.postcode && digits(r.address.postcode) !== digits(postal)) return null;
     const lat = Number(r.lat);
     const lng = Number(r.lon);
     return Number.isFinite(lat) && Number.isFinite(lng)

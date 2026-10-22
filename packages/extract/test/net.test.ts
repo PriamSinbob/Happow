@@ -115,6 +115,51 @@ describe('NominatimGeocoder', () => {
     expect(sleep).toHaveBeenCalledTimes(1);
   });
 
+  it('rejects a hit whose postcode differs (same street name in a nearby village)', async () => {
+    // Recorded case: "pl. Wolności 1, 50-071" without a city matched Psary's "Wolności 1, 51-180".
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        ok([
+          {
+            lat: '51.1843',
+            lon: '17.0291',
+            display_name: '1, Wolności, Psary',
+            address: { postcode: '51-180' },
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        ok([
+          {
+            lat: '51.1070',
+            lon: '17.0265',
+            display_name: 'Narodowe Forum Muzyki, 1, Plac Wolności, Wrocław',
+            address: { postcode: '50-071' },
+          },
+        ]),
+      );
+    const g = new NominatimGeocoder({
+      endpoint: 'https://n.example',
+      userAgent: 'u',
+      minIntervalMs: 0,
+      fetch: fetchMock,
+    });
+    const r = await g.geocode(
+      {
+        venueName: 'Narodowe Forum Muzyki (NFM) Wrocław',
+        street: 'pl. Wolności 1',
+        postalCode: '50-071',
+        city: 'Wrocław',
+      },
+      bbox,
+    );
+    expect(r).toMatchObject({ point: { lat: 51.107, lng: 17.0265 }, precision: 'venue' });
+    expect(new URL(fetchMock.mock.calls[0]![0] as string).searchParams.get('addressdetails')).toBe(
+      '1',
+    );
+  });
+
   it('gives up on a city alone (useless for a 500 m radius)', async () => {
     const fetchMock = vi.fn();
     const g = new NominatimGeocoder({
