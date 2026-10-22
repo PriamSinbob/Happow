@@ -17,6 +17,7 @@ import { categoriesById, config, region } from '../config';
 import { formatDistance } from '../format';
 import type { Guidance } from '../hooks/useGuidance';
 import { useI18n, type MessageKey } from '../i18n';
+import { useMapTheme, type OwnLayerPaint } from '../mapTheme';
 
 interface Props {
   center: LatLng;
@@ -130,6 +131,10 @@ function computeChevrons(m: maplibregl.Map, p: Props): Chevron[] {
 }
 
 const RADIUS_SOURCE = 'radius';
+const RADIUS_PAINT: OwnLayerPaint = [
+  ['radius-fill', 'fill-color', 'ink'],
+  ['radius-line', 'line-color', 'ink'],
+];
 
 export interface MarkerItem {
   key: string;
@@ -273,13 +278,13 @@ export function MapView(props: Props) {
           id: 'radius-fill',
           type: 'fill',
           source: RADIUS_SOURCE,
-          paint: { 'fill-color': '#f97316', 'fill-opacity': 0.07 },
+          paint: { 'fill-opacity': 0.07 },
         });
         m.addLayer({
           id: 'radius-line',
           type: 'line',
           source: RADIUS_SOURCE,
-          paint: { 'line-color': '#f97316', 'line-width': 2, 'line-dasharray': [2, 1.5] },
+          paint: { 'line-width': 2, 'line-dasharray': [2, 1.5] },
         });
       }
     });
@@ -310,6 +315,8 @@ export function MapView(props: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useMapTheme(map, RADIUS_PAINT);
 
   // The radius circle always follows the user; the view fits to it only when that won't fight the
   // user: on a new radius or layout, on "locate", or when the user has walked on while the map
@@ -480,7 +487,7 @@ export function MapView(props: Props) {
         }
       }
       const selected = item.events.some((ev) => ev.id === props.selectedId);
-      entry.el.style.setProperty('--cat', cat?.color ?? '#475569');
+      entry.el.style.setProperty('--cat', cat?.color ?? 'var(--muted)');
       entry.el.setAttribute(
         'aria-label',
         item.kind === 'cluster'

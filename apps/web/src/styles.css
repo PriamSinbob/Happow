@@ -1,20 +1,12 @@
 :root {
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --surface-2: #f1f5f9;
-  --text: #0f172a;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --accent: #f97316;
-  --accent-ink: #c2410c;
-  --now: #16a34a;
+  /* Colours come from config/theme.json at runtime (src/theme.ts): --land, --paper, --paper-2,
+     --ink, --muted, --line, --scrim, --warn, --warn-ink, --error, --error-ink, --live, --on-live. */
   --radius-lg: 20px;
   --radius-md: 14px;
-  --shadow-lg: 0 10px 30px rgb(15 23 42 / 0.16), 0 2px 6px rgb(15 23 42 / 0.08);
-  --shadow-sm: 0 1px 3px rgb(15 23 42 / 0.12);
+  --shadow-lg: 0 10px 30px rgb(0 0 0 / 0.16), 0 2px 6px rgb(0 0 0 / 0.08);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.12);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  color-scheme: light;
   font-family:
     Inter,
     system-ui,
@@ -24,8 +16,8 @@
     'Helvetica Neue',
     Arial,
     sans-serif;
-  color: var(--text);
-  background: var(--bg);
+  color: var(--ink);
+  background: var(--paper-2);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
@@ -75,7 +67,7 @@ button {
   align-items: center;
   gap: 8px;
   padding: 8px 14px 8px 10px;
-  background: var(--surface);
+  background: var(--paper);
   border-radius: 999px;
   box-shadow: var(--shadow-lg);
 }
@@ -85,9 +77,9 @@ button {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    var(--accent) 0 32%,
+    var(--ink) 0 32%,
     transparent 34% 52%,
-    rgb(249 115 22 / 0.45) 54% 66%,
+    color-mix(in srgb, var(--ink) 45%, transparent) 54% 66%,
     transparent 68%
   );
 }
@@ -99,7 +91,7 @@ button {
   font-size: 13px;
   color: var(--muted);
   padding-left: 8px;
-  border-left: 1px solid var(--border);
+  border-left: 1px solid var(--line);
 }
 .topbar__actions {
   display: flex;
@@ -111,7 +103,7 @@ button {
   padding: 0 12px;
   border: 0;
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--paper);
   box-shadow: var(--shadow-lg);
   font-weight: 700;
   font-size: 13px;
@@ -123,15 +115,15 @@ button {
   height: 36px;
   border: 0;
   border-radius: 50%;
-  background: var(--surface-2);
+  background: var(--paper-2);
   flex: none;
 }
 .icon-btn--raised {
   width: 40px;
   height: 40px;
-  background: var(--surface);
+  background: var(--paper);
   box-shadow: var(--shadow-lg);
-  color: #2563eb;
+  color: var(--ink);
 }
 .icon-btn--raised[data-status='locating'] svg {
   animation: spin 1.4s linear infinite;
@@ -154,8 +146,8 @@ button {
   justify-content: space-between;
   gap: 6px 12px;
   padding: 10px 12px 10px 14px;
-  background: #0f172a;
-  color: #fff;
+  background: var(--ink);
+  color: var(--paper);
   border-radius: var(--radius-md);
   font-size: 14px;
   box-shadow: var(--shadow-lg);
@@ -168,7 +160,7 @@ button {
 .banner button {
   background: transparent;
   border: 0;
-  color: #fdba74;
+  color: var(--paper);
   font-weight: 600;
   padding: 4px 6px;
 }
@@ -198,7 +190,7 @@ button {
   overflow-y: auto;
   /* Bottom: room to scroll the last row above the floating "Map" button. */
   padding: calc(116px + var(--safe-top)) 12px calc(88px + var(--safe-bottom));
-  background: var(--bg);
+  background: var(--paper-2);
   -webkit-overflow-scrolling: touch;
 }
 
@@ -206,7 +198,7 @@ button {
 /* MapLibre positions .marker with an inline transform, so the pin shape lives on an inner
    element: rotating .marker itself would be overwritten. */
 .marker {
-  --cat: #475569;
+  --cat: var(--muted);
   display: grid;
   place-items: center;
   width: 34px;
@@ -224,7 +216,7 @@ button {
   border: 2.5px solid var(--cat);
   border-radius: 50% 50% 50% 4px;
   transform: rotate(-45deg);
-  background: var(--surface);
+  background: var(--paper);
   box-shadow: var(--shadow-sm);
   font-size: 16px;
   line-height: 1;
@@ -234,7 +226,7 @@ button {
   background: var(--cat);
   /* Running now: filled pin with a quiet halo. Static on purpose: calm, and no redraws. */
   box-shadow:
-    0 0 0 3px rgb(255 255 255 / 0.95),
+    0 0 0 3px color-mix(in srgb, var(--paper) 95%, transparent),
     0 0 0 6px color-mix(in srgb, var(--cat) 28%, transparent),
     var(--shadow-sm);
 }
@@ -255,9 +247,9 @@ button {
   height: 20px;
   padding: 0 5px;
   border-radius: 999px;
-  border: 2px solid #fff;
-  background: var(--text);
-  color: #fff;
+  border: 2px solid var(--paper);
+  background: var(--ink);
+  color: var(--paper);
   font:
     700 11px/16px system-ui,
     sans-serif;
@@ -268,19 +260,19 @@ button {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 3px solid #fff;
-  background: var(--accent);
-  color: #fff;
+  border: 3px solid var(--paper);
+  background: var(--ink);
+  color: var(--paper);
   font:
     800 14px/1 system-ui,
     sans-serif;
   box-shadow:
-    0 0 0 5px rgb(249 115 22 / 0.25),
+    0 0 0 5px color-mix(in srgb, var(--ink) 25%, transparent),
     var(--shadow-sm);
 }
 .marker--cluster.is-now {
   box-shadow:
-    0 0 0 5px rgb(22 163 74 / 0.35),
+    0 0 0 5px color-mix(in srgb, var(--live) 35%, transparent),
     var(--shadow-sm);
 }
 /* A tapped spot: "Search from here" floats above its pin. */
@@ -296,7 +288,7 @@ button {
   align-items: center;
   height: 40px;
   border-radius: 999px;
-  background: var(--text);
+  background: var(--ink);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
@@ -304,7 +296,7 @@ button {
   height: 100%;
   border: 0;
   background: none;
-  color: #fff;
+  color: var(--paper);
   font-weight: 700;
   font-size: 14px;
   white-space: nowrap;
@@ -314,7 +306,7 @@ button {
 }
 .candidate__cancel {
   padding: 0 14px 0 10px;
-  border-left: 1px solid rgb(255 255 255 / 0.2) !important;
+  border-left: 1px solid color-mix(in srgb, var(--paper) 20%, transparent) !important;
   opacity: 0.8;
 }
 .candidate .point-pin {
@@ -324,7 +316,7 @@ button {
 .icon-btn--raised[data-pinned='true'] {
   color: var(--muted);
   box-shadow:
-    0 0 0 2px var(--text),
+    0 0 0 2px var(--ink),
     var(--shadow-lg);
 }
 /* The pinned search point: distances and walking times count from here. */
@@ -333,8 +325,8 @@ button {
   height: 22px;
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
-  background: var(--text);
-  border: 3px solid #fff;
+  background: var(--ink);
+  border: 3px solid var(--paper);
   box-shadow: var(--shadow-sm);
 }
 /* Bottom-sheet list of one place's events. */
@@ -350,10 +342,10 @@ button {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #2563eb;
-  border: 3px solid #fff;
+  background: var(--ink);
+  border: 3px solid var(--paper);
   box-shadow:
-    0 0 0 6px rgb(37 99 235 / 0.2),
+    0 0 0 6px color-mix(in srgb, var(--ink) 20%, transparent),
     var(--shadow-sm);
 }
 
@@ -369,8 +361,8 @@ button {
   padding: 0 10px 0 7px;
   border: 0;
   border-radius: 999px;
-  background: var(--text);
-  color: #fff;
+  background: var(--ink);
+  color: var(--paper);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -382,7 +374,7 @@ button {
 }
 .chevron__arrow {
   flex: none;
-  color: #fdba74;
+  color: var(--paper);
 }
 /* Events beyond the radius but on screen: a count bubble; tap widens the radius. */
 .ghost {
@@ -391,10 +383,10 @@ button {
   min-width: 28px;
   height: 28px;
   padding: 0 7px;
-  border: 2px dashed color-mix(in srgb, var(--text) 45%, white);
+  border: 2px dashed color-mix(in srgb, var(--ink) 45%, var(--paper));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.88);
-  color: var(--text);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  color: var(--ink);
   font-size: 12px;
   font-weight: 800;
   box-shadow: var(--shadow-sm);
@@ -416,8 +408,8 @@ button {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgb(249 115 22 / 0.5),
-    rgb(249 115 22 / 0.12) 62%,
+    color-mix(in srgb, var(--ink) 50%, transparent),
+    color-mix(in srgb, var(--ink) 12%, transparent) 62%,
     transparent 70%
   );
 }
@@ -428,10 +420,10 @@ button {
   min-width: 30px;
   height: 30px;
   padding: 0 6px;
-  border: 3px solid #fff;
+  border: 3px solid var(--paper);
   border-radius: 999px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--ink);
+  color: var(--paper);
   font-size: 13px;
   font-weight: 800;
   box-shadow: var(--shadow-sm);
@@ -439,7 +431,7 @@ button {
 
 /* Empty-radius guidance and the hotspot card. */
 .guide {
-  background: var(--surface);
+  background: var(--paper);
   padding: 14px 16px 16px;
 }
 .guide__head {
@@ -464,7 +456,7 @@ button {
 }
 .guide__arrow {
   flex: none;
-  color: #2563eb;
+  color: var(--ink);
   transform: translateY(2px);
 }
 .guide__dot {
@@ -472,8 +464,8 @@ button {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px rgb(249 115 22 / 0.25);
+  background: var(--ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 25%, transparent);
   transform: translateY(-1px);
 }
 .guide__actions {
@@ -511,7 +503,7 @@ button {
   pointer-events: auto;
 }
 .panel {
-  background: var(--surface);
+  background: var(--paper);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   padding: 14px 16px 12px;
@@ -540,8 +532,8 @@ button {
   padding: 0 20px 0 16px;
   border: 0;
   border-radius: 999px;
-  background: var(--text);
-  color: #fff;
+  background: var(--ink);
+  color: var(--paper);
   font-weight: 700;
   font-size: 15px;
   box-shadow: var(--shadow-lg);
@@ -550,7 +542,7 @@ button {
   display: block;
   margin-top: 4px;
   font-size: 13px;
-  color: #b91c1c;
+  color: var(--error-ink);
 }
 
 /* Radius slider */
@@ -563,7 +555,7 @@ button {
   color: var(--muted);
 }
 .radius__label strong {
-  color: var(--text);
+  color: var(--ink);
   font-size: 15px;
   margin-left: 4px;
 }
@@ -586,12 +578,12 @@ button {
 .radius input[type='range']::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  background: linear-gradient(to right, var(--accent) var(--fill), var(--border) var(--fill));
+  background: linear-gradient(to right, var(--ink) var(--fill), var(--line) var(--fill));
 }
 .radius input[type='range']::-moz-range-track {
   height: 6px;
   border-radius: 999px;
-  background: linear-gradient(to right, var(--accent) var(--fill), var(--border) var(--fill));
+  background: linear-gradient(to right, var(--ink) var(--fill), var(--line) var(--fill));
 }
 .radius input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -599,29 +591,29 @@ button {
   height: 26px;
   margin-top: -10px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--paper);
   border: 0;
   box-shadow:
-    0 0 0 1px rgb(15 23 42 / 0.08),
-    0 2px 8px rgb(15 23 42 / 0.25);
+    0 0 0 1px rgb(0 0 0 / 0.08),
+    0 2px 8px rgb(0 0 0 / 0.25);
 }
 .radius input[type='range']::-moz-range-thumb {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--paper);
   border: 0;
   box-shadow:
-    0 0 0 1px rgb(15 23 42 / 0.08),
-    0 2px 8px rgb(15 23 42 / 0.25);
+    0 0 0 1px rgb(0 0 0 / 0.08),
+    0 2px 8px rgb(0 0 0 / 0.25);
 }
 .radius input[type='range']:focus-visible {
   outline: none;
 }
 .radius input[type='range']:focus-visible::-webkit-slider-thumb {
   box-shadow:
-    0 0 0 4px rgb(249 115 22 / 0.35),
-    0 2px 8px rgb(15 23 42 / 0.25);
+    0 0 0 4px color-mix(in srgb, var(--ink) 35%, transparent),
+    0 2px 8px rgb(0 0 0 / 0.25);
 }
 
 /* Segmented control */
@@ -629,7 +621,7 @@ button {
   display: grid;
   grid-template-columns: 1fr 1fr;
   padding: 3px;
-  background: var(--surface-2);
+  background: var(--line);
   border-radius: 12px;
 }
 .segmented button {
@@ -641,8 +633,8 @@ button {
   color: var(--muted);
 }
 .segmented button.is-active {
-  background: var(--surface);
-  color: var(--text);
+  background: var(--paper);
+  color: var(--ink);
   box-shadow: var(--shadow-sm);
 }
 
@@ -655,7 +647,7 @@ button {
   animation: rise 0.2s ease-out;
 }
 .event-card {
-  background: var(--surface);
+  background: var(--paper);
   padding: 14px 16px 16px;
 }
 .event-card__head {
@@ -706,7 +698,7 @@ button {
   color: var(--muted);
 }
 .event-card__desc {
-  color: #334155;
+  color: var(--ink);
 }
 .event-card__actions {
   display: flex;
@@ -725,7 +717,7 @@ button {
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 999px;
-  background: var(--surface-2);
+  background: var(--paper-2);
 }
 .footnote {
   font-size: 12px !important;
@@ -736,19 +728,16 @@ button {
   padding: 2px 6px;
   border-radius: 999px;
   letter-spacing: 0.02em;
-  background: var(--surface-2);
+  background: var(--paper-2);
 }
-.badge--api {
-  background: #dcfce7;
-  color: #166534;
-}
+.badge--api,
 .badge--crawled {
-  background: #e0f2fe;
-  color: #075985;
+  background: var(--paper-2);
+  color: var(--ink);
 }
 .badge--community {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--warn);
+  color: var(--warn-ink);
 }
 .now-pill {
   display: inline-flex;
@@ -756,8 +745,8 @@ button {
   gap: 4px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #dcfce7;
-  color: #166534;
+  background: var(--live);
+  color: var(--on-live);
   font-size: 12px;
   font-weight: 700;
 }
@@ -766,7 +755,7 @@ button {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--now);
+  background: var(--live);
 }
 .btn {
   flex: 1;
@@ -776,9 +765,9 @@ button {
   height: 42px;
   padding: 0 14px;
   border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
   text-decoration: none;
   font-weight: 600;
   font-size: 14px;
@@ -791,18 +780,18 @@ button {
   cursor: default;
 }
 .btn--primary {
-  background: var(--text);
-  border-color: var(--text);
-  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
 }
 
 .cat-icon {
-  --cat: #475569;
+  --cat: var(--muted);
   display: inline-grid;
   place-items: center;
   flex: none;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--cat) 14%, white);
+  background: color-mix(in srgb, var(--cat) 14%, var(--paper));
   font-size: 20px;
 }
 
@@ -826,7 +815,7 @@ button {
   flex: none;
   gap: 2px;
   padding: 3px;
-  background: var(--surface);
+  background: var(--paper);
   border-radius: 999px;
   box-shadow: var(--shadow-lg);
 }
@@ -846,25 +835,25 @@ button {
   white-space: nowrap;
 }
 .chip.is-active {
-  background: var(--text);
-  color: #fff;
+  background: var(--ink);
+  color: var(--paper);
 }
 .chip__live {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--now);
+  background: var(--live);
 }
 .chip--filters {
   height: 40px;
   margin-left: auto;
-  background: var(--surface);
-  color: var(--text);
+  background: var(--paper);
+  color: var(--ink);
   box-shadow: var(--shadow-lg);
 }
 .chip--filters.has-active {
   box-shadow:
-    0 0 0 2px var(--accent),
+    0 0 0 2px var(--ink),
     var(--shadow-lg);
 }
 .chip__count {
@@ -874,8 +863,8 @@ button {
   height: 20px;
   padding: 0 6px;
   border-radius: 999px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--ink);
+  color: var(--paper);
   font-size: 12px;
 }
 
@@ -887,7 +876,7 @@ button {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgb(15 23 42 / 0.42);
+  background: color-mix(in srgb, var(--scrim) 42%, transparent);
   animation: fade 0.15s ease-out;
 }
 .filter-sheet {
@@ -895,7 +884,7 @@ button {
   max-width: 520px;
   max-height: 88dvh;
   overflow-y: auto;
-  background: var(--surface);
+  background: var(--paper);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   padding: 16px 16px 0;
   box-shadow: var(--shadow-lg);
@@ -928,15 +917,15 @@ button {
   gap: 8px;
 }
 .cat-chip {
-  --cat: #475569;
+  --cat: var(--muted);
   display: flex;
   align-items: center;
   gap: 8px;
   min-height: 46px;
   padding: 6px 10px;
-  border: 1.5px solid var(--border);
+  border: 1.5px solid var(--line);
   border-radius: 12px;
-  background: var(--surface);
+  background: var(--paper);
   text-align: left;
   font-size: 14px;
   font-weight: 600;
@@ -949,12 +938,12 @@ button {
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  background: color-mix(in srgb, var(--cat) 14%, white);
+  background: color-mix(in srgb, var(--cat) 14%, var(--paper));
   font-size: 16px;
 }
 .cat-chip.is-on {
   border-color: var(--cat);
-  background: color-mix(in srgb, var(--cat) 9%, white);
+  background: color-mix(in srgb, var(--cat) 9%, var(--paper));
 }
 .cat-chip.is-on .cat-chip__icon {
   background: var(--cat);
@@ -969,8 +958,8 @@ button {
   gap: 8px;
   margin-top: 18px;
   padding: 12px 0 calc(14px + var(--safe-bottom));
-  background: var(--surface);
-  border-top: 1px solid var(--border);
+  background: var(--paper);
+  border-top: 1px solid var(--line);
 }
 .filter-sheet__foot .btn {
   height: 48px;
@@ -994,7 +983,7 @@ button {
   z-index: 50;
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  background: var(--paper);
   animation: rise 0.2s ease-out;
   outline: none;
 }
@@ -1015,7 +1004,7 @@ button {
   color: var(--muted);
 }
 .detail__hero {
-  --cat: #475569;
+  --cat: var(--muted);
   display: grid;
   place-items: center;
   width: 100%;
@@ -1023,8 +1012,8 @@ button {
   max-height: 36dvh;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--cat) 26%, white),
-    color-mix(in srgb, var(--cat) 8%, white)
+    color-mix(in srgb, var(--cat) 26%, var(--paper)),
+    color-mix(in srgb, var(--cat) 8%, var(--paper))
   );
   overflow: hidden;
 }
@@ -1042,7 +1031,7 @@ button {
   max-width: 640px;
   margin: -20px auto 0;
   padding: 18px 16px calc(32px + var(--safe-bottom));
-  background: var(--surface);
+  background: var(--paper);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   min-height: 60dvh;
 }
@@ -1060,12 +1049,12 @@ button {
   font-size: 14px;
 }
 .status-banner--cancelled {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--error);
+  color: var(--error-ink);
 }
 .status-banner--postponed {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--warn);
+  color: var(--warn-ink);
 }
 .facts {
   display: grid;
@@ -1115,16 +1104,16 @@ button {
   align-items: center;
   gap: 4px;
   padding: 10px 4px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 12px;
-  background: var(--surface);
+  background: var(--paper);
   font-size: 12px;
   font-weight: 600;
 }
 .tool[aria-pressed='true'] {
-  color: var(--accent-ink);
-  border-color: color-mix(in srgb, var(--accent) 50%, white);
-  background: color-mix(in srgb, var(--accent) 7%, white);
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 50%, var(--paper));
+  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
 }
 .detail__section {
   margin-top: 22px;
@@ -1141,7 +1130,7 @@ button {
   margin: 0;
   font-size: 15px;
   line-height: 1.5;
-  color: #334155;
+  color: var(--ink);
 }
 .detail__section .rules {
   margin: 0;
@@ -1149,7 +1138,7 @@ button {
 .detail__source {
   margin: 24px 0 0;
   padding-top: 14px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--line);
   font-size: 12px;
   color: var(--muted);
 }
@@ -1164,8 +1153,8 @@ button {
   transform: translateX(-50%);
   padding: 10px 16px;
   border-radius: 999px;
-  background: var(--text);
-  color: #fff;
+  background: var(--ink);
+  color: var(--paper);
   font-size: 14px;
   box-shadow: var(--shadow-lg);
 }
@@ -1188,7 +1177,7 @@ button {
   padding: 12px;
   border: 0;
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--paper);
   box-shadow: var(--shadow-sm);
   text-align: left;
 }
@@ -1251,7 +1240,7 @@ button {
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--border);
+  background: var(--line);
 }
 .list-around__more {
   display: block;
@@ -1331,9 +1320,9 @@ button.brand {
   white-space: nowrap;
 }
 .badge--unverified {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px dashed #94a3b8;
+  background: var(--paper-2);
+  color: var(--muted);
+  border: 1px dashed var(--muted);
 }
 .row__title .badge {
   margin-left: 6px;
@@ -1360,7 +1349,7 @@ button.brand {
   z-index: 50;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  background: var(--paper-2);
   animation: rise 0.2s ease-out;
   outline: none;
 }
@@ -1369,8 +1358,8 @@ button.brand {
   align-items: center;
   gap: 8px;
   padding: calc(10px + var(--safe-top)) 12px 10px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
 }
 .screen__bar h1 {
   margin: 0;
@@ -1406,18 +1395,18 @@ button.brand {
   padding: 0;
   font-size: 13px;
   font-weight: 700;
-  color: #334155;
+  color: var(--ink);
 }
 .field__error {
   font-weight: 600;
-  color: #b91c1c;
+  color: var(--error-ink);
 }
 .field__hint {
   font-size: 12px;
   color: var(--muted);
 }
 .field__hint.is-warn {
-  color: #b45309;
+  color: var(--warn-ink);
 }
 .field__row {
   display: flex;
@@ -1432,23 +1421,23 @@ button.brand {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 12px;
-  background: var(--surface);
+  background: var(--paper);
   font: inherit;
   font-size: 16px; /* no zoom on iOS focus */
-  color: var(--text);
+  color: var(--ink);
 }
 .field textarea {
   resize: vertical;
 }
 .field input:focus-visible,
 .field textarea:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ink);
   outline-offset: -1px;
 }
 .field [aria-invalid='true'] {
-  border-color: #dc2626;
+  border-color: var(--error-ink);
 }
 .field-pair {
   display: grid;
@@ -1466,14 +1455,22 @@ button.brand {
   height: 44px;
 }
 .btn--danger {
-  color: #b91c1c;
-  border-color: #fecaca;
+  color: var(--error-ink);
+  border-color: var(--error);
 }
 .cat-chip:disabled {
   opacity: 0.45;
 }
 .segmented--2 {
   grid-template-columns: 1fr 1fr;
+}
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: -1px;
 }
 /* Age limit: "not stated" wider, then the numerals (one more if a page gave another age). */
 .segmented--age {
@@ -1488,16 +1485,16 @@ button.brand {
   margin: 0 0 12px;
   padding: 8px 12px;
   border-radius: 10px;
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--error);
+  color: var(--error-ink);
   font-size: 14px;
 }
 .notice {
   margin: 0 0 12px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: #fff7ed;
-  color: #9a3412;
+  background: var(--warn);
+  color: var(--warn-ink);
   font-size: 13px;
   line-height: 1.4;
 }
@@ -1513,24 +1510,24 @@ button.brand {
   height: 20px;
   margin: 0;
   flex: none;
-  accent-color: var(--accent);
+  accent-color: var(--ink);
 }
 .check.is-invalid {
-  color: #b91c1c;
+  color: var(--error-ink);
 }
 .inline-link {
   padding: 0;
   border: 0;
   background: none;
   font: inherit;
-  color: var(--accent-ink);
+  color: var(--ink);
   text-decoration: underline;
 }
 .terms {
   margin: -4px 0 14px;
   padding: 10px 12px 10px 28px;
   border-radius: 10px;
-  background: var(--surface-2);
+  background: var(--paper-2);
   font-size: 13px;
   line-height: 1.45;
 }
@@ -1539,7 +1536,7 @@ button.brand {
   bottom: 0;
   display: flex;
   padding: 12px 0 calc(8px + var(--safe-bottom));
-  background: var(--bg);
+  background: var(--paper-2);
 }
 .add-form__foot .btn {
   height: 50px;
@@ -1561,7 +1558,7 @@ button.brand {
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--border);
+  background: var(--line);
 }
 .found {
   margin: -6px 0 12px;
@@ -1587,9 +1584,9 @@ button.brand {
   gap: 2px;
   width: 100%;
   padding: 10px 12px;
-  border: 1.5px solid var(--border);
+  border: 1.5px solid var(--line);
   border-radius: 12px;
-  background: var(--surface);
+  background: var(--paper);
   text-align: left;
   font-size: 14px;
 }
@@ -1601,19 +1598,19 @@ label.choice {
 }
 label.choice input {
   margin: 0;
-  accent-color: var(--accent);
+  accent-color: var(--ink);
 }
 .choice span {
   font-size: 13px;
   color: var(--muted);
 }
 .choice.is-on {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 6%, white);
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
 }
 .pin-map {
   height: 220px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 14px;
   overflow: hidden;
   cursor: crosshair;
@@ -1622,9 +1619,10 @@ label.choice input {
   width: 30px;
   height: 40px;
   cursor: grab;
-  background: no-repeat center / contain
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Cpath d='M15 39s13-12.6 13-23A13 13 0 0 0 2 16c0 10.4 13 23 13 23z' fill='%23f97316' stroke='white' stroke-width='2'/%3E%3Ccircle cx='15' cy='16' r='5' fill='white'/%3E%3C/svg%3E");
-  filter: drop-shadow(0 2px 3px rgb(15 23 42 / 0.3));
+  /* Pin shape with a hole, filled with the theme ink. */
+  background: var(--ink);
+  mask: no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Cpath fill-rule='evenodd' d='M15 39s13-12.6 13-23A13 13 0 0 0 2 16c0 10.4 13 23 13 23zM15 11a5 5 0 1 0 0 10a5 5 0 1 0 0-10z'/%3E%3C/svg%3E");
 }
 .done {
   display: grid;
@@ -1640,8 +1638,8 @@ label.choice input {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #dcfce7;
-  color: var(--now);
+  background: var(--paper-2);
+  color: var(--ink);
 }
 .done .event-card__actions {
   width: 100%;
@@ -1671,9 +1669,9 @@ label.choice input {
 .mod-card {
   margin-bottom: 10px;
   padding: 12px 14px 14px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 14px;
-  background: var(--surface);
+  background: var(--paper);
 }
 .mod-card h3 {
   margin: 4px 0;
@@ -1695,9 +1693,9 @@ label.choice input {
 .mod-card__note {
   margin: 6px 0;
   padding: 6px 10px;
-  border-left: 3px solid var(--border);
+  border-left: 3px solid var(--line);
   font-size: 13px;
-  color: #334155;
+  color: var(--ink);
 }
 .mod-card .event-card__actions {
   flex-wrap: wrap;
@@ -1706,7 +1704,7 @@ label.choice input {
 .prose {
   font-size: 15px;
   line-height: 1.55;
-  color: #334155;
+  color: var(--ink);
 }
 .prose h2 {
   margin: 24px 0 6px;
@@ -1725,7 +1723,7 @@ label.choice input {
 }
 .prose .lead {
   font-size: 17px;
-  color: var(--text);
+  color: var(--ink);
 }
 .prose .small {
   font-size: 12px;
@@ -1745,8 +1743,8 @@ label.choice input {
   margin: 12px 0 0;
   padding: 10px 12px;
   border-radius: 12px;
-  background: #fef3c7;
-  color: #78350f;
+  background: var(--warn);
+  color: var(--warn-ink);
   font-size: 14px;
   line-height: 1.35;
 }
@@ -1765,19 +1763,19 @@ label.choice input {
 .flag-banner__note {
   margin-top: 2px;
   font-size: 12px;
-  color: #92400e;
+  color: var(--warn-ink);
 }
 .flag-line {
   margin: 8px 0 0;
   padding: 6px 10px;
   border-radius: 10px;
-  background: #fef3c7;
-  color: #78350f;
+  background: var(--warn);
+  color: var(--warn-ink);
   font-size: 13px;
 }
 .badge--flag {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--warn);
+  color: var(--warn-ink);
 }
 .row__title .badge--flag {
   margin-left: 6px;
@@ -1798,10 +1796,10 @@ label.choice input {
   place-items: center;
   width: 16px;
   height: 16px;
-  border: 2px solid #fff;
+  border: 2px solid var(--paper);
   border-radius: 50%;
-  background: #f59e0b;
-  color: #fff;
+  background: var(--warn-ink);
+  color: var(--paper);
   font:
     800 10px/1 system-ui,
     sans-serif;
@@ -1821,7 +1819,7 @@ label.choice input {
   flex: none;
   width: 42px;
   padding: 0;
-  color: #2563eb;
+  color: var(--ink);
 }
 .event-card__actions--links {
   margin-top: 8px;
@@ -1833,7 +1831,7 @@ label.choice input {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: var(--bg);
+  background: var(--paper-2);
 }
 .go__map {
   position: absolute;
@@ -1850,7 +1848,7 @@ label.choice input {
   gap: 10px;
   padding: 10px 14px 12px 10px;
   border-radius: var(--radius-lg);
-  background: var(--surface);
+  background: var(--paper);
   box-shadow: var(--shadow-lg);
 }
 .go__titles {
@@ -1876,7 +1874,7 @@ label.choice input {
 .go__meta {
   font-size: 14px;
   font-weight: 600;
-  color: #1e40af;
+  color: var(--ink);
 }
 .go__notices {
   position: absolute;
@@ -1900,7 +1898,7 @@ label.choice input {
   bottom: calc(12px + var(--safe-bottom));
   padding: 12px;
   border-radius: var(--radius-lg);
-  background: var(--surface);
+  background: var(--paper);
   box-shadow: var(--shadow-lg);
 }
 .go-buttons {

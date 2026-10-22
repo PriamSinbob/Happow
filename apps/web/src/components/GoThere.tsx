@@ -6,6 +6,7 @@ import { categoriesById, config } from '../config';
 import { formatDistance, navigationUrl } from '../format';
 import { useLiveLocation } from '../hooks/useLiveLocation';
 import { useI18n } from '../i18n';
+import { useMapTheme, type OwnLayerPaint } from '../mapTheme';
 import { pathLength, progress } from '../nav';
 import { FlagNotice } from './EventMeta';
 import { Icon } from './Icons';
@@ -13,6 +14,10 @@ import { rasterStyle } from './MapView';
 
 const nav = config.app.navigation;
 const ROUTE = 'route';
+const ROUTE_PAINT: OwnLayerPaint = [
+  ['route-casing', 'line-color', 'paper'],
+  ['route-line', 'line-color', 'ink'],
+];
 
 interface Route {
   path: LatLng[];
@@ -244,7 +249,7 @@ function TripMap({
         type: 'line',
         source: ROUTE,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#ffffff', 'line-width': 9 },
+        paint: { 'line-width': 9 },
       });
       m.addLayer({
         id: 'route-line',
@@ -252,7 +257,6 @@ function TripMap({
         source: ROUTE,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': '#2563eb',
           'line-width': 5,
           'line-dasharray': ['case', ['get', 'direct'], ['literal', [1, 2]], ['literal', [1, 0]]],
         },
@@ -266,6 +270,7 @@ function TripMap({
     // The map is created once; markers and the route update below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useMapTheme(map, ROUTE_PAINT);
 
   useEffect(() => {
     const m = map.current;
@@ -274,7 +279,7 @@ function TripMap({
       const el = document.createElement('div');
       el.className = 'marker is-target';
       const cat = categoriesById.get(ev.categoryIds[0]!);
-      el.style.setProperty('--cat', cat?.color ?? '#475569');
+      el.style.setProperty('--cat', cat?.color ?? 'var(--muted)');
       const pin = Object.assign(document.createElement('span'), { className: 'marker__pin' });
       pin.append(Object.assign(document.createElement('span'), { textContent: cat?.icon ?? '📍' }));
       el.append(pin);

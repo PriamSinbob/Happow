@@ -6,6 +6,7 @@ import { App } from './App';
 import { captureAuthRedirect } from './auth';
 import { config } from './config';
 import { detectLanguage, I18nProvider } from './i18n';
+import { applyInitialTheme, ThemeProvider } from './theme';
 import './styles.css';
 
 registerSW({ immediate: true });
@@ -13,13 +14,17 @@ registerSW({ immediate: true });
 captureAuthRedirect();
 initAnalytics();
 
+applyInitialTheme();
+
 const lang = detectLanguage(config.app.languages, config.app.fallbackLanguage);
 document.documentElement.lang = lang;
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <I18nProvider initial={lang}>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </I18nProvider>
   </StrictMode>,
 );
