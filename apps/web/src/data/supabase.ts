@@ -41,6 +41,10 @@ export interface Row {
   currency: string | null;
   is_free: boolean;
   rules: NearbyEvent['rules'];
+  entry?: NearbyEvent['entry'];
+  grace_min?: number | null;
+  age_min?: number | null;
+  family?: boolean | null;
   official_url: string | null;
   ticket_url: string | null;
   image_url?: string | null;
@@ -108,6 +112,10 @@ export function rowToEvent(r: Row): NearbyEvent {
     currency: r.currency,
     isFree: r.is_free,
     rules: r.rules ?? {},
+    entry: r.entry ?? null,
+    graceMin: r.grace_min ?? null,
+    ageMin: r.age_min ?? null,
+    family: r.family ?? null,
     officialUrl: r.official_url,
     ticketUrl: r.ticket_url,
     imageUrl: r.image_url ?? null,

@@ -174,6 +174,13 @@ describe.skipIf(!url)('ingestion into Postgres', () => {
     }
   });
 
+  it('stores the age limit as a column, not as rules text', async () => {
+    const { rows } = await db.query(
+      `select age_min, family, entry, rules from events where id = 'ticketmaster:Z698xZb_Z17a0kB'`,
+    );
+    expect(rows[0]).toEqual({ age_min: 18, family: null, entry: null, rules: {} });
+  });
+
   it('stops showing API events past their cache age', async () => {
     await db.query(
       `update events set stale_after = now() - interval '1 minute' where id = 'ticketmaster:Z698xZb_Z17a0kB'`,

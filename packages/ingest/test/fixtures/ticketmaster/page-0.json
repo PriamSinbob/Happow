@@ -125,6 +125,7 @@
           }
         ],
         "priceRanges": [{ "type": "standard", "currency": "PLN", "min": 60.0, "max": 120.0 }],
+        "ageRestrictions": { "legalAgeEnforced": true },
         "_embedded": {
           "venues": [
             {

@@ -4,7 +4,6 @@ import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
 import { en as RULE_KEYS } from '../i18n/en';
 
 const RULE_ICONS: Record<string, string> = {
-  age: '🔞',
   pets: '🐾',
   accessibility: '♿',
   dress: '👔',
@@ -18,19 +17,43 @@ function ruleText(
 ): string {
   const exact = `rule.${key}.${value}`;
   if (exact in RULE_KEYS) return t(exact as MessageKey);
-  if (key === 'age' || key === 'dress') return t(`rule.${key}`, { value });
+  if (key === 'dress') return t('rule.dress', { value });
   return value;
 }
 
-export function RuleList({ rules }: { rules: NearbyEvent['rules'] }) {
+type RuleFields = Pick<NearbyEvent, 'rules' | 'ageMin' | 'family'>;
+
+/** Age limit, family mark and the source's free-text rules, one line each. */
+function ruleItems(
+  ev: RuleFields,
+  t: (key: MessageKey, params?: Record<string, string>) => string,
+): { key: string; icon: string; text: string }[] {
+  const items = [];
+  if (ev.ageMin !== null)
+    items.push({
+      key: 'age',
+      icon: ev.ageMin >= 18 ? '🔞' : '•',
+      text: ev.ageMin === 0 ? t('rule.allAges') : t('rule.ageMin', { value: String(ev.ageMin) }),
+    });
+  if (ev.family) items.push({ key: 'family', icon: '👪', text: t('rule.family') });
+  for (const [k, v] of Object.entries(ev.rules))
+    if (v) items.push({ key: k, icon: RULE_ICONS[k] ?? '•', text: ruleText(t, k, v) });
+  return items;
+}
+
+export function hasRules(ev: RuleFields): boolean {
+  return ev.ageMin !== null || !!ev.family || Object.values(ev.rules).some(Boolean);
+}
+
+export function RuleList({ ev }: { ev: RuleFields }) {
   const { t } = useI18n();
-  const entries = Object.entries(rules).filter(([, v]) => v);
-  if (!entries.length) return null;
+  const items = ruleItems(ev, t);
+  if (!items.length) return null;
   return (
     <ul className="rules">
-      {entries.map(([k, v]) => (
-        <li key={k}>
-          <span aria-hidden>{RULE_ICONS[k] ?? '•'}</span> {ruleText(t, k, v!)}
+      {items.map((i) => (
+        <li key={i.key}>
+          <span aria-hidden>{i.icon}</span> {i.text}
         </li>
       ))}
     </ul>
@@ -92,7 +115,7 @@ export function EventCard({
       <p className="event-card__distance">
         {distance} · {walk}
       </p>
-      <RuleList rules={ev.rules} />
+      <RuleList ev={ev} />
       {ev.endEstimated && <p className="footnote">* {t('event.endEstimated')}</p>}
 
       <div className="event-card__actions">

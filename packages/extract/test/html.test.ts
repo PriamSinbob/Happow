@@ -211,3 +211,55 @@ describe('offer prices', () => {
     });
   });
 });
+
+describe('age and entry from JSON-LD', () => {
+  const one = (extra: object) =>
+    eventsFromJsonLd(
+      [
+        {
+          '@type': 'TheaterEvent',
+          name: 'Show',
+          startDate: '2026-11-01T19:00:00+01:00',
+          location: { '@type': 'Place', name: 'Teatr', address: 'Ruska 1, Wrocław' },
+          ...extra,
+        },
+      ],
+      'https://x.example',
+    )[0]!;
+
+  it('reads typicalAgeRange: "18-", "16+", "7-12" (family), "0-99"', () => {
+    expect(one({ typicalAgeRange: '18-' })).toMatchObject({ ageMin: 18, family: null });
+    expect(one({ typicalAgeRange: '16+' })).toMatchObject({ ageMin: 16, family: null });
+    expect(one({ typicalAgeRange: '7-12' })).toMatchObject({ ageMin: 7, family: true });
+    expect(one({ typicalAgeRange: '0-99' })).toMatchObject({ ageMin: 0, family: null });
+    expect(one({ typicalAgeRange: 'dorośli' })).toMatchObject({ ageMin: null, family: null });
+  });
+
+  it('reads audience ages, and ignores numbers that are not ages', () => {
+    expect(
+      one({ audience: { '@type': 'PeopleAudience', suggestedMinAge: 3, suggestedMaxAge: 10 } }),
+    ).toMatchObject({ ageMin: 3, family: true });
+    expect(one({ audience: [{ '@type': 'PeopleAudience', requiredMinAge: '18' }] })).toMatchObject({
+      ageMin: 18,
+      family: null,
+    });
+    expect(one({ audience: { suggestedMinAge: 2026 } })).toMatchObject({ ageMin: null });
+    expect(one({})).toMatchObject({ ageMin: null, family: null, entry: null });
+  });
+
+  it('doors before the start mean fixed entry; doors at the start say nothing', () => {
+    expect(one({ doorTime: '18:30' }).entry).toBe('fixed');
+    expect(one({ doorTime: '2026-11-01T18:00:00+01:00' }).entry).toBe('fixed');
+    expect(one({ doorTime: '2026-11-01T19:00:00+01:00' }).entry).toBeNull();
+    expect(one({ doorTime: '19:00' }).entry).toBeNull();
+  });
+
+  it('recorded pages without age data keep null', () => {
+    const events = eventsFromJsonLd(
+      extractJsonLd(fixture('ebilet-listing.html')),
+      'https://www.ebilet.pl/',
+    );
+    expect(events.length).toBeGreaterThan(0);
+    for (const e of events) expect(e).toMatchObject({ ageMin: null, family: null });
+  });
+});

@@ -2,6 +2,7 @@ import type { z } from 'zod';
 import type {
   appConfigSchema,
   categorySchema,
+  entrySchema,
   languageSchema,
   mapConfigSchema,
   regionSchema,
@@ -20,6 +21,7 @@ export type MapConfig = z.infer<typeof mapConfigSchema>;
 export type Source = z.infer<typeof sourceSchema>;
 export type Trust = z.infer<typeof trustSchema>;
 export type EventRules = z.infer<typeof rulesSchema>;
+export type EntryType = z.infer<typeof entrySchema>;
 export type SeedFile = z.infer<typeof seedFileSchema>;
 export type TimeWindow = z.infer<typeof timeWindowSchema>;
 
@@ -50,6 +52,14 @@ export interface HappowEvent {
   currency: string | null;
   isFree: boolean;
   rules: EventRules;
+  /** Fixed or open entry; null = the source did not say, the category default applies. */
+  entry: EntryType | null;
+  /** Fixed entry: minutes late that still count as on time; null = the category default. */
+  graceMin: number | null;
+  /** Youngest age let in: 0 = explicitly all ages, 18 = 18+; null = unknown. */
+  ageMin: number | null;
+  /** Explicitly meant for children or families; null = not said. */
+  family: boolean | null;
   officialUrl: string | null;
   ticketUrl: string | null;
   imageUrl: string | null;

@@ -118,6 +118,9 @@ describe.skipIf(!url)('milestone 4 in Postgres', () => {
       ticketUrl: null,
       imageUrl: null,
       status: 'scheduled',
+      ageMin: null,
+      family: null,
+      entry: null,
       online: false,
       categoryHints: [],
       categoryIds: ['music'],
@@ -197,6 +200,9 @@ describe.skipIf(!url)('milestone 4 in Postgres', () => {
           priceMax: 0,
           currency: null,
           rules: {},
+          ageMin: 0,
+          family: true,
+          entry: 'open',
           officialUrl: null,
           ticketUrl: null,
           imageUrl: null,
@@ -218,7 +224,8 @@ describe.skipIf(!url)('milestone 4 in Postgres', () => {
     const near = async () =>
       (
         await db.query(
-          `select id, verified, flag_reason, flag_count, flag_at from events_near($1, $2, 300, now(), now() + interval '1 hour')`,
+          `select id, verified, flag_reason, flag_count, flag_at, entry, age_min, family
+           from events_near($1, $2, 300, now(), now() + interval '1 hour')`,
           [region.center.lat, region.center.lng],
         )
       ).rows;
@@ -234,7 +241,12 @@ describe.skipIf(!url)('milestone 4 in Postgres', () => {
         config.app.submissions.publishBeforeModeration,
       ]);
       published = `submissions:${p.id}`;
-      expect((await near()).find((e) => e.id === published)).toMatchObject({ verified: false });
+      expect((await near()).find((e) => e.id === published)).toMatchObject({
+        verified: false,
+        entry: 'open',
+        age_min: 0,
+        family: true,
+      });
     });
 
     it('queues it for moderation and verifies it on approval', async () => {

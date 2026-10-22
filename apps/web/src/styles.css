@@ -1475,6 +1475,15 @@ button.brand {
 .segmented--2 {
   grid-template-columns: 1fr 1fr;
 }
+/* Age limit: "not stated" wider, then the numerals (one more if a page gave another age). */
+.segmented--age {
+  grid-template-columns: 1.6fr;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+}
+.segmented--age button {
+  font-size: 14px;
+}
 .form-error {
   margin: 0 0 12px;
   padding: 8px 12px;

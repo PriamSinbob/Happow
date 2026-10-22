@@ -30,6 +30,10 @@ function ev(over: Partial<HappowEvent>): HappowEvent {
     currency: null,
     isFree: false,
     rules: {},
+    entry: null,
+    graceMin: null,
+    ageMin: null,
+    family: null,
     officialUrl: null,
     ticketUrl: null,
     imageUrl: null,
@@ -112,14 +116,17 @@ describe('merge and decide', () => {
 
   it('fills gaps from the other listing and prefers a real end time', () => {
     const merged = mergeEvents(
-      ev({ title: 'A', ticketUrl: 'https://t.example/1', endEstimated: true }),
+      ev({ title: 'A', ticketUrl: 'https://t.example/1', endEstimated: true, entry: 'open' }),
       ev({
         title: 'B',
         ticketUrl: 'https://t.example/2',
         officialUrl: 'https://o.example',
         endAt: '2026-10-24T21:00:00.000Z',
         endEstimated: false,
-        rules: { age: '16+' },
+        rules: { dress: 'smart' },
+        entry: 'fixed',
+        ageMin: 16,
+        family: false,
       }),
     );
     expect(merged).toMatchObject({
@@ -128,7 +135,12 @@ describe('merge and decide', () => {
       officialUrl: 'https://o.example',
       endAt: '2026-10-24T21:00:00.000Z',
       endEstimated: false,
-      rules: { age: '16+' },
+      rules: { dress: 'smart' },
+      // The primary's own entry wins; the age data it lacks comes from the other listing.
+      entry: 'open',
+      ageMin: 16,
+      family: false,
+      graceMin: null,
     });
   });
 

@@ -44,6 +44,9 @@ const nfmEvent = {
   status: 'scheduled',
   online_only: false,
   category_ids: ['kids', 'music'],
+  age_min: null,
+  family: true,
+  entry: 'fixed',
   confidence: 0.92,
 };
 
@@ -83,6 +86,9 @@ describe('ClaudeExtractor', () => {
       priceMax: 120,
       currency: 'PLN',
       categoryIds: ['kids', 'music'],
+      ageMin: null,
+      family: true,
+      entry: 'fixed',
       method: 'llm',
       confidence: 0.92,
     });
@@ -100,6 +106,31 @@ describe('ClaudeExtractor', () => {
     expect(body.messages[0].content).toContain('Today: 2026-10-20');
     expect(body.messages[0].content).toContain('Pustynne portato');
     expect(body).not.toHaveProperty('temperature');
+    // Age and entry fields, prompted with the Polish cues.
+    const schemaText = JSON.stringify(body.output_config.format.schema);
+    for (const f of ['age_min', 'family', 'entry']) expect(schemaText).toContain(f);
+    for (const cue of ['od 18 lat', '18+', 'wstęp od 16 lat', 'dla dzieci', 'rodzinny', '0+'])
+      expect(body.system[0].text).toContain(cue);
+  });
+
+  it('keeps plausible ages and known entry types only', async () => {
+    const fetchMock = vi.fn(async () =>
+      reply({
+        events: [
+          { ...nfmEvent, title: 'A', age_min: 18, family: null, entry: 'open' },
+          { ...nfmEvent, title: 'B', age_min: 0, family: false, entry: 'whenever' },
+          { ...nfmEvent, title: 'C', age_min: 2026, family: null, entry: null },
+          { ...nfmEvent, title: 'D', age_min: 16.5, family: null, entry: null },
+        ],
+      }),
+    );
+    const events = await extractor(fetchMock as unknown as typeof fetch).extract(input);
+    expect(events.map((e) => [e.title, e.ageMin, e.family, e.entry])).toEqual([
+      ['A', 18, null, 'open'],
+      ['B', 0, false, null],
+      ['C', null, null, null],
+      ['D', null, null, null],
+    ]);
   });
 
   it('drops events without a usable date and clamps confidence', async () => {

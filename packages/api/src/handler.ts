@@ -1,8 +1,10 @@
 import {
+  ageMinSchema,
   areaFrom,
   distanceM,
   areaSlackM,
   daysBounds,
+  entrySchema,
   getRegion,
   isAreaKey,
   isInBbox,
@@ -114,6 +116,11 @@ const submissionSchema = z.object({
     currency: z.string().length(3).nullable().optional(),
     url: z.string().url().max(500).nullable().optional(),
     description: z.string().trim().max(2000).nullable().optional(),
+    /** The form offers none / 0+ / 12+ / 16+ / 18+; a prefilled page value may be another age. */
+    ageMin: ageMinSchema.nullable().optional(),
+    family: z.boolean().nullable().optional(),
+    /** Sent only when the user changes it; otherwise the category default applies. */
+    entry: entrySchema.nullable().optional(),
   }),
 });
 
@@ -163,6 +170,9 @@ export interface Prefill {
   currency: string | null;
   url: string;
   ticketUrl: string | null;
+  ageMin: number | null;
+  family: boolean | null;
+  entry: 'fixed' | 'open' | null;
 }
 
 export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
@@ -266,6 +276,9 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       currency: e.currency,
       url: e.url ?? pageUrl,
       ticketUrl: e.ticketUrl,
+      ageMin: e.ageMin ?? null,
+      family: e.family ?? null,
+      entry: e.entry ?? null,
     };
   }
 
@@ -408,6 +421,9 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         priceMax: e.isFree ? 0 : (e.priceMin ?? null),
         currency: e.isFree ? null : (e.currency ?? region.currency),
         rules: {},
+        ageMin: e.ageMin ?? null,
+        family: e.family ?? null,
+        entry: e.entry ?? null,
         officialUrl: e.url ?? null,
         ticketUrl: null,
         imageUrl: null,

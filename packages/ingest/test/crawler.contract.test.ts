@@ -164,6 +164,9 @@ describe('crawler (contract, recorded pages)', () => {
       ticketUrl: null,
       imageUrl: null,
       status: 'scheduled',
+      ageMin: 6,
+      family: true,
+      entry: 'fixed',
       online: false,
       categoryHints: [],
       categoryIds: ['kids', 'music'],
@@ -193,6 +196,10 @@ describe('crawler (contract, recorded pages)', () => {
       startAt: '2026-11-22T09:00:00.000Z',
       categoryIds: ['kids', 'music'],
       trust: 'crawled',
+      ageMin: 6,
+      family: true,
+      entry: 'fixed',
+      graceMin: null,
     });
     expect(pustynne.event.confidence).toBeCloseTo(0.92, 5);
     const input = extract.mock.calls.find(([i]) => i.text.includes('Pustynne'))![0];
@@ -227,6 +234,9 @@ describe('crawler (contract, recorded pages)', () => {
       ticketUrl: null,
       imageUrl: null,
       status: 'scheduled',
+      ageMin: null,
+      family: null,
+      entry: null,
       online: false,
       categoryHints: [],
       categoryIds: ['music'],

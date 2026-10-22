@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Language, LatLng } from '@happow/core';
+import { entryOf, type EntryType, type Language, type LatLng } from '@happow/core';
 import { track } from '../analytics';
 import { api, deviceId } from '../api';
 import { config, region } from '../config';
@@ -24,6 +24,9 @@ interface Prefill {
   currency: string | null;
   url: string;
   ticketUrl: string | null;
+  ageMin: number | null;
+  family: boolean | null;
+  entry: EntryType | null;
 }
 
 interface Form {
@@ -39,6 +42,11 @@ interface Form {
   currency: string;
   url: string;
   description: string;
+  /** Youngest age let in; null = not stated. */
+  ageMin: number | null;
+  family: boolean;
+  /** Null until the user picks one: the category default applies. */
+  entry: EntryType | null;
   terms: boolean;
 }
 
@@ -55,10 +63,16 @@ const EMPTY: Form = {
   currency: region.currency,
   url: '',
   description: '',
+  ageMin: null,
+  family: false,
+  entry: null,
   terms: false,
 };
 
 const MAX_CATEGORIES = 3;
+/** Age choices: not stated, all ages, 12+, 16+, 18+. */
+const AGE_CHOICES = [null, 0, 12, 16, 18] as const;
+const ENTRY_TYPES: EntryType[] = ['fixed', 'open'];
 const { submissions } = config.app;
 
 type Autofill =
@@ -114,6 +128,15 @@ export function AddEvent({
   const invalid = tried ? missing(form) : new Set<keyof Form>();
   const required = (key: keyof Form) =>
     invalid.has(key) && <span className="field__error">{t('add.required')}</span>;
+  const defaultEntry = entryOf(
+    { categoryIds: form.categoryIds, entry: null, graceMin: null },
+    config.categories,
+  ).entry;
+  // A prefilled page may give an age the choices lack (6+); offer it too.
+  const ageChoices: (number | null)[] =
+    form.ageMin !== null && !(AGE_CHOICES as readonly (number | null)[]).includes(form.ageMin)
+      ? [...AGE_CHOICES, form.ageMin].sort((a, b) => (a ?? -1) - (b ?? -1))
+      : [...AGE_CHOICES];
 
   async function fill(e: React.FormEvent) {
     e.preventDefault();
@@ -147,6 +170,9 @@ export function AddEvent({
       amount: p.priceMin !== null && !p.isFree ? String(p.priceMin) : '',
       currency: p.currency ?? region.currency,
       url: p.url,
+      ageMin: p.ageMin,
+      family: p.family === true,
+      entry: p.entry,
     }));
     if (!p.point && (p.address || p.venueName)) void locate(p.address || p.venueName!);
   }
@@ -185,6 +211,8 @@ export function AddEvent({
     setSending(true);
     setError(null);
     const amount = form.amount ? Number(form.amount.replace(',', '.')) : null;
+    // Only a choice that differs from the category default is stored on the event.
+    const entry = form.entry && form.entry !== defaultEntry ? form.entry : null;
     try {
       const res = await api<Done>('submissions', {
         body: {
@@ -203,6 +231,9 @@ export function AddEvent({
             currency: form.isFree ? null : form.currency,
             url: form.url.trim() || null,
             description: form.description.trim() || null,
+            ageMin: form.ageMin,
+            family: form.family || null,
+            entry,
           },
         },
       });
@@ -466,6 +497,54 @@ export function AddEvent({
             />
           </label>
         )}
+
+        <fieldset className="field">
+          <legend className="field__label">{t('add.field.entry')}</legend>
+          <div className="segmented segmented--2" role="radiogroup">
+            {ENTRY_TYPES.map((type) => {
+              const on = (form.entry ?? defaultEntry) === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  className={on ? 'is-active' : ''}
+                  onClick={() => set('entry', type)}
+                >
+                  {t(`add.entry.${type}`)}
+                </button>
+              );
+            })}
+          </div>
+          <span className="field__hint">{t('add.entry.hint')}</span>
+        </fieldset>
+
+        <fieldset className="field">
+          <legend className="field__label">{t('add.field.age')}</legend>
+          <div className="segmented segmented--age" role="radiogroup">
+            {ageChoices.map((age) => (
+              <button
+                key={String(age)}
+                type="button"
+                role="radio"
+                aria-checked={form.ageMin === age}
+                className={form.ageMin === age ? 'is-active' : ''}
+                onClick={() => set('ageMin', age)}
+              >
+                {age === null ? t('add.age.none') : `${age}+`}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={form.family}
+            onChange={(e) => set('family', e.target.checked)}
+          />
+          <span>{t('add.field.family')}</span>
+        </label>
 
         <label className="field">
           <span className="field__label">{t('add.field.url')}</span>

@@ -7,7 +7,7 @@ import { eventUrl } from '../hooks/useHashRoute';
 import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
-import { RuleList } from './EventCard';
+import { hasRules, RuleList } from './EventCard';
 import { Icon } from './Icons';
 import { ReportDialog } from './ReportDialog';
 
@@ -255,10 +255,10 @@ function DetailBody({
             <p>{ev.description}</p>
           </section>
         )}
-        {Object.values(ev.rules).some(Boolean) && (
+        {hasRules(ev) && (
           <section className="detail__section">
             <h2>{t('event.rules')}</h2>
-            <RuleList rules={ev.rules} />
+            <RuleList ev={ev} />
           </section>
         )}
         {ev.endEstimated && <p className="footnote">* {t('event.endEstimated')}</p>}

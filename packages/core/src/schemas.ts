@@ -8,10 +8,25 @@ const latLngSchema = z.object({
   lng: z.number().min(-180).max(180),
 });
 
+/** Fixed: the event starts at a set time (a play, a film). Open: come and go while it runs. */
+export const entrySchema = z.enum(['fixed', 'open']);
+/** Youngest age let in: 0 = explicitly all ages, 18 = adults only. */
+export const ageMinSchema = z.number().int().min(0).max(21);
+export const graceMinSchema = z.number().int().min(0).max(120);
+
 export const categorySchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   labels: labelsSchema,
   defaultDurationMin: z.number().int().positive(),
+  /** Entry type for events whose source does not say. */
+  entry: entrySchema,
+  /** Fixed entry: minutes after the start that arriving still counts as on time. */
+  graceMin: graceMinSchema,
+  /**
+   * Family mode: "yes" shows every event, "likely" shows events without age information as
+   * "not confirmed", "no" hides them. Absent: only events with their own age data count.
+   */
+  family: z.enum(['yes', 'likely', 'no']).optional(),
   icon: z.string().min(1),
   color: z.string().regex(/^#[0-9a-f]{6}$/i),
 });
@@ -56,6 +71,17 @@ export const appConfigSchema = z.object({
     defaultM: z.number().positive(),
   }),
   walkingSpeedMPerMin: z.number().positive(),
+  /** When the user would get to an event, for the late (dashed) state of pins. */
+  arrival: z.object({
+    /** Straight-line distance × this ≈ the walked distance, until routing is used. */
+    detourFactor: z.number().min(1),
+    /** Open entry: arriving this close to the end counts as too late. */
+    openLastEntryMin: z.number().nonnegative(),
+  }),
+  family: z.object({
+    /** "HH:MM" in the region's time zone: later starts are hidden in family mode. */
+    latestEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'use a time like "21:00"'),
+  }),
   h3: z.object({
     eventResolution: z.number().int().min(0).max(15),
     /** Coarser cells (r8 ≈ 0.7 km²) that events are counted in for hotspots and off-screen hints. */
@@ -269,8 +295,8 @@ export const sourceSchema = z.object({
 });
 export const sourcesConfigSchema = z.object({ sources: z.array(sourceSchema) });
 
+/** Free-text extras shown on the card. Age has its own fields (`ageMin`, `family`). */
 export const rulesSchema = z.object({
-  age: z.string().optional(),
   pets: z.string().optional(),
   accessibility: z.string().optional(),
   dress: z.string().optional(),
@@ -298,6 +324,9 @@ export const seedEventSchema = z.object({
   priceMax: z.number().nonnegative().optional(),
   currency: z.string().length(3).optional(),
   rules: rulesSchema.default({}),
+  ageMin: ageMinSchema.optional(),
+  family: z.boolean().optional(),
+  entry: entrySchema.optional(),
   officialUrl: z.string().url().optional(),
   ticketUrl: z.string().url().optional(),
 });
