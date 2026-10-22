@@ -28,6 +28,8 @@ export const categorySchema = z.object({
    */
   family: z.enum(['yes', 'likely', 'no']).optional(),
   icon: z.string().min(1),
+  /** Monochrome map glyph from the app's drawn set (apps/web/src/pinSprites.ts). */
+  glyph: z.string().regex(/^[a-z-]+$/).default('dot'),
   color: z.string().regex(/^#[0-9a-f]{6}$/i),
 });
 export const categoriesConfigSchema = z.object({ categories: z.array(categorySchema).min(1) });

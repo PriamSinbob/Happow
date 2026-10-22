@@ -7,6 +7,7 @@
       "entry": "fixed",
       "graceMin": 15,
       "icon": "🎵",
+      "glyph": "note",
       "color": "#7c3aed"
     },
     {
@@ -16,6 +17,7 @@
       "entry": "fixed",
       "graceMin": 5,
       "icon": "🎭",
+      "glyph": "mask",
       "color": "#be123c"
     },
     {
@@ -25,6 +27,7 @@
       "entry": "fixed",
       "graceMin": 25,
       "icon": "🎬",
+      "glyph": "film",
       "color": "#334155"
     },
     {
@@ -35,6 +38,7 @@
       "graceMin": 0,
       "family": "likely",
       "icon": "🖼️",
+      "glyph": "frame",
       "color": "#0e7490"
     },
     {
@@ -45,6 +49,7 @@
       "graceMin": 0,
       "family": "likely",
       "icon": "🎪",
+      "glyph": "tent",
       "color": "#c2410c"
     },
     {
@@ -54,6 +59,7 @@
       "entry": "open",
       "graceMin": 0,
       "icon": "✨",
+      "glyph": "spark",
       "color": "#db2777"
     },
     {
@@ -64,6 +70,7 @@
       "graceMin": 15,
       "family": "likely",
       "icon": "⚽",
+      "glyph": "ball",
       "color": "#15803d"
     },
     {
@@ -74,6 +81,7 @@
       "graceMin": 0,
       "family": "likely",
       "icon": "🧺",
+      "glyph": "basket",
       "color": "#a16207"
     },
     {
@@ -84,6 +92,7 @@
       "graceMin": 0,
       "family": "likely",
       "icon": "📦",
+      "glyph": "tag",
       "color": "#92400e"
     },
     {
@@ -94,6 +103,7 @@
       "graceMin": 5,
       "family": "yes",
       "icon": "🧸",
+      "glyph": "kite",
       "color": "#0284c7"
     },
     {
@@ -104,6 +114,7 @@
       "graceMin": 0,
       "family": "likely",
       "icon": "🍽️",
+      "glyph": "cup",
       "color": "#ea580c"
     },
     {
@@ -113,6 +124,7 @@
       "entry": "fixed",
       "graceMin": 10,
       "icon": "🎤",
+      "glyph": "mic",
       "color": "#4338ca"
     },
     {
@@ -122,6 +134,7 @@
       "entry": "fixed",
       "graceMin": 15,
       "icon": "🕯️",
+      "glyph": "candle",
       "color": "#0d9488"
     },
     {
@@ -131,6 +144,7 @@
       "entry": "open",
       "graceMin": 0,
       "icon": "📍",
+      "glyph": "dot",
       "color": "#475569"
     }
   ]
