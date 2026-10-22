@@ -172,6 +172,7 @@ Build in five increments, each deployable and demoable on a phone in Wrocław.
 3. **Density.** H3 hotspot computation; off-screen chevrons and empty-radius guidance.
 4. **Crawler and submissions.** JSON-LD crawler with a target list in config, LLM extraction fallback, URL-autofill submission form, moderation screen.
 5. **Social signals.** Threads keyword adapter (after app review), confidence scoring, "possibly cancelled" logic, analytics. Instagram was dropped from the PoC on 2026-10-21 (see Future features → More venue and event data).
+6. **Design system and map UX** (added 2026-10-22). Spec: [docs/milestones/M6-design.md](milestones/M6-design.md). Where it differs from Core features above (time chips, radius slider, map/list toggle, pin colours, chevrons), the spec wins. Advantages it delivers: [docs/ADVANTAGES.md](ADVANTAGES.md).
 
 Instructions for the build agent:
 
@@ -252,6 +253,37 @@ Requested 2026-10-21. The event page gets a small feed of short posts from the e
 - **Paid tier:** promos and extra posts are part of the organiser subscription. Schedule changes and safety notices should stay free, because they protect visitors and keep the map accurate.
 - **Moderation:** posts can be reported like events, with a length limit and no external images in the PoC.
 - **Battery and data:** posts load with the event's detail view, not with the map, so they add no background traffic.
+
+### Event links, sharing and attendance
+
+Requested 2026-10-22. A shared event should open in Happow itself: its card, the in-app walking route and a way to say you're going, not a Google Maps pin. It should also preview properly when pasted into WhatsApp, Messenger, Instagram or X.
+
+- **What exists today.** Share sends an in-app link (`/#/e/<id>`) through the phone's share sheet, or copies it, and the link opens the event card. Two gaps:
+  - **Generic previews.** Social apps fetch a link without running JavaScript and never see the part after `#`, so every shared event previews as "Happow", not as its title, time and place.
+  - **Maps hand-off still offered.** Navigation offers the Google Maps hand-off next to the in-app route.
+- **Clean event URLs: `/e/<id>`.** The `#/e/<id>` form keeps working.
+  - The Worker answers `/e/*` first: `"run_worker_first": ["/api/*", "/e/*"]` in `wrangler.jsonc`, a one-line change.
+  - It returns the app's HTML with Open Graph and Twitter Card tags for that event: title, start–end, venue, category and canonical URL.
+  - The SPA reads the path and opens the event card.
+- **Preview image.** Our own generated card, never the source's image (copyright rule): a map snippet with the pin, the time and the category glyph in the app's style, 1200×630. It is rendered in the Worker and cached at the edge per event version.
+- **Opening in the app.**
+  - Android: an installed PWA (WebAPK) captures links in its scope, so the tap opens the installed app.
+  - iOS: Home Screen web apps can't capture links, so the link opens in Safari. The full app works there without installing; show a one-line "Add to Home Screen" hint.
+  - Either way, the recipient needs no account and no install.
+- **Navigation inside.** The shared card leads with the in-app route ("Going there"). The Google/Apple Maps hand-off becomes a secondary option.
+- **Attendance from the link.**
+  - **"I'm going"** on the card: anonymous, one per device (salted token, as for submissions). It feeds the going / on-the-way counts in M6 §9, shown from 5 people.
+  - **Link-scoped count for the sharer.** Each share carries a token, and the sharer sees "3 people from your link are going", without names. Names appear only when both are logged in and the recipient chooses to show theirs; that is the bridge to private events with invitations below.
+  - **"I'm here" ✓** on arrival, as in M6 §9.
+  - Attendance is off for religious and political events, as in M6 §9.
+- **Sharing beyond links.**
+  - The share sheet sends the link plus a short text (title · time · venue).
+  - "Share as image" for Instagram Stories and similar apps: the preview card as an image file through the Web Share API, with the link in the text.
+  - A QR code on the card, for organisers' posters and flyers.
+- **Links that outlive the event.** An ended event's link shows "Ended" plus what's on now near that place, so old shares still lead somewhere live.
+- **Private events.** A private event's link opens only for invitees (enforced by row-level security). Everyone else sees "Private event", and the preview tags stay generic, so no details leak.
+- **Cost.** One Worker request per link open or preview fetch; preview images are cached at the edge. No new data sources.
+- **Tier.** Free for everyone: sharing is the app's growth loop.
 
 ### Private events with invitations
 
