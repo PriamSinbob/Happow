@@ -10,10 +10,18 @@ export const pl: Record<MessageKey, string> = {
   'radius.label': 'Promień',
   'summary.count':
     '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} w promieniu {radius}',
+  'summary.countPoint':
+    '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} w promieniu {radius} od punktu',
+  'point.searchHere': 'Szukaj stąd',
+  'point.back': 'Wróć do mojej lokalizacji',
+  'point.label': 'Punkt wyszukiwania: odległości liczone od tego miejsca',
   'summary.loading': 'Rozglądamy się…',
   'summary.error': 'Nie udało się pobrać wydarzeń. Pokazujemy to, co mamy.',
   'list.empty.title': 'Nic w promieniu {radius}',
   'list.empty.expand': 'Zwiększ do {radius}',
+  'list.around': 'Więcej wydarzeń dalej niż {radius}',
+  'list.showMore': 'Pokaż więcej ({count})',
+  'view.toMap': 'Mapa',
   'event.now': 'Teraz',
   'event.until': 'do {time}',
   'event.startsIn': 'za {minutes} min',
@@ -98,6 +106,12 @@ export const pl: Record<MessageKey, string> = {
   'guide.takeMeThere': 'Zaprowadź mnie',
   'guide.showOnMap': 'Pokaż na mapie',
   'guide.nothingAround': 'W promieniu {distance} też nic. Zmień okno czasu lub filtry.',
+  'place.label':
+    '{place}: {count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}}',
+  'place.zoom':
+    '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} blisko siebie. Przybliż.',
+  'place.title':
+    '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} w tym miejscu',
   'cluster.label':
     '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} {distance} {direction}, poza Twoim promieniem. Zwiększ promień, by je zobaczyć.',
   'chevron.label':

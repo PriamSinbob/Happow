@@ -196,7 +196,8 @@ button {
   position: absolute;
   inset: 0;
   overflow-y: auto;
-  padding: calc(116px + var(--safe-top)) 12px 0;
+  /* Bottom: room to scroll the last row above the floating "Map" button. */
+  padding: calc(116px + var(--safe-top)) 12px calc(88px + var(--safe-bottom));
   background: var(--bg);
   -webkit-overflow-scrolling: touch;
 }
@@ -243,6 +244,107 @@ button {
 .marker__pin > span {
   display: block;
   transform: rotate(45deg);
+}
+/* Several events at one place (screenings, stages): one pin with a count. Positioned against the
+   marker, which MapLibre keeps position: absolute (never override that: pins would drift on zoom). */
+.marker__count {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  background: var(--text);
+  color: #fff;
+  font:
+    700 11px/16px system-ui,
+    sans-serif;
+  text-align: center;
+}
+/* Nearby places merged at this zoom; tapping zooms in. */
+.marker--cluster {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: var(--accent);
+  color: #fff;
+  font:
+    800 14px/1 system-ui,
+    sans-serif;
+  box-shadow:
+    0 0 0 5px rgb(249 115 22 / 0.25),
+    var(--shadow-sm);
+}
+.marker--cluster.is-now {
+  box-shadow:
+    0 0 0 5px rgb(22 163 74 / 0.35),
+    var(--shadow-sm);
+}
+/* A tapped spot: "Search from here" floats above its pin. */
+.candidate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 20;
+}
+.candidate__actions {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--text);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.candidate__actions button {
+  height: 100%;
+  border: 0;
+  background: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.candidate__go {
+  padding: 0 12px 0 16px;
+}
+.candidate__cancel {
+  padding: 0 14px 0 10px;
+  border-left: 1px solid rgb(255 255 255 / 0.2) !important;
+  opacity: 0.8;
+}
+.candidate .point-pin {
+  opacity: 0.55;
+}
+/* Circle pinned elsewhere: the locate button shows it is not following you. */
+.icon-btn--raised[data-pinned='true'] {
+  color: var(--muted);
+  box-shadow:
+    0 0 0 2px var(--text),
+    var(--shadow-lg);
+}
+/* The pinned search point: distances and walking times count from here. */
+.point-pin {
+  width: 22px;
+  height: 22px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--text);
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-sm);
+}
+/* Bottom-sheet list of one place's events. */
+.place-card {
+  display: grid;
+  gap: 10px;
+}
+.place-card .list {
+  max-height: 42vh;
+  overflow-y: auto;
 }
 .user-dot {
   width: 18px;
@@ -420,6 +522,29 @@ button {
 .panel__summary {
   font-size: 15px;
   line-height: 1.3;
+}
+.panel[hidden] {
+  display: none;
+}
+/* List view: the only control at the bottom, back to the map. */
+.to-map {
+  position: absolute;
+  z-index: 15;
+  left: 50%;
+  bottom: calc(16px + var(--safe-bottom));
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 20px 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--text);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: var(--shadow-lg);
 }
 .panel__error {
   display: block;
@@ -1104,6 +1229,33 @@ button {
 }
 .list--empty {
   padding-top: 8px;
+}
+/* Below the circle's events: the rest of the area, nearest first, after a divider. */
+.list-around {
+  max-width: 640px;
+  margin: 20px auto 0;
+}
+.list-around__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.list-around__title::before,
+.list-around__title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.list-around__more {
+  display: block;
+  margin: 12px auto 0;
 }
 
 /* Attribution (required by OSM) sits under the top bar, clear of the bottom sheet. */

@@ -1,7 +1,15 @@
 import { isRunning, SOURCE_MISSING, walkingMinutes, type NearbyEvent } from '@happow/core';
 import { track } from '../analytics';
 import { categoriesById, config } from '../config';
-import { formatAgo, formatDistance, formatPrice, formatTime, navigationUrl } from '../format';
+import {
+  formatAgo,
+  formatDistance,
+  formatPrice,
+  formatRelativeDay,
+  formatTime,
+  isSameDay,
+  navigationUrl,
+} from '../format';
 import { useI18n } from '../i18n';
 import { Icon } from './Icons';
 
@@ -13,11 +21,15 @@ export function useEventText(ev: NearbyEvent, now: Date) {
   const start = formatTime(ev.startAt, ev.timezone, lang);
   const end = formatTime(ev.endAt, ev.timezone, lang);
   const minutesToStart = Math.round((new Date(ev.startAt).getTime() - now.getTime()) / 60_000);
+  // The day is always named for later starts, and for the others once it is not today (at night
+  // "until 01:00" or "at 00:30" is otherwise ambiguous).
+  const day = (iso: string) => formatRelativeDay(iso, now, ev.timezone, lang);
+  const notToday = (iso: string) => (isSameDay(iso, now, ev.timezone) ? '' : `${day(iso)} `);
   const when = running
-    ? `${t('event.until', { time: end })}${ev.endEstimated ? '*' : ''}`
+    ? `${t('event.until', { time: `${notToday(ev.endAt)}${end}` })}${ev.endEstimated ? '*' : ''}`
     : minutesToStart <= 90
-      ? `${t('event.startsAt', { time: start })} · ${t('event.startsIn', { minutes: minutesToStart })}`
-      : `${start}–${end}${ev.endEstimated ? '*' : ''}`;
+      ? `${notToday(ev.startAt)}${t('event.startsAt', { time: start })} · ${t('event.startsIn', { minutes: minutesToStart })}`
+      : `${day(ev.startAt)}, ${start}–${end}${ev.endEstimated ? '*' : ''}`;
   const price = ev.isFree
     ? t('event.free')
     : ev.priceMin !== null

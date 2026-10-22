@@ -15,4 +15,7 @@
   // the API returns is no-store or a POST, so it is never cached.
   "cache": { "enabled": true },
   "observability": { "enabled": true },
+  // Pull-request branches deploy as Previews (`wrangler preview`), which needs this block. Empty:
+  // previews reuse the assets and settings above.
+  "previews": {},
 }

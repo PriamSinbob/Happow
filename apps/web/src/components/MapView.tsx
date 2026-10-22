@@ -25,6 +25,8 @@ interface Props {
   now: Date;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  /** Tapped a pin that holds several events at one place (cinema screenings, a festival stage). */
+  onSelectPlace: (ids: string[]) => void;
   /** Pixels covered by the bottom panel, so the radius circle stays in the visible area. */
   bottomInset: number;
   /** Incremented by the locate button: fit the view to the circle again even after panning. */
@@ -37,6 +39,12 @@ interface Props {
   hotspot: Guidance['hotspot'];
   onHotspot: () => void;
   onExpand: (radius: number) => void;
+  /** The circle is pinned to a point on the map ("Search here"), not following the user. */
+  pinned: boolean;
+  /** A card is open in the sheet: the next tap on the map closes it instead of placing a point. */
+  cardOpen: boolean;
+  /** "Search from here" confirmed for a tapped spot. */
+  onSetPoint: (point: LatLng) => void;
 }
 
 interface Chevron {
@@ -123,6 +131,66 @@ function computeChevrons(m: maplibregl.Map, p: Props): Chevron[] {
 
 const RADIUS_SOURCE = 'radius';
 
+export interface MarkerItem {
+  key: string;
+  /** "place": one spot (one or more events there); "cluster": nearby spots merged at this zoom. */
+  kind: 'place' | 'cluster';
+  point: LatLng;
+  events: NearbyEvent[];
+  /** Venue name of a place, when its events have one. */
+  label: string | null;
+}
+
+/** Spots closer than this on screen merge into one bubble. */
+const CLUSTER_PX = 48;
+
+/**
+ * Groups events by exact spot, then merges spots falling into the same CLUSTER_PX grid square of
+ * the Web Mercator world at this zoom. A grid (not distance) keeps groups stable while panning.
+ */
+export function groupMarkers(events: NearbyEvent[], zoom: number): MarkerItem[] {
+  const places = new Map<string, MarkerItem>();
+  for (const ev of events) {
+    const key = `p:${ev.point.lat.toFixed(5)},${ev.point.lng.toFixed(5)}`;
+    const place = places.get(key);
+    if (place) place.events.push(ev);
+    else
+      places.set(key, {
+        key,
+        kind: 'place',
+        point: ev.point,
+        events: [ev],
+        label: ev.venue?.name ?? null,
+      });
+  }
+  const world = 512 * 2 ** zoom;
+  const cells = new Map<string, MarkerItem[]>();
+  for (const place of places.values()) {
+    const c = maplibregl.MercatorCoordinate.fromLngLat(place.point);
+    const cell = `${Math.floor((c.x * world) / CLUSTER_PX)}:${Math.floor((c.y * world) / CLUSTER_PX)}`;
+    cells.set(cell, [...(cells.get(cell) ?? []), place]);
+  }
+  const out: MarkerItem[] = [];
+  for (const [cell, group] of cells) {
+    if (group.length === 1) {
+      out.push(group[0]!);
+      continue;
+    }
+    const all = group.flatMap((p) => p.events);
+    out.push({
+      key: `c:${zoom}:${cell}`,
+      kind: 'cluster',
+      point: {
+        lat: group.reduce((s, p) => s + p.point.lat, 0) / group.length,
+        lng: group.reduce((s, p) => s + p.point.lng, 0) / group.length,
+      },
+      events: all,
+      label: null,
+    });
+  }
+  return out;
+}
+
 export function rasterStyle(): StyleSpecification {
   const r = config.map.fallbackRaster;
   return {
@@ -152,7 +220,9 @@ export function MapView(props: Props) {
   const { t, lang } = useI18n();
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLButtonElement }>());
+  const markers = useRef(
+    new Map<string, { marker: maplibregl.Marker; el: HTMLButtonElement; ids: string[] }>(),
+  );
   const hintMarkers = useRef<maplibregl.Marker[]>([]);
   const userMoved = useRef(false);
   const lastFit = useRef<{
@@ -225,9 +295,12 @@ export function MapView(props: Props) {
     };
     m.on('dragstart', markMoved);
     m.on('zoomstart', markMoved);
+    // A tap on empty map first closes an open card; otherwise it proposes a search point there
+    // (inside the circle too, for fine adjustment). Taps on any marker are theirs.
     m.on('click', (e) => {
-      if (!(e.originalEvent.target as HTMLElement).closest('.marker'))
-        latest.current.onSelect(null);
+      if ((e.originalEvent.target as HTMLElement).closest('.maplibregl-marker')) return;
+      if (latest.current.cardOpen) latest.current.onSelect(null);
+      else setCandidate({ lat: e.lngLat.lat, lng: e.lngLat.lng });
     });
     return () => {
       m.remove();
@@ -276,60 +349,161 @@ export function MapView(props: Props) {
     );
   }, [props.center.lat, props.center.lng, props.radiusM, props.bottomInset, props.recenter]);
 
+  // The tapped spot: a pin with "Search from here" above it, and ✕ to drop it. Another tap moves it.
+  const [candidate, setCandidate] = useState<LatLng | null>(null);
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !candidate) return;
+    const el = document.createElement('div');
+    el.className = 'candidate';
+    const actions = Object.assign(document.createElement('div'), {
+      className: 'candidate__actions',
+    });
+    const go = Object.assign(document.createElement('button'), {
+      type: 'button',
+      className: 'candidate__go',
+      textContent: t('point.searchHere'),
+    });
+    go.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setCandidate(null);
+      latest.current.onSetPoint(candidate);
+    });
+    const cancel = Object.assign(document.createElement('button'), {
+      type: 'button',
+      className: 'candidate__cancel',
+      textContent: '✕',
+    });
+    cancel.setAttribute('aria-label', t('event.close'));
+    cancel.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setCandidate(null);
+    });
+    actions.append(go, cancel);
+    el.append(actions, Object.assign(document.createElement('span'), { className: 'point-pin' }));
+    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+      .setLngLat(candidate)
+      .addTo(m);
+    return () => {
+      marker.remove();
+    };
+  }, [candidate, t]);
+  // Locate (or any other move of the circle) or leaving the map drops a pending proposal.
+  useEffect(() => setCandidate(null), [props.center.lat, props.center.lng, props.hidden]);
+
+  // A pinned search point gets its own marker, so it's clear what distances count from.
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !props.pinned) return;
+    const el = document.createElement('div');
+    el.className = 'point-pin';
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', t('point.label'));
+    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+      .setLngLat(props.center)
+      .addTo(m);
+    return () => {
+      marker.remove();
+    };
+  }, [props.pinned, props.center.lat, props.center.lng, t]);
+
   // The map container may have been display:none while the list was open.
   useEffect(() => {
     if (!props.hidden) map.current?.resize();
   }, [props.hidden]);
 
-  // Event markers: diff by id; nudge markers that share a spot so all stay tappable.
+  // Re-group markers only when the zoom level changes, not on every pan frame.
+  const [zoom, setZoom] = useState(region.defaultZoom);
+  useEffect(() => {
+    const m = map.current;
+    if (!m) return;
+    const update = () => setZoom(Math.round(m.getZoom()));
+    m.on('zoomend', update);
+    return () => {
+      m.off('zoomend', update);
+    };
+  }, []);
+
+  // Markers: one pin per place (a count badge when several events share it), and places that would
+  // overlap at this zoom merged into a bubble that zooms in. Diffed by key so pins don't flicker.
   useEffect(() => {
     const m = map.current;
     if (!m) return;
     const seen = new Set<string>();
-    const perSpot = new Map<string, number>();
-    for (const ev of props.events) {
-      seen.add(ev.id);
-      const spot = `${ev.point.lat.toFixed(5)},${ev.point.lng.toFixed(5)}`;
-      const n = perSpot.get(spot) ?? 0;
-      perSpot.set(spot, n + 1);
-      const cat = categoriesById.get(ev.categoryIds[0]!);
-      let entry = markers.current.get(ev.id);
+    for (const item of groupMarkers(props.events, zoom)) {
+      seen.add(item.key);
+      const first = item.events[0]!;
+      const cat = categoriesById.get(first.categoryIds[0]!);
+      let entry = markers.current.get(item.key);
       if (!entry) {
         const el = document.createElement('button');
         el.type = 'button';
-        el.className = 'marker';
+        el.className = item.kind === 'cluster' ? 'marker marker--cluster' : 'marker';
         el.addEventListener('click', (e) => {
           e.stopPropagation();
-          latest.current.onSelect(ev.id);
+          if (item.kind === 'cluster') {
+            m.easeTo({ center: item.point, zoom: Math.min(zoom + 2, config.map.maxZoom) });
+            return;
+          }
+          // The place keeps its pin while its events change; read the current ones.
+          const ids = markers.current.get(item.key)?.ids ?? [];
+          if (ids.length === 1) latest.current.onSelect(ids[0]!);
+          else latest.current.onSelectPlace(ids);
         });
-        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-          .setLngLat(ev.point)
+        const marker = new maplibregl.Marker({
+          element: el,
+          anchor: item.kind === 'cluster' ? 'center' : 'bottom',
+        })
+          .setLngLat(item.point)
           .addTo(m);
-        entry = { marker, el };
-        markers.current.set(ev.id, entry);
+        entry = { marker, el, ids: [] };
+        markers.current.set(item.key, entry);
       }
-      const icon = cat?.icon ?? '📍';
-      if (entry.el.dataset.icon !== icon) {
-        entry.el.dataset.icon = icon;
-        const pin = Object.assign(document.createElement('span'), { className: 'marker__pin' });
-        pin.append(Object.assign(document.createElement('span'), { textContent: icon }));
-        entry.el.replaceChildren(pin);
+      entry.ids = item.events.map((ev) => ev.id);
+      const count = item.events.length;
+      const icon = item.kind === 'cluster' ? '' : (cat?.icon ?? '📍');
+      const look = `${icon}|${count}`;
+      if (entry.el.dataset.look !== look) {
+        entry.el.dataset.look = look;
+        if (item.kind === 'cluster') entry.el.textContent = String(count);
+        else {
+          const pin = Object.assign(document.createElement('span'), { className: 'marker__pin' });
+          pin.append(Object.assign(document.createElement('span'), { textContent: icon }));
+          entry.el.replaceChildren(pin);
+          if (count > 1)
+            entry.el.append(
+              Object.assign(document.createElement('span'), {
+                className: 'marker__count',
+                textContent: String(count),
+              }),
+            );
+        }
       }
+      const selected = item.events.some((ev) => ev.id === props.selectedId);
       entry.el.style.setProperty('--cat', cat?.color ?? '#475569');
-      entry.el.setAttribute('aria-label', ev.title);
-      entry.el.classList.toggle('is-now', isRunning(ev, props.now));
-      entry.el.classList.toggle('is-selected', ev.id === props.selectedId);
-      entry.el.classList.toggle('is-flagged', !!ev.flag);
-      entry.marker.setOffset([n * 18, -n * 6]);
-      entry.el.style.zIndex = ev.id === props.selectedId ? '10' : '';
+      entry.el.setAttribute(
+        'aria-label',
+        item.kind === 'cluster'
+          ? t('place.zoom', { count })
+          : count === 1
+            ? first.title
+            : t('place.label', { place: item.label ?? t('guide.place'), count }),
+      );
+      entry.el.classList.toggle(
+        'is-now',
+        item.events.some((ev) => isRunning(ev, props.now)),
+      );
+      entry.el.classList.toggle('is-selected', selected);
+      entry.el.classList.toggle('is-flagged', count === 1 && !!first.flag);
+      entry.el.style.zIndex = selected ? '10' : '';
     }
-    for (const [id, entry] of markers.current) {
-      if (!seen.has(id)) {
+    for (const [key, entry] of markers.current) {
+      if (!seen.has(key)) {
         entry.marker.remove();
-        markers.current.delete(id);
+        markers.current.delete(key);
       }
     }
-  }, [props.events, props.selectedId, props.now]);
+  }, [props.events, props.selectedId, props.now, zoom, t]);
 
   // Outside-radius bubbles (tap to widen the circle) and the hotspot marker.
   useEffect(() => {

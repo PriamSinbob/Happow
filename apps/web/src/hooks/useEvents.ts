@@ -11,6 +11,9 @@ import type { EventRepository } from '../data';
 
 export interface EventsState {
   events: NearbyEvent[];
+  /** Matching events beyond the circle but within the search area, nearest first: the list's
+   *  "more around" section. */
+  around: NearbyEvent[];
   /** Matching events around the user per density cell; empty when the density query fails. */
   clusters: DensityCluster[];
   loading: boolean;
@@ -38,6 +41,7 @@ export function useEvents(
 ): EventsState {
   const [state, setState] = useState<EventsState>({
     events: [],
+    around: [],
     clusters: [],
     loading: true,
     error: false,
@@ -64,8 +68,10 @@ export function useEvents(
       if (fresh) setState((s) => ({ ...s, loading: true }));
       try {
         const q = { ...query, ...windowRange(timeWindow, now, timeZone) };
-        const [events, clusters] = await Promise.all([
-          repo.near(q, ctrl.signal),
+        // One query out to the search area, split at the circle: nothing extra to download.
+        const reach = Math.max(searchRadiusM, radiusM);
+        const [all, clusters] = await Promise.all([
+          repo.near({ ...q, radiusM: reach }, ctrl.signal),
           // Hints are a bonus: their failure must not hide the events.
           repo
             .density({ ...q, searchRadiusM: Math.max(searchRadiusM, radiusM) }, ctrl.signal)
@@ -76,7 +82,9 @@ export function useEvents(
         ]);
         if (ctrl.signal.aborted) return;
         shown.current = query;
-        setState({ events, clusters, loading: false, error: false, now });
+        const events = all.filter((e) => e.distanceM <= radiusM);
+        const around = all.filter((e) => e.distanceM > radiusM);
+        setState({ events, around, clusters, loading: false, error: false, now });
       } catch (err) {
         if (ctrl.signal.aborted) return;
         console.error(err);

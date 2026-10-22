@@ -22,8 +22,12 @@ await withClient(async (db) => {
     await db.query(
       `delete from events where id in (select event_id from event_sources where source_id = 'seed')`,
     );
+    // With the "seed" source switched off, the delete above just clears the demo events.
+    // SEED_DEMO=1 loads them anyway (CI's database tests run on the demo data).
+    const seedOn =
+      process.env.SEED_DEMO === '1' || config.sources.some((s) => s.id === 'seed' && s.enabled);
     for (const region of config.regions) {
-      if (!region.seedFile || !region.enabledSources.includes('seed')) continue;
+      if (!seedOn || !region.seedFile || !region.enabledSources.includes('seed')) continue;
       const raw = JSON.parse(await readFile(root + region.seedFile, 'utf8'));
       const res = config.app.h3.eventResolution;
       for (const v of seedVenues(raw)) {
