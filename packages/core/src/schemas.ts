@@ -245,6 +245,20 @@ export const sourceSchema = z.object({
    * stops returning may be off: after `ingest.missedRunsToFlag` runs it shows "possibly cancelled".
    */
   completeListing: z.boolean().default(false),
+  /**
+   * Single-venue sources (a concert hall, theatre, club): where an event is when its page gives
+   * no location at all. Geocoded through the normal pipeline, so no coordinates live here.
+   */
+  defaultVenue: z
+    .object({
+      name: z.string().min(1),
+      street: z.string().min(1),
+      postalCode: z.string().nullable().default(null),
+      city: z.string().min(1),
+      /** Other names for the building, so its halls ("NFM, Sala Czerwona") resolve to it. */
+      aliases: z.array(z.string().min(1)).default([]),
+    })
+    .optional(),
 });
 export const sourcesConfigSchema = z.object({ sources: z.array(sourceSchema) });
 

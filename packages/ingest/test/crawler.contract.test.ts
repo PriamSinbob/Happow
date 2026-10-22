@@ -204,6 +204,76 @@ describe('crawler (contract, recorded pages)', () => {
     expect(extract.mock.calls.length).toBe(calls); // unchanged pages come from the cache
   });
 
+  it("places NFM pages without an address at the source's default venue, not pages naming another", async () => {
+    const pages = {
+      'https://www.nfm.wroclaw.pl/robots.txt': page('nfm-robots.txt'),
+      'https://www.nfm.wroclaw.pl/component/nfmcalendar': page('nfm-listing.html'),
+      'https://www.nfm.wroclaw.pl/pl/component/nfmcalendar/event/14132': page('nfm-event.html'),
+    };
+    const event = (title: string, venueName: string | null): ExtractedEvent => ({
+      title,
+      description: null,
+      start: '2026-11-22T10:00',
+      end: null,
+      venueName,
+      // The page names no street; the extractor still fills in the region's city.
+      address: { street: null, postalCode: null, city: 'Wrocław', country: null },
+      point: null,
+      isFree: null,
+      priceMin: null,
+      priceMax: null,
+      currency: null,
+      url: null,
+      ticketUrl: null,
+      imageUrl: null,
+      status: 'scheduled',
+      online: false,
+      categoryHints: [],
+      categoryIds: ['music'],
+      method: 'llm',
+      confidence: 0.9,
+    });
+    const extractor: Extractor = {
+      id: 'fake:venue',
+      extract: async (input) =>
+        input.text.includes('Pustynne portato')
+          ? [
+              event('Bez adresu', null),
+              event('W sali', 'NFM, Sala Czerwona'),
+              event('Gościnnie', 'Impart'),
+            ]
+          : [],
+    };
+    geocoder.calls = [];
+    const [s] = await runIngest({
+      ...base,
+      env: { ANTHROPIC_API_KEY: 'k' },
+      sourceIds: ['nfm'],
+      fetch: site(pages).fetch,
+      geocoder,
+      extractor,
+      extractionCache: new MemoryCache(),
+    });
+    expect(s).toMatchObject({ status: 'ok' });
+    const byTitle = (t: string) => s!.events!.find(({ event }) => event.title === t);
+    expect(byTitle('Bez adresu')?.venue).toMatchObject({
+      name: 'Narodowe Forum Muzyki',
+      address: 'plac Wolności 1, 50-071 Wrocław',
+    });
+    // A hall of the building keeps its name, which people know, and is placed at the building.
+    expect(byTitle('W sali')?.venue).toMatchObject({
+      name: 'NFM, Sala Czerwona',
+      address: 'plac Wolności 1, 50-071 Wrocław',
+    });
+    expect(geocoder.calls).toContainEqual(
+      expect.objectContaining({ street: 'plac Wolności 1', postalCode: '50-071' }),
+    );
+    expect(byTitle('Gościnnie')?.venue).toMatchObject({ name: 'Impart', address: 'Wrocław' });
+    expect(geocoder.calls).toContainEqual(
+      expect.objectContaining({ venueName: 'Impart', street: null }),
+    );
+  });
+
   it('is skipped without its LLM key, and other crawlers do not need one', async () => {
     const [s] = await runIngest({ ...base, sourceIds: ['nfm'] });
     expect(s).toMatchObject({ status: 'skipped', reason: 'missing ANTHROPIC_API_KEY' });
