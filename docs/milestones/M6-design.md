@@ -6,6 +6,77 @@ Spec agreed with the owner in the design session of 2026-10-22 (interactive prot
 
 **Status:** in progress: §14 built (slice A), §13 data built (slice B); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
+## Build plan
+
+Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR to `main` each. The data-only slices come first, so the live app keeps working between PRs; the visuals build on them. Each slice PR updates its row below, the Status line above, and adds a short "Built (slice X)" note under its spec section (built, skipped, open), like §13.4 and §14.
+
+| Slice | Spec                    | What                                                     | Needs | Status                                   |
+| ----- | ----------------------- | -------------------------------------------------------- | ----- | ---------------------------------------- |
+| A     | §14                     | Default venue for single-venue sources                   | —     | merged (#9)                              |
+| B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest     | —     | merged (#10)                             |
+| C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | next                                     |
+| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     |                                          |
+| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  |                                          |
+| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  |                                          |
+| G     | §4.4 UI, §7             | Family-mode filter and chip; dice                        | C, F  |                                          |
+| H     | §6                      | Lit map and the local atlas                              | F     |                                          |
+| —     | §8, §9                  | Accounts and premium; co-presence                        | —     | out of M6 (build later / after the core) |
+
+### Slice C: entry and age data
+
+Data, ingest, API and the add-event form only. No pin or map visuals: those are E and F.
+
+- **Event model.**
+  - Add `entry: 'fixed' | 'open'` and `graceMin` (§4.2).
+  - Replace the free-text `rules.age` with `ageMin: number | null` (0 = explicitly all ages, 18 = 18+) and `family: boolean | null` (§4.4).
+  - `rules.age` is used today in:
+    - the schemas in `packages/core/src/schemas.ts` and `packages/ingest/src/types.ts`
+    - the Ticketmaster adapter (`legalAgeEnforced` becomes the text "18+")
+    - `packages/ingest/test/dedup.test.ts`
+    - `RuleList` in `apps/web/src/components/EventCard.tsx` and `EventDetail.tsx`
+  - The card and detail views keep showing age, now rendered from `ageMin` ("18+") and `family`, translated (PL/EN).
+- **Category defaults** in `config/categories.json`, next to `defaultDurationMin`, validated in `packages/core/src/config.ts`:
+  - `entry` and `graceMin`.
+    - fixed: theatre, cinema, talk, sport
+    - open: garage-sale, market, exhibition, festival, happening
+    - Music needs the per-event value: a concert is fixed, a club night is open.
+  - `family: "yes" | "likely" | "no"`.
+    - yes: kids
+    - likely: market, garage-sale, festival, exhibition, food, sport
+    - no: none today
+  - `config/app.json` gets `family.latestEnd` (21:00, in the region's time zone).
+- **Sources of the values** (each change gets a contract test on recorded fixtures):
+  - Ticketmaster: `legalAgeEnforced` gives `ageMin: 18`. Its fixture `packages/ingest/test/fixtures/ticketmaster/page-0.json` has the field.
+  - schema.org (`packages/extract/src/schemaorg.ts`):
+    - `typicalAgeRange` ("18-", "7-12") and `audience.suggestedMinAge` give `ageMin`.
+    - An upper bound of 12 or less gives `family: true`.
+    - `doorTime` vs `startDate` gives the entry type.
+  - Claude extractor (`packages/extract/src/llm.ts`, `types.ts`):
+    - `ageMin`, `family` and entry fields in its tool schema.
+    - The prompt uses Polish cues: "od 18 lat", "18+", "wstęp od 16 lat", "dla dzieci", "rodzinny", "0+".
+  - Category `kids` gives `family: true`.
+- **Add-event form** (`apps/web/src/components/AddEvent.tsx`, the `submit` handler in `packages/api/src/handler.ts`, and the `submit_event` SQL function):
+  - an age choice: none / 0+ / 12+ / 16+ / 18+
+  - a family toggle
+  - a fixed/open entry toggle
+- **Database.** A new migration in `supabase/migrations/`.
+  - Columns or `rules` jsonb: decide in the plan. Family mode filters client-side on the area snapshot, so `events_area` must return the fields.
+  - Existing `rules.age` text ("16+", "18+") moves into `ageMin`.
+  - Update every SQL function that returns or writes events: `events_area`, `events_near`, the ingest upsert, `submit_event`.
+  - The PR notes that the migration must be applied to Supabase on deploy.
+- **Core helpers** for slices E and G, unit-tested, with no UI:
+  - Arrival time: now plus walking minutes (straight line × 1.3 ÷ 80 m/min).
+  - Late:
+    - fixed: arrival > start + grace
+    - open: arrival ≥ end − 5 min
+  - Family match: shows, "not confirmed" or hides, as in §4.4.
+
+### Working notes
+
+- Read `CLAUDE.md` and `docs/BRIEF.md` first. Post the slice plan and wait for the owner's OK before building.
+- Before a PR: `pnpm typecheck`, `pnpm test` and `npx prettier --check` on changed files. No live API calls in tests.
+- On the owner's Windows checkout, many files show as modified with line-ending-only changes. Commit only files with real changes (`git diff --ignore-cr-at-eol`).
+
 ## Supersedes in the brief
 
 Where this spec and `docs/BRIEF.md` → Core features differ, this spec wins:
