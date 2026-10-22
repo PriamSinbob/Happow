@@ -15,8 +15,8 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | A     | §14                     | Default venue for single-venue sources                   | —     | merged (#9)                              |
 | B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest     | —     | merged (#10)                             |
 | C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | merged (#12)                             |
-| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | in review (#13)                          |
-| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  |                                          |
+| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | merged (#13)                             |
+| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  | planned (branch `m6-pins`)               |
 | F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  |                                          |
 | G     | §4.4 UI, §7             | Family-mode filter and chip; dice                        | C, F  |                                          |
 | H     | §6                      | Lit map and the local atlas                              | F     |                                          |
@@ -94,6 +94,26 @@ Plan agreed with the owner on 2026-10-22 (pure black night land; settings on the
   - The night theme gets the black land (`#000000`); `#050505` stays a config change if OLED smear shows on test devices.
 - **Out of scope:** pin glyphs, rings and sizes (E), the map-screen layout (F), the veil and lit areas (H), account-gated presets (§8).
 - **Steps and pushes:** (1) this plan; (2) config + core helpers + contrast test; (3) CSS tokens and day theme in the chrome; (4) night theme, auto switching and settings; (5) basemap recolour; (6) spec Status and "Built (slice D)" note under §3.
+
+### Slice E: pins on one symbol layer
+
+Plan proposed 2026-10-22, waiting for the owner's OK. Branch `m6-pins`, pushed after each step.
+
+- **Scope.** §4.1 and §4.3, plus the age badge from §4.4. Event pins only: edge dots, rail, scrubber and list overlay are slice F; hotspot and outside-radius bubbles stay DOM markers until F.
+- **One GeoJSON source + symbol layers** replace the per-event DOM `maplibregl.Marker`s in `MapView`:
+  - a `pins` GeoJSON source rebuilt from the events on data change and on the minute clock (no per-frame work);
+  - layers: ring (live only), pin body, glyph, count badge, age badge, all `symbol` layers with `symbol-sort-key` live > soon > later, so live pins win collisions;
+  - taps via `queryRenderedFeatures` on the pin layers; selection by a feature-state / property, ×1.2 and on top.
+- **Pin states** (core helper `pinState(event, now, arrival)`, unit-tested): `live` (34 px, filled live hue, `--on-live` glyph, ring), `soon` (starts within 60 min: 26 px, paper fill, ink glyph, live-hue outline), `later` (10 px muted dot, no glyph), `outside` (beyond the radius: ×0.85, opacity ×0.5), `late` (`isLate` from slice C: dashed outline). Multi-day ranges show future days as `later` dots.
+- **Ring = time left.** 12 ring states in 10-minute steps on the 2 h scale (full at ≥ 120 min, 8 % minimum stub); a dotted full ring for `endEstimated` ("till late"). Core helper `ringStep(event, now)`.
+- **Sprites, generated at runtime** (no binary assets in the repo): a small canvas builder in `apps/web/src/pinSprites.ts` draws SDF-style images and adds them with `map.addImage(id, img, { sdf: true })`, so colour stays a paint property (`icon-color` from the theme tokens; no rebuild on theme change):
+  - pin body (filled disc, outlined disc, dashed outline), 12 ring arcs + dotted ring, small dot;
+  - one consistent monochrome line glyph per category (14 glyphs, simple strokes drawn in code from config `icon` ids: the emoji icons in `config/categories.json` get a `glyph` id alongside; emoji stay for the list until F).
+- **Age badge.** `ageMin ≥ 16` gets a small numeral badge ("18+") at the upper right: a text-field symbol on the pin, no translation needed.
+- **Grouping.** Today's same-place grouping and zoom clustering move to a pure function feeding the GeoJSON (count badge kept); MapLibre's own collision then thins the rest by priority.
+- **Tests.** Core: `pinState`, `ringStep`, sort keys. Web: the GeoJSON builder (features, properties, sort keys) on fixtures; sprite ids complete for every category.
+- **Out of scope:** colours of the list and cards (F), family-mode filtering (G).
+- **Steps and pushes:** (1) this plan; (2) core helpers + tests; (3) GeoJSON builder + tests; (4) sprites; (5) MapView switch to symbol layers, taps and selection; (6) spec report and PR.
 
 ### Working notes
 
