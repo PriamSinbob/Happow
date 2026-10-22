@@ -21,6 +21,7 @@ Why someone would use Happow over a listings site, a ticket app or Google Maps. 
   - Open-entry events (clubs, garage sales, markets, exhibitions) are never marked late.
   - Fixed-start ones (theatre, cinema, talks) show "+N min" if you'd arrive after the start. `M6`
 - **Time left at a glance.** A ring around each live pin shows how long it still runs; a dotted ring means no fixed end. `M6`
+- **Plan up to two weeks ahead.** Calendar icons switch between Today, the next 7 days and the next 14 days; the time line then steps by day, and cards show dates. `M6`
 - **See the evening unfold.** Drag the time line to watch events appear and end; the track shows when the busy hours are. `M6`
 - **Can't decide? Roll the dice.** One tap picks something on now within reach. It learns from what you skip, on your phone only. `M6`
 - **Plan from anywhere.** Long-press the map to see what's on around another spot, in walking minutes from there. `M6`

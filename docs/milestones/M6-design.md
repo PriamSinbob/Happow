@@ -4,13 +4,13 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** spec, not built. List style B (§5) is provisional until the owner reviews it on the working app.
+**Status:** spec, not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
 ## Supersedes in the brief
 
 Where this spec and `docs/BRIEF.md` → Core features differ, this spec wins:
 
-- Time-window chips (Now / 2 h / 6 h / Today) → a time scrubber (§5). `defaultTimeWindow` becomes "now".
+- Time-window chips (Now / 2 h / 6 h / Today) → a time scrubber with Today / Week / Later range icons (§5, §13). `defaultTimeWindow` becomes "now".
 - Radius slider 100 m–25 km in the bottom panel → vertical rail capped at 5 km, city scale via pinch (§5).
 - Map/List segmented control → one list button and an overlay list (§5).
 - Category colours and emoji pins → one live hue, time-encoded pins, monochrome glyphs (§3, §4).
@@ -162,7 +162,7 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
   - Locate: resets reach to 500 m and time to now.
   - List button (style B, provisional): a single icon showing the other mode. The list opens as an overlay panel over the map, and tapping a row returns to the map with that pin selected.
 - **Bottom: time scrubber.**
-  - Range: now → end of day.
+  - Range: now → end of the selected range. The Today / Week / Later icons sit at its left end (§13).
   - Marks: hour ticks (numerals only) and a 30-min density histogram in the track.
   - Snapping: to now within 10 min; otherwise 5-min steps.
 - **Default state = now.** Live events plus those starting within 60 min; later ones as 10 px dots.
@@ -255,9 +255,67 @@ Atlas sync design:
 - The §3.2 contrast table holds for every shipped preset.
 - 60 fps rail drag with 500 events in the snapshot on a mid-range Android phone.
 - Time to first pin tap < 3 s from a cold open.
+- Week and Later: switching costs at most one request per 30 minutes, and in the week of the DST change (25 Oct 2026) every day still starts and ends at local midnight.
+- NFM: a crawl no longer rejects events for "no location" when the page simply omits the hall's address.
 
 ## 12. Open
 
 - List style B: owner review on the working app.
 - Premium pricing and payment provider.
 - Co-presence timing (after the core).
+- Later window length (14 days) to confirm in use.
+
+## 13. Week and Later windows
+
+Added 2026-10-22, so the map is useful for planning and fills up while few events are on right now. The database already holds crawled events up to 60 days ahead; the app only asks for 24 hours.
+
+### 13.1 Windows
+
+- **Today** is now → end of today. **Week** is today plus the next 6 days. **Later** is today plus the next 13 days.
+- They count calendar days in the region's time zone, and each includes everything sooner (as Today includes now).
+- Lengths live in config: `timeWindows` gains `{ "id": "week", "days": 7 }` and `{ "id": "later", "days": 14 }`, so "later" changes without code.
+- Days are stepped by the calendar, not in 24-hour blocks: daylight saving ends on 25 Oct 2026, and tests cover that week.
+
+### 13.2 Icons
+
+- Calendar line icons, 24 px, same stroke as the glyph set:
+  - **Today:** one filled day square.
+  - **Week:** one filled row.
+  - **Later:** two filled rows.
+- Three icon buttons (36 px touch area) at the left end of the time scrubber; the active one is ink-filled. Translated `aria-label`s: "Dziś / Today", "7 dni / 7 days", "14 dni / 14 days".
+
+### 13.3 The scrubber per range
+
+- **Today:** hours, as in §5.
+- **Week and Later:** day ticks (date numerals only) and a per-day density histogram in the track.
+  - By default the map shows the whole range.
+  - Dragging selects one day: that day's events get the 26 px glyph pins and the other days are hidden.
+  - Snapping is per day; tapping the "now" anchor returns to now.
+
+### 13.4 Data
+
+- **Ingest.** API sources (Ticketmaster, Meetup) fetch 15 days ahead: `ingest.lookaheadHours` 48 → 360. M7 raises it to 60 days.
+- **Area endpoint.** `/api/area` takes a range parameter limited to the configured windows: 24 h by default, 7 or 14 days.
+  - The longer snapshot is fetched only when Week or Later is selected.
+  - It is cached for 30 minutes (`refresh.longCacheMinutes`), since future events change slowly.
+  - The 24-hour snapshot stays as it is, so everyday use costs nothing extra.
+- **Cap.** The 1,000-nearest-events cap per snapshot stays. Target payload < 100 KB gzipped.
+
+### 13.5 Display
+
+- **Dates.** Cards and the list show the date for future days ("sob 25.10, 19:00" / "Sat 25.10, 19:00"), and the list gets day headers.
+- **Pins.** Future-day pins use the "later" style from §4.1 (10 px dots) until a day is selected.
+- **What follows the range:** the hotspot, edge dots and dice use the selected range. The live counter always counts what is on right now.
+
+## 14. Default venue for single-venue sources
+
+Found on 2026-10-22: the NFM crawl found 50 events and added 20, sent 1 to moderation and rejected 29 for "no location". NFM's event pages assume their own building and print no address, so the extractor returns none.
+
+- **Config.** A per-source `defaultVenue` in `config/sources.json`. For NFM: `{ "name": "Narodowe Forum Muzyki", "address": "plac Wolności 1, Wrocław" }`.
+- **When it applies.** Only when extraction yields no venue, address or coordinates. A page that names another venue keeps it.
+- **Geocoding.** The default venue is geocoded once through the existing geocoder and cached. No coordinates are hard-coded.
+- **Reuse.** Any single-venue source (a theatre, club or cinema) can set it.
+- **Tests.**
+  - A fixture page without an address lands at the default venue.
+  - A page naming another venue keeps that venue.
+- **Expected gain.** About 30 more NFM events per crawl.

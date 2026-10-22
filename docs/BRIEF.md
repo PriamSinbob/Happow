@@ -211,7 +211,7 @@ Decided 2026-10-21: in the PoC, people add events by hand. Pasting a link to fil
 
 ### Plan ahead: a "Later" window
 
-Requested 2026-10-21. The PoC is about what is on now and today. The full app should also handle events further ahead:
+Requested 2026-10-21. The PoC is about what is on now and today. The full app should also handle events further ahead (update 2026-10-22: the Week and Later windows are part of M6, see `docs/milestones/M6-design.md` §13; the agenda, evening queue and reminders below remain future work):
 - **A "Later" time filter** next to Now / 2 h / 6 h / Today, with a date picker for "this weekend" or a chosen evening.
 - **Saved and accepted events in one agenda.** This includes invitations to private events once those exist.
 - **An evening queue:** several events in a row, with walking times between them and a warning when two overlap or one ends too late to make the next.
