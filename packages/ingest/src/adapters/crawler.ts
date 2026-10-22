@@ -10,7 +10,7 @@ import {
   type ExtractedEvent,
   type Robots,
 } from '@happow/extract';
-import { HttpError } from '../http.js';
+import { HttpError, isTimeout } from '../http.js';
 import type { AdapterContext, ParsedEvent, RawEvent, SourceAdapter } from '../types.js';
 import { inRegion, llmExtract, localDate, sha256 } from './extraction.js';
 
@@ -136,8 +136,9 @@ export const crawler: SourceAdapter = {
         const html = await ctx.http.text(link);
         await collect(link, await extract(link, html));
       } catch (err) {
-        // One broken event page must not lose the rest of the crawl.
+        // One broken or slow event page must not lose the rest of the crawl.
         if (err instanceof HttpError && err.status >= 400 && err.status < 500) continue;
+        if (isTimeout(err)) continue;
         throw err;
       }
     }

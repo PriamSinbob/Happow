@@ -17,7 +17,7 @@ import {
 import { adapters } from './adapters/index.js';
 import { isDue, plannedRuns } from './schedule.js';
 import { sourceRanker } from './dedup.js';
-import { HttpClient, redact } from './http.js';
+import { HttpClient, isTimeout, redact } from './http.js';
 import { normalize, type RejectReason } from './normalize.js';
 import type { EventStore } from './store.js';
 import type { NormalizedEvent, RawEvent, SourceAdapter } from './types.js';
@@ -216,16 +216,22 @@ async function runSource(
     }
     // Pipeline step 4: places without coordinates are geocoded; a coarse match lowers confidence.
     if (!parsed.point && !parsed.venue?.point && parsed.locationQuery && opts.geocoder) {
-      const hit = await opts.geocoder.geocode(
-        {
-          ...parsed.locationQuery,
-          // Pages that leave the city out are in the region's city: without it, a same-named
-          // street in a nearby village wins.
-          city: parsed.locationQuery.city || region.localities?.[0] || region.name[region.locale],
-          countryCode: region.countryCode,
-        },
-        region.bbox,
-      );
+      const hit = await opts.geocoder
+        .geocode(
+          {
+            ...parsed.locationQuery,
+            // Pages that leave the city out are in the region's city: without it, a same-named
+            // street in a nearby village wins.
+            city: parsed.locationQuery.city || region.localities?.[0] || region.name[region.locale],
+            countryCode: region.countryCode,
+          },
+          region.bbox,
+        )
+        // A slow geocoder skips this event (rejected as no-location, retried next run), not the run.
+        .catch((err: unknown) => {
+          if (isTimeout(err)) return null;
+          throw err;
+        });
       if (hit) {
         geocoded++;
         parsed = {

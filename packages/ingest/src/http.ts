@@ -10,6 +10,11 @@ export interface HttpOptions {
   onResponse?: (url: string, body: string) => void;
 }
 
+/** A request that gave up waiting (AbortSignal.timeout), as opposed to a real error answer. */
+export function isTimeout(err: unknown): boolean {
+  return err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError');
+}
+
 export class HttpError extends Error {
   constructor(
     readonly status: number,
