@@ -150,7 +150,16 @@ export const crawler: SourceAdapter = {
     if (!start) return null;
     const end = e.end ? resolveInstant(e.end, region.timezone) : null;
     let endAt: Date | null = end ? end.at : null;
-    if (start.allDay && (!end || end.allDay)) {
+    // Portals also write date-only runs as clock times: "2026-10-23T00:00" → "2026-10-29T23:59"
+    // (a week-long festival). Midnight to the end of a later day is whole days, not a timed show.
+    const wholeDays =
+      !!e.end && /T00:00(?::00)?$/.test(e.start) && /T(23:59|00:00)(?::\d\d)?$/.test(e.end);
+    if (wholeDays && e.end!.slice(0, 10) > e.start.slice(0, 10)) {
+      // "…T00:00" already is the next day's start; "…T23:59" runs through that date.
+      endAt = /T00:00/.test(e.end!)
+        ? end!.at
+        : (resolveInstant(nextDate(e.end!.slice(0, 10)), region.timezone)?.at ?? null);
+    } else if (start.allDay && (!end || end.allDay)) {
       // Date-only listing: whole days, through the end date (or the start date).
       endAt =
         resolveInstant(nextDate((e.end ?? e.start).slice(0, 10)), region.timezone)?.at ?? null;
