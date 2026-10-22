@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Why someone would use Happow over a listings site, a ticket app or Google Maps. Every item is tagged so the list stays honest:
 
-- **Status:** `Live` = in the app today · `M6` = specified in [M6-design](milestones/M6-design.md), being built · `Later` = designed, not scheduled.
+- **Status:** `Live` = in the app today · `M6` / `M7` = specified in [M6-design](milestones/M6-design.md) / [M7-search-follow](milestones/M7-search-follow.md) · `Later` = designed, not scheduled.
 - **Tier:** see [Free and paid](#free-and-paid) at the end. Unless marked otherwise, an item is free for everyone, with no account.
 
 ## Built around "now"
@@ -111,6 +111,13 @@ Why someone would use Happow over a listings site, a ticket app or Google Maps. 
 - **Share as an image or QR code.** A ready-made card for Instagram Stories, and a QR code for posters and flyers. `Later`
 - **Old links still work.** A link to an ended event shows what's on now near that place. `Later`
 
+## Follow the artists you like
+
+- **Search everything coming up.** Type an artist, venue or title and see every upcoming event in the city, not just what's in reach today. Typos and missing Polish letters still match. `M7`
+- **Follow without an account.** Tap ♡ on a performer; their events get a ★ on the map and float to the top of the list. The list stays on your phone. `M7`
+- **Across Poland.** Followed artists playing in other Polish cities show up too (via Ticketmaster). `M7`
+- **New-date alerts.** Get a push or email when a followed artist announces a date. Premium. `M7`
+
 ## Your city, lit up
 
 - **A personal map.** The map is grey by default; your reach and the places you've actually been to glow in colour, with soft cloud-like edges. `M6`
@@ -129,11 +136,13 @@ Map, events, filters, details and navigation are free for everyone, always. Paid
 | Live counter, time line, dice, plan from anywhere                   | ✓          | ✓            | ✓       |
 | Personal lit map on the device                                      | ✓          | ✓            | ✓       |
 | Family mode and age markings                                        | ✓          | ✓            | ✓       |
+| Search, follow artists on the phone, nationwide matches             | ✓          | ✓            | ✓       |
 | Violet and Mono colour presets                                      | ✓          | ✓            | ✓       |
 | Settings page, Tally red preset                                     |            | ✓            | ✓       |
 | Export and import your lit map                                      |            | ✓            | ✓       |
 | Encrypted lit-map sync and backup across devices and phone upgrades |            |              | ✓       |
 | Extended colour presets (Magenta and future ones)                   |            |              | ✓       |
+| Alerts when a followed artist announces a date; follows synced      |            |              | ✓       |
 
 Ideas for later paid features, not decided (from the brief):
 

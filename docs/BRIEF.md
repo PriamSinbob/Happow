@@ -173,6 +173,7 @@ Build in five increments, each deployable and demoable on a phone in Wrocław.
 4. **Crawler and submissions.** JSON-LD crawler with a target list in config, LLM extraction fallback, URL-autofill submission form, moderation screen.
 5. **Social signals.** Threads keyword adapter (after app review), confidence scoring, "possibly cancelled" logic, analytics. Instagram was dropped from the PoC on 2026-10-21 (see Future features → More venue and event data).
 6. **Design system and map UX** (added 2026-10-22). Spec: [docs/milestones/M6-design.md](milestones/M6-design.md). Where it differs from Core features above (time chips, radius slider, map/list toggle, pin colours, chevrons), the spec wins. Advantages it delivers: [docs/ADVANTAGES.md](ADVANTAGES.md).
+7. **Search and followed artists** (added 2026-10-22, after M6). Spec: [docs/milestones/M7-search-follow.md](milestones/M7-search-follow.md). Performer data, typo-tolerant search, follows on the device, nationwide Ticketmaster matches, premium alerts.
 
 Instructions for the build agent:
 
@@ -302,7 +303,7 @@ Requested 2026-10-20. An organiser can mark an event as **private**: it is visib
 - [ ] Contact Wrocław city (ARAW) about an events feed or partnership?
 - [ ] Is Facebook public-page crawling in scope at all, after a legal opinion under Polish/EU law?
 - [ ] Brand name: search HAPPOW / HAPPO / HAPOW in TMview (EUIPO + UPRP), WIPO Brand DB and IP Australia; consider filing "Happow" (classes 9, 35, 41, 42). happow.com is an Australian youth eLearning company (HAPPOW PTY LTD); a US "HAPPOW" mark exists in class 28 only.
-- [ ] Domain and email: register happow.app (Cloudflare Registrar) and happow.pl (Polish registrar), forward a contact address with Cloudflare Email Routing, set `legal.contactEmail`.
+- [ ] Domain and email: register happow.app (Cloudflare Registrar) and happow.pl (Polish registrar), forward a contact address with Cloudflare Email Routing, replace the interim `legal.contactEmail` (the owner's personal address, set 2026-10-22) and the crawler User-Agent URL (`ingest.userAgent`).
 
 ## Before public launch (to-do)
 
