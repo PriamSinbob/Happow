@@ -15,7 +15,7 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | A     | §14                     | Default venue for single-venue sources                   | —     | merged (#9)                              |
 | B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest     | —     | merged (#10)                             |
 | C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | merged (#12)                             |
-| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | in review (branch `m6-colour`)           |
+| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | in review (#13)                          |
 | E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  |                                          |
 | F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  |                                          |
 | G     | §4.4 UI, §7             | Family-mode filter and chip; dice                        | C, F  |                                          |
