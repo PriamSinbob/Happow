@@ -11,3 +11,4 @@ export * from './config.js';
 export * from './area.js';
 export * from './confidence.js';
 export * from './entry.js';
+export * from './colour.js';

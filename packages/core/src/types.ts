@@ -9,6 +9,9 @@ import type {
   rulesSchema,
   seedFileSchema,
   sourceSchema,
+  themeConfigSchema,
+  themePresetSchema,
+  themeTokensSchema,
   timeWindowSchema,
   trustSchema,
 } from './schemas.js';
@@ -24,6 +27,10 @@ export type EventRules = z.infer<typeof rulesSchema>;
 export type EntryType = z.infer<typeof entrySchema>;
 export type SeedFile = z.infer<typeof seedFileSchema>;
 export type TimeWindow = z.infer<typeof timeWindowSchema>;
+export type ThemeConfig = z.infer<typeof themeConfigSchema>;
+export type ThemePreset = z.infer<typeof themePresetSchema>;
+export type ThemeTokens = z.infer<typeof themeTokensSchema>;
+export type ThemeName = 'day' | 'night';
 
 export interface LatLng {
   lat: number;

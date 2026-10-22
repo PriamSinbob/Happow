@@ -229,6 +229,60 @@ export const appConfigSchema = z.object({
   }),
 });
 
+const hex = z.string().regex(/^#[0-9a-f]{6}$/i, 'use a colour like "#6A4CF5"');
+
+/** §3.1 colours of one theme: the basemap, the chrome and notices. */
+export const themeTokensSchema = z.object({
+  land: hex,
+  majorRoad: hex,
+  minorRoad: hex,
+  water: hex,
+  park: hex,
+  /** Covers unexplored areas (lit map, slice H). */
+  veil: hex,
+  veilOpacity: z.number().min(0).max(1),
+  /** Text and glyphs. */
+  ink: hex,
+  muted: hex,
+  /** Cards, sheets, pins. */
+  paper: hex,
+  /** Subtle fills on paper (segmented controls, chips). */
+  paper2: hex,
+  line: hex,
+  /** Behind dialogs, at partial opacity. */
+  scrim: hex,
+  warn: hex,
+  warnInk: hex,
+  error: hex,
+  errorInk: hex,
+});
+
+const liveSchema = z.object({ live: hex, onLive: hex });
+
+/** A live-hue preset (§3.2): the one colour that means "on now", and the glyph on it. */
+export const themePresetSchema = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  labels: labelsSchema,
+  /** Who may pick it: everyone, signed-in users, premium (§8). */
+  tier: z.enum(['anonymous', 'account', 'premium']),
+  day: liveSchema,
+  night: liveSchema,
+});
+
+export const themeConfigSchema = z.object({
+  themes: z.object({ day: themeTokensSchema, night: themeTokensSchema }),
+  presets: z.array(themePresetSchema).min(1),
+  defaultPreset: z.string(),
+  /** §3.2: every preset must meet these in both themes (checked by the contrast test). */
+  rules: z.object({
+    minGlyphContrast: z.number().min(1),
+    minLandContrast: z.number().min(1),
+    minHueDistance: z.number().min(0).max(180),
+    minInkContrast: z.number().min(1),
+    minMutedContrast: z.number().min(1),
+  }),
+});
+
 export const mapConfigSchema = z.object({
   provider: z.string(),
   styleUrl: z.string().url(),
@@ -240,6 +294,18 @@ export const mapConfigSchema = z.object({
   attribution: z.string(),
   minZoom: z.number(),
   maxZoom: z.number(),
+  /**
+   * Basemap recolouring per theme: layer ids of the style (a trailing "*" matches a prefix) and
+   * the paint properties to set to a theme token. Layers not listed keep the style's colours.
+   */
+  themeLayers: z
+    .array(
+      z.object({
+        layers: z.array(z.string().min(1)).min(1),
+        paint: z.record(themeTokensSchema.keyof()),
+      }),
+    )
+    .default([]),
 });
 
 export const trustSchema = z.enum(['api', 'crawled', 'community']);

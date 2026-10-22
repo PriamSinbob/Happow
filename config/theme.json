@@ -1,0 +1,80 @@
+{
+  "themes": {
+    "day": {
+      "land": "#F1ECE2",
+      "majorRoad": "#FFFFFF",
+      "minorRoad": "#E3DACA",
+      "water": "#A8CBDF",
+      "park": "#CDE2B4",
+      "veil": "#E6E6E4",
+      "veilOpacity": 0.74,
+      "ink": "#17171A",
+      "muted": "#86807A",
+      "paper": "#FBFAF7",
+      "paper2": "#EEEAE2",
+      "line": "#DFD8CC",
+      "scrim": "#17171A",
+      "warn": "#FBEFD3",
+      "warnInk": "#7A4B0C",
+      "error": "#FBE3E1",
+      "errorInk": "#9B1C1C"
+    },
+    "night": {
+      "land": "#000000",
+      "majorRoad": "#2E3647",
+      "minorRoad": "#1C2230",
+      "water": "#123049",
+      "park": "#173622",
+      "veil": "#000000",
+      "veilOpacity": 0.75,
+      "ink": "#ECE9E3",
+      "muted": "#80838B",
+      "paper": "#1A1D23",
+      "paper2": "#242832",
+      "line": "#323846",
+      "scrim": "#000000",
+      "warn": "#3A2E14",
+      "warnInk": "#F2C879",
+      "error": "#3D1A1C",
+      "errorInk": "#FFB4B4"
+    }
+  },
+  "presets": [
+    {
+      "id": "violet",
+      "labels": { "pl": "Fiolet", "en": "Violet" },
+      "tier": "anonymous",
+      "day": { "live": "#6A4CF5", "onLive": "#FFFFFF" },
+      "night": { "live": "#8C74FF", "onLive": "#FFFFFF" }
+    },
+    {
+      "id": "red",
+      "labels": { "pl": "Czerwień", "en": "Tally red" },
+      "tier": "account",
+      "day": { "live": "#EE2E4E", "onLive": "#FFFFFF" },
+      "night": { "live": "#FF4766", "onLive": "#FFFFFF" }
+    },
+    {
+      "id": "magenta",
+      "labels": { "pl": "Magenta", "en": "Magenta" },
+      "tier": "premium",
+      "day": { "live": "#C8177A", "onLive": "#FFFFFF" },
+      "night": { "live": "#FF4FA8", "onLive": "#FFFFFF" }
+    },
+    {
+      "id": "mono",
+      "labels": { "pl": "Mono", "en": "Mono" },
+      "tier": "anonymous",
+      "day": { "live": "#17171A", "onLive": "#FBFAF7" },
+      "night": { "live": "#ECE9E3", "onLive": "#1A1D23" }
+    }
+  ],
+  "defaultPreset": "violet",
+  "rules": {
+    "minGlyphContrast": 3,
+    "minLandContrast": 3,
+    "minHueDistance": 40,
+    "minInkContrast": 4.5,
+    "minMutedContrast": 3
+  }
+}
