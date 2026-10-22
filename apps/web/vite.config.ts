@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import mapConfig from '../../config/map.json';
+import { crawlerPage } from './build/crawlerPage';
 
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 const tileHosts = [mapConfig.styleUrl, ...mapConfig.fallbackRaster.tiles].map(
@@ -69,6 +70,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       devApi(mode),
+      crawlerPage(),
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['icons/favicon.svg', 'icons/apple-touch-icon.png'],
@@ -95,6 +97,8 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+          // Server-rendered pages and the API are never answered with the app shell.
+          navigateFallbackDenylist: [/^\/crawler/, /^\/api\//],
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
           runtimeCaching: [
             {

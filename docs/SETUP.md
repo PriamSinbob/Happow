@@ -4,12 +4,12 @@ A one-time checklist for taking Happow from "runs on a laptop" to "live on the i
 
 There are four accounts, and each one owns some of the secrets:
 
-| Account                                       | What it runs                                                                  | Cost                               |
-| --------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------- |
-| **Supabase** (supabase.com)                   | Postgres database, magic-link sign-in for moderators                          | Free tier                          |
-| **Cloudflare** (dash.cloudflare.com)          | Hosts the app and the `/api` endpoints, later the domain and email forwarding | Free tier                          |
-| **Anthropic Console** (console.anthropic.com) | Claude API key for reading event pages without structured data                | Prepaid credits; set a spend limit |
-| **GitHub** (this repo)                        | Stores the secrets and runs the ingest, deploy and migrate workflows          | Free (public repo)                 |
+| Account                                       | What it runs                                                                  | Cost                                                               |
+| --------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **Supabase** (supabase.com)                   | Postgres database, magic-link sign-in for moderators                          | Free tier                                                          |
+| **Cloudflare** (dash.cloudflare.com)          | Hosts the app and the `/api` endpoints, later the domain and email forwarding | Free tier                                                          |
+| **Anthropic Console** (console.anthropic.com) | Claude API key for reading event pages without structured data                | Prepaid credits; set a spend limit                                 |
+| **GitHub** (this repo)                        | Stores the secrets and runs the ingest, deploy and migrate workflows          | Free: unlimited Actions while public, 2,000 min/month once private |
 
 Optional: **Ticketmaster** and **Meetup** API keys (see the README). Each source is skipped while its key is missing, so you can add them later.
 
@@ -84,10 +84,24 @@ The app runs as one **Cloudflare Worker** named `happow`. Cloudflare serves the 
    - `SUPABASE_URL`: Project URL (1.3)
    - `SUPABASE_SERVICE_ROLE_KEY`: secret / service_role key (1.3)
    - `SUBMITTER_SALT`: a long random string you create once, for example the output of `openssl rand -hex 32` or 40 random characters from a password manager. It makes stored device and IP hashes unlinkable. Keep it stable: changing it resets rate limits and breaks "one report per device".
+   - `GITHUB_DISPATCH_TOKEN`: lets the Worker's schedule start the ingest workflow (see **5a**).
    - `ORS_API_KEY` (optional): walking routes for "Route in Happow". Sign up at account.heigit.org (openrouteservice by HeiGIT); the free **Standard** plan gives 2,000 routes a day and 40 a minute. Copy the API key from the dashboard. Without it, or when the daily quota runs out, the in-app route is drawn as a direct line, and the Google Maps button works as always.
 6. **Deployments → Retry** (or push to `main`). The app is then at `https://happow.<your-subdomain>.workers.dev`, shown on the Worker's overview page. A custom domain is added later under **Settings → Domains & Routes**.
 
 **Logs:** errors from `/api` appear under the Worker's **Observability → Logs**, and failed builds under **Deployments → View build**.
+
+### 5a. Scheduled ingestion (Cron Trigger)
+
+The Worker has a Cron Trigger every 15 minutes (`triggers.crons` in `wrangler.jsonc`). Each tick reads the latest rows of `source_runs` and starts the GitHub **Ingest sources** workflow only when some source is due. A tick that finds nothing due costs nothing, and GitHub's own schedule is only a fallback every 6 hours. This keeps ingestion on time (GitHub runs its own frequent schedules late or not at all) and within the 2,000 free Actions minutes a private repository gets.
+
+1. GitHub → your avatar → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
+   - **Repository access:** Only select repositories → `PriamSinbob/happow`.
+   - **Permissions → Repository permissions → Actions:** Read and write. Nothing else.
+   - **Expiration:** pick a date and set yourself a reminder; when it expires, ingestion falls back to every 6 hours.
+2. Cloudflare → the `happow` Worker → **Settings → Runtime variables and secrets → + Add variable**, secret checkbox ticked, name `GITHUB_DISPATCH_TOKEN`, value: the token.
+3. Check: the Worker's **Settings → Triggers** lists the Cron Trigger `*/15 * * * *` (it appears after the first deploy of this change). After the next tick, **Observability → Logs** shows a line like `{"cron":"*/15 * * * *","due":["ticketmaster@wroclaw"],"dispatched":true}`, and GitHub → **Actions** shows a new run started by `workflow_dispatch`.
+
+Sources whose GitHub secrets are missing are recorded as skipped and not retried for 24 hours (`ingest.dispatch` in `config/app.json`), so an unconfigured source never triggers runs on its own. Expected use with today's sources: about 24 hourly runs a day for Ticketmaster (about a minute each, as GitHub bills whole minutes) plus a few minutes a day of crawling, roughly 1,000 minutes a month.
 
 ## 6. GitHub: secrets for the scheduled jobs
 
@@ -99,7 +113,7 @@ The app runs as one **Cloudflare Worker** named `happow`. Cloudflare serves the 
 | `ANTHROPIC_API_KEY`                | Anthropic Console (2.4)          | ingest (NFM crawl) |
 | `TICKETMASTER_API_KEY`, `MEETUP_*` | optional, see README             | ingest             |
 
-**Ingest** runs every 15 minutes by itself. Each source decides whether it is due, so most runs finish in seconds. To run everything now: **Actions → Ingest sources → Run workflow** with **force** ticked.
+**Ingest** is started by the Worker's Cron Trigger whenever a source is due (**5a**), with a fallback schedule every 6 hours. Each source decides whether it is due, so a run fetches only those. To run everything now: **Actions → Ingest sources → Run workflow** with **force** ticked.
 
 ## 7. Check that it works
 

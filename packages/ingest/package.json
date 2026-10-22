@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./normalize": "./src/normalize.ts"
+    "./normalize": "./src/normalize.ts",
+    "./schedule": "./src/schedule.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

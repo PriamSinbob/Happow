@@ -178,6 +178,21 @@ export const appConfigSchema = z.object({
     userAgent: z.string().min(1),
     /** Runs in a row a complete-listing source must miss an event before it is "possibly cancelled". */
     missedRunsToFlag: z.number().int().min(1),
+    /**
+     * The Worker's Cron Trigger starts the GitHub ingest workflow (workflow_dispatch) only when a
+     * source is due, so a frequent schedule costs no CI minutes while nothing is due.
+     */
+    dispatch: z.object({
+      /** owner/name of the repository that runs `.github/workflows/<workflow>`. */
+      repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
+      workflow: z.string().min(1),
+      ref: z.string().min(1),
+      /** Name of the Worker secret holding a GitHub token with Actions: write on `repo`. */
+      tokenSecret: z.string().min(1),
+      skippedBackoffHours: z.number().positive(),
+      failedRetryMinutes: z.number().positive(),
+      runningTimeoutMinutes: z.number().positive(),
+    }),
   }),
 });
 

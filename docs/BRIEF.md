@@ -307,6 +307,6 @@ Requested 2026-10-20. An organiser can mark an event as **private**: it is visib
 ## Before public launch (to-do)
 
 - [ ] **Legal texts** (Claude to draft when the app is feature-complete): terms of use, privacy policy (GDPR: hashed device ids, performer/organiser names under legitimate interest, art. 14 notice), takedown procedure, cookie/storage note. Replace the draft bullets on the About page.
-- [ ] **Crawl permissions:** email eBilet for written consent or a partner feed (source paused until then); email ARAW (wroclaw.pl/go) for consent or a feed; courtesy email to NFM. Crawler policy is public in `docs/CRAWLER.md`.
+- [ ] **Crawl permissions:** email eBilet for written consent or a partner feed (owner decision 2026-10-22: keep crawling its listing page during private testing; consent is needed before launch); email ARAW (wroclaw.pl/go) for consent or a feed; courtesy email to NFM. The crawler policy (`docs/CRAWLER.md`) is published at `/crawler` on the app, which the crawler's User-Agent links to.
 - [ ] **Crawler politeness:** conditional requests (ETag / If-Modified-Since), skip unchanged detail pages, respect TDM reservations (`/.well-known/tdmrep.json`, `tdm-reservation` meta) before sending page text to the LLM, add the contact email to the User-Agent.
 - [ ] Under the Plumbi umbrella or standalone?

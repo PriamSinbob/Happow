@@ -70,8 +70,17 @@
     "descriptionMaxChars": 600,
     "lookbackHours": 8,
     "lookaheadHours": 48,
-    "userAgent": "Happow/0.4 (+https://github.com/PriamSinbob/Happow/blob/main/docs/CRAWLER.md)",
-    "missedRunsToFlag": 2
+    "userAgent": "Happow/0.4 (+https://happow.krasnoroda.workers.dev/crawler)",
+    "missedRunsToFlag": 2,
+    "dispatch": {
+      "repo": "PriamSinbob/happow",
+      "workflow": "ingest.yml",
+      "ref": "main",
+      "tokenSecret": "GITHUB_DISPATCH_TOKEN",
+      "skippedBackoffHours": 24,
+      "failedRetryMinutes": 60,
+      "runningTimeoutMinutes": 40
+    }
   },
   "geocoding": {
     "provider": "nominatim",

@@ -128,6 +128,15 @@ export class EventStore {
     return Number(rows[0]!.id);
   }
 
+  /** A source the run could not attempt (for example missing secrets), for the scheduler. */
+  async recordSkip(sourceId: string, regionId: string, reason: string): Promise<void> {
+    await this.db.query(
+      `insert into source_runs (source_id, region_id, status, finished_at, error)
+       values ($1, $2, 'skipped', now(), $3)`,
+      [sourceId, regionId, reason],
+    );
+  }
+
   async finishRun(id: number, status: 'ok' | 'failed', stats: object, error?: string) {
     await this.db.query(
       `update source_runs set finished_at = now(), status = $2, stats = $3, error = $4 where id = $1`,

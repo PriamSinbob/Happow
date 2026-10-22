@@ -46,6 +46,11 @@ Why someone would use Happow over a listings site, a ticket app or Google Maps. 
 - **Teaches itself.** No tutorial screens; controls demonstrate themselves once on first launch. `M6`
 - **The map stays the screen.** Controls used to cover about a third of it; now they float at the edges, and the list opens over the map instead of replacing it. `M6`
 
+## For families
+
+- **Family mode.** One switch shows what suits children: kids and family events, events marked for young ages, and daytime markets, festivals and exhibitions with no age limit (marked "not confirmed"). It hides 18+ and late-evening events. Remembered on the phone; nothing about your children leaves it. `M6`
+- **Age limits at a glance.** Events with an age limit carry a small "16+" or "18+" badge on the map and the card, in any mode. `M6`
+
 ## Accessible by design
 
 - **Colour-blind ready.**
@@ -123,6 +128,7 @@ Map, events, filters, details and navigation are free for everyone, always. Paid
 | All events, map, list, filters, details, navigation, add and report | ✓          | ✓            | ✓       |
 | Live counter, time line, dice, plan from anywhere                   | ✓          | ✓            | ✓       |
 | Personal lit map on the device                                      | ✓          | ✓            | ✓       |
+| Family mode and age markings                                        | ✓          | ✓            | ✓       |
 | Violet and Mono colour presets                                      | ✓          | ✓            | ✓       |
 | Settings page, Tally red preset                                     |            | ✓            | ✓       |
 | Export and import your lit map                                      |            | ✓            | ✓       |

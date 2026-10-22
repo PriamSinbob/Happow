@@ -1,10 +1,14 @@
 name: Ingest sources
 
-# Runs every 15 minutes; each source's own `schedule` in config/sources.json decides whether it is
-# due (tracked in the source_runs table). Sources whose secrets are missing are skipped.
+# Started by the Worker's Cron Trigger (every 15 min, only when a source is due; see
+# packages/api/src/schedule.ts), by hand, or by the fallback schedule below. Each source's own
+# `schedule` in config/sources.json decides whether it is due (tracked in the source_runs table).
+# Sources whose secrets are missing are skipped and recorded, so the Worker backs off for a day.
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    # Fallback only, in case the Worker cannot dispatch (token missing or expired). Kept sparse:
+    # every run of a private repo counts against the Actions minutes.
+    - cron: '17 */6 * * *'
   workflow_dispatch:
     inputs:
       source:

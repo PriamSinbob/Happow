@@ -122,6 +122,17 @@ describe.skipIf(!url)('ingestion into Postgres', () => {
     expect(runs.rows[0].stats).toMatchObject({ fetched: 9 });
   });
 
+  it('records sources skipped for missing secrets, so the scheduler can back off', async () => {
+    const [s] = await ingest('ticketmaster', [], { env: {} });
+    expect(s).toMatchObject({ status: 'skipped', reason: 'missing TICKETMASTER_API_KEY' });
+    const { rows } = await db.query(
+      `select status, error, finished_at from source_runs
+       where source_id = 'ticketmaster' order by started_at desc limit 1`,
+    );
+    expect(rows[0]).toMatchObject({ status: 'skipped', error: 'missing TICKETMASTER_API_KEY' });
+    expect(rows[0].finished_at).not.toBeNull();
+  });
+
   it('filters by category and price, and hides cancelled events', async () => {
     await ingest('meetup', MU);
     const all = await near(25000);

@@ -3,7 +3,7 @@
 Happow is a free map of events happening near you (concerts, markets, talks), starting in Wrocław, Poland. Its crawler identifies itself as:
 
 ```
-Happow/0.4 (+https://github.com/PriamSinbob/Happow/blob/main/docs/CRAWLER.md)
+Happow/0.4 (+https://happow.krasnoroda.workers.dev/crawler)
 ```
 
 ## What it does
@@ -16,12 +16,12 @@ Happow/0.4 (+https://github.com/PriamSinbob/Happow/blob/main/docs/CRAWLER.md)
 
 ## Opting out or asking for changes
 
-Open an issue at https://github.com/PriamSinbob/Happow/issues (a contact email will be listed here before public launch). We stop crawling a site within 48 hours of a request and remove its events from the app. Every source has an on/off switch in `config/sources.json`.
+Write to the contact address on the app's [About page](https://happow.krasnoroda.workers.dev/#/about). We stop crawling a site within 48 hours of a request and remove its events from the app.
 
 ## Sources
 
-| Site                 | Status                                                                              |
-| -------------------- | ----------------------------------------------------------------------------------- |
-| wroclaw.pl/go (ARAW) | Daily; asking ARAW for consent or a feed                                            |
-| nfm.wroclaw.pl       | Daily, about 25 pages                                                               |
-| ebilet.pl            | **Paused** until eBilet gives written consent (its terms limit use to personal use) |
+| Site                 | Status                                                                            |
+| -------------------- | --------------------------------------------------------------------------------- |
+| wroclaw.pl/go (ARAW) | Daily; asking ARAW for consent or a feed                                          |
+| nfm.wroclaw.pl       | Daily, about 25 pages                                                             |
+| ebilet.pl            | Daily, listing page only, during private testing; consent requested before launch |

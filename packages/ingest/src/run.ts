@@ -1,5 +1,4 @@
 import {
-  intervalMs,
   rateLimitIntervalMs,
   scoreConfidence,
   type Category,
@@ -16,6 +15,7 @@ import {
   type KeyValueCache,
 } from '@happow/extract';
 import { adapters } from './adapters/index.js';
+import { isDue, plannedRuns } from './schedule.js';
 import { sourceRanker } from './dedup.js';
 import { HttpClient, redact } from './http.js';
 import { normalize, type RejectReason } from './normalize.js';
@@ -60,28 +60,8 @@ export interface SourceRunSummary {
   events?: NormalizedEvent[];
 }
 
-/** Grace so a cron tick that fires a few minutes early still counts as due. */
-const SCHEDULE_SLACK_MS = 5 * 60_000;
-
-export function isDue(source: Source, lastSuccess: Date | null, now: Date): boolean {
-  if (!source.schedule) return false;
-  if (!lastSuccess) return true;
-  return now.getTime() - lastSuccess.getTime() >= intervalMs(source.schedule) - SCHEDULE_SLACK_MS;
-}
-
 export function missingSecrets(source: Source, env: IngestOptions['env']): string[] {
   return source.secrets.filter((s) => !env[s]);
-}
-
-/** Every (region, source) pair the config enables, in sources.json order. */
-export function plannedRuns(config: HappowConfig): { region: Region; source: Source }[] {
-  return config.regions.flatMap((region) =>
-    config.sources
-      .filter(
-        (s) => s.enabled && s.regionIds.includes(region.id) && region.enabledSources.includes(s.id),
-      )
-      .map((source) => ({ region, source })),
-  );
 }
 
 /** Fetch → store raw → parse → normalize → dedup + write, for every due source. */
@@ -112,6 +92,8 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
     const missing = missingSecrets(source, env);
     if (missing.length) {
       skip(`missing ${missing.join(', ')}`);
+      // Recorded so the scheduler backs off instead of starting runs that cannot fetch it.
+      if (store) await store.recordSkip(source.id, region.id, `missing ${missing.join(', ')}`);
       continue;
     }
     if (!opts.force && store) {

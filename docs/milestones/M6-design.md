@@ -119,10 +119,36 @@ Add `entry: 'fixed' | 'open'` and `graceMin` to the event model. Category defaul
 - **Collision priority.** `symbol-sort-key` ranks live above soon above later, so live pins win collisions.
 - **Why this is required.** The rail↔zoom coupling makes every rail drag a continuous zoom, and area snapshots allow up to 1,000 events.
 
+### 4.4 Age limits and family mode
+
+Added 2026-10-22: age restrictions visible on events, and a child-friendly filter for families.
+
+- **Data.** Replace the free-text `rules.age` with two fields:
+  - `ageMin: number | null`: 0 means explicitly all ages, 18 means 18+.
+  - `family: boolean | null`: explicitly meant for children or families.
+- **Where the values come from:**
+  - Ticketmaster: `ageRestrictions.legalAgeEnforced` → `ageMin: 18` (today it becomes the text "18+").
+  - schema.org: `typicalAgeRange` ("18-", "7-12") and `audience.suggestedMinAge` → `ageMin`; an upper bound of 12 or less → `family: true`.
+  - Claude extractor: two more fields in its schema, prompted with Polish cues such as "od 18 lat", "18+", "wstęp od 16 lat", "dla dzieci", "rodzinny", "0+".
+  - Category `kids` → `family: true`.
+  - Add-event form: an age choice (none / 0+ / 12+ / 16+ / 18+) and a family toggle.
+- **Markings** (always shown, not only in family mode):
+  - Pins with `ageMin ≥ 16` carry a small numeral badge ("18+") at the upper right. Numerals only, so it needs no translation.
+  - The card shows the age badge next to the time, and a family glyph for family events.
+- **Family mode** (a filter, remembered per device):
+  - **Shows:** `family: true`, the kids category, and `ageMin ≤ 12` (including 0+).
+  - **Also shows, marked "not confirmed":** events with no age information in categories marked `family: "likely"` (today: market, garage sale, festival, exhibition, food, sport) that end by 21:00 local time.
+  - **Hides:** `ageMin ≥ 13`, events starting after 21:00, and categories marked `family: "no"` (none today; a club or nightlife category when one is added).
+  - **Config:** the rules live in `config/categories.json` (`family: "yes" | "likely" | "no"`) and `config/app.json` (`family.latestEnd`), so they change without code.
+  - The live counter, dice, hotspot and edge dots all respect it.
+- **Privacy.** Family mode is a setting on the device; nothing about the user's children is sent or stored.
+- **Tier.** Free for everyone, no account needed.
+
 ## 5. Layout and controls (portrait)
 
 - **Top-left: live counter `● N`.** It counts live, reachable, non-dashed events. Tapping it toggles live-only; the counter fills while the filter is on.
 - **Top-right:** dice, filters.
+- **Family mode chip.** Switched on in filters; while on, a small family glyph sits beside the live counter, and tapping it turns family mode off (§4.4).
 - **Right rail (radius):**
   - Placement:
     - inset ~20 px from the screen edge (Android's back gesture fires from both edges, and the web has no gesture-exclusion API)
@@ -179,7 +205,7 @@ Consistent with the brief's monetization rules: every event is always shown to e
 
 | Tier             | Gets                                                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Anonymous        | the full app, local atlas, Violet and Mono presets                                                                        |
+| Anonymous        | the full app, family mode and age markings, local atlas, Violet and Mono presets                                          |
 | Logged in (free) | settings page, Tally red preset, atlas export and import                                                                  |
 | Premium          | end-to-end-encrypted atlas sync and backup across devices and phone upgrades, extended hue presets (Magenta, future ones) |
 

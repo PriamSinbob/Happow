@@ -5,5 +5,12 @@
     "jsx": "react-jsx",
     "types": ["vite/client", "vite-plugin-pwa/client"]
   },
-  "include": ["src", "test", "vite.config.ts", "../../config/*.json", "../../data/seed/*.json"]
+  "include": [
+    "src",
+    "test",
+    "build",
+    "vite.config.ts",
+    "../../config/*.json",
+    "../../data/seed/*.json"
+  ]
 }
