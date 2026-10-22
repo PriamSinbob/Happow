@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
+**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
 ## Build plan
 
@@ -15,7 +15,7 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | A     | §14                     | Default venue for single-venue sources                   | —     | merged (#9)                              |
 | B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest     | —     | merged (#10)                             |
 | C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | merged (#12)                             |
-| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | planned (branch `m6-colour`)             |
+| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | in review (branch `m6-colour`)           |
 | E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  |                                          |
 | F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  |                                          |
 | G     | §4.4 UI, §7             | Family-mode filter and chip; dice                        | C, F  |                                          |
@@ -73,7 +73,7 @@ Data, ingest, API and the add-event form only. No pin or map visuals: those are 
 
 ### Slice D: colour and themes
 
-Plan proposed 2026-10-22, waiting for the owner's OK. Branch `m6-colour`, pushed after each step so a later session (cloud or local) can pick it up from the last commit.
+Plan agreed with the owner on 2026-10-22 (pure black night land; settings on the About screen for now). Branch `m6-colour`, pushed after each step so a later session (cloud or local) can pick it up from the last commit.
 
 - **Scope.** §3: colour tokens, day/night themes, hue presets, contrast test. The app chrome and the basemap change colour; pins keep their current look until slice E, the veil and lit/unlit areas wait for slice H.
 - **Config, no colours in code** (new `config/theme.json`, validated in `packages/core/src/config.ts`):
@@ -174,6 +174,19 @@ Night intent: streets on a switched-off OLED phone. Outside lit areas only stree
   - orange and amber: white glyph below 3:1
 - Greyscale e-ink reduces colour to luminance, so violet (L 0.148) renders darker than red (L 0.207): 4.5:1 vs 3.5:1 against the day land. Mono is the proper e-ink preset.
 - Mono is set manually: `@media (update: slow)` and `monochrome` are not reliable on Android e-ink devices.
+
+### 3.3 Built (slice D, 2026-10-22)
+
+- **Config.** `config/theme.json`: the §3.1 tokens for day and night (plus chrome tokens paper2, line, scrim, warn/warnInk, error/errorInk) and the §3.2 presets with their tiers; `config/map.json` `themeLayers` maps Positron layers to tokens. Night land is pure black (owner's call).
+- **Core** (`packages/core/src/colour.ts`): WCAG contrast, hue and hue distance, `checkPreset` (the §3.2 rules in both themes), `checkTokens` (ink ≥ 4.5:1 and muted ≥ 3:1 on paper and land; notice inks on their fills), `themeAt` (sunrise/sunset via `suncalc`, polar fallback by sun altitude), `themeLayerPaint`.
+- **Contrast test** (`packages/core/test/colour.test.ts`): every preset and both themes; the spec's rejected candidates (blue, orange) fail; every `themeLayers` pattern matches the recorded Positron layer list (`test/fixtures/positron-layers.json`).
+- **Web.**
+  - `src/theme.tsx`: applies the theme before the first render (no flash), re-checks auto day/night on the minute clock at the user's position (region centre until located), remembers theme and preset per device. Sets `color-scheme`, `data-theme` and the `theme-color` meta; the PWA manifest colours come from the config.
+  - `styles.css` holds no colour values any more (a test checks it): "on now" pills use `--live` / `--on-live`; buttons, focus, the radius circle, locate, chevrons and the user dot use ink; notices and flags use warn/error. MapLibre controls follow the theme.
+  - `src/mapTheme.ts`: recolours the basemap and our own layers (radius, route) in place on style load and on every theme change, for the main map, "Going there" and the add-event pin map.
+  - About → "Wygląd / Appearance": Auto / Dzień / Noc and Fiolet / Mono (Violet / Mono).
+- Skipped: the veil and black unlit areas (slice H: until then the whole map uses the lit colours); account and premium presets are in the config and the contrast test but not selectable (§8); pins keep their category colours until slice E.
+- Open: the raster fallback map (when OpenFreeMap is down) is not recoloured, so it stays light at night. Category tints on the list icons and chips are mixed onto the theme paper; they go with the glyph set in slice E. Check OLED smear on a real phone at night.
 
 ## 4. Pins
 

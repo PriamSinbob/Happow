@@ -1924,3 +1924,20 @@ label.choice input {
 .marker.is-target .marker__pin {
   transform: rotate(-45deg) scale(1.15);
 }
+
+/* MapLibre controls follow the theme. */
+.maplibregl-ctrl.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-group {
+  background: var(--paper);
+  color: var(--muted);
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--ink);
+}
+.maplibregl-ctrl-group button + button {
+  border-top-color: var(--line);
+}
+[data-theme='night'] .maplibregl-ctrl-icon,
+[data-theme='night'] .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
+}
