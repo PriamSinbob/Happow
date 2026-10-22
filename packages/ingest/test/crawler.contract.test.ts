@@ -122,6 +122,26 @@ describe('crawler (contract, recorded pages)', () => {
     expect(s!.events!.some(({ event }) => event.categoryIds.includes('kids'))).toBe(true);
   });
 
+  it('skips an event page that times out instead of failing the whole crawl', async () => {
+    const slow = 'https://www.wroclaw.pl/go/wydarzenia/edukacja-i-rozwoj/1416880-cool-moms-club';
+    const web = site({
+      'https://www.wroclaw.pl/robots.txt': page('wroclaw-robots.txt'),
+      'https://www.wroclaw.pl/go/': page('go-listing.html'),
+      'https://www.wroclaw.pl/go/wydarzenia/dla-dzieci/1403864-bajkowe-poranki-w-centrum-historii-zajezdnia-1':
+        page('go-event-2.html'),
+    });
+    const timeoutOn = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input) === slow)
+        throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+      return web.fetch(input, init);
+    }) as typeof fetch;
+    const [s] = await runIngest({ ...base, sourceIds: ['wroclaw-go'], fetch: timeoutOn, geocoder });
+    expect(s).toMatchObject({ status: 'ok' });
+    const titles = s!.events!.map(({ event }) => event.title);
+    expect(titles.some((t) => t.startsWith('Cool Moms Club'))).toBe(false);
+    expect(titles.length).toBeGreaterThan(0);
+  });
+
   it('falls back to LLM extraction on pages without JSON-LD, once per unchanged page', async () => {
     const pages = {
       'https://www.nfm.wroclaw.pl/robots.txt': page('nfm-robots.txt'),
