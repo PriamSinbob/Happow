@@ -182,6 +182,13 @@
         "maxFollow": 25,
         "llmFallback": true
       },
+      "defaultVenue": {
+        "name": "Narodowe Forum Muzyki",
+        "street": "plac Wolności 1",
+        "postalCode": "50-071",
+        "city": "Wrocław",
+        "aliases": ["NFM"]
+      },
       "defaultCategories": ["music"],
       "categoryMap": {}
     },

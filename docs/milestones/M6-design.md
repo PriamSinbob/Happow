@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** spec, not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
+**Status:** in progress: §14 built (slice A); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
 ## Supersedes in the brief
 
@@ -311,11 +311,16 @@ Added 2026-10-22, so the map is useful for planning and fills up while few event
 
 Found on 2026-10-22: the NFM crawl found 50 events and added 20, sent 1 to moderation and rejected 29 for "no location". NFM's event pages assume their own building and print no address, so the extractor returns none.
 
-- **Config.** A per-source `defaultVenue` in `config/sources.json`. For NFM: `{ "name": "Narodowe Forum Muzyki", "address": "plac Wolności 1, Wrocław" }`.
-- **When it applies.** Only when extraction yields no venue, address or coordinates. A page that names another venue keeps it.
+- **Config.** A per-source `defaultVenue` in `config/sources.json`, with the address in the geocoder's fields so its postcode check applies. For NFM: `{ "name": "Narodowe Forum Muzyki", "street": "plac Wolności 1", "postalCode": "50-071", "city": "Wrocław", "aliases": ["NFM"] }`.
+- **When it applies.**
+  - Extraction yields no venue, address or coordinates. A city alone counts as no location: it is the region itself.
+  - Or the page names only one of the building's own halls, recognised by the name or an alias as a whole word ("NFM, Sala Czerwona"). The hall keeps its name, which people in the city know, and gets the building's address. (Owner decision, 2026-10-22.)
+  - A page that names another venue, or gives a street, postcode or coordinates, keeps it.
 - **Geocoding.** The default venue is geocoded once through the existing geocoder and cached. No coordinates are hard-coded.
 - **Reuse.** Any single-venue source (a theatre, club or cinema) can set it.
 - **Tests.**
   - A fixture page without an address lands at the default venue.
+  - A page naming one of the building's halls keeps the hall's name at the building's address.
   - A page naming another venue keeps that venue.
 - **Expected gain.** About 30 more NFM events per crawl.
+- **Built** (2026-10-22): `packages/ingest/src/run.ts` (`atDefaultVenue`, applied before geocoding for any adapter), schema in `packages/core/src/schemas.ts`, contract test in `packages/ingest/test/crawler.contract.test.ts`. Open: NFM also runs concerts in other buildings (Oratorium Marianum, Aula Leopoldina). Those pages name the other venue and keep it, unless the extractor writes them as "NFM, …"; check this on the next live crawl.

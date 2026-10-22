@@ -20,7 +20,7 @@ import { sourceRanker } from './dedup.js';
 import { HttpClient, isTimeout, redact } from './http.js';
 import { normalize, type RejectReason } from './normalize.js';
 import type { EventStore } from './store.js';
-import type { NormalizedEvent, RawEvent, SourceAdapter } from './types.js';
+import type { NormalizedEvent, ParsedEvent, RawEvent, SourceAdapter } from './types.js';
 
 export interface IngestOptions {
   config: HappowConfig;
@@ -156,6 +156,36 @@ export function missedWindow(
   return { from: window.from, to: new Date(Math.min(window.to.getTime(), latest)), afterRuns };
 }
 
+type DefaultVenue = NonNullable<Source['defaultVenue']>;
+
+/** "NFM, Sala Czerwona" names a hall of the source's own building ("NFM" as a whole word). */
+function isOwnVenue(name: string, v: DefaultVenue): boolean {
+  return [v.name, ...v.aliases].some((alias) => {
+    const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu').test(name);
+  });
+}
+
+/**
+ * Single-venue sources: a page with no location, or naming only one of the source's own halls,
+ * is at the source's building. The hall keeps its name and gains the address; the geocoding step
+ * then finds (and caches) the point. A city alone is no location (the region itself); a page
+ * naming another venue or giving an address keeps it.
+ */
+function atDefaultVenue(parsed: ParsedEvent, v: DefaultVenue): ParsedEvent {
+  if (parsed.point || parsed.venue?.point) return parsed;
+  const q = parsed.locationQuery;
+  if (q ? q.street || q.postalCode : parsed.venue?.address) return parsed;
+  const pageVenue = q ? q.venueName : (parsed.venue?.name ?? null);
+  if (pageVenue && !isOwnVenue(pageVenue, v)) return parsed;
+  const address = [v.street, [v.postalCode, v.city].filter(Boolean).join(' ')].join(', ');
+  return {
+    ...parsed,
+    venue: { externalId: null, name: pageVenue ?? v.name, address, point: null, website: null },
+    locationQuery: { venueName: v.name, street: v.street, postalCode: v.postalCode, city: v.city },
+  };
+}
+
 async function runSource(
   adapter: SourceAdapter,
   source: Source,
@@ -214,6 +244,7 @@ async function runSource(
       dropped++;
       continue;
     }
+    if (source.defaultVenue) parsed = atDefaultVenue(parsed, source.defaultVenue);
     // Pipeline step 4: places without coordinates are geocoded; a coarse match lowers confidence.
     if (!parsed.point && !parsed.venue?.point && parsed.locationQuery && opts.geocoder) {
       const hit = await opts.geocoder
