@@ -67,3 +67,27 @@ describe('entry and age data', () => {
     expect(rules('en', { rules: {}, ageMin: null, family: null })).toBe('');
   });
 });
+
+describe('themes (slice D)', () => {
+  it('writes the theme tokens and the preset to CSS variables', async () => {
+    const { applyTheme, selectablePresets } = await import('../src/theme');
+    const violet = config.theme.presets.find((p) => p.id === 'violet')!;
+    applyTheme('night', violet);
+    const s = document.documentElement.style;
+    expect(s.getPropertyValue('--land')).toBe('#000000');
+    expect(s.getPropertyValue('--paper-2')).toBe(config.theme.themes.night.paper2);
+    expect(s.getPropertyValue('--warn-ink')).toBe(config.theme.themes.night.warnInk);
+    expect(s.getPropertyValue('--live')).toBe('#8C74FF');
+    expect(s.colorScheme).toBe('dark');
+    applyTheme('day', violet);
+    expect(s.getPropertyValue('--live')).toBe('#6A4CF5');
+    expect(s.colorScheme).toBe('light');
+    // Account and premium presets wait for accounts (§8).
+    expect(selectablePresets.map((p) => p.id)).toEqual(['violet', 'mono']);
+  });
+
+  it('the stylesheet uses theme tokens, not fixed colours', async () => {
+    const css = (await import('../src/styles.css?raw')).default;
+    expect(css.match(/#[0-9a-f]{3,6}\b/gi) ?? []).toEqual([]);
+  });
+});

@@ -147,7 +147,7 @@ function DetailBody({
     <div className="detail__scroll">
       <div
         className={`detail__hero${ev.imageUrl ? ' has-image' : ''}`}
-        style={{ ['--cat' as string]: cat?.color ?? '#475569' }}
+        style={{ ['--cat' as string]: cat?.color ?? 'var(--muted)' }}
       >
         {ev.imageUrl ? (
           <img src={ev.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />

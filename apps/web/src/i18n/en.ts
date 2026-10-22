@@ -224,6 +224,14 @@ export const en = {
   'about.title': 'About Happow',
   'about.intro':
     "Happow shows what's happening near you right now (concerts, markets, garage sales, talks) within a small radius you choose.",
+  'about.appearance': 'Appearance',
+  'about.theme': 'Theme',
+  'about.theme.auto': 'Auto',
+  'about.theme.day': 'Day',
+  'about.theme.night': 'Night',
+  'about.theme.hint': 'Auto switches at sunrise and sunset where you are.',
+  'about.colour': 'Colour of "on now"',
+  'about.colour.hint': 'Mono suits e-ink screens and high contrast.',
   'about.sources': 'Where events come from',
   'about.sourcesBody':
     'Official APIs, public event pages (we keep the facts and link back) and people like you. Every event shows its source and when it was last checked.',

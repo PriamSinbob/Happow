@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { LatLng } from '@happow/core';
 import { config, region } from '../config';
+import { useMapTheme } from '../mapTheme';
 import { rasterStyle } from './MapView';
 
 /** Small map for the add-event form: tap to place the pin, drag it to adjust. */
@@ -54,6 +55,7 @@ export function PinMap({
     };
     // Created once; `point` updates are handled below.
   }, []);
+  useMapTheme(map);
 
   useEffect(() => {
     const m = map.current;

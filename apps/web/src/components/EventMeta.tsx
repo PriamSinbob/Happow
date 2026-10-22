@@ -61,7 +61,7 @@ export function CategoryIcon({ ev, size = 40 }: { ev: NearbyEvent; size?: number
   return (
     <span
       className="cat-icon"
-      style={{ ['--cat' as string]: cat?.color ?? '#475569', width: size, height: size }}
+      style={{ ['--cat' as string]: cat?.color ?? 'var(--muted)', width: size, height: size }}
       aria-hidden
     >
       {cat?.icon ?? '📍'}

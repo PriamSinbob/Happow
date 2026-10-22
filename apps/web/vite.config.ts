@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import mapConfig from '../../config/map.json';
+import themeConfig from '../../config/theme.json';
 import { crawlerPage } from './build/crawlerPage';
 
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
@@ -79,8 +80,8 @@ export default defineConfig(({ mode }) => {
           short_name: 'Happow',
           description: 'Everything happening near you, now.',
           lang: 'pl',
-          theme_color: '#0f172a',
-          background_color: '#f8fafc',
+          theme_color: themeConfig.themes.day.land,
+          background_color: themeConfig.themes.day.paper,
           display: 'standalone',
           orientation: 'portrait',
           start_url: '/',

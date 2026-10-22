@@ -235,6 +235,14 @@ export const pl: Record<MessageKey, string> = {
   'about.title': 'O Happow',
   'about.intro':
     'Happow pokazuje, co dzieje się teraz w pobliżu (koncerty, targi, wyprzedaże garażowe, spotkania) w wybranym przez Ciebie niewielkim promieniu.',
+  'about.appearance': 'Wygląd',
+  'about.theme': 'Motyw',
+  'about.theme.auto': 'Auto',
+  'about.theme.day': 'Dzień',
+  'about.theme.night': 'Noc',
+  'about.theme.hint': 'Auto przełącza się o wschodzie i zachodzie słońca tam, gdzie jesteś.',
+  'about.colour': 'Kolor „teraz”',
+  'about.colour.hint': 'Mono sprawdza się na czytnikach e-ink i przy wysokim kontraście.',
   'about.sources': 'Skąd są wydarzenia',
   'about.sourcesBody':
     'Z oficjalnych API, publicznych stron wydarzeń (zapisujemy fakty i linkujemy do źródła) oraz od użytkowników. Każde wydarzenie pokazuje źródło i czas ostatniego sprawdzenia.',

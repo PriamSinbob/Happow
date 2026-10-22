@@ -8,5 +8,94 @@
   },
   "attribution": "© OpenFreeMap © OpenMapTiles Data from OpenStreetMap",
   "minZoom": 9,
-  "maxZoom": 19
+  "maxZoom": 19,
+  "themeLayers": [
+    {
+      "layers": ["background"],
+      "paint": {
+        "background-color": "land"
+      }
+    },
+    {
+      "layers": ["landuse_residential", "landcover_ice_shelf", "landcover_glacier", "aeroway-area"],
+      "paint": {
+        "fill-color": "land"
+      }
+    },
+    {
+      "layers": ["water"],
+      "paint": {
+        "fill-color": "water"
+      }
+    },
+    {
+      "layers": ["waterway"],
+      "paint": {
+        "line-color": "water"
+      }
+    },
+    {
+      "layers": ["park", "landcover_wood"],
+      "paint": {
+        "fill-color": "park"
+      }
+    },
+    {
+      "layers": ["building"],
+      "paint": {
+        "fill-color": "minorRoad",
+        "fill-outline-color": "minorRoad"
+      }
+    },
+    {
+      "layers": ["highway_major_*", "highway_motorway_*", "tunnel_motorway_*"],
+      "paint": {
+        "line-color": "majorRoad"
+      }
+    },
+    {
+      "layers": [
+        "highway_minor",
+        "highway_path",
+        "road_pier",
+        "aeroway-taxiway",
+        "aeroway-runway*"
+      ],
+      "paint": {
+        "line-color": "minorRoad"
+      }
+    },
+    {
+      "layers": ["road_area_pier"],
+      "paint": {
+        "fill-color": "minorRoad"
+      }
+    },
+    {
+      "layers": ["railway*"],
+      "paint": {
+        "line-color": "muted"
+      }
+    },
+    {
+      "layers": ["boundary_*"],
+      "paint": {
+        "line-color": "muted"
+      }
+    },
+    {
+      "layers": ["label_*", "airport", "highway-name-*"],
+      "paint": {
+        "text-color": "muted",
+        "text-halo-color": "land"
+      }
+    },
+    {
+      "layers": ["water_name_*", "waterway_line_label"],
+      "paint": {
+        "text-color": "muted",
+        "text-halo-color": "land"
+      }
+    }
+  ]
 }

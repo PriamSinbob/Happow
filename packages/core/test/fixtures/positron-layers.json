@@ -1,0 +1,226 @@
+{
+  "source": "https://tiles.openfreemap.org/styles/positron",
+  "recorded": "2026-10-22",
+  "layers": [
+    {
+      "id": "background",
+      "type": "background"
+    },
+    {
+      "id": "park",
+      "type": "fill"
+    },
+    {
+      "id": "water",
+      "type": "fill"
+    },
+    {
+      "id": "landcover_ice_shelf",
+      "type": "fill"
+    },
+    {
+      "id": "landcover_glacier",
+      "type": "fill"
+    },
+    {
+      "id": "landuse_residential",
+      "type": "fill"
+    },
+    {
+      "id": "landcover_wood",
+      "type": "fill"
+    },
+    {
+      "id": "waterway",
+      "type": "line"
+    },
+    {
+      "id": "building",
+      "type": "fill"
+    },
+    {
+      "id": "tunnel_motorway_casing",
+      "type": "line"
+    },
+    {
+      "id": "tunnel_motorway_inner",
+      "type": "line"
+    },
+    {
+      "id": "aeroway-taxiway",
+      "type": "line"
+    },
+    {
+      "id": "aeroway-runway-casing",
+      "type": "line"
+    },
+    {
+      "id": "aeroway-area",
+      "type": "fill"
+    },
+    {
+      "id": "aeroway-runway",
+      "type": "line"
+    },
+    {
+      "id": "road_area_pier",
+      "type": "fill"
+    },
+    {
+      "id": "road_pier",
+      "type": "line"
+    },
+    {
+      "id": "highway_path",
+      "type": "line"
+    },
+    {
+      "id": "highway_minor",
+      "type": "line"
+    },
+    {
+      "id": "highway_major_casing",
+      "type": "line"
+    },
+    {
+      "id": "highway_major_inner",
+      "type": "line"
+    },
+    {
+      "id": "highway_major_subtle",
+      "type": "line"
+    },
+    {
+      "id": "highway_motorway_casing",
+      "type": "line"
+    },
+    {
+      "id": "highway_motorway_inner",
+      "type": "line"
+    },
+    {
+      "id": "highway_motorway_subtle",
+      "type": "line"
+    },
+    {
+      "id": "railway_transit",
+      "type": "line"
+    },
+    {
+      "id": "railway_transit_dashline",
+      "type": "line"
+    },
+    {
+      "id": "railway_service",
+      "type": "line"
+    },
+    {
+      "id": "railway_service_dashline",
+      "type": "line"
+    },
+    {
+      "id": "railway",
+      "type": "line"
+    },
+    {
+      "id": "railway_dashline",
+      "type": "line"
+    },
+    {
+      "id": "highway_motorway_bridge_casing",
+      "type": "line"
+    },
+    {
+      "id": "highway_motorway_bridge_inner",
+      "type": "line"
+    },
+    {
+      "id": "boundary_3",
+      "type": "line"
+    },
+    {
+      "id": "boundary_2",
+      "type": "line"
+    },
+    {
+      "id": "boundary_disputed",
+      "type": "line"
+    },
+    {
+      "id": "waterway_line_label",
+      "type": "symbol"
+    },
+    {
+      "id": "water_name_point_label",
+      "type": "symbol"
+    },
+    {
+      "id": "water_name_line_label",
+      "type": "symbol"
+    },
+    {
+      "id": "highway-name-path",
+      "type": "symbol"
+    },
+    {
+      "id": "highway-name-minor",
+      "type": "symbol"
+    },
+    {
+      "id": "highway-name-major",
+      "type": "symbol"
+    },
+    {
+      "id": "highway-shield-non-us",
+      "type": "symbol"
+    },
+    {
+      "id": "highway-shield-us-interstate",
+      "type": "symbol"
+    },
+    {
+      "id": "road_shield_us",
+      "type": "symbol"
+    },
+    {
+      "id": "airport",
+      "type": "symbol"
+    },
+    {
+      "id": "label_other",
+      "type": "symbol"
+    },
+    {
+      "id": "label_village",
+      "type": "symbol"
+    },
+    {
+      "id": "label_town",
+      "type": "symbol"
+    },
+    {
+      "id": "label_state",
+      "type": "symbol"
+    },
+    {
+      "id": "label_city",
+      "type": "symbol"
+    },
+    {
+      "id": "label_city_capital",
+      "type": "symbol"
+    },
+    {
+      "id": "label_country_3",
+      "type": "symbol"
+    },
+    {
+      "id": "label_country_2",
+      "type": "symbol"
+    },
+    {
+      "id": "label_country_1",
+      "type": "symbol"
+    }
+  ]
+}

@@ -30,6 +30,7 @@ import { PlaceCard } from './components/PlaceCard';
 import { Icon } from './components/Icons';
 import { RadiusControl } from './components/RadiusControl';
 import { storage } from './storage';
+import { useTheme } from './theme';
 
 type View = 'map' | 'list';
 
@@ -48,6 +49,9 @@ export function App() {
   const filters = useFilters();
   // Searches move only after ~100 m; labels and windows follow a minute clock, not downloads.
   const userCenter = useStableCenter(location.center, config.app.refresh.moveThresholdM);
+  // Auto day/night follows sunrise and sunset where the user is.
+  const { setPoint: setThemePoint } = useTheme();
+  useEffect(() => setThemePoint(userCenter), [userCenter, setThemePoint]);
   // Tap the map → "Search from here" pins the circle to that spot (another district, a taxi
   // drop-off); distances and walking times then count from it. The locate button returns to the user.
   const [point, setPoint] = useState<LatLng | null>(null);
