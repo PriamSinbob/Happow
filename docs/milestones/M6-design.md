@@ -14,8 +14,8 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | ----- | ----------------------- | -------------------------------------------------------- | ----- | ---------------------------------------- |
 | A     | §14                     | Default venue for single-venue sources                   | —     | merged (#9)                              |
 | B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest     | —     | merged (#10)                             |
-| C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | in review (#12)                          |
-| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | next                                     |
+| C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | merged (#12)                             |
+| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | planned (branch `m6-colour`)             |
 | E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  |                                          |
 | F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  |                                          |
 | G     | §4.4 UI, §7             | Family-mode filter and chip; dice                        | C, F  |                                          |
@@ -70,6 +70,30 @@ Data, ingest, API and the add-event form only. No pin or map visuals: those are 
     - fixed: arrival > start + grace
     - open: arrival ≥ end − 5 min
   - Family match: shows, "not confirmed" or hides, as in §4.4.
+
+### Slice D: colour and themes
+
+Plan proposed 2026-10-22, waiting for the owner's OK. Branch `m6-colour`, pushed after each step so a later session (cloud or local) can pick it up from the last commit.
+
+- **Scope.** §3: colour tokens, day/night themes, hue presets, contrast test. The app chrome and the basemap change colour; pins keep their current look until slice E, the veil and lit/unlit areas wait for slice H.
+- **Config, no colours in code** (new `config/theme.json`, validated in `packages/core/src/config.ts`):
+  - `themes.day` / `themes.night`: the §3.1 tokens (land, majorRoad, minorRoad, water, park, ink, muted, paper, veil), plus the few chrome tokens the app needs (line, error, error-ink, focus).
+  - `presets`: violet, red (tally), magenta, mono, each with `day`, `night`, `onLive` and `tier` (`anonymous` / `account` / `premium`). Only `anonymous` presets (violet, mono) are selectable until accounts exist (§8).
+  - `config/map.json` gets `themeLayers`: basemap layer id → token (`background` → land, `water`/`waterway` → water, `park`/`landcover_wood` → park, `highway_major_*`/`highway_motorway_*` → majorRoad, `highway_minor`/`highway_path` → minorRoad, labels → ink/muted with a land-coloured halo). Layers not listed keep the Positron colours.
+- **Until slice H the whole map counts as "lit"**: night uses the lit values (land black, roads `#2E3647` / `#1C2230`, water `#123049`, parks `#173622`). The veil and the black unlit areas come with the lit map.
+- **Core** (`packages/core/src/colour.ts`, unit-tested, no DOM):
+  - WCAG contrast ratio, relative luminance, hue in degrees, hue distance.
+  - `checkPreset(preset, themes)`: the §3.2 rules (glyph ≥ 3:1 in both themes, ≥ 3:1 against day land, ≥ 40° from park green and water blue), returning the failures.
+  - `themeAt(now, point, setting)`: 'day' or 'night' from sunrise/sunset at the user's position (`suncalc`, local maths, no API), or the manual override. No position yet → the region centre.
+- **Contrast test.** A core test runs `checkPreset` on every preset in `config/theme.json`, and fails CI when a preset breaks a rule. It also checks text tokens: ink and muted on paper and on land, both themes (ink ≥ 4.5:1, muted ≥ 3:1).
+- **Web.**
+  - `apps/web/src/theme.ts`: writes the active theme and preset to CSS custom properties on `:root` (`--land`, `--paper`, `--ink`, `--muted`, `--live`, `--on-live`, …), sets `color-scheme` and the `theme-color` meta, and re-checks day/night on the existing minute clock.
+  - `styles.css`: the Tailwind slate/orange values are replaced by the tokens. "Now" pills and running highlights use `--live`; buttons, focus rings, the radius circle and the locate control use ink (orange's seven jobs go away); errors keep a red that is not the live hue. About 60 hard-coded colours to move onto tokens.
+  - `MapView`: recolours the Positron style through `themeLayers` with `setPaintProperty` on load and on every theme change (no style reload, no flash). The radius circle uses ink instead of orange.
+  - Settings: an "Wygląd / Appearance" section on the About screen (the settings page comes with accounts, §8): theme Auto / Dzień / Noc (Auto / Day / Night) and colour Fiolet / Mono (Violet / Mono). Remembered per device. PL and EN strings.
+  - The night theme gets the black land (`#000000`); `#050505` stays a config change if OLED smear shows on test devices.
+- **Out of scope:** pin glyphs, rings and sizes (E), the map-screen layout (F), the veil and lit areas (H), account-gated presets (§8).
+- **Steps and pushes:** (1) this plan; (2) config + core helpers + contrast test; (3) CSS tokens and day theme in the chrome; (4) night theme, auto switching and settings; (5) basemap recolour; (6) spec Status and "Built (slice D)" note under §3.
 
 ### Working notes
 
