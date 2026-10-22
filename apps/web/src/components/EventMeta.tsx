@@ -3,6 +3,7 @@ import { track } from '../analytics';
 import { categoriesById, config } from '../config';
 import {
   formatAgo,
+  formatDay,
   formatDistance,
   formatPrice,
   formatRelativeDay,
@@ -25,11 +26,19 @@ export function useEventText(ev: NearbyEvent, now: Date) {
   // "until 01:00" or "at 00:30" is otherwise ambiguous).
   const day = (iso: string) => formatRelativeDay(iso, now, ev.timezone, lang);
   const notToday = (iso: string) => (isSameDay(iso, now, ev.timezone) ? '' : `${day(iso)} `);
-  const when = running
-    ? `${t('event.until', { time: `${notToday(ev.endAt)}${end}` })}${ev.endEstimated ? '*' : ''}`
-    : minutesToStart <= 90
-      ? `${notToday(ev.startAt)}${t('event.startsAt', { time: start })} · ${t('event.startsIn', { minutes: minutesToStart })}`
-      : `${day(ev.startAt)}, ${start}–${end}${ev.endEstimated ? '*' : ''}`;
+  // A known span of a day or more (festivals, fairs): dates, not clock times like "00:00–00:00".
+  const lastDay = new Date(Date.parse(ev.endAt) - 60_000).toISOString();
+  const multiDay = !ev.endEstimated && Date.parse(ev.endAt) - Date.parse(ev.startAt) >= 86_400_000;
+  const dates = (iso: string) => formatDay(iso, ev.timezone, lang);
+  const when = multiDay
+    ? running
+      ? t('event.until', { time: dates(lastDay) })
+      : `${dates(ev.startAt)} – ${dates(lastDay)}`
+    : running
+      ? `${t('event.until', { time: `${notToday(ev.endAt)}${end}` })}${ev.endEstimated ? '*' : ''}`
+      : minutesToStart <= 90
+        ? `${notToday(ev.startAt)}${t('event.startsAt', { time: start })} · ${t('event.startsIn', { minutes: minutesToStart })}`
+        : `${day(ev.startAt)}, ${start}–${end}${ev.endEstimated ? '*' : ''}`;
   const price = ev.isFree
     ? t('event.free')
     : ev.priceMin !== null

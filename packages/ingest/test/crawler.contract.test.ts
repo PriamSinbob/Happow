@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ExtractedEvent, Extractor, GeoQuery, Geocoder } from '@happow/extract';
 import { MemoryCache } from '@happow/extract';
 import { runIngest } from '../src';
-import { config, noSleep } from './helpers';
+import { crawler } from '../src/adapters/crawler';
+import { config, noSleep, region } from './helpers';
 
 const page = (name: string) =>
   readFileSync(new URL(`../../extract/test/fixtures/${name}`, import.meta.url), 'utf8');
@@ -186,5 +187,57 @@ describe('crawler (contract, recorded pages)', () => {
   it('is skipped without its LLM key, and other crawlers do not need one', async () => {
     const [s] = await runIngest({ ...base, sourceIds: ['nfm'] });
     expect(s).toMatchObject({ status: 'skipped', reason: 'missing ANTHROPIC_API_KEY' });
+  });
+});
+
+describe('crawler date spans', () => {
+  const source = config.sources.find((s) => s.id === 'wroclaw-go')!;
+  const parse = (start: string, end: string | null) =>
+    crawler.parse(
+      {
+        sourceId: 'wroclaw-go',
+        externalId: 'x',
+        sourceUrl: null,
+        fetchedAt: now.toISOString(),
+        payload: {
+          pageUrl: 'https://www.wroclaw.pl/go/wydarzenia/kino/1',
+          event: {
+            title: 'Przegląd Kina Koreańskiego 2026',
+            description: null,
+            start,
+            end,
+            venueName: 'Kino Nowe Horyzonty',
+            address: { street: null, postalCode: null, city: 'Wrocław', country: null },
+            point: { lat: 51.1079, lng: 17.0385 },
+            isFree: null,
+            priceMin: null,
+            priceMax: null,
+            currency: null,
+            url: null,
+            ticketUrl: null,
+            imageUrl: null,
+            status: 'scheduled',
+            online: false,
+            categoryHints: [],
+            categoryIds: [],
+            method: 'jsonld',
+            confidence: 1,
+          },
+        },
+      },
+      { source, region },
+    );
+
+  it('keeps a festival written as midnight to 23:59 days later as whole days (wroclaw.pl GO)', () => {
+    // Recorded payload: a week-long review once lost its end and showed as 00:00–02:00.
+    expect(parse('2026-10-23T00:00', '2026-10-29T23:59')).toMatchObject({
+      startAt: '2026-10-22T22:00:00.000Z', // 23 Oct 00:00 Warsaw
+      endAt: '2026-10-29T23:00:00.000Z', // 30 Oct 00:00 Warsaw: through 29 Oct
+    });
+    expect(parse('2026-10-23T00:00', '2026-10-30T00:00')?.endAt).toBe('2026-10-29T23:00:00.000Z');
+  });
+
+  it('still treats a timed show with a far end date as a run with an unknown end', () => {
+    expect(parse('2026-10-23T19:00', '2026-12-20T21:00')?.endAt).toBeNull();
   });
 });
