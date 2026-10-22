@@ -7,10 +7,18 @@ export const en = {
   'view.label': 'View',
   'radius.label': 'Radius',
   'summary.count': '{count, plural, one {# event} other {# events}} within {radius}',
+  'summary.countPoint':
+    '{count, plural, one {# event} other {# events}} within {radius} of the point',
+  'point.searchHere': 'Search from here',
+  'point.back': 'Back to my location',
+  'point.label': 'Search point: distances count from here',
   'summary.loading': 'Looking around…',
   'summary.error': 'Could not load events. Showing what we have.',
   'list.empty.title': 'Nothing within {radius}',
   'list.empty.expand': 'Expand to {radius}',
+  'list.around': 'More events beyond {radius}',
+  'list.showMore': 'Show more ({count})',
+  'view.toMap': 'Map',
   'event.now': 'Now',
   'event.until': 'until {time}',
   'event.startsIn': 'in {minutes} min',
@@ -94,6 +102,9 @@ export const en = {
   'guide.showOnMap': 'Show on map',
   'guide.nothingAround':
     'Nothing within {distance} either. Try another time window or fewer filters.',
+  'place.label': '{place}: {count, plural, one {# event} other {# events}}',
+  'place.zoom': '{count, plural, one {# event} other {# events}} close together. Zoom in.',
+  'place.title': '{count, plural, one {# event} other {# events}} here',
   'cluster.label':
     '{count, plural, one {# event} other {# events}} {distance} {direction}, outside your radius. Expand the radius to see them.',
   'chevron.label':

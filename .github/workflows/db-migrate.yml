@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       seed:
-        description: Re-seed demo events (re-anchors seed times to now)
+        description: Sync config and demo events (clears the demo while the seed source is off)
         type: boolean
         default: true
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { snapRadius, type Language } from '@happow/core';
+import { snapRadius, type Language, type LatLng } from '@happow/core';
 import { trackView } from './analytics';
 import { config, region } from './config';
 import { createRepository } from './data';
@@ -26,6 +26,7 @@ import { GuidanceCard } from './components/Guidance';
 import { ListView } from './components/ListView';
 import { MapView } from './components/MapView';
 import { Moderation } from './components/Moderation';
+import { PlaceCard } from './components/PlaceCard';
 import { Icon } from './components/Icons';
 import { RadiusControl } from './components/RadiusControl';
 import { storage } from './storage';
@@ -39,11 +40,18 @@ export function App() {
   const [radius, setRadius] = useRadius();
   const [view, setView] = useState<View>(() => (storage.get('view') === 'list' ? 'list' : 'map'));
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
+  // "OK" on the location notice is remembered on this device; the locate button shows it again.
+  const [bannerDismissed, setBannerDismissed] = useState(
+    () => storage.get('locationNoticeDismissed') === '1',
+  );
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filters = useFilters();
   // Searches move only after ~100 m; labels and windows follow a minute clock, not downloads.
-  const searchCenter = useStableCenter(location.center, config.app.refresh.moveThresholdM);
+  const userCenter = useStableCenter(location.center, config.app.refresh.moveThresholdM);
+  // Tap the map → "Search from here" pins the circle to that spot (another district, a taxi
+  // drop-off); distances and walking times then count from it. The locate button returns to the user.
+  const [point, setPoint] = useState<LatLng | null>(null);
+  const searchCenter = point ?? userCenter;
   const clock = useMinuteClock();
   const loaded = useEvents(
     repo,
@@ -63,6 +71,9 @@ export function App() {
     [loaded.events, myReports],
   );
   const selected = events.find((e) => e.id === selectedId) ?? null;
+  // A pin with several events at one place lists them; ids that left the results drop out.
+  const [placeIds, setPlaceIds] = useState<string[] | null>(null);
+  const placeEvents = placeIds ? events.filter((e) => placeIds.includes(e.id)) : [];
   const guidance = useGuidance(clusters, searchCenter, radius);
   const [hotspotOpen, setHotspotOpen] = useState(false);
   const [recenter, setRecenter] = useState(0);
@@ -85,7 +96,8 @@ export function App() {
     const s = sheet.current;
     if (!p || !s) return;
     const ro = new ResizeObserver(() => {
-      setPanelHeight(p.offsetHeight);
+      // Hidden in the list view (0 px): keep the map's last inset so it doesn't re-fit on return.
+      if (p.offsetHeight > 0) setPanelHeight(p.offsetHeight);
       setSheetHeight(s.offsetHeight);
     });
     ro.observe(p);
@@ -113,12 +125,25 @@ export function App() {
             {t('location.useMine')}
           </button>
         )}
-        <button type="button" onClick={() => setBannerDismissed(true)}>
+        <button
+          type="button"
+          onClick={() => {
+            setBannerDismissed(true);
+            storage.set('locationNoticeDismissed', '1');
+          }}
+        >
           {t('location.dismiss')}
         </button>
       </span>
     </div>
   );
+  // The list starts clean: map cards, a hotspot card or a proposed point don't wait behind it.
+  const showList = () => {
+    setView('list');
+    setSelectedId(null);
+    setPlaceIds(null);
+    setHotspotOpen(false);
+  };
   const otherLang = config.app.languages.find((l) => l !== lang) as Language | undefined;
 
   return (
@@ -158,11 +183,13 @@ export function App() {
             className="icon-btn icon-btn--raised"
             onClick={() => {
               setBannerDismissed(false);
+              setPoint(null);
               setRecenter((n) => n + 1);
               location.retry();
             }}
-            aria-label={t('header.locate')}
+            aria-label={t(point ? 'point.back' : 'header.locate')}
             data-status={location.status}
+            data-pinned={point !== null}
           >
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
               <path
@@ -192,6 +219,12 @@ export function App() {
           selectedId={selectedId}
           onSelect={(id) => {
             setSelectedId(id);
+            setPlaceIds(null);
+            setHotspotOpen(false);
+          }}
+          onSelectPlace={(ids) => {
+            setSelectedId(null);
+            setPlaceIds(ids);
             setHotspotOpen(false);
           }}
           bottomInset={panelHeight}
@@ -205,15 +238,24 @@ export function App() {
             setHotspotOpen(true);
           }}
           onExpand={setRadius}
+          pinned={point !== null}
+          cardOpen={selected !== null || placeEvents.length > 0 || hotspotOpen}
+          onSetPoint={(p) => {
+            setPoint(p);
+            setSelectedId(null);
+            setPlaceIds(null);
+            setHotspotOpen(false);
+          }}
         />
         {view === 'list' && (
-          <div className="list-wrap" style={{ paddingBottom: panelHeight + 16 }}>
+          <div className="list-wrap">
             {bannerEl}
             <ListView
               events={events}
               now={now}
               radiusM={radius}
               nextRadiusM={nextRadius}
+              around={loaded.around}
               guidance={guidance}
               filtered={filtered}
               onSelect={openDetail}
@@ -225,7 +267,8 @@ export function App() {
       </main>
 
       <div className="sheet" ref={sheet}>
-        {selected ? (
+        {/* Cards belong to the map; in the list a row opens the full event page. */}
+        {view === 'map' && selected ? (
           <div className="sheet__card">
             <EventCard
               ev={selected}
@@ -233,6 +276,15 @@ export function App() {
               onClose={() => setSelectedId(null)}
               onDetails={() => openDetail(selected.id)}
               onGo={() => go({ name: 'go', id: selected.id })}
+            />
+          </div>
+        ) : view === 'map' && placeEvents.length > 0 ? (
+          <div className="sheet__card">
+            <PlaceCard
+              events={placeEvents}
+              now={now}
+              onSelect={openDetail}
+              onClose={() => setPlaceIds(null)}
             />
           </div>
         ) : view === 'map' && hotspotOpen && guidance.hotspot ? (
@@ -268,14 +320,21 @@ export function App() {
             </div>
           )
         )}
-        <section className="panel" ref={panel} aria-label={t('radius.label')}>
+        {/* Map only: the list has no circle to control. Kept mounted (hidden) so its measured
+            height stays put and the map doesn't re-fit on every return from the list. */}
+        <section
+          className="panel"
+          ref={panel}
+          aria-label={t('radius.label')}
+          hidden={view !== 'map'}
+        >
           <div className="panel__summary" aria-live="polite">
             {loading && events.length === 0 ? (
               t('summary.loading')
             ) : (
               <>
                 <strong>
-                  {t('summary.count', {
+                  {t(point ? 'summary.countPoint' : 'summary.count', {
                     count: events.length,
                     radius: formatDistance(radius, lang),
                   })}
@@ -294,7 +353,7 @@ export function App() {
                 role="tab"
                 aria-selected={view === v}
                 className={view === v ? 'is-active' : ''}
-                onClick={() => setView(v)}
+                onClick={() => (v === 'list' ? showList() : setView('map'))}
               >
                 {t(`view.${v}`)}
               </button>
@@ -302,6 +361,12 @@ export function App() {
           </div>
         </section>
       </div>
+      {view === 'list' && (
+        <button type="button" className="to-map" onClick={() => setView('map')}>
+          <Icon name="pin" size={18} />
+          {t('view.toMap')}
+        </button>
+      )}
 
       {filtersOpen && (
         <FilterSheet

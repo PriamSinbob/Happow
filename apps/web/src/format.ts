@@ -36,6 +36,24 @@ export function formatDay(iso: string, timeZone: string, lang: Language): string
   }).format(new Date(iso));
 }
 
+/**
+ * "today" / "tomorrow" / "yesterday" ("dzisiaj" / "jutro" / "wczoraj") within a day of `now`,
+ * else the short date, all counted in the event's timezone, so 01:00 is not mistaken for tonight.
+ */
+export function formatRelativeDay(
+  iso: string,
+  now: Date,
+  timeZone: string,
+  lang: Language,
+): string {
+  const f = new Intl.DateTimeFormat('en-CA', { timeZone, dateStyle: 'short' });
+  const days = Math.round(
+    (Date.parse(f.format(new Date(iso))) - Date.parse(f.format(now))) / 86_400_000,
+  );
+  if (Math.abs(days) > 1) return formatDay(iso, timeZone, lang);
+  return new Intl.RelativeTimeFormat(lang, { numeric: 'auto' }).format(days, 'day');
+}
+
 export function isSameDay(a: string | Date, b: string | Date, timeZone: string): boolean {
   const f = new Intl.DateTimeFormat('en-CA', { timeZone, dateStyle: 'short' });
   return f.format(new Date(a)) === f.format(new Date(b));

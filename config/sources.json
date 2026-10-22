@@ -8,7 +8,7 @@
       "schedule": null,
       "rateLimit": null,
       "trustLevel": "community",
-      "enabled": true,
+      "enabled": false,
       "termsNotes": "Hand-entered demo events for the PoC skeleton (milestone 1). Fictional programmes at real venues."
     },
     {

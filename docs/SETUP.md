@@ -80,7 +80,7 @@ The app runs as one **Cloudflare Worker** named `happow`. Cloudflare serves the 
 4. **Build variables** (same **Build** section → **Variables and secrets**). These are baked into the app when it is built:
    - `VITE_SUPABASE_URL`: Project URL (1.3)
    - `VITE_SUPABASE_ANON_KEY`: publishable / anon key (1.3)
-5. **Runtime secrets** (**Settings → Variables and Secrets**, type **Secret**). Only the `/api` code can read these:
+5. **Runtime secrets** (top of **Settings → Runtime variables and secrets → + Add variable**, with the **secret checkbox ticked**; never unticked, and never the `VITE_` names here). Only the `/api` code can read these:
    - `SUPABASE_URL`: Project URL (1.3)
    - `SUPABASE_SERVICE_ROLE_KEY`: secret / service_role key (1.3)
    - `SUBMITTER_SALT`: a long random string you create once, for example the output of `openssl rand -hex 32` or 40 random characters from a password manager. It makes stored device and IP hashes unlinkable. Keep it stable: changing it resets rate limits and breaks "one report per device".
