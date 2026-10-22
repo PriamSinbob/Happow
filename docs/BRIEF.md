@@ -172,6 +172,7 @@ Build in five increments, each deployable and demoable on a phone in Wrocław.
 3. **Density.** H3 hotspot computation; off-screen chevrons and empty-radius guidance.
 4. **Crawler and submissions.** JSON-LD crawler with a target list in config, LLM extraction fallback, URL-autofill submission form, moderation screen.
 5. **Social signals.** Threads keyword adapter (after app review), confidence scoring, "possibly cancelled" logic, analytics. Instagram was dropped from the PoC on 2026-10-21 (see Future features → More venue and event data).
+6. **Design system and map UX** (added 2026-10-22). Spec: [docs/milestones/M6-design.md](milestones/M6-design.md). Where it differs from Core features above (time chips, radius slider, map/list toggle, pin colours, chevrons), the spec wins. Advantages it delivers: [docs/ADVANTAGES.md](ADVANTAGES.md).
 
 Instructions for the build agent:
 
