@@ -275,7 +275,6 @@ export const en = {
   'dice.empty': 'Nothing nearby right now',
   'atlas.label':
     '{count, plural, =0 {Places you have been: none yet} one {Places you have been: # area} other {Places you have been: # areas}}',
-  'atlas.title': 'Your places',
   'atlas.export': 'Save my places to a file',
   'atlas.import': 'Add places from a file',
   'atlas.clear': 'Forget my places (hold)',

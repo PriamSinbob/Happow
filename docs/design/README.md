@@ -29,7 +29,7 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
   - list style B: an overlay over the map
 - **Lit map** (§6). A grey veil with soft, cloud-like holes for your reach and the places you've been. It fades out as you zoom out.
   - The veil algorithm in `atlas.html` is normative: blobs seeded by cell id, opens faint, arrivals strong, repeats brighter, labels above the veil.
-  - The atlas controls live one level deeper (owner, 2026-10-23): a settings row with the atlas glyph and the count opens "Your places", which holds export, import and clear. The inline row in `atlas.html` shows the controls, not where they live; their looks are still to be adjusted.
+  - The atlas bar (export, the glyph with the count, import, hold-to-clear) sits whole inside About, settings → ⓘ (owner, 2026-10-23), not in the sheet as drawn in `atlas.html`. Its looks are still to be adjusted.
 
 - **Category glyphs** (owner's choice, 2026-10-23): one set in `apps/web/src/glyphs.ts` for pins, cards, detail, filter chips and the add form. No emoji.
   - From Tabler Icons: music, theatre (masks), cinema (film), exhibition (photo), festival (confetti), happening (sparkles), sport (runner), market (basket), kids (rocking horse), food (utensils).

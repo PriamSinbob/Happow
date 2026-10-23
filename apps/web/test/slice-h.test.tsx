@@ -17,7 +17,9 @@ import { veilBox, type AtlasCell } from '@happow/core';
 import { atlasStore, resetAtlasStore } from '../src/atlas/store';
 import { useAtlas, type Atlas } from '../src/atlas/useAtlas';
 import { drawVeil, type LitCell } from '../src/atlas/veil';
-import { AtlasEntry, AtlasScreen, CLEAR_HOLD_MS } from '../src/components/Atlas';
+import { About } from '../src/components/About';
+import { AtlasBar, CLEAR_HOLD_MS } from '../src/components/Atlas';
+import { ThemeProvider } from '../src/theme';
 import { config } from '../src/config';
 import { I18nProvider } from '../src/i18n';
 
@@ -199,7 +201,7 @@ describe('the veil drawing', () => {
   });
 });
 
-describe('atlas in settings, one level deeper (§6)', () => {
+describe('the atlas bar in About (§6)', () => {
   const stub = (): Atlas => ({
     lit: [],
     cellRadiusM: 200,
@@ -210,18 +212,20 @@ describe('atlas in settings, one level deeper (§6)', () => {
     clear: vi.fn(async () => {}),
   });
 
-  it('the settings row shows the count and opens the atlas screen', () => {
-    const open = vi.fn();
-    render(<AtlasEntry count={37} onOpen={open} />, { wrapper });
-    const row = screen.getByRole('button', { name: /37 areas/ });
-    expect(row.textContent).toBe('37');
-    fireEvent.click(row);
-    expect(open).toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: /save my places/i })).toBeNull();
+  it('sits whole inside About, with the theme and colour settings', () => {
+    render(
+      <ThemeProvider>
+        <About atlas={stub()} onClose={vi.fn()} onModerate={vi.fn()} />
+      </ThemeProvider>,
+      { wrapper },
+    );
+    expect(screen.getByRole('img', { name: /37 areas/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /save my places/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /forget my places/i })).toBeTruthy();
   });
 
-  it('the screen is wordless, with translated names on every button', () => {
-    render(<AtlasScreen atlas={stub()} onClose={vi.fn()} />, { wrapper });
+  it('is wordless, with translated names on every button', () => {
+    render(<AtlasBar atlas={stub()} />, { wrapper });
     expect(screen.getByRole('img', { name: /37 areas/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /save my places/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /add places/i })).toBeTruthy();
@@ -230,7 +234,7 @@ describe('atlas in settings, one level deeper (§6)', () => {
 
   it('exports, and imports a picked file with a +N toast', async () => {
     const a = stub();
-    render(<AtlasScreen atlas={a} onClose={vi.fn()} />, { wrapper });
+    render(<AtlasBar atlas={a} />, { wrapper });
     fireEvent.click(screen.getByRole('button', { name: /save my places/i }));
     expect(a.exportFile).toHaveBeenCalled();
     const input = screen.getByTestId('atlas-file') as HTMLInputElement;
@@ -243,7 +247,7 @@ describe('atlas in settings, one level deeper (§6)', () => {
   it('clears only after a full hold', () => {
     vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
     const a = stub();
-    render(<AtlasScreen atlas={a} onClose={vi.fn()} />, { wrapper });
+    render(<AtlasBar atlas={a} />, { wrapper });
     const bin = screen.getByRole('button', { name: /forget my places/i });
     fireEvent.pointerDown(bin);
     act(() => vi.advanceTimersByTime(CLEAR_HOLD_MS / 2));

@@ -287,7 +287,6 @@ export const pl: Record<MessageKey, string> = {
   'dice.empty': 'Teraz nic w pobliżu',
   'atlas.label':
     '{count, plural, =0 {Twoje miejsca: jeszcze żadnych} one {Twoje miejsca: # obszar} few {Twoje miejsca: # obszary} many {Twoje miejsca: # obszarów} other {Twoje miejsca: # obszaru}}',
-  'atlas.title': 'Twoje miejsca',
   'atlas.export': 'Zapisz swoje miejsca do pliku',
   'atlas.import': 'Dodaj miejsca z pliku',
   'atlas.clear': 'Zapomnij swoje miejsca (przytrzymaj)',

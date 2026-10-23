@@ -217,7 +217,7 @@ Plan agreed with the owner on 2026-10-23, with every recommendation below. Mocku
   - **Redrawn only on change:** an arrival, a new open cell, a reach detent released, the reach centre moving (locate, long-press), a new snapshot centre, an import or clear, a theme change (the veil colour). Never on pan, zoom or rail drag; after a redraw the source is played for one frame so MapLibre uploads the texture, then paused.
 - **Zoom fade.** `raster-opacity` (and the outer fill's `fill-opacity`) is a zoom `interpolate` expression: the theme's `veilOpacity` at `atlas.fadeZoom.full` (12.8, a 1 km reach on a 380 px phone) down to 0 at `atlas.fadeZoom.gone` (10.5, 5 km; recalibrated after the design review, matching the prototype curve), so the veil is gone in city mode. The GPU evaluates it; no JavaScript runs while zooming.
 - **Theme tokens.** `veil` and `veilOpacity` already exist in `config/theme.json` (slice D): day `#E6E6E4` at 0.74, night `#000000` at 0.75. Slice H starts reading them. At night the black veil over the lit colours gives the §3.1 intent: unlit water and parks read black, only street geometry shows. The contrast test gains a check that `veilOpacity` stays between 0.5 and 0.85, so unlit areas stay legible.
-- **Settings: the atlas row** (`atlas.html`). A wordless row in the settings sheet, between language and About, black and white like §15. Changed by the owner (2026-10-23): the row only opens an atlas screen one level deeper, which holds the controls below:
+- **The atlas bar** (`atlas.html`). Wordless, black and white like §15. Changed by the owner (2026-10-23): the whole bar sits inside About (settings → ⓘ), with the theme and colour settings; nothing about the atlas is in the settings sheet itself. The bar:
   - Centre: an atlas glyph drawn for Happow (a folded map with a soft lit spot), with the number of lit cells under it in numerals.
   - Left: export (Tabler `download`). It saves `happow-atlas-YYYY-MM-DD.json` through the share sheet where the phone supports sharing files, otherwise as a download.
   - Right: import (Tabler `upload`), a file picker for `.json`. The file is checked against a schema; a good one merges and shows a wordless toast (check + the number of cells added); a bad one shows the crossed-O toast.
@@ -253,7 +253,7 @@ Plan agreed with the owner on 2026-10-23, with every recommendation below. Mocku
 4. Export and import are free without an account (§8 updated); sync and backup stay premium.
 5. Import merges by the larger count per cell, so importing the same file twice changes nothing.
 6. A long-press "from here" reach is lit like any reach, but it isn't recorded as a visit.
-7. The atlas row goes into the settings sheet as in the mockup; its looks get adjusted there later.
+7. The whole atlas bar goes inside About (settings → ⓘ), not into the sheet and not onto a screen of its own; its looks get adjusted later.
 
 ### Working notes
 
@@ -505,11 +505,11 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
   - **Veil** (`apps/web/src/atlas/veil.ts`, `MapView`): a 512 px canvas source covering 6 km around the area snapshot's grid point, under the basemap labels; an outer fill (the world minus the box) in the same colour, so panning never shows colour. The opacity is a zoom expression from the theme's `veilOpacity` (z12.8) to 0 (z10.5). Redrawn only when the lit cells, the reach (detent released, locate, long-press), the snapshot box or the theme change. Then the canvas source is played and paused once, which uploads the texture a single time. No map event handlers.
   - **Drawing.** The veil colour, with holes cut (`destination-out`) by one pre-drawn soft blob stamped per jittered blob (5 per cell, seeded by the cell id), and the reach as a soft disc with a seeded cloudy rim. Measured in a desktop browser: 20 ms for 2,000 lit cells (10,000 blobs), about 3 ms for 300; a phone is perhaps 3× slower, and it only runs on change.
   - **Atlas** (`apps/web/src/atlas/`): IndexedDB store `happow/atlas` that never throws; opens from precise fixes (≤ 100 m) once per cell per session (30 min hidden starts a new one), never from a long-press point; arrivals when Going there arrives. h3-js loads after the first paint (`@happow/core/h3`). Nothing is sent.
-  - **Settings.** A row between language and About (the glyph with the lit-area count, small export and import motifs) opens "Twoje miejsca / Your places" (`#/atlas`): export (share sheet with a file where supported, else a download of `happow-atlas-YYYY-MM-DD.json`), import (merge by the larger count; wordless +N toast, crossed O for a bad file) and a 1.5 s hold-to-clear bin with a filling ring.
+  - **About.** The atlas bar sits whole in About (settings → ⓘ), after the theme and colour settings (owner, 2026-10-23): export (share sheet with a file where supported, else a download of `happow-atlas-YYYY-MM-DD.json`), import (merge by the larger count; wordless +N toast, crossed O for a bad file) and a 1.5 s hold-to-clear bin with a filling ring.
   - **Core** (`packages/core/src/atlas.ts`, tested on `test/fixtures/atlas-v1.json` and `atlas-bad.json`): recording, session, strength, seeded blobs, Mercator box and projection, zoom fade, export, parse, merge. The contrast test checks `veilOpacity` stays within 0.5–0.85.
-  - **Tests.** `apps/web/test/slice-h.test.tsx`: the store on fake-indexeddb, recording and import through `useAtlas`, the veil drawing on a stub canvas, the settings row and the atlas screen (hold-to-clear).
+  - **Tests.** `apps/web/test/slice-h.test.tsx`: the store on fake-indexeddb, recording and import through `useAtlas`, the veil drawing on a stub canvas, the atlas bar in About (hold-to-clear).
   - Skipped: none of §6. The "new since last open" bloom (§10) and atlas sync (§8) were out of scope.
-  - Open: the atlas screen's looks are to be adjusted with the owner. The veil on the raster fallback map (it is skipped there). Day contrast is subtle by design (the §3.1 tokens). Check redraw time on a mid-range phone.
+  - Open: the atlas bar's looks are to be adjusted with the owner. The veil on the raster fallback map (it is skipped there). Day contrast is subtle by design (the §3.1 tokens). Check redraw time on a mid-range phone.
 
 ## 7. Dice
 

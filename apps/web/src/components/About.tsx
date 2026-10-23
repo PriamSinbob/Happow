@@ -1,12 +1,23 @@
+import type { Atlas } from '../atlas/useAtlas';
 import { config, region } from '../config';
 import { useI18n } from '../i18n';
 import { selectablePresets, THEME_SETTINGS, useTheme } from '../theme';
+import { AtlasBar } from './Atlas';
 import { Screen } from './Screen';
 
 const NUMBERS = ['1', '2', '3', '4'] as const;
 
 /** About, terms of use, privacy, sources and the takedown contact. */
-export function About({ onClose, onModerate }: { onClose: () => void; onModerate: () => void }) {
+export function About({
+  atlas,
+  onClose,
+  onModerate,
+}: {
+  /** The local atlas (§6): its bar sits with the theme and colour settings. */
+  atlas: Atlas;
+  onClose: () => void;
+  onModerate: () => void;
+}) {
   const { t, lang } = useI18n();
   const theme = useTheme();
   const email = config.app.legal.contactEmail;
@@ -64,6 +75,7 @@ export function About({ onClose, onModerate }: { onClose: () => void; onModerate
           </div>
           <span className="field__hint">{t('about.colour.hint')}</span>
         </div>
+        <AtlasBar atlas={atlas} />
 
         <h2>{t('about.sources')}</h2>
         <p>{t('about.sourcesBody')}</p>

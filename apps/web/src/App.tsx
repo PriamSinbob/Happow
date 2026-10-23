@@ -37,7 +37,6 @@ import { useLongPress } from './hooks/useLongPress';
 import { useShortcut } from './hooks/useShortcut';
 import { useI18n } from './i18n';
 import { About } from './components/About';
-import { AtlasScreen } from './components/Atlas';
 import { AddEvent } from './components/AddEvent';
 import { EventCard } from './components/EventCard';
 import { EventDetail } from './components/EventDetail';
@@ -612,7 +611,6 @@ export function App() {
       {settingsOpen && (
         <SettingsSheet
           filters={filters}
-          atlasCount={atlas.count}
           count={events.length}
           loading={loading}
           onClose={() => setSettingsOpen(false)}
@@ -623,10 +621,6 @@ export function App() {
           onAbout={() => {
             setSettingsOpen(false);
             go({ name: 'about' });
-          }}
-          onAtlas={() => {
-            setSettingsOpen(false);
-            go({ name: 'atlas' });
           }}
         />
       )}
@@ -656,9 +650,8 @@ export function App() {
         <AddEvent onClose={close} onOpenEvent={(id) => go({ name: 'event', id }, true)} />
       )}
       {route?.name === 'moderate' && <Moderation onClose={close} />}
-      {route?.name === 'atlas' && <AtlasScreen atlas={atlas} onClose={close} />}
       {route?.name === 'about' && (
-        <About onClose={close} onModerate={() => go({ name: 'moderate' }, true)} />
+        <About atlas={atlas} onClose={close} onModerate={() => go({ name: 'moderate' }, true)} />
       )}
     </div>
   );

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import type { Atlas } from '../atlas/useAtlas';
 import { useI18n } from '../i18n';
 import { Icon } from './Icons';
-import { Screen } from './Screen';
 
 /** Clearing needs a deliberate hold, so the atlas can't be forgotten by accident. */
 export const CLEAR_HOLD_MS = 1500;
@@ -44,39 +43,11 @@ export function AtlasGlyph({
 }
 
 /**
- * The atlas row in the settings sheet: the glyph with the number of lit areas, flanked by small
- * export and import motifs (like the About row). It opens the atlas screen, one level deeper
- * (owner, 2026-10-23).
+ * The atlas bar (§6, `docs/design/atlas.html`), inside About with the theme and colour
+ * settings (owner, 2026-10-23): export, the number of lit areas, import, and a hold-to-clear
+ * bin. Wordless, black and white; every button has a translated name.
  */
-export function AtlasEntry({ count, onOpen }: { count: number; onOpen: () => void }) {
-  const { t } = useI18n();
-  return (
-    <button
-      type="button"
-      className="settings-row atlas-entry"
-      aria-label={t('atlas.label', { count })}
-      onClick={onOpen}
-    >
-      <span className="settings-row__motif" style={{ opacity: 0.6 }}>
-        <Icon name="download" size={17} />
-      </span>
-      <span className="settings-row__main atlas-row__main">
-        <AtlasGlyph />
-        <span className="atlas-row__count">{count}</span>
-      </span>
-      <span className="settings-row__motif" style={{ opacity: 0.6 }}>
-        <Icon name="upload" size={17} />
-      </span>
-    </button>
-  );
-}
-
-/**
- * Your places (§6, `docs/design/atlas.html`): the number of lit areas, then export, import and
- * a hold-to-clear bin, wordless and in black and white; every button has a translated name.
- * Looks to be adjusted with the owner later.
- */
-export function AtlasScreen({ atlas, onClose }: { atlas: Atlas; onClose: () => void }) {
+export function AtlasBar({ atlas }: { atlas: Atlas }) {
   const { t } = useI18n();
   const file = useRef<HTMLInputElement>(null);
   const [toast, setToast] = useState<Toast | null>(null);
@@ -113,100 +84,95 @@ export function AtlasScreen({ atlas, onClose }: { atlas: Atlas; onClose: () => v
   };
 
   return (
-    <Screen title={t('atlas.title')} onClose={onClose}>
-      <div className="atlas-screen">
-        <span
-          className="atlas-screen__main"
-          role="img"
-          aria-label={t('atlas.label', { count: atlas.count })}
-        >
-          {/* Thinner at 64 px, so its strokes match the 34 px row glyph. */}
-          <AtlasGlyph size={64} strokeWidth={0.9} />
-          <span className="atlas-screen__count">{atlas.count}</span>
-        </span>
-        <div className="atlas-screen__actions">
-          <button
-            type="button"
-            className="atlas-row__btn"
-            aria-label={t('atlas.export')}
-            onClick={() =>
-              void atlas
-                .exportFile()
-                .then((ok) => ok && setToast({ ok: true, label: t('atlas.saved') }))
-            }
-          >
-            <Icon name="download" size={26} strokeWidth={1.8} />
-          </button>
-          <button
-            type="button"
-            className="atlas-row__btn"
-            aria-label={t('atlas.import')}
-            onClick={() => file.current?.click()}
-          >
-            <Icon name="upload" size={26} strokeWidth={1.8} />
-          </button>
-          <button
-            type="button"
-            className="atlas-row__btn atlas-row__clear"
-            aria-label={t('atlas.clear')}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              startHold();
-            }}
-            onPointerUp={stopHold}
-            onPointerLeave={stopHold}
-            onPointerCancel={stopHold}
-            onKeyDown={(e) => {
-              if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
-                e.preventDefault();
-                startHold();
-              }
-            }}
-            onKeyUp={stopHold}
-            onBlur={stopHold}
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            <svg className="atlas-row__ring" viewBox="0 0 44 44" width={44} height={44} aria-hidden>
-              {/* Not drawn at rest: a zero-length round-capped dash still paints a dot. */}
-              {holding > 0 && (
-                <circle
-                  cx="22"
-                  cy="22"
-                  r="19"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeDasharray={`${(holding * RING).toFixed(1)} ${RING.toFixed(1)}`}
-                  transform="rotate(-90 22 22)"
-                />
-              )}
-            </svg>
-            <Icon name="trash" size={22} strokeWidth={1.8} />
-          </button>
-        </div>
-        <input
-          ref={file}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          data-testid="atlas-file"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = '';
-            if (!f) return;
-            void atlas
-              .importFile(f)
-              .then((n) =>
-                setToast(
-                  n === null
-                    ? { ok: false, label: t('atlas.badFile') }
-                    : { ok: true, text: `+${n}`, label: t('atlas.imported', { count: n }) },
-                ),
-              );
-          }}
-        />
-      </div>
+    <div className="atlas-bar">
+      <button
+        type="button"
+        className="atlas-row__btn"
+        aria-label={t('atlas.export')}
+        onClick={() =>
+          void atlas
+            .exportFile()
+            .then((ok) => ok && setToast({ ok: true, label: t('atlas.saved') }))
+        }
+      >
+        <Icon name="download" size={24} strokeWidth={1.8} />
+      </button>
+      <span
+        className="atlas-row__main"
+        role="img"
+        aria-label={t('atlas.label', { count: atlas.count })}
+      >
+        <AtlasGlyph />
+        <span className="atlas-row__count">{atlas.count}</span>
+      </span>
+      <button
+        type="button"
+        className="atlas-row__btn"
+        aria-label={t('atlas.import')}
+        onClick={() => file.current?.click()}
+      >
+        <Icon name="upload" size={24} strokeWidth={1.8} />
+      </button>
+      <button
+        type="button"
+        className="atlas-row__btn atlas-row__clear"
+        aria-label={t('atlas.clear')}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          startHold();
+        }}
+        onPointerUp={stopHold}
+        onPointerLeave={stopHold}
+        onPointerCancel={stopHold}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
+            e.preventDefault();
+            startHold();
+          }
+        }}
+        onKeyUp={stopHold}
+        onBlur={stopHold}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <svg className="atlas-row__ring" viewBox="0 0 44 44" width={44} height={44} aria-hidden>
+          {/* Not drawn at rest: a zero-length round-capped dash still paints a dot. */}
+          {holding > 0 && (
+            <circle
+              cx="22"
+              cy="22"
+              r="19"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeDasharray={`${(holding * RING).toFixed(1)} ${RING.toFixed(1)}`}
+              transform="rotate(-90 22 22)"
+            />
+          )}
+        </svg>
+        <Icon name="trash" size={20} strokeWidth={1.8} />
+      </button>
+      <input
+        ref={file}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        data-testid="atlas-file"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = '';
+          if (!f) return;
+          void atlas
+            .importFile(f)
+            .then((n) =>
+              setToast(
+                n === null
+                  ? { ok: false, label: t('atlas.badFile') }
+                  : { ok: true, text: `+${n}`, label: t('atlas.imported', { count: n }) },
+              ),
+            );
+        }}
+      />
       <div role="status" className="visually-hidden">
         {toast?.label ?? ''}
       </div>
@@ -216,6 +182,6 @@ export function AtlasScreen({ atlas, onClose }: { atlas: Atlas; onClose: () => v
           {toast.ok && toast.text && <span className="sheet-btn__count">{toast.text}</span>}
         </div>
       )}
-    </Screen>
+    </div>
   );
 }

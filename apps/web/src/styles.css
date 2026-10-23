@@ -688,30 +688,19 @@ div.settings-row {
 .sheet-btn__count {
   font-variant-numeric: tabular-nums;
 }
-/* The atlas (§6, docs/design/atlas.html): a row in settings opens "Your places", with export,
-   import and a hold-to-clear bin. */
-.atlas-screen {
+/* The atlas bar (§6, docs/design/atlas.html), in About: export, lit areas, import; hold the bin
+   at the far right to clear. */
+.atlas-bar {
+  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 28px;
-  padding: 32px 16px;
+  justify-content: center;
+  gap: 22px;
+  min-height: 66px;
+  margin: 16px 0;
+  border-top: 0.5px solid var(--line);
+  border-bottom: 0.5px solid var(--line);
   color: var(--ink);
-}
-.atlas-screen__main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-.atlas-screen__count {
-  font-size: 22px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.atlas-screen__actions {
-  display: flex;
-  gap: 28px;
 }
 .atlas-row__btn {
   position: relative;
@@ -724,9 +713,6 @@ div.settings-row {
   border-radius: 12px;
   background: transparent;
   color: var(--ink);
-}
-.settings-row.atlas-entry {
-  min-height: 66px;
 }
 .atlas-row__main {
   display: flex;
@@ -741,6 +727,9 @@ div.settings-row {
   color: var(--quiet);
 }
 .atlas-row__clear {
+  position: absolute;
+  right: 0;
+  top: 11px;
   color: var(--quiet);
   touch-action: none;
   user-select: none;
