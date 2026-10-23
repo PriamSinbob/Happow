@@ -16,6 +16,12 @@
   "family": {
     "latestEnd": "21:00"
   },
+  "dice": {
+    "maxDistanceM": 2000,
+    "soonMin": 60,
+    "reachMargin": 1.15,
+    "fanSize": 5
+  },
   "h3": {
     "eventResolution": 9,
     "densityResolution": 8
@@ -23,7 +29,8 @@
   "density": {
     "searchRadiusM": 5000,
     "hotspotMinEvents": 3,
-    "maxEdgeDots": 24
+    "maxEdgeDots": 24,
+    "deviceCellM": 650
   },
   "refresh": {
     "dataMinutes": 5,

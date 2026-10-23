@@ -82,7 +82,10 @@ export function checkPreset(preset: ThemePreset, config: ThemeConfig): string[] 
   return fails;
 }
 
-/** Text tokens: ink on paper, paper2 and land; muted on paper; notice inks on their fills. */
+/**
+ * Text tokens: ink on paper, paper2 and land; muted on paper and land; quiet (off controls) on the track and paper; content on
+ * an "on" toggle; notice inks on their fills.
+ */
 export function checkTokens(name: ThemeName, t: ThemeTokens, config: ThemeConfig): string[] {
   const { minInkContrast: ink, minMutedContrast: muted } = config.rules;
   const pairs: [string, string, string, number][] = [
@@ -91,6 +94,10 @@ export function checkTokens(name: ThemeName, t: ThemeTokens, config: ThemeConfig
     ['ink', 'land', t.land, ink],
     ['muted', 'paper', t.paper, muted],
     ['muted', 'land', t.land, muted],
+    ['muted', 'sunken', t.sunken, muted],
+    ['onRaised', 'raised', t.raised, ink],
+    ['quiet', 'sunken', t.sunken, ink],
+    ['quiet', 'paper', t.paper, ink],
     ['warnInk', 'warn', t.warn, ink],
     ['errorInk', 'error', t.error, ink],
   ];

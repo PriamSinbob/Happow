@@ -116,7 +116,6 @@ button {
 /* "Going there" target: MapLibre positions .marker with an inline transform, so the pin shape
    lives on an inner element: rotating .marker itself would be overwritten. */
 .marker {
-  --cat: var(--muted);
   display: grid;
   place-items: center;
   width: 34px;
@@ -130,7 +129,7 @@ button {
   place-items: center;
   width: 34px;
   height: 34px;
-  border: 2.5px solid var(--cat);
+  border: 2.5px solid var(--ink);
   border-radius: 50% 50% 50% 4px;
   transform: rotate(-45deg);
   background: var(--paper);
@@ -194,10 +193,68 @@ button {
 .hud-top > * {
   pointer-events: auto;
 }
-.hud-top .map-btn {
+.hud-top > .counter,
+.hud-top > .map-btn,
+.hud-top__end {
+  flex: none;
+}
+.hud-top__end {
+  display: flex;
+  gap: 8px;
   margin-left: auto;
 }
+/* The map shortcut (slice G): on = ink fill, like the filled counter. */
+.map-btn[data-on='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+/* The grid a hold opens under the top row: glyphs only, the current one ringed. */
+.pick-grid {
+  position: absolute;
+  z-index: 22;
+  top: calc(60px + var(--safe-top));
+  left: 12px;
+  right: 12px;
+  max-width: 360px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 8px;
+  border: 0.5px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: var(--shadow-lg);
+  animation: drop 0.16s ease-out;
+}
+/* Taps outside the grid only close it. */
+.pick-grid-backdrop {
+  position: absolute;
+  z-index: 21;
+  inset: 0;
+}
+.pick-grid__opt {
+  display: grid;
+  place-items: center;
+  height: 48px;
+  padding: 0;
+  border: 0.5px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+}
+.pick-grid__opt.is-current {
+  border: 1.5px solid var(--ink);
+}
+.pick-grid__opt:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
 .hud-error {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 6px 10px;
   border-radius: 999px;
   background: var(--paper);
@@ -210,8 +267,11 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  /* Fixed width, dot and number centred: the shortcut beside it never moves (owner, 2026-10-23). */
+  justify-content: center;
+  width: 76px;
   height: 40px;
-  padding: 0 15px 0 13px;
+  padding: 0 12px;
   border: 0.5px solid var(--line);
   border-radius: 999px;
   background: var(--paper);
@@ -516,40 +576,124 @@ button {
   opacity: 0.9;
 }
 
-/* Settings: filters first, then the other rows. */
-.settings__group {
-  margin: 4px 0 0;
-  font-size: 13px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--muted);
+/* Settings (§15, docs/design/settings-rows.html): wordless rows, black and white, no hover. */
+.toggle-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 0 10px;
 }
-.settings__rows {
-  list-style: none;
-  margin: 8px 0 0;
+.toggle-track {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--sunken);
+}
+.toggle {
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 44px;
   padding: 0;
-  border-top: 1px solid var(--line);
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--quiet);
 }
-.settings__row {
+.toggle.is-on {
+  background: var(--raised);
+  color: var(--on-raised);
+}
+.toggle.is-nudge {
+  animation: nudge 0.25s;
+}
+.settings-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 10px;
   width: 100%;
-  min-height: 48px;
-  padding: 0 4px;
+  min-height: 58px;
+  padding: 0;
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-top: 0.5px solid var(--line);
   background: transparent;
   color: var(--ink);
-  font-size: 15px;
-  text-align: left;
 }
-.settings__label {
-  flex: 1;
+div.settings-row {
+  gap: 14px;
 }
-.settings__value {
-  color: var(--muted);
-  font-size: 14px;
+.settings-row__motif {
+  display: inline-flex;
+}
+.settings-row__main {
+  display: inline-flex;
+  margin: 0 4px;
+}
+.settings-row__globe {
+  display: inline-flex;
+}
+.lang-field {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--sunken);
+}
+.lang-code {
+  position: relative;
+  width: 32px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--quiet);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+/* A 44 × 36 touch target around the small field. */
+.lang-code::before {
+  content: '';
+  position: absolute;
+  inset: -7px -6px;
+}
+.lang-code.is-on {
+  background: var(--raised);
+  color: var(--on-raised);
+}
+.sheet-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0;
+  border: 0.5px solid var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--quiet);
+}
+.sheet-btn:disabled {
+  opacity: 0.5;
+}
+.sheet-btn--show {
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 16px;
+  font-weight: 600;
+}
+.sheet-btn__count {
+  font-variant-numeric: tabular-nums;
+}
+.toggle:focus-visible,
+.lang-code:focus-visible,
+.settings-row:focus-visible,
+.sheet-btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 /* ---------- Density hints ---------- */
@@ -834,13 +978,13 @@ button {
   color: var(--paper);
 }
 
+/* Black and white (§15): no category colours. */
 .cat-icon {
-  --cat: var(--muted);
   display: inline-grid;
   place-items: center;
   flex: none;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--cat) 14%, var(--paper));
+  background: var(--paper-2);
   color: var(--ink);
 }
 
@@ -878,9 +1022,6 @@ button {
   margin: 0;
   font-size: 18px;
 }
-.filter-sheet__section {
-  margin-top: 16px;
-}
 .filter-sheet h3 {
   margin: 0 0 8px;
   font-size: 12px;
@@ -895,7 +1036,6 @@ button {
   gap: 8px;
 }
 .cat-chip {
-  --cat: var(--muted);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -916,12 +1056,11 @@ button {
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  background: color-mix(in srgb, var(--cat) 14%, var(--paper));
+  background: var(--paper-2);
   color: var(--ink);
 }
 .cat-chip.is-on {
-  border-color: var(--cat);
-  background: color-mix(in srgb, var(--cat) 9%, var(--paper));
+  border-color: var(--ink);
 }
 .cat-chip.is-on .cat-chip__icon {
   /* Selected: ink tile, paper glyph, as the active range icon; readable in both themes. */
@@ -946,6 +1085,17 @@ button {
 }
 .filter-sheet__foot .btn--primary {
   flex: 2;
+}
+/* Settings footer (§15): clear and show, icons only. */
+.settings-foot {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 8px;
+  padding: 12px 0 calc(14px + var(--safe-bottom));
+  background: var(--paper);
+  border-top: 0.5px solid var(--line);
 }
 
 /* ---------- Event detail ---------- */
@@ -984,17 +1134,12 @@ button {
   color: var(--muted);
 }
 .detail__hero {
-  --cat: var(--muted);
   display: grid;
   place-items: center;
   width: 100%;
   aspect-ratio: 16 / 9;
   max-height: 36dvh;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--cat) 26%, var(--paper)),
-    color-mix(in srgb, var(--cat) 8%, var(--paper))
-  );
+  background: var(--paper-2);
   overflow: hidden;
 }
 .detail__hero img {
@@ -1139,6 +1284,13 @@ button {
   box-shadow: var(--shadow-lg);
 }
 
+/* A wordless toast: one icon (the empty dice). */
+.toast--icon {
+  display: grid;
+  place-items: center;
+  padding: 9px 14px;
+}
+
 /* ---------- List ---------- */
 .list {
   list-style: none;
@@ -1235,6 +1387,20 @@ button {
 @keyframes fade {
   from {
     opacity: 0;
+  }
+}
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes nudge {
+  30% {
+    transform: translateX(-3px);
+  }
+  60% {
+    transform: translateX(3px);
   }
 }
 @keyframes rise {

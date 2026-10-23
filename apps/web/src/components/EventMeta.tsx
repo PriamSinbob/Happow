@@ -58,13 +58,8 @@ export function useEventText(ev: NearbyEvent, now: Date) {
 }
 
 export function CategoryIcon({ ev, size = 40 }: { ev: NearbyEvent; size?: number }) {
-  const cat = categoriesById.get(ev.categoryIds[0]!);
   return (
-    <span
-      className="cat-icon"
-      style={{ ['--cat' as string]: cat?.color ?? 'var(--muted)', width: size, height: size }}
-      aria-hidden
-    >
+    <span className="cat-icon" style={{ width: size, height: size }} aria-hidden>
       <Glyph id={glyphOf(ev)} size={Math.round(size * 0.55)} />
     </span>
   );

@@ -101,6 +101,17 @@ export const appConfigSchema = z.object({
     /** "HH:MM" in the region's time zone: later starts are hidden in family mode. */
     latestEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'use a time like "21:00"'),
   }),
+  /** The dice (§7). */
+  dice: z.object({
+    /** Rolls only events this close to the user. */
+    maxDistanceM: z.number().positive(),
+    /** Live events, plus those starting within this many minutes. */
+    soonMin: z.number().int().nonnegative(),
+    /** An event beyond the reach widens it to the first detent at this × its distance. */
+    reachMargin: z.number().min(1),
+    /** Categories in the long-press fan. */
+    fanSize: z.number().int().positive(),
+  }),
   h3: z.object({
     eventResolution: z.number().int().min(0).max(15),
     /** Coarser cells (r8 ≈ 0.7 km²) that events are counted in for hotspots and off-screen hints. */
@@ -113,6 +124,8 @@ export const appConfigSchema = z.object({
     hotspotMinEvents: z.number().int().positive(),
     /** Off-screen events shown as edge dots at once: the nearest ones (§5). */
     maxEdgeDots: z.number().int().min(0),
+    /** Cell size when hotspots are counted on the device (family mode, slice G). */
+    deviceCellM: z.number().positive(),
   }),
   timeWindows: z.array(timeWindowSchema).min(1),
   /** The time line under the map (§5, §13.3). */
@@ -278,6 +291,13 @@ export const themeTokensSchema = z.object({
   paper: hex,
   /** Subtle fills on paper (segmented controls, chips). */
   paper2: hex,
+  /** The track behind toggles (§15). */
+  sunken: hex,
+  /** A toggle that is on, and what sits on it (§15). */
+  raised: hex,
+  onRaised: hex,
+  /** What is off in the settings sheet: toggles, language codes, clear (§15, owner 2026-10-23). */
+  quiet: hex,
   line: hex,
   /** Behind dialogs, at partial opacity. */
   scrim: hex,

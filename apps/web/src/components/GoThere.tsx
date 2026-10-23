@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl, { type GeoJSONSource } from 'maplibre-gl';
 import { distanceM, walkingMinutes, type LatLng, type NearbyEvent } from '@happow/core';
 import { api } from '../api';
-import { categoriesById, config } from '../config';
+import { config } from '../config';
 import { formatDistance, navigationUrl } from '../format';
 import { useLiveLocation } from '../hooks/useLiveLocation';
 import { useI18n } from '../i18n';
@@ -279,8 +279,6 @@ function TripMap({
     if (!venue.current) {
       const el = document.createElement('div');
       el.className = 'marker is-target';
-      const cat = categoriesById.get(ev.categoryIds[0]!);
-      el.style.setProperty('--cat', cat?.color ?? 'var(--muted)');
       const pin = Object.assign(document.createElement('span'), { className: 'marker__pin' });
       pin.append(
         Object.assign(document.createElement('span'), { innerHTML: glyphSvg(glyphOf(ev), 18) }),

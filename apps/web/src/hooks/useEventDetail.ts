@@ -36,8 +36,12 @@ export function useEventDetail(
   if (!id) return { ev: null, loading: false };
   const fresh = fetched?.id === id ? fetched : null;
   if (fresh?.ev) {
-    // Keep the list's distance (measured from the current search centre).
-    return { ev: inList ? { ...fresh.ev, distanceM: inList.distanceM } : fresh.ev, loading: false };
+    // Keep the list's distance (measured from the current search centre) and its family mark.
+    if (!inList) return { ev: fresh.ev, loading: false };
+    const ev: NearbyEvent = { ...fresh.ev, distanceM: inList.distanceM };
+    const mark = (inList as { familyUnconfirmed?: boolean }).familyUnconfirmed;
+    if (mark) Object.assign(ev, { familyUnconfirmed: true });
+    return { ev, loading: false };
   }
   if (inList) return { ev: inList, loading: false };
   return fresh ? { ev: null, loading: false } : { ev: null, loading: true };

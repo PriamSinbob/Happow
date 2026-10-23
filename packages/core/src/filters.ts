@@ -1,4 +1,4 @@
-import type { EventFilters, HappowEvent, TimeWindow } from './types.js';
+import type { EventFilters, HappowEvent, PriceFilter, TimeWindow } from './types.js';
 import { dayBounds, daysBounds } from './time.js';
 
 export const DEFAULT_FILTERS: EventFilters = { categories: [], price: 'any' };
@@ -27,6 +27,19 @@ export function windowRange(
   if ('endOfDay' in window) return { from: now, to: dayBounds(now, timeZone).end };
   if ('days' in window) return { from: now, to: daysBounds(now, timeZone, window.days).end };
   return { from: now, to: new Date(now.getTime() + window.hours * 3_600_000) };
+}
+
+/** The two price toggles in settings (§15): free and paid, both on = any. */
+export function priceToggles(price: PriceFilter): { free: boolean; paid: boolean } {
+  return { free: price !== 'paid', paid: price !== 'free' };
+}
+
+/** Back from the toggles; null when both are off, which the sheet does not allow. */
+export function priceFromToggles(free: boolean, paid: boolean): PriceFilter | null {
+  if (free && paid) return 'any';
+  if (free) return 'free';
+  if (paid) return 'paid';
+  return null;
 }
 
 /** "5/s" → minimum milliseconds between requests. */
