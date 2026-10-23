@@ -12,17 +12,17 @@ Spec agreed with the owner in the design session of 2026-10-22 (interactive prot
 
 Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR to `main` each. The data-only slices come first, so the live app keeps working between PRs; the visuals build on them. Each slice PR updates its row below, the Status line above, and adds a short "Built (slice X)" note under its spec section (built, skipped, open), like §13.4 and §14.
 
-| Slice | Spec                    | What                                                     | Needs | Status                                   |
-| ----- | ----------------------- | -------------------------------------------------------- | ----- | ---------------------------------------- |
-| A     | §14                     | Default venue for single-venue sources                   | —     | merged (#9)                              |
-| B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest     | —     | merged (#10)                             |
-| C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | merged (#12)                             |
-| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | merged (#13)                             |
-| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  | merged (#14)                             |
-| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  | in review (`m6-layout`)                  |
-| G     | §4.4 UI, §7             | Family-mode filter and chip; dice                        | C, F  |                                          |
-| H     | §6                      | Lit map and the local atlas                              | F     |                                          |
-| —     | §8, §9                  | Accounts and premium; co-presence                        | —     | out of M6 (build later / after the core) |
+| Slice | Spec                    | What                                                                          | Needs | Status                                   |
+| ----- | ----------------------- | ----------------------------------------------------------------------------- | ----- | ---------------------------------------- |
+| A     | §14                     | Default venue for single-venue sources                                        | —     | merged (#9)                              |
+| B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest                          | —     | merged (#10)                             |
+| C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data                      | —     | merged (#12)                             |
+| D     | §3                      | Colour tokens, day/night themes, presets, contrast test                       | —     | merged (#13)                             |
+| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge                        | C, D  | merged (#14)                             |
+| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay                      | B, E  | in review (`m6-layout`)                  |
+| G     | §4.4 UI, §7, §15        | Family-mode filter and chip; dice; wordless settings sheet, no category tints | C, F  |                                          |
+| H     | §6                      | Lit map and the local atlas                                                   | F     |                                          |
+| —     | §8, §9                  | Accounts and premium; co-presence                                             | —     | out of M6 (build later / after the core) |
 
 ### Slice C: entry and age data
 
@@ -164,6 +164,7 @@ Where this spec and `docs/BRIEF.md` → Core features differ, this spec wins:
 - Teach by motion, not text: on first launch the rail nudges up and back once.
 - Pull, not push. Optimise for opens per week, time to first pin tap (< 3 s), GoThere starts and arrivals; not session length. No streaks.
 - Nothing animates at idle.
+- Touch-first: no hover styles (owner, 2026-10-23). Feedback comes from the state change itself (raised / flat), not from pointer position.
 
 ## 2. Baseline being replaced (repo at 6e3cbbb)
 
@@ -518,3 +519,24 @@ Found on 2026-10-22: the NFM crawl found 50 events and added 20, sent 1 to moder
   - A page naming another venue keeps that venue.
 - **Expected gain.** About 30 more NFM events per crawl.
 - **Built** (2026-10-22): `packages/ingest/src/run.ts` (`atDefaultVenue`, applied before geocoding for any adapter), schema in `packages/core/src/schemas.ts`, contract test in `packages/ingest/test/crawler.contract.test.ts`. Open: NFM also runs concerts in other buildings (Oratorium Marianum, Aula Leopoldina). Those pages name the other venue and keep it, unless the extractor writes them as "NFM, …"; check this on the next live crawl.
+
+## 15. Settings sheet: wordless rows, black and white
+
+Agreed with the owner on 2026-10-23 after four mockup rounds. Reference: `docs/design/settings-rows.html` (sizes, states and colours are normative). Applies to the settings sheet from slice F, below the category chips. Built in slice G.
+
+- **Black and white only.** No live hue, no category colours anywhere in the sheet. Category colour tints also go from the category chips, card icons, the detail hero and the Going-there marker: glyph tiles use `paper2`, the selected chip is an `ink` tile with a `paper` glyph (as merged in #15), the marker outline is `ink`. The `color` field in `config/categories.json` stays for now but nothing renders it.
+- **New tokens** in `config/theme.json` (day / night), checked by the contrast test:
+  - `sunken`: the track behind toggles, `#ECE8E0` / `#0E1013`.
+  - `raised`: an "on" tile, `#FFFFFF` / `#ECE9E3` (night uses the same light fill as the primary button, so on reads the same everywhere).
+  - `onRaised`: content on a raised tile, `#17171A` / `#1A1D23`.
+- **Price: two toggles, not three options.** One `sunken` track, 3 px padding, 4 px gap; two 130 × 44 tiles: crossed-out ticket = free, plain ticket = paid (Tabler `ticket-off` / `ticket`, 28 px, stroke 1.8). No marks inside the tickets.
+  - Both start on, which means "show everything". Tapping one turns it off and hides that kind.
+  - On = `raised` tile with `onRaised` icon; off = no tile, `muted` icon.
+  - The last tile that is on cannot be switched off: it gives a 3 px sideways nudge (none under `prefers-reduced-motion`).
+  - Filter state maps to the existing `price` filter: both on = any, one on = free or paid.
+- **Add event row.** Full-width 58 px row: a circled plus in `ink` (38 px, stroke 1.6) with three category glyphs on each side, shrinking outward (20 / 16 / 13 px) and fading (opacity 0.9 / 0.6 / 0.35). No live hue.
+- **Language row.** The globe (30 px, stroke 1.6) on the sheet's `paper`, centred. Each language is a small field: `sunken` 2 px padding around a 32 × 22 button with its code ("PL", "EN"; 10.5 px, weight 700, 0.06 em tracking). The active one is `raised`, the others flat and `muted`. Tapping switches at once (no menu). More languages line up outward on both sides at the same size. No flags.
+- **About row.** A circled "i" drawn for Happow, symmetric (dot over a straight stroke, no serif foot), 34 px, stroke 1.6, flanked by small motifs: dice and gear on the left, moderator shield and tag on the right (13 / 17 px, opacity 0.35 / 0.6). It opens About, where the theme and colour settings and the moderator sign-in live.
+- **Footer.** Clear = outlined button with the `filter-off` icon in `muted`; show = `ink`-filled button with a check and the event count ("✓ 476"). No words.
+- **No hover styles** anywhere in the sheet (§1). Focus-visible rings stay for keyboards.
+- **Accessibility.** Every icon-only control keeps a translated `aria-label`; the price tiles use `aria-pressed`, the language buttons `role="radio"` with `aria-checked` and their own names ("Polski", "English").

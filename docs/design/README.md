@@ -8,6 +8,7 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
 | `icons/range-today.svg` | Time range icon: Today (calendar with one filled day).                                                                                                               |
 | `icons/range-week.svg`  | Time range icon: 7 days (one filled row).                                                                                                                            |
 | `icons/range-later.svg` | Time range icon: 14 days (two filled rows).                                                                                                                          |
+| `settings-rows.html`    | The settings sheet's wordless rows (price, add, language, about, footer), approved by the owner on 2026-10-23. Self-contained; toggle day and night.                 |
 
 ## Normative: match exactly
 
@@ -31,6 +32,9 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
   - Drawn for Happow: garage sale (tag), talk (microphone), religious (candle), café (cup), bar (beer mug), other (dot).
   - Food picks its glyph per event from words in the title or venue (`glyphRules` in `config/categories.json`): cup for cafés, beer mug for pubs, bars and breweries, utensils otherwise. Never chosen at random: the glyph must say what the place is.
   - Change a glyph only with the owner's OK.
+
+- **Settings sheet rows** (M6 §15, `settings-rows.html`): black and white only, two ticket toggles (both on by default, last one can't be switched off), circled plus with fanned glyphs, globe with small PL / EN fields, symmetric circled "i" with gear and shield, icon-only footer. Category colour tints go everywhere.
+- **Touch-first: no hover styles** (owner, 2026-10-23).
 
 ## Illustrative: don't copy
 
