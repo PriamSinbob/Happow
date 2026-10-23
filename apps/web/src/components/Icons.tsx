@@ -47,6 +47,12 @@ const paths = {
   dice: 'M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2zM8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01',
   // Nothing to roll (owner, 2026-10-23): a crossed O.
   none: 'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM5 19L19 5',
+  // The atlas row (§6, docs/design/atlas.html): Tabler download, upload, trash; the folded map
+  // with a lit spot is drawn for Happow (AtlasGlyph in AtlasRow).
+  download: 'M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2M7 11l5 5l5 -5M12 4l0 12',
+  upload: 'M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2M7 9l5 -5l5 5M12 4l0 12',
+  trash:
+    'M4 7l16 0M10 11l0 6M14 11l0 6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3',
   filterOff:
     'M8 4h12v2.172a2 2 0 0 1 -.586 1.414l-3.914 3.914m-.5 3.5v4l-6 2v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227M3 3l18 18',
 } as const;

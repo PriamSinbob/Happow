@@ -47,6 +47,10 @@ export function loadConfig(): HappowConfig {
   if (!det.includes(defaultM)) errors.push('radius.defaultM must be one of radius.detentsM');
   if (app.h3.densityResolution >= app.h3.eventResolution)
     errors.push('h3.densityResolution must be coarser (lower) than h3.eventResolution');
+  if (app.atlas.fadeZoom.full <= app.atlas.fadeZoom.gone)
+    errors.push('atlas.fadeZoom.full must be a closer (higher) zoom than atlas.fadeZoom.gone');
+  if (app.atlas.veilRadiusM < app.radius.detentsM.at(-1)!)
+    errors.push('atlas.veilRadiusM must cover the largest reach detent');
   if (app.density.searchRadiusM < app.radius.defaultM)
     errors.push('density.searchRadiusM must be at least radius.defaultM');
   if (!app.timeWindows.some((w) => w.id === app.defaultTimeWindow))

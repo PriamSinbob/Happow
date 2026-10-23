@@ -39,12 +39,15 @@ export function GoThere({
   ev: initial,
   now,
   refresh,
+  onArrive,
   onClose,
 }: {
   ev: NearbyEvent | null;
   now: Date;
   /** Reads the event fresh (flags, time changes) while on the way. */
   refresh: (id: string, from: LatLng) => Promise<NearbyEvent | null>;
+  /** Arrived: the event's place goes into the local atlas (§6). */
+  onArrive?: (eventId: string, point: LatLng) => void;
   onClose: () => void;
 }) {
   const { t, lang } = useI18n();
@@ -90,7 +93,12 @@ export function GoThere({
     if (phase !== 'going' || !ev) return;
     if (new Date(ev.endAt) < now || ev.status === 'cancelled') setPhase('ended');
     else if (Date.now() - startedAt > nav.maxMinutes * 60_000) setPhase('stopped');
-    else if (here && distanceM(here, ev.point) <= nav.arriveM) setPhase('arrived');
+    else if (here && distanceM(here, ev.point) <= nav.arriveM) {
+      setPhase('arrived');
+      onArrive?.(ev.id, ev.point);
+    }
+    // onArrive is called once, when the phase changes; a new callback must not re-run this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, ev, here, now, startedAt]);
 
   // The event, fresh every minute while on the way and the app is on screen.

@@ -688,8 +688,70 @@ div.settings-row {
 .sheet-btn__count {
   font-variant-numeric: tabular-nums;
 }
+/* The atlas bar (§6, docs/design/atlas.html), in About: export, lit areas, import; hold the bin
+   at the far right to clear. */
+.atlas-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  min-height: 66px;
+  margin: 16px 0;
+  border-top: 0.5px solid var(--line);
+  border-bottom: 0.5px solid var(--line);
+  color: var(--ink);
+}
+.atlas-row__btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+}
+.atlas-row__main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.atlas-row__count {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--quiet);
+}
+.atlas-row__clear {
+  position: absolute;
+  right: 0;
+  top: 11px;
+  color: var(--quiet);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.atlas-row__ring {
+  position: absolute;
+  inset: 0;
+  color: var(--ink);
+}
+.toast.atlas-row__toast {
+  height: 40px;
+  padding: 0 16px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 600;
+}
 .toggle:focus-visible,
 .lang-code:focus-visible,
+.atlas-row__btn:focus-visible,
 .settings-row:focus-visible,
 .sheet-btn:focus-visible {
   outline: 2px solid var(--ink);

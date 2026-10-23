@@ -1,0 +1,12 @@
+{
+  "format": "happow-atlas",
+  "version": 1,
+  "exportedAt": "2026-10-23",
+  "cells": [
+    { "cell": "891e2040887ffff", "opens": 4, "arrivals": 1, "lastSeen": "2026-10-23" },
+    { "cell": "891e2040897ffff", "opens": 1, "arrivals": 0, "lastSeen": "2026-10-20" },
+    { "cell": "891e20408b3ffff", "opens": 2, "arrivals": 0, "lastSeen": "2026-10-22" },
+    { "cell": "891e2040d4bffff", "opens": 0, "arrivals": 2, "lastSeen": "2026-10-21" },
+    { "cell": "881e2040d5fffff", "opens": 3, "arrivals": 0, "lastSeen": "2026-10-19" }
+  ]
+}

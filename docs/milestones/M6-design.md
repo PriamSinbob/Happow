@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E), §5 and §13.2–§13.5 built (slice F), §4.4 UI, §7 and §15 built (slice G); the rest (§6, slice H) not built. List style B (§5) approved by the owner on a phone (2026-10-23). Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
+**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E), §5 and §13.2–§13.5 built (slice F), §4.4 UI, §7 and §15 built (slice G), §6 built (slice H, in review). §8 and §9 stay out of M6. List style B (§5) approved by the owner on a phone (2026-10-23). Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
 **Visual reference:** `docs/design/` (interactive prototype, exact range icons, README listing what is normative). Slices E to H match it; where this spec's words and the prototype differ, ask the owner.
 
@@ -20,8 +20,8 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | D     | §3                      | Colour tokens, day/night themes, presets, contrast test                       | —     | merged (#13)                             |
 | E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge                        | C, D  | merged (#14)                             |
 | F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay                      | B, E  | merged (#17)                             |
-| G     | §4.4 UI, §7, §15        | Family-mode filter and chip; dice; wordless settings sheet, no category tints | C, F  | in review (`m6-family-dice`)             |
-| H     | §6                      | Lit map and the local atlas                                                   | F     |                                          |
+| G     | §4.4 UI, §7, §15        | Family-mode filter and chip; dice; wordless settings sheet, no category tints | C, F  | merged (#18)                             |
+| H     | §6                      | Lit map and the local atlas                                                   | F     | in review (`m6-lit-map`)                 |
 | —     | §8, §9                  | Accounts and premium; co-presence                                             | —     | out of M6 (build later / after the core) |
 
 ### Slice C: entry and age data
@@ -193,6 +193,67 @@ Plan agreed with the owner on 2026-10-23, including the mockups `settings-rows.h
 1. Dice at the top right beside settings, as in the prototype and §5.
 2. Family mode is broader than the kids category, so it stays: the category shows only kids events; family mode also shows family events from other categories, all-ages and up-to-12 events, and (marked "not confirmed") likely family categories that end by 21:00. It hides 13+ events and anything starting after 21:00. Its tile sits on the same line as the price toggles, as its own track. The chip beside the counter becomes a shortcut the user sets to one filter: family mode, food, music, …
 3. The dice picks from events that are live or start within 60 minutes.
+
+### Slice H: lit map and the local atlas
+
+Plan agreed with the owner on 2026-10-23, with every recommendation below. Mockup: `docs/design/atlas.html` (the veil at three zooms, the settings row, the toasts). Branch `m6-lit-map`. Builds §6 on top of slice F.
+
+- **The atlas (storage, on the device only).**
+  - IndexedDB database `happow`, store `atlas`, one record per H3 resolution 9 cell (about 0.1 km²): `{ cell, opens, arrivals, lastSeen }`. §6 names `count`; splitting it by kind is what lets arrivals be strong and opens faint (open question 1).
+  - `lastSeen` is a day (`2026-10-23`), not a timestamp: nothing in the app needs the hour, and a coarser record is less sensitive.
+  - Nothing is ever sent: no API call, no analytics event carries a cell. Nothing decays and nothing is pruned (heavy use stays in the tens of KB per year).
+  - A small wrapper in `apps/web/src/atlas/store.ts` (plain IndexedDB, no new dependency) that never throws: private mode or blocked storage gives an empty atlas and the veil shows the reach only.
+- **What gets recorded.**
+  - **Open:** the user's own position (not a long-press "from here" point) on the first fix of a session and on every later fix that lands in a new cell. One count per cell per session (a session ends when the app is hidden for 30 min). Fixes with accuracy worse than `atlas.maxAccuracyM` (100 m) are ignored.
+  - **Arrival:** the event's cell when Going there reaches `navigation.arriveM` (the existing `arrived` phase). One per event.
+  - Cell ids come from h3-js, which is lazily loaded after the first paint (about 93 KB gzipped, already a lazy chunk for the seed path), so the cold open and the time to first pin tap don't pay for it.
+- **The veil (MapLibre).**
+  - A `canvas` source (`animate: false`) covering a box of `atlas.veilRadiusM` (6 km) around the area snapshot's grid centre; a `raster` layer on it, inserted below the basemap labels so street names stay readable (open question 3).
+  - Outside the box, a plain `fill` layer (the world with the box cut out) in the veil colour with the same opacity, so panning beyond the canvas never reveals a full-colour map.
+  - Drawing: the canvas (512 × 512, about 23 m a pixel) is filled with the theme's `veil` colour, then holes are cut with `destination-out`: one soft radial blob is drawn once and stamped per blob (same colour stops as a gradient each, and faster). The GPU's bilinear upscaling on top of the soft gradients gives the cloud edge; no canvas `filter` (Safari).
+  - Each lit cell is 5 blobs, jittered by a PRNG seeded from its cell id, so a cell looks the same on every redraw and every device.
+  - Strength per cell: open 0.35, arrival 0.85, and each repeat brightens: `min(1, base + 0.12 · log2(count))`. Overlapping holes compound, so a well-walked street is clearer than one visit.
+  - The current reach is always lit: a soft disc of the reach radius plus 4 seeded blobs on its edge, as in the prototype.
+  - **Redrawn only on change:** an arrival, a new open cell, a reach detent released, the reach centre moving (locate, long-press), a new snapshot centre, an import or clear, a theme change (the veil colour). Never on pan, zoom or rail drag; after a redraw the source is played for one frame so MapLibre uploads the texture, then paused.
+- **Zoom fade.** `raster-opacity` (and the outer fill's `fill-opacity`) is a zoom `interpolate` expression: the theme's `veilOpacity` at `atlas.fadeZoom.full` (12.8, a 1 km reach on a 380 px phone) down to 0 at `atlas.fadeZoom.gone` (10.5, 5 km; recalibrated after the design review, matching the prototype curve), so the veil is gone in city mode. The GPU evaluates it; no JavaScript runs while zooming.
+- **Theme tokens.** `veil` and `veilOpacity` already exist in `config/theme.json` (slice D): day `#E6E6E4` at 0.74, night `#000000` at 0.75. Slice H starts reading them. At night the black veil over the lit colours gives the §3.1 intent: unlit water and parks read black, only street geometry shows. The contrast test gains a check that `veilOpacity` stays between 0.5 and 0.85, so unlit areas stay legible.
+- **The atlas bar** (`atlas.html`). Wordless, black and white like §15. Changed by the owner (2026-10-23): the whole bar sits inside About (settings → ⓘ), with the theme and colour settings; nothing about the atlas is in the settings sheet itself. The bar:
+  - Centre: an atlas glyph drawn for Happow (a folded map with a soft lit spot), with the number of lit cells under it in numerals.
+  - Left: export (Tabler `download`). It saves `happow-atlas-YYYY-MM-DD.json` through the share sheet where the phone supports sharing files, otherwise as a download.
+  - Right: import (Tabler `upload`), a file picker for `.json`. The file is checked against a schema; a good one merges and shows a wordless toast (check + the number of cells added); a bad one shows the crossed-O toast.
+  - Far right: clear (Tabler `trash`), hold 1.5 s while a ring fills (`vibrate(6)` at the end), so it can't happen by accident. Clearing deletes the store (open question 2).
+  - All free and anonymous (open question 4). Translated `aria-label`s on every button.
+- **Export format.** `{ "format": "happow-atlas", "version": 1, "exportedAt": "2026-10-23", "cells": [{ "cell": "891e…", "opens": 3, "arrivals": 1, "lastSeen": "2026-10-23" }] }`, validated by a zod schema in core. Import merges by taking the larger count and the later day per cell, so importing the same file twice changes nothing (open question 5).
+- **Config** (`config/app.json`, validated): `atlas.resolution` 9, `atlas.maxAccuracyM` 100, `atlas.sessionGapMin` 30, `atlas.veilRadiusM` 6000, `atlas.canvasPx` 512, `atlas.fadeZoom` `{ full: 12.8, gone: 10.5 }`, `atlas.strength` `{ open: 0.35, arrival: 0.85, repeat: 0.12 }`, `atlas.blobsPerCell` 5.
+- **Performance (§10).** No per-frame JavaScript on pan or zoom: no `move` or `zoom` handlers for the veil; the fade is a style expression. A redraw of 2,000 lit cells is about 10,000 blob stamps on a 512 px canvas (measured: see "Built" under §6). Zero new requests. The canvas texture is 1 MB of GPU memory.
+- **Core helpers, unit-tested on fixtures** (`packages/core/src/atlas.ts`, no DOM, no h3-js):
+  - `seededRandom(cellId)`: stable PRNG; same id, same blobs.
+  - `cellBlobs(cell, centre, strength, cellRadiusM)`: blob offsets, radii and alphas.
+  - `cellStrength(record)`: base by kind, repeat brightening, capped at 1.
+  - `veilBox(snapshotCentre, radiusM)` and `toCanvasPx(point, box, px)`: Web Mercator, so blobs line up with the basemap.
+  - `fadeStops(theme, fadeZoom)`: the zoom expression.
+  - `parseAtlas(json)`, `exportAtlas(records, day)` and `mergeAtlas(a, b)`: schema check, round trip, idempotent merge.
+  - `shouldRecordOpen(fix, session)`: accuracy, new cell, once per session.
+  - Fixtures: a recorded atlas file (`packages/core/test/fixtures/atlas-v1.json`), a malformed one, and real res-9 cell ids from Wrocław.
+- **Web tests.** The IndexedDB wrapper on `fake-indexeddb` (dev dependency), the recorder (open and arrival paths), the settings row (export file name and contents, import merge, hold-to-clear), and the veil drawing on a stub canvas (count of holes, redraw triggers; no redraw on a `move` event).
+- **Out of scope:** atlas sync and backup (§8, premium), the "new since last open" bloom (§10), co-presence (§9), the raster fallback map (not recoloured, so the veil only goes on the vector style).
+- **Steps:**
+  1. this plan and the mockup
+  2. config, core helpers and tests
+  3. IndexedDB store and the recorder
+  4. veil source, layers, drawing and zoom fade
+  5. the atlas row in settings: export, import, clear, toasts
+  6. design-review subagent, spec report and PR
+
+**Owner decisions (2026-10-23):**
+
+1. Records are `{ cell, opens, arrivals, lastSeen }`, not one `count`, so arrivals are strong and opens faint.
+2. Clear (forget) is a 1.5 s hold. No pause switch: nothing leaves the phone.
+3. The veil goes under the basemap labels, so street names stay readable. Pins, the reach circle and the user dot stay above it.
+4. Export and import are free without an account (§8 updated); sync and backup stay premium.
+5. Import merges by the larger count per cell, so importing the same file twice changes nothing.
+6. A long-press "from here" reach is lit like any reach, but it isn't recorded as a visit.
+7. The whole atlas bar goes inside About (settings → ⓘ), not into the sheet and not onto a screen of its own; its looks get adjusted later.
 
 ### Working notes
 
@@ -439,7 +500,16 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
   - cells where the app was opened: faint
   - repeat visits brighten
   - nothing decays
-- **Storage.** Local only by default: IndexedDB records `{h3 res 9 cell, count, lastSeen}`, roughly tens of KB per year of heavy use. Free JSON export and import.
+- **Storage.** Local only by default: IndexedDB records `{h3 res 9 cell, opens, arrivals, lastSeen}` (owner, 2026-10-23), roughly tens of KB per year of heavy use. Free JSON export and import.
+- **Built** (slice H, 2026-10-23): §6 as planned in "Slice H" above.
+  - **Veil** (`apps/web/src/atlas/veil.ts`, `MapView`): a 512 px canvas source covering 6 km around the area snapshot's grid point, under the basemap labels; an outer fill (the world minus the box) in the same colour, so panning never shows colour. The opacity is a zoom expression from the theme's `veilOpacity` (z12.8) to 0 (z10.5). Redrawn only when the lit cells, the reach (detent released, locate, long-press), the snapshot box or the theme change. Then the canvas source is played and paused once, which uploads the texture a single time. No map event handlers.
+  - **Drawing.** The veil colour, with holes cut (`destination-out`) by one pre-drawn soft blob stamped per jittered blob (5 per cell, seeded by the cell id), and the reach as a soft disc with a seeded cloudy rim. Measured in a desktop browser: 20 ms for 2,000 lit cells (10,000 blobs), about 3 ms for 300; a phone is perhaps 3× slower, and it only runs on change.
+  - **Atlas** (`apps/web/src/atlas/`): IndexedDB store `happow/atlas` that never throws; opens from precise fixes (≤ 100 m) once per cell per session (30 min hidden starts a new one), never from a long-press point; arrivals when Going there arrives. h3-js loads after the first paint (`@happow/core/h3`). Nothing is sent.
+  - **About.** The atlas bar sits whole in About (settings → ⓘ), after the theme and colour settings (owner, 2026-10-23): export (share sheet with a file where supported, else a download of `happow-atlas-YYYY-MM-DD.json`), import (merge by the larger count; wordless +N toast, crossed O for a bad file) and a 1.5 s hold-to-clear bin with a filling ring.
+  - **Core** (`packages/core/src/atlas.ts`, tested on `test/fixtures/atlas-v1.json` and `atlas-bad.json`): recording, session, strength, seeded blobs, Mercator box and projection, zoom fade, export, parse, merge. The contrast test checks `veilOpacity` stays within 0.5–0.85.
+  - **Tests.** `apps/web/test/slice-h.test.tsx`: the store on fake-indexeddb, recording and import through `useAtlas`, the veil drawing on a stub canvas, the atlas bar in About (hold-to-clear).
+  - Skipped: none of §6. The "new since last open" bloom (§10) and atlas sync (§8) were out of scope.
+  - Open: the atlas bar's looks are to be adjusted with the owner. The veil on the raster fallback map (it is skipped there). Day contrast is subtle by design (the §3.1 tokens). Check redraw time on a mid-range phone.
 
 ## 7. Dice
 
@@ -461,7 +531,7 @@ Consistent with the brief's monetization rules: every event is always shown to e
 | Tier             | Gets                                                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Anonymous        | the full app, family mode and age markings, local atlas, Violet and Mono presets                                          |
-| Logged in (free) | settings page, Tally red preset, atlas export and import                                                                  |
+| Logged in (free) | settings page, Tally red preset (atlas export and import are free for everyone: owner, 2026-10-23)                        |
 | Premium          | end-to-end-encrypted atlas sync and backup across devices and phone upgrades, extended hue presets (Magenta, future ones) |
 
 Atlas sync design:

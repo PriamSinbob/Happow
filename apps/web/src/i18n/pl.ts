@@ -285,4 +285,14 @@ export const pl: Record<MessageKey, string> = {
   'dice.roll': 'Zaskocz mnie',
   'dice.pick': 'Losuj z kategorii',
   'dice.empty': 'Teraz nic w pobliżu',
+  'atlas.label':
+    '{count, plural, =0 {Twoje miejsca: jeszcze żadnych} one {Twoje miejsca: # obszar} few {Twoje miejsca: # obszary} many {Twoje miejsca: # obszarów} other {Twoje miejsca: # obszaru}}',
+  'atlas.export': 'Zapisz swoje miejsca do pliku',
+  'atlas.import': 'Dodaj miejsca z pliku',
+  'atlas.clear': 'Zapomnij swoje miejsca (przytrzymaj)',
+  'atlas.saved': 'Zapisano',
+  'atlas.imported':
+    '{count, plural, one {Dodano # obszar} few {Dodano # obszary} many {Dodano # obszarów} other {Dodano # obszaru}}',
+  'atlas.badFile': 'To nie jest plik miejsc Happow',
+  'atlas.cleared': 'Miejsca zapomniane',
 };
