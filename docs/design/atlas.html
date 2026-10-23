@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Happow lit map and atlas row</title>
+<style>
+body{margin:0;padding:24px 16px 40px;background:#f4f3ef;font:14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#17171a}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.bar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 10px}
+.bar button[aria-pressed="true"]{font-weight:700}
+.ph{position:relative;width:340px;max-width:100%;margin:0 auto;border-radius:22px;border:6px solid #8a8a86;overflow:hidden}
+.ph *{box-sizing:border-box}
+.g{display:inline-flex}
+.n{font-variant-numeric:tabular-nums}
+.cap{font-size:12.5px;text-align:center;margin:8px auto 0;color:#6b6b66;max-width:340px;line-height:1.45}
+h2{font-size:13px;text-align:center;margin:26px 0 8px;font-weight:600;color:#55524d}
+#map{display:block;touch-action:none;cursor:grab}
+.zoom{display:flex;align-items:center;gap:8px;justify-content:center;margin:8px 0 0;font-size:12.5px;color:#55524d}
+.toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);height:40px;padding:0 16px;border-radius:20px;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;pointer-events:none;opacity:0;transition:opacity .2s}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<!-- Design reference for M6 §6, slice H (draft, 2026-10-23, waiting for the owner's OK).
+     The veil algorithm (seeded blobs per cell, strengths, low-resolution canvas upscaled, zoom fade)
+     is what the app will do; the street grid, river, park, labels and hex cells are illustrative. -->
+<h1 class="sr-only">Lit map and the local atlas: a grey veil with soft holes for your reach and the places you have been, fading as you zoom out, and a wordless settings row to export, import and clear the atlas.</h1>
+<div class="bar"><button id="bd" type="button">Day</button><button id="bn" type="button">Night</button><span style="width:10px"></span><button id="mo" type="button">Tap = app opened here</button><button id="ma" type="button">Tap = arrived here</button></div>
+
+<div class="ph" id="ph"><canvas id="map" width="328" height="420" aria-label="Map with veil"></canvas></div>
+<div class="zoom"><span>reach</span><input id="z" type="range" min="0" max="1000" value="250" aria-label="Reach (zoom)"><span id="zl" class="n" style="width:60px">500 m</span></div>
+<p class="cap">Drag to pan, tap to add a visit. Opens are faint, arrivals strong, repeats brighter, nothing fades with time. The reach is always lit. The veil fades from a 1 km reach and is gone at 5 km (city scale). Street names sit above the veil.</p>
+
+<h2>Settings sheet: atlas row (between language and About)</h2>
+<div class="ph" id="sheet">
+<div id="lang" style="display:flex;justify-content:center;align-items:center;gap:14px;padding:12px 14px"></div>
+<div id="atlas" style="position:relative;height:66px;display:flex;align-items:center;justify-content:center;gap:22px"></div>
+<button id="about" type="button" aria-label="About and settings"></button>
+<div id="toast" class="toast" role="status"></div>
+</div>
+<p class="cap">Left: export (saves happow-atlas-2026-10-23.json, or the share sheet). Right: import a file. The number is how many cells are lit. Far right: hold the bin for 1.5 s to clear. <button id="bad" type="button" style="font-size:12px">show a bad-file import</button></p>
+
+<script>
+/* ---------- tokens (config/theme.json, §3.1 and §15) ---------- */
+const DAY={land:'#F1ECE2',minor:'#E3DACA',major:'#FFFFFF',water:'#A8CBDF',park:'#CDE2B4',veil:'#E6E6E4',veilA:.74,ink:'#17171A',muted:'#86807A',paper:'#FBFAF7',quiet:'#5C5852',line:'rgba(23,23,26,.12)',sunken:'#ECE8E0',raised:'#FFFFFF',onRaised:'#17171A'};
+const NIGHT={land:'#000000',minor:'#1C2230',major:'#2E3647',water:'#123049',park:'#173622',veil:'#000000',veilA:.75,ink:'#ECE9E3',muted:'#80838B',paper:'#1A1D23',quiet:'#A9ACB3',line:'rgba(236,233,227,.16)',sunken:'#0E1013',raised:'#ECE9E3',onRaised:'#1A1D23'};
+/* ---------- the plan's atlas config ---------- */
+const STRENGTH={open:.35,arrival:.85,repeat:.12},BLOBS=5,CELL_R=175; /* res 9: ~174 m edge */
+const W=328,H=420,R=116,VEIL_SCALE=4; /* veil drawn at 1/4 resolution, upscaled with smoothing */
+const st={dark:false,mode:'open',reach:500,px:0,py:0,cells:new Map()};
+const $=id=>document.getElementById(id);
+
+/* ---------- seeded PRNG from the cell id (core: seededRandom) ---------- */
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function rng(seed){let a=seed;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ---------- a stand-in hex grid (the app uses H3 res 9 cell ids) ---------- */
+const HX=Math.sqrt(3)*CELL_R;
+function cellAt(x,y){const q=(Math.sqrt(3)/3*x-y/3)/CELL_R,r=(2/3*y)/CELL_R;let rx=Math.round(q),rz=Math.round(r),ry=Math.round(-q-r);const dx=Math.abs(rx-q),dz=Math.abs(rz-r),dy=Math.abs(ry+q+r);if(dx>dy&&dx>dz)rx=-ry-rz;else if(dy<=dz)rz=-rx-ry;return rx+','+rz}
+function centreOf(id){const[q,r]=id.split(',').map(Number);return[HX*(q+r/2),1.5*CELL_R*r]}
+
+/* ---------- core: cellStrength and cellBlobs ---------- */
+function strength(c){const base=c.arrivals?STRENGTH.arrival:STRENGTH.open,n=c.opens+c.arrivals;return Math.min(1,base+STRENGTH.repeat*Math.log2(n))}
+function blobs(id){const r=rng(hash(id)),[cx,cy]=centreOf(id),out=[];for(let i=0;i<BLOBS;i++){const a=r()*Math.PI*2,d=r()*.55*CELL_R;out.push([cx+Math.cos(a)*d,cy+Math.sin(a)*d,CELL_R*(.75+r()*.5)])}return out}
+function record(x,y,kind){const id=cellAt(x,y),c=st.cells.get(id)||{opens:0,arrivals:0};c[kind==='open'?'opens':'arrivals']++;st.cells.set(id,c)}
+
+/* a recorded week: walks with the app open, two arrivals, one visited three times */
+(function seed(){const walk=(x0,y0,x1,y1,n)=>{for(let i=0;i<=n;i++)record(x0+(x1-x0)*i/n,y0+(y1-y0)*i/n,'open')};
+walk(-900,-200,600,-520,8);walk(600,-520,1300,300,5);walk(-300,400,-1500,900,6);walk(200,700,900,1500,4);walk(-900,-200,-300,400,3);
+record(1300,300,'arrival');record(-1500,900,'arrival');record(600,-520,'arrival');record(600,-520,'arrival');record(600,-520,'arrival')})();
+
+/* ---------- the fake basemap (illustrative) ---------- */
+function basemap(ctx,C,k,ox,oy){ctx.fillStyle=C.land;ctx.fillRect(0,0,W,H);
+const T=(x,y)=>[ox+x*k,oy+y*k];
+ctx.fillStyle=C.park;[[700,350,900,650],[-1250,-1300,700,520],[-520,-700,380,300]].forEach(([x,y,w,h])=>{const[a,b]=T(x,y);ctx.beginPath();ctx.roundRect(a,b,w*k,h*k,70*k);ctx.fill()});
+ctx.strokeStyle=C.water;ctx.lineWidth=Math.max(6,Math.min(60,110*k));ctx.beginPath();for(let x=-9000;x<=9000;x+=150){const y=900+380*Math.sin(x/1500)-200*Math.cos(x/700);const[a,b]=T(x,y);x===-9000?ctx.moveTo(a,b):ctx.lineTo(a,b)}ctx.stroke();
+[[12,200,1.2,'minor'],[102,200,1.2,'minor'],[12,800,4,'major'],[102,800,4,'major']].forEach(([deg,s,w,kind])=>{if(kind==='minor'&&k<0.04)return;const r=deg*Math.PI/180,dx=Math.cos(r),dy=Math.sin(r);ctx.strokeStyle=C[kind];ctx.lineWidth=w;ctx.beginPath();for(let i=-40;i<=40;i++){if(s===200&&i%4===0)continue;const o=i*s,[a,b]=T(-o*dy-9000*dx,o*dx-9000*dy),[c,d]=T(-o*dy+9000*dx,o*dx+9000*dy);ctx.moveTo(a,b);ctx.lineTo(c,d)}ctx.stroke()})}
+
+/* ---------- the veil: low-res canvas, destination-out radial holes, upscaled ---------- */
+const vc=document.createElement('canvas');vc.width=W/VEIL_SCALE;vc.height=H/VEIL_SCALE;
+function hole(v,x,y,r,a){const g=v.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(0,0,0,${a})`);g.addColorStop(.55,`rgba(0,0,0,${a*.7})`);g.addColorStop(1,'rgba(0,0,0,0)');v.fillStyle=g;v.beginPath();v.arc(x,y,r,0,Math.PI*2);v.fill()}
+function veil(C,k,ox,oy){const v=vc.getContext('2d'),s=1/VEIL_SCALE;v.globalCompositeOperation='source-over';v.clearRect(0,0,vc.width,vc.height);v.fillStyle=C.veil;v.fillRect(0,0,vc.width,vc.height);v.globalCompositeOperation='destination-out';
+const P=(x,y)=>[(ox+x*k)*s,(oy+y*k)*s];
+st.cells.forEach((c,id)=>{const a=strength(c)/1.6;blobs(id).forEach(([x,y,r])=>{const[a1,b1]=P(x,y);hole(v,a1,b1,r*k*s*1.3,a)})});
+/* the reach: a soft disc plus four seeded blobs on its rim */
+const[ux,uy]=P(0,0),rr=st.reach*k*s;hole(v,ux,uy,rr*1.35,1);hole(v,ux,uy,rr*1.1,.6);const r=rng(hash('reach'));for(let i=0;i<4;i++){const a=i*Math.PI/2+r()*.8,d=rr*(.75+r()*.2);hole(v,ux+Math.cos(a)*d,uy+Math.sin(a)*d,rr*(.35+r()*.15),.45)}
+v.globalCompositeOperation='source-over'}
+/* zoom fade: linear in zoom = linear in log(reach); full at 1 km, gone at 5 km */
+const fade=C=>st.reach<=1000?C.veilA:st.reach>=5000?0:C.veilA*(1-Math.log(st.reach/1000)/Math.log(5));
+
+function render(){const C=st.dark?NIGHT:DAY,ctx=$('map').getContext('2d'),k=R/st.reach,ox=W/2+st.px,oy=H/2+st.py;
+basemap(ctx,C,k,ox,oy);
+const o=fade(C);if(o>0){veil(C,k,ox,oy);ctx.save();ctx.globalAlpha=o;ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(vc,0,0,W,H);ctx.restore()}
+/* labels above the veil */
+ctx.font='600 11px system-ui,sans-serif';ctx.fillStyle=C.muted;ctx.textAlign='center';[['Rynek',-120,-80],['Odra',1400,560],['Nadodrze',-1100,-600]].forEach(([t,x,y])=>{ctx.lineWidth=3;ctx.strokeStyle=C.land;const a=ox+x*k,b=oy+y*k;ctx.strokeText(t,a,b);ctx.fillText(t,a,b)});
+/* reach circle and user dot (ours, above the veil) */
+ctx.strokeStyle=C.ink;ctx.globalAlpha=.5;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(ox,oy,st.reach*k,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;
+ctx.fillStyle=C.paper;ctx.beginPath();ctx.arc(ox,oy,8,0,Math.PI*2);ctx.fill();ctx.fillStyle=C.ink;ctx.beginPath();ctx.arc(ox,oy,5,0,Math.PI*2);ctx.fill();
+$('zl').textContent=st.reach>=1000?(st.reach/1000).toFixed(st.reach<10000?1:0)+' km':Math.round(st.reach)+' m';
+['bd','bn'].forEach((id,i)=>$(id).setAttribute('aria-pressed',String(st.dark===!!i)));$('mo').setAttribute('aria-pressed',String(st.mode==='open'));$('ma').setAttribute('aria-pressed',String(st.mode==='arrival'));
+sheet(C)}
+
+/* ---------- pan and tap ---------- */
+(function(){const m=$('map');let d=null;m.addEventListener('pointerdown',e=>{m.setPointerCapture(e.pointerId);d={x:e.clientX,y:e.clientY,px:st.px,py:st.py,moved:false}});
+m.addEventListener('pointermove',e=>{if(!d)return;const dx=e.clientX-d.x,dy=e.clientY-d.y;if(Math.hypot(dx,dy)>4)d.moved=true;if(d.moved){st.px=d.px+dx;st.py=d.py+dy;render()}});
+m.addEventListener('pointerup',e=>{if(d&&!d.moved){const b=m.getBoundingClientRect(),k=R/st.reach,x=((e.clientX-b.left)*W/b.width-W/2-st.px)/k,y=((e.clientY-b.top)*H/b.height-H/2-st.py)/k;record(x,y,st.mode);render()}d=null})})();
+$('z').addEventListener('input',e=>{st.reach=250*Math.pow(100,e.target.value/1000);render()});
+
+/* ---------- settings row (§15 style: black and white, no words) ---------- */
+const P={download:['M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2','M7 11l5 5l5 -5','M12 4l0 12'],upload:['M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2','M7 9l5 -5l5 5','M12 4l0 12'],trash:['M4 7l16 0','M10 11l0 6','M14 11l0 6','M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12','M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3'],
+/* atlas glyph, drawn for Happow: a folded map with a lit spot */
+atlas:['M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13','M9 4v13','M15 7v13'],world:['M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0','M3.6 9h16.8','M3.6 15h16.8','M11.5 3a17 17 0 0 0 0 18','M12.5 3a17 17 0 0 1 0 18'],info:['M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0','M12 8h.01','M12 11v5.5'],gear:['M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065','M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0'],shield:['M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06','M15 19l2 2l4 -4'],dice:['M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z','M8.5 8.5h.01','M15.5 8.5h.01','M12 12h.01','M8.5 15.5h.01','M15.5 15.5h.01'],tag:['M3 3h9l9 9l-9 9l-9 -9z','M6.5 8a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0'],check:['M5 12l5 5l10 -10'],none:['M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0','M5.7 5.7l12.6 12.6']};
+const svg=(k,s,sw=2,extra='')=>`<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k].map(d=>`<path d="${d}"/>`).join('')}${extra}</svg>`;
+const reset='margin:0;font:inherit;box-shadow:none;transform:none;outline-offset:2px;';
+const btn=C=>`${reset}width:44px;height:44px;border:0;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;background:transparent;color:${C.ink}`;
+const HOLD=1500;let holdT=null,holdStart=0;
+function sheet(C){paint($('sheet'),`background:${C.paper};color:${C.ink}`);
+const code=(c,on)=>`<span style="display:inline-flex;padding:2px;border-radius:8px;background:${C.sunken}"><span style="height:22px;width:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;letter-spacing:.06em;background:${on?C.raised:'transparent'};color:${on?C.onRaised:C.quiet}">${c}</span></span>`;
+$('lang').innerHTML=code('PL',true)+`<span class="g">${svg('world',30,1.6)}</span>`+code('EN',false);
+paint($('atlas'),`position:relative;height:66px;display:flex;align-items:center;justify-content:center;gap:22px;border-top:.5px solid ${C.line};color:${C.ink}`);
+/* the lit spot inside the map glyph: a filled dot with a soft ring */
+const spot=`<circle cx="12" cy="11.5" r="1.9" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r="4.2" stroke-width="1" stroke-dasharray="1.2 1.6"/>`;
+$('atlas').innerHTML=`<button type="button" id="exp" aria-label="Export atlas" style="${btn(C)}">${svg('download',24,1.8)}</button>
+<span style="display:flex;flex-direction:column;align-items:center;gap:1px"><span class="g">${svg('atlas',34,1.6,spot)}</span><span class="n" style="font-size:11px;font-weight:600;color:${C.quiet}">${st.cells.size}</span></span>
+<button type="button" id="imp" aria-label="Import atlas" style="${btn(C)}">${svg('upload',24,1.8)}</button>
+<button type="button" id="clr" aria-label="Clear atlas (hold)" style="${btn(C)};position:absolute;right:10px;top:11px;color:${C.quiet}"><svg id="ring" viewBox="0 0 44 44" width="44" height="44" style="position:absolute;left:0;top:0" aria-hidden="true"><circle cx="22" cy="22" r="19" fill="none" stroke="${C.ink}" stroke-width="2" stroke-dasharray="0 120" stroke-linecap="round" transform="rotate(-90 22 22)"/></svg>${svg('trash',20,1.8)}</button>`;
+paint($('about'),`${reset}width:100%;height:58px;border:0;border-top:.5px solid ${C.line};display:flex;align-items:center;justify-content:center;gap:10px;padding:0;color:${C.ink};background:transparent`);
+$('about').innerHTML=`<span class="g" style="opacity:.35">${svg('dice',13)}</span><span class="g" style="opacity:.6">${svg('gear',17)}</span><span class="g" style="margin:0 4px">${svg('info',34,1.6)}</span><span class="g" style="opacity:.6">${svg('shield',17)}</span><span class="g" style="opacity:.35">${svg('tag',13)}</span>`;
+$('exp').onclick=()=>toast(C,'check','');
+$('imp').onclick=()=>{const before=st.cells.size;for(let i=0;i<14;i++)record(-2600+i*160,-1400+i*90,'open');render();toast(C,'check','+'+(st.cells.size-before))};
+const clr=$('clr'),ring=clr.querySelector('circle');
+const stop=()=>{cancelAnimationFrame(holdT);holdT=null;ring.setAttribute('stroke-dasharray','0 120')};
+clr.onpointerdown=e=>{e.preventDefault();holdStart=performance.now();const tick=()=>{const p=Math.min(1,(performance.now()-holdStart)/HOLD);ring.setAttribute('stroke-dasharray',`${(p*119.4).toFixed(1)} 120`);if(p>=1){stop();if(navigator.vibrate)navigator.vibrate(6);st.cells.clear();render();toast(C,'check','0');return}holdT=requestAnimationFrame(tick)};holdT=requestAnimationFrame(tick)};
+clr.onpointerup=clr.onpointerleave=clr.onpointercancel=()=>holdT&&stop()}
+function paint(el,css){el.setAttribute('style',css)}
+let tt=null;function toast(C,icon,text){const t=$('toast');paint(t,`background:${C.ink};color:${C.paper}`);t.className='toast on';t.innerHTML=svg(icon,20)+(text?`<span class="n">${text}</span>`:'');clearTimeout(tt);tt=setTimeout(()=>t.className='toast',1600)}
+$('bad').onclick=()=>toast(st.dark?NIGHT:DAY,'none','');
+$('bd').onclick=()=>{st.dark=false;render()};$('bn').onclick=()=>{st.dark=true;render()};
+$('mo').onclick=()=>{st.mode='open';render()};$('ma').onclick=()=>{st.mode='arrival';render()};
+render();
+</script>
+</body>
+</html>
