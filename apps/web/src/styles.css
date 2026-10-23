@@ -222,58 +222,12 @@ button {
   line-height: 1;
   transition: transform 0.15s ease;
 }
-.marker.is-now .marker__pin {
-  background: var(--cat);
-  /* Running now: filled pin with a quiet halo. Static on purpose: calm, and no redraws. */
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--paper) 95%, transparent),
-    0 0 0 6px color-mix(in srgb, var(--cat) 28%, transparent),
-    var(--shadow-sm);
-}
 .marker.is-selected .marker__pin {
   transform: rotate(-45deg) scale(1.25);
 }
 .marker__pin > span {
   display: block;
   transform: rotate(45deg);
-}
-/* Several events at one place (screenings, stages): one pin with a count. Positioned against the
-   marker, which MapLibre keeps position: absolute (never override that: pins would drift on zoom). */
-.marker__count {
-  position: absolute;
-  top: -8px;
-  right: -10px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 999px;
-  border: 2px solid var(--paper);
-  background: var(--ink);
-  color: var(--paper);
-  font:
-    700 11px/16px system-ui,
-    sans-serif;
-  text-align: center;
-}
-/* Nearby places merged at this zoom; tapping zooms in. */
-.marker--cluster {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 3px solid var(--paper);
-  background: var(--ink);
-  color: var(--paper);
-  font:
-    800 14px/1 system-ui,
-    sans-serif;
-  box-shadow:
-    0 0 0 5px color-mix(in srgb, var(--ink) 25%, transparent),
-    var(--shadow-sm);
-}
-.marker--cluster.is-now {
-  box-shadow:
-    0 0 0 5px color-mix(in srgb, var(--live) 35%, transparent),
-    var(--shadow-sm);
 }
 /* A tapped spot: "Search from here" floats above its pin. */
 .candidate {
@@ -1786,30 +1740,6 @@ label.choice input {
 }
 .row__title .badge--flag {
   margin-left: 6px;
-}
-.marker.is-flagged {
-  /* Above neighbouring pins so the warning badge is never covered. */
-  z-index: 5;
-}
-.marker.is-flagged .marker__pin {
-  filter: saturate(0.4);
-}
-.marker.is-flagged::after {
-  content: '!';
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  display: grid;
-  place-items: center;
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--paper);
-  border-radius: 50%;
-  background: var(--warn-ink);
-  color: var(--paper);
-  font:
-    800 10px/1 system-ui,
-    sans-serif;
 }
 .choices__title {
   padding: 0;

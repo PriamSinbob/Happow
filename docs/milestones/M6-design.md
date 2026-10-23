@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
+**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
 **Visual reference:** `docs/design/` (interactive prototype, exact range icons, README listing what is normative). Slices E to H match it; where this spec's words and the prototype differ, ask the owner.
 
@@ -17,8 +17,8 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | A     | §14                     | Default venue for single-venue sources                   | —     | merged (#9)                              |
 | B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest     | —     | merged (#10)                             |
 | C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | merged (#12)                             |
-| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | in review (#13)                          |
-| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  |                                          |
+| D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | merged (#13)                             |
+| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  | in review (#14)                          |
 | F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  |                                          |
 | G     | §4.4 UI, §7             | Family-mode filter and chip; dice                        | C, F  |                                          |
 | H     | §6                      | Lit map and the local atlas                              | F     |                                          |
@@ -96,6 +96,26 @@ Plan agreed with the owner on 2026-10-22 (pure black night land; settings on the
   - The night theme gets the black land (`#000000`); `#050505` stays a config change if OLED smear shows on test devices.
 - **Out of scope:** pin glyphs, rings and sizes (E), the map-screen layout (F), the veil and lit areas (H), account-gated presets (§8).
 - **Steps and pushes:** (1) this plan; (2) config + core helpers + contrast test; (3) CSS tokens and day theme in the chrome; (4) night theme, auto switching and settings; (5) basemap recolour; (6) spec Status and "Built (slice D)" note under §3.
+
+### Slice E: pins on one symbol layer
+
+Plan agreed with the owner on 2026-10-22 (glyphs drawn in code for now; a designed set may replace them). Branch `m6-pins`, pushed after each step.
+
+- **Scope.** §4.1 and §4.3, plus the age badge from §4.4. Event pins only: edge dots, rail, scrubber and list overlay are slice F; hotspot and outside-radius bubbles stay DOM markers until F.
+- **One GeoJSON source + symbol layers** replace the per-event DOM `maplibregl.Marker`s in `MapView`:
+  - a `pins` GeoJSON source rebuilt from the events on data change and on the minute clock (no per-frame work);
+  - layers: ring (live only), pin body, glyph, count badge, age badge, all `symbol` layers with `symbol-sort-key` live > soon > later, so live pins win collisions;
+  - taps via `queryRenderedFeatures` on the pin layers; selection by a feature-state / property, ×1.2 and on top.
+- **Pin states** (core helper `pinState(event, now, arrival)`, unit-tested): `live` (34 px, filled live hue, `--on-live` glyph, ring), `soon` (starts within 60 min: 26 px, paper fill, ink glyph, live-hue outline), `later` (10 px muted dot, no glyph), `outside` (beyond the radius: ×0.85, opacity ×0.5), `late` (`isLate` from slice C: dashed outline). Multi-day ranges show future days as `later` dots.
+- **Ring = time left.** 12 ring states in 10-minute steps on the 2 h scale (full at ≥ 120 min, 8 % minimum stub); a dotted full ring for `endEstimated` ("till late"). Core helper `ringStep(event, now)`.
+- **Sprites, generated at runtime** (no binary assets in the repo): a small canvas builder in `apps/web/src/pinSprites.ts` draws SDF-style images and adds them with `map.addImage(id, img, { sdf: true })`, so colour stays a paint property (`icon-color` from the theme tokens; no rebuild on theme change):
+  - pin body (filled disc, outlined disc, dashed outline), 12 ring arcs + dotted ring, small dot;
+  - one consistent monochrome line glyph per category (14 glyphs, simple strokes drawn in code from config `icon` ids: the emoji icons in `config/categories.json` get a `glyph` id alongside; emoji stay for the list until F).
+- **Age badge.** `ageMin ≥ 16` gets a small numeral badge ("18+") at the upper right: a text-field symbol on the pin, no translation needed.
+- **Grouping.** Today's same-place grouping and zoom clustering move to a pure function feeding the GeoJSON (count badge kept); MapLibre's own collision then thins the rest by priority.
+- **Tests.** Core: `pinState`, `ringStep`, sort keys. Web: the GeoJSON builder (features, properties, sort keys) on fixtures; sprite ids complete for every category.
+- **Out of scope:** colours of the list and cards (F), family-mode filtering (G).
+- **Steps and pushes:** (1) this plan; (2) core helpers + tests; (3) GeoJSON builder + tests; (4) sprites; (5) MapView switch to symbol layers, taps and selection; (6) spec report and PR.
 
 ### Working notes
 
@@ -228,6 +248,13 @@ Add `entry: 'fixed' | 'open'` and `graceMin` to the event model. Category defaul
 - **Sprite.** An SDF glyph set (one consistent line-icon set, no emoji) plus 12 ring states (10-min steps on the 2 h scale).
 - **Collision priority.** `symbol-sort-key` ranks live above soon above later, so live pins win collisions.
 - **Why this is required.** The rail↔zoom coupling makes every rail drag a continuous zoom, and area snapshots allow up to 1,000 events.
+- **Built** (slice E, 2026-10-23): §4.1, §4.3 and the §4.4 age badge.
+  - **Core** (`packages/core/src/pins.ts`): `pinState` (live / soon / later, outside, late from slice C, ring step, dotted for `endEstimated`, sort key) and `ringStep` (full at ≥ 120 min, 10-minute steps, a stub to the end).
+  - **Sprites** (`apps/web/src/pinSprites.ts`): drawn in code as SDF images (TinySDF method), so colours are paint properties and day/night or presets never rebuild them: disc, outline, dashed outline, 12 ring steps, dotted ring, and 14 line glyphs (`glyph` per category in `config/categories.json`; owner's call to draw them for now).
+  - **Layers** (`apps/web/src/pinLayers.ts`): one `pins` GeoJSON source and symbol layers for ring, disc, outline, glyph, count, flag mark and age badge. Sizes 34 / 26 / 10 px, outside ×0.85 at half opacity, selected ×1.2 on top. Only live pins use the live hue.
+  - **Data** (`apps/web/src/pins.ts`): `pinFeatures` turns places and zoom clusters into features; a place shows its most urgent event, the count, the highest 16+/18+ badge and a "!" when a single event is flagged. Taps use `queryRenderedFeatures`.
+  - Skipped: collision thinning. Pins overlap freely and the draw order (`symbol-sort-key`) puts live over soon over later; the existing 48 px zoom clustering keeps them apart. Hotspot, outside-radius bubbles, the pinned point and "Going there" keep DOM markers until slice F.
+  - Open: pins are no longer focusable buttons, so screen-reader users reach events through the list (the list button stays on the map screen); a keyboard path on the map is for slice F. Glyphs may be replaced by a designed set. A "number but found null" console warning comes from the Positron style itself, not from these layers.
 
 ### 4.4 Age limits and family mode
 

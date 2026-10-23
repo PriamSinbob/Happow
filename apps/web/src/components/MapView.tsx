@@ -7,17 +7,19 @@ import {
   circleRing,
   compassPoint,
   distanceM,
-  isRunning,
   snapRadiusUp,
   type DensityCluster,
   type LatLng,
   type NearbyEvent,
 } from '@happow/core';
-import { categoriesById, config, region } from '../config';
+import { config, region } from '../config';
 import { formatDistance } from '../format';
 import type { Guidance } from '../hooks/useGuidance';
 import { useI18n, type MessageKey } from '../i18n';
 import { useMapTheme, type OwnLayerPaint } from '../mapTheme';
+import { addPinLayers, applyPinPaint, PIN_HIT_LAYERS, PIN_SOURCE, pinPaint } from '../pinLayers';
+import { pinFeatures } from '../pins';
+import { useTheme } from '../theme';
 
 interface Props {
   center: LatLng;
@@ -225,9 +227,11 @@ export function MapView(props: Props) {
   const { t, lang } = useI18n();
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  const markers = useRef(
-    new Map<string, { marker: maplibregl.Marker; el: HTMLButtonElement; ids: string[] }>(),
-  );
+  const groupsRef = useRef<MarkerItem[]>([]);
+  const [styleReady, setStyleReady] = useState(0);
+  const { tokens, preset, name: themeName } = useTheme();
+  const themeRef = useRef({ tokens, preset, name: themeName });
+  themeRef.current = { tokens, preset, name: themeName };
   const hintMarkers = useRef<maplibregl.Marker[]>([]);
   const userMoved = useRef(false);
   const lastFit = useRef<{
@@ -287,6 +291,10 @@ export function MapView(props: Props) {
           paint: { 'line-width': 2, 'line-dasharray': [2, 1.5] },
         });
       }
+      addPinLayers(m);
+      const th = themeRef.current;
+      applyPinPaint(m, pinPaint(th.tokens, th.preset, th.name));
+      setStyleReady((n) => n + 1);
     });
     m.once('load', () => {
       // Compact attribution starts expanded on wide viewports; start it collapsed (the ⓘ opens it).
@@ -304,13 +312,28 @@ export function MapView(props: Props) {
     // (inside the circle too, for fine adjustment). Taps on any marker are theirs.
     m.on('click', (e) => {
       if ((e.originalEvent.target as HTMLElement).closest('.maplibregl-marker')) return;
+      const hit = m.getLayer('pin-disc')
+        ? m.queryRenderedFeatures(e.point, { layers: PIN_HIT_LAYERS })[0]
+        : undefined;
+      if (hit) {
+        const key = hit.properties.key as string;
+        const group = groupsRef.current.find((g) => g.key === key);
+        if (!group) return;
+        if (group.kind === 'cluster') {
+          m.easeTo({ center: group.point, zoom: Math.min(m.getZoom() + 2, config.map.maxZoom) });
+          return;
+        }
+        const ids = group.events.map((ev) => ev.id);
+        if (ids.length === 1) latest.current.onSelect(ids[0]!);
+        else latest.current.onSelectPlace(ids);
+        return;
+      }
       if (latest.current.cardOpen) latest.current.onSelect(null);
       else setCandidate({ lat: e.lngLat.lat, lng: e.lngLat.lng });
     });
     return () => {
       m.remove();
       map.current = null;
-      markers.current.clear();
       hintMarkers.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -431,86 +454,26 @@ export function MapView(props: Props) {
     };
   }, []);
 
-  // Markers: one pin per place (a count badge when several events share it), and places that would
-  // overlap at this zoom merged into a bubble that zooms in. Diffed by key so pins don't flicker.
+  // Pins: one GeoJSON source drawn by symbol layers (§4.3). Places that would overlap at this
+  // zoom merge into a count bubble that zooms in; rebuilt on data, selection, minute or zoom.
   useEffect(() => {
-    const m = map.current;
-    if (!m) return;
-    const seen = new Set<string>();
-    for (const item of groupMarkers(props.events, zoom)) {
-      seen.add(item.key);
-      const first = item.events[0]!;
-      const cat = categoriesById.get(first.categoryIds[0]!);
-      let entry = markers.current.get(item.key);
-      if (!entry) {
-        const el = document.createElement('button');
-        el.type = 'button';
-        el.className = item.kind === 'cluster' ? 'marker marker--cluster' : 'marker';
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (item.kind === 'cluster') {
-            m.easeTo({ center: item.point, zoom: Math.min(zoom + 2, config.map.maxZoom) });
-            return;
-          }
-          // The place keeps its pin while its events change; read the current ones.
-          const ids = markers.current.get(item.key)?.ids ?? [];
-          if (ids.length === 1) latest.current.onSelect(ids[0]!);
-          else latest.current.onSelectPlace(ids);
-        });
-        const marker = new maplibregl.Marker({
-          element: el,
-          anchor: item.kind === 'cluster' ? 'center' : 'bottom',
-        })
-          .setLngLat(item.point)
-          .addTo(m);
-        entry = { marker, el, ids: [] };
-        markers.current.set(item.key, entry);
-      }
-      entry.ids = item.events.map((ev) => ev.id);
-      const count = item.events.length;
-      const icon = item.kind === 'cluster' ? '' : (cat?.icon ?? '📍');
-      const look = `${icon}|${count}`;
-      if (entry.el.dataset.look !== look) {
-        entry.el.dataset.look = look;
-        if (item.kind === 'cluster') entry.el.textContent = String(count);
-        else {
-          const pin = Object.assign(document.createElement('span'), { className: 'marker__pin' });
-          pin.append(Object.assign(document.createElement('span'), { textContent: icon }));
-          entry.el.replaceChildren(pin);
-          if (count > 1)
-            entry.el.append(
-              Object.assign(document.createElement('span'), {
-                className: 'marker__count',
-                textContent: String(count),
-              }),
-            );
-        }
-      }
-      const selected = item.events.some((ev) => ev.id === props.selectedId);
-      entry.el.style.setProperty('--cat', cat?.color ?? 'var(--muted)');
-      entry.el.setAttribute(
-        'aria-label',
-        item.kind === 'cluster'
-          ? t('place.zoom', { count })
-          : count === 1
-            ? first.title
-            : t('place.label', { place: item.label ?? t('guide.place'), count }),
-      );
-      entry.el.classList.toggle(
-        'is-now',
-        item.events.some((ev) => isRunning(ev, props.now)),
-      );
-      entry.el.classList.toggle('is-selected', selected);
-      entry.el.classList.toggle('is-flagged', count === 1 && !!first.flag);
-      entry.el.style.zIndex = selected ? '10' : '';
-    }
-    for (const [key, entry] of markers.current) {
-      if (!seen.has(key)) {
-        entry.marker.remove();
-        markers.current.delete(key);
-      }
-    }
-  }, [props.events, props.selectedId, props.now, zoom, t]);
+    const groups = groupMarkers(props.events, zoom);
+    groupsRef.current = groups;
+    const src = map.current?.getSource(PIN_SOURCE) as GeoJSONSource | undefined;
+    src?.setData(
+      pinFeatures(groups, {
+        now: props.now,
+        center: props.center,
+        radiusM: props.radiusM,
+        selectedId: props.selectedId,
+      }),
+    );
+  }, [props.events, props.selectedId, props.now, props.center, props.radiusM, zoom, styleReady]);
+
+  // Day/night or preset changed: pin colours are paint properties, no sprite rebuild.
+  useEffect(() => {
+    if (map.current) applyPinPaint(map.current, pinPaint(tokens, preset, themeName));
+  }, [tokens, preset, themeName, styleReady]);
 
   // Outside-radius bubbles (tap to widen the circle) and the hotspot marker.
   useEffect(() => {
