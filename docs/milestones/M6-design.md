@@ -18,8 +18,8 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest     | —     | merged (#10)                             |
 | C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | merged (#12)                             |
 | D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | merged (#13)                             |
-| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  | in review (#14)                          |
-| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  |                                          |
+| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  | merged (#14)                             |
+| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  | in progress (`m6-layout`)                |
 | G     | §4.4 UI, §7             | Family-mode filter and chip; dice                        | C, F  |                                          |
 | H     | §6                      | Lit map and the local atlas                              | F     |                                          |
 | —     | §8, §9                  | Accounts and premium; co-presence                        | —     | out of M6 (build later / after the core) |
@@ -116,6 +116,29 @@ Plan agreed with the owner on 2026-10-22 (glyphs drawn in code for now; a design
 - **Tests.** Core: `pinState`, `ringStep`, sort keys. Web: the GeoJSON builder (features, properties, sort keys) on fixtures; sprite ids complete for every category.
 - **Out of scope:** colours of the list and cards (F), family-mode filtering (G).
 - **Steps and pushes:** (1) this plan; (2) core helpers + tests; (3) GeoJSON builder + tests; (4) sprites; (5) MapView switch to symbol layers, taps and selection; (6) spec report and PR.
+
+### Slice F: map-screen layout
+
+Plan agreed with the owner on 2026-10-23. Branch `m6-layout`. The top bar, window chips and bottom panel give way to the prototype's layout (`docs/design/prototype.html`).
+
+- **Top-left: live counter `● N`** (§5). Live, inside the reach, not dashed. Tap toggles live-only; the counter fills while it is on. It always counts what is on now, whatever the range (§13.5).
+- **Top-right: settings.** One icon button, no text (owner's call: tidy chrome). It opens the former filter sheet, renamed Ustawienia / Settings: a Filters segment first (categories, price), then rows below it for "Dodaj wydarzenie / Add event", the language switch and "O aplikacji / About" (theme and colour stay in About). The dice joins it in slice G.
+- **Removed from the map screen:** brand pill, language chip, add button in the top bar, summary sentence, Now / 2 h / 6 h / Today chips, radius slider and scale, Map/List switch.
+- **Right rail (reach).** 2 px track, 28 px thumb, value pill beside it; ~20 px from the edge, lower-middle. Detents 100 / 250 / 500 / 1000 / 2000 / 5000 m on a log scale; the pill shows walking minutes up to 2 km, then km; `vibrate(6)` per detent; snaps to the nearest detent on release. `role="slider"`, arrow keys step detents.
+  - **Radius↔zoom coupling.** While dragging, the map zooms so the reach keeps its size on screen; events are re-filtered only when the detent changes.
+  - **City mode via pinch** (owner: OK). Pinching out past the 5 km view sets a city reach (`radius.maxM`, the 25 km snapshot) and the pill shows "miasto / city"; dragging the rail returns to ≤ 5 km.
+- **Below the rail:** locate (reach 500 m, time now, drops the "from here" point) and the list button (list icon on the map, map icon in the list).
+- **Bottom: time line** (§5, §13.2, §13.3). Range icons from `docs/design/icons/range-*.svg` at its left end, 36 px touch area, active one ink-filled, tapping it again shows the whole range.
+  - Today: now → midnight, hour ticks (numerals), 30-min histogram, snap to now within 10 min, else 5-min steps. Pins use `pinState(event, t)`.
+  - 7 / 14 days: day ticks (date numerals), per-day histogram; whole range by default as 10 px dots; dragging selects a day, whose events get 26 px glyph pins and the other days hide.
+  - Config: `timeWindows` becomes today / week / later; `defaultTimeWindow` "now" means Today at the current time. A saved now / 2h / 6h falls back to it. No extra requests: scrubbing filters the loaded snapshot.
+- **List overlay (style B).** A panel over the map, rows as in the prototype; tapping a row returns to the map with that pin selected. Day headers and dated times for 7 / 14 days (§13.5).
+- **Map.** Long-press = plan from here (a plain tap closes a card or picks a pin). Taps on pins get a hit tolerance, so 10 px dots are tappable.
+- **Edge dots** replace chevrons: 10 px dots for off-screen events clamped to the screen edge, live hue when live; the 24 nearest only (owner: no need for every event beyond the circle; zoom out for that). Tap pans to the event.
+- **Hotspot** stays a DOM marker; the outside-radius count bubbles go (faded outside pins and edge dots show what lies beyond the reach) (owner: OK).
+- **Core helpers, unit-tested:** rail position ↔ metres and nearest detent, reach label, time-line snapping, histogram bins (30 min and per day, across the 25 Oct DST change), edge-dot clamping.
+- **Out of scope:** family chip and dice (G), veil and lit areas (H).
+- **Steps:** (1) this plan; (2) core helpers + tests; (3) config, filter state and the time line; (4) rail with zoom coupling, locate; (5) counter, settings sheet, list overlay; (6) long-press, pin hit tolerance and edge dots; (7) spec report and PR.
 
 ### Working notes
 
