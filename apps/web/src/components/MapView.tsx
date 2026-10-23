@@ -69,7 +69,7 @@ const EDGE = 10;
 const HALF_W = 52;
 const HALF_H = 16;
 const { minM, maxM } = config.app.radius;
-const { searchRadiusM, maxChevrons } = config.app.density;
+const { searchRadiusM, maxEdgeDots: maxChevrons } = config.app.density;
 /** Without panning, re-fit only once the user has walked this far (GPS jitter is smaller). */
 const REFIT_AFTER_M = 30;
 

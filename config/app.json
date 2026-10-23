@@ -5,7 +5,8 @@
   "radius": {
     "minM": 100,
     "maxM": 25000,
-    "defaultM": 500
+    "defaultM": 500,
+    "detentsM": [100, 250, 500, 1000, 2000, 5000]
   },
   "walkingSpeedMPerMin": 80,
   "arrival": {
@@ -22,7 +23,7 @@
   "density": {
     "searchRadiusM": 5000,
     "hotspotMinEvents": 3,
-    "maxChevrons": 6
+    "maxEdgeDots": 24
   },
   "refresh": {
     "dataMinutes": 5,
@@ -52,18 +53,6 @@
   },
   "timeWindows": [
     {
-      "id": "now",
-      "hours": 0
-    },
-    {
-      "id": "2h",
-      "hours": 2
-    },
-    {
-      "id": "6h",
-      "hours": 6
-    },
-    {
       "id": "today",
       "endOfDay": true
     },
@@ -76,6 +65,11 @@
       "days": 14
     }
   ],
+  "timeline": {
+    "snapNowMin": 10,
+    "stepMin": 5,
+    "binMin": 30
+  },
   "defaultTimeWindow": "today",
   "dedup": {
     "startToleranceMin": 30,
