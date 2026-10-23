@@ -49,3 +49,40 @@ export function Icon({
     </svg>
   );
 }
+
+/**
+ * Time-range icons, exactly as `docs/design/icons/range-*.svg`: a calendar with one filled day
+ * (Today), one filled row (7 days) or two filled rows (14 days). Decorative: callers provide the
+ * accessible name.
+ */
+export function RangeIcon({ rows, size = 22 }: { rows: 0 | 1 | 2; size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+      <path d="M8 3v3.5M16 3v3.5M3.5 9.5h17" />
+      {rows === 0 && (
+        <rect
+          x="6.6"
+          y="12.4"
+          width="3.8"
+          height="3.8"
+          rx="0.9"
+          fill="currentColor"
+          stroke="none"
+        />
+      )}
+      {rows === 1 && <path d="M7 14h10" strokeWidth={3} />}
+      {rows === 2 && <path d="M7 13h10M7 17h10" strokeWidth={3} />}
+    </svg>
+  );
+}

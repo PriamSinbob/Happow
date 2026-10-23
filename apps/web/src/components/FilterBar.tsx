@@ -1,7 +1,7 @@
 import type { TimeWindow } from '@happow/core';
 import { config } from '../config';
 import { useI18n, type MessageKey } from '../i18n';
-import { Icon } from './Icons';
+import { Icon, RangeIcon } from './Icons';
 
 type T = (key: MessageKey, params?: Record<string, string | number>) => string;
 
@@ -9,6 +9,13 @@ export function windowLabel(t: T, w: TimeWindow): string {
   if ('endOfDay' in w) return t('window.today');
   if ('days' in w) return t('window.days', { days: w.days });
   return w.hours === 0 ? t('window.now') : t('window.hours', { hours: w.hours });
+}
+
+/** Calendar icon for whole-day windows (docs/design/icons): Today, ≤ 7 days, longer. Null for hours. */
+export function windowRows(w: TimeWindow): 0 | 1 | 2 | null {
+  if ('endOfDay' in w) return 0;
+  if ('days' in w) return w.days <= 7 ? 1 : 2;
+  return null;
 }
 
 /** Lower-case phrase for the summary line: "happening now", "next 2 h", "today". */
@@ -31,19 +38,25 @@ export function FilterBar({ window, onWindow, activeCount, onOpenFilters }: Prop
   return (
     <div className="filterbar">
       <div className="chips" role="radiogroup" aria-label={t('window.label')}>
-        {config.app.timeWindows.map((w) => (
-          <button
-            key={w.id}
-            type="button"
-            role="radio"
-            aria-checked={w.id === window.id}
-            className={`chip${w.id === window.id ? ' is-active' : ''}`}
-            onClick={() => onWindow(w.id)}
-          >
-            {'hours' in w && w.hours === 0 && <span className="chip__live" aria-hidden />}
-            {windowLabel(t, w)}
-          </button>
-        ))}
+        {config.app.timeWindows.map((w) => {
+          const rows = windowRows(w);
+          const label = windowLabel(t, w);
+          return (
+            <button
+              key={w.id}
+              type="button"
+              role="radio"
+              aria-checked={w.id === window.id}
+              aria-label={rows === null ? undefined : label}
+              title={rows === null ? undefined : label}
+              className={`chip${rows === null ? '' : ' chip--icon'}${w.id === window.id ? ' is-active' : ''}`}
+              onClick={() => onWindow(w.id)}
+            >
+              {'hours' in w && w.hours === 0 && <span className="chip__live" aria-hidden />}
+              {rows === null ? label : <RangeIcon rows={rows} />}
+            </button>
+          );
+        })}
       </div>
       <button
         type="button"

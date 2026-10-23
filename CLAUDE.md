@@ -6,4 +6,5 @@
 - Secrets only in GitHub Secrets or local `.env` files (never committed); keep `.env.example` current.
 - Each data adapter gets a contract test against recorded fixtures; no live API calls in CI.
 - UI is mobile-first (380 px), polished, Polish and English strings from the start.
+- UI work matches `docs/design/` (interactive prototype and exact icons; see its README). Open the prototype before building a screen; don't redraw its icons or invent alternatives. Deviations need the owner's OK first.
 - End each milestone with a short report: built, skipped, open issues.

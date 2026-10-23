@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Happow Map Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* layout: one centred column: heading, display controls, the phone frame, then what is normative */
+:root{--bg:#f1f1ee;--fg:#17171a;--muted:#625e59;--line:rgba(23,23,26,.14);--panel:#ffffff;--accent:#6a4cf5;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c0c0e;--fg:#ece9e3;--muted:#a0a2a8;--line:rgba(236,233,227,.16);--panel:#17181c;--accent:#8c74ff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c0c0e;--fg:#ece9e3;--muted:#a0a2a8;--line:rgba(236,233,227,.16);--panel:#17181c;--accent:#8c74ff;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans)}
+.page{max-width:760px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+h1{font-size:22px;line-height:1.2;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.lede{margin:6px 0 0;color:var(--muted);font-size:14px;line-height:1.5;max-width:62ch}
+.controls{display:flex;flex-wrap:wrap;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;background:var(--panel)}
+.seg button{border:0;background:transparent;color:var(--fg);font:500 13px var(--sans);height:32px;padding:0 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg button:focus-visible,.hp button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sw{width:10px;height:10px;border-radius:50%;flex:none}
+.stage{display:flex;justify-content:center;min-width:0}
+.hp{position:relative;width:340px;max-width:100%;height:620px;border-radius:36px;overflow:hidden;border:6px solid var(--fg);touch-action:none;user-select:none;-webkit-user-select:none;font-family:var(--sans)}
+.hp *{box-sizing:border-box}
+.pin{position:absolute;cursor:pointer;transition:opacity .25s,transform .2s}
+.ib{position:absolute;z-index:8;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border-style:solid;border-width:.5px;padding:0}
+.rb{position:absolute;z-index:9;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:0;padding:0;background:transparent}
+.n{font-variant-numeric:tabular-nums}
+.row{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer}
+.dayh{padding:8px 12px 4px;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.legend{font-size:12.5px;color:var(--muted);text-align:center;margin:0;line-height:1.5}
+.notes{display:grid;gap:14px;font-size:14px;line-height:1.55;max-width:65ch}
+.notes h2{font-size:15px;margin:0 0 6px}
+.notes ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.notes code{font-family:var(--mono);font-size:12.5px}
+@media (prefers-reduced-motion:reduce){.pin{transition:none}}
+</style>
+</head>
+<body>
+<main class="page">
+<header>
+<h1>Happow map prototype</h1>
+<p class="lede">Design reference for M6 (slices E to H). Drag the right rail to change reach and the bottom line to move in time. The calendar icons switch Today, 7 days and 14 days. Tap pins, the dice and the ● counter. Demo time: Friday 23 October, 16:10.</p>
+</header>
+<div class="controls" aria-label="Display options">
+<div class="seg" role="group" aria-label="Theme"><button id="bd" type="button">Day</button><button id="bn" type="button">Night</button></div>
+<div class="seg" role="group" aria-label="Live colour"><button id="hv" type="button"><span class="sw" style="background:#6A4CF5"></span>Violet</button><button id="hr" type="button"><span class="sw" style="background:#EE2E4E"></span>Red</button><button id="hm" type="button"><span class="sw" style="background:var(--fg)"></span>Mono</button></div>
+</div>
+<div class="stage">
+<div class="hp" id="hp">
+<svg id="map" width="328" height="608" style="position:absolute;left:0;top:0" aria-hidden="true"><defs><mask id="vm" maskUnits="userSpaceOnUse" x="0" y="0" width="328" height="608"><rect width="328" height="608" fill="#fff"/><g id="mblobs"></g><g id="mreach"></g></mask></defs><g id="g0"><g id="parks"><rect x="600" y="300" width="900" height="650" rx="80"/><rect x="-1150" y="-1200" width="700" height="520" rx="90"/><rect x="-430" y="-560" width="380" height="300" rx="60"/></g><path id="riv" fill="none" d="M-6000 900 C-2500 500 -900 1350 900 820 S3200 380 6000 700"/><g id="gmin"></g><g id="gmaj"></g></g><rect id="veil" width="328" height="608" mask="url(#vm)"/></svg>
+<div id="pins"></div>
+<div id="edge"></div>
+<div id="me" style="position:absolute;left:156px;top:272px;width:16px;height:16px;border-radius:50%;border-style:solid;border-width:3px"></div>
+<button id="chip" class="n" type="button" aria-label="Show only what is on now" style="position:absolute;z-index:8;left:12px;top:12px;height:38px;padding:0 14px;border-radius:19px;display:flex;align-items:center;gap:8px;border-style:solid;border-width:.5px;font-size:17px;font-weight:600;cursor:pointer"></button>
+<button class="ib" id="dice" type="button" style="left:278px;top:12px" aria-label="Surprise me"></button>
+<button class="ib" id="filt" type="button" style="left:232px;top:12px" aria-label="Filters"></button>
+<div id="rail" style="position:absolute;z-index:8;left:284px;top:168px;width:44px;height:220px;cursor:ns-resize" role="slider" aria-label="Reach"></div>
+<div id="rpill" class="n" style="position:absolute;z-index:8;height:28px;padding:0 10px;border-radius:14px;display:flex;align-items:center;gap:4px;font-size:13px;border-style:solid;border-width:.5px;pointer-events:none"></div>
+<button class="ib" id="loc" type="button" style="left:287px;top:400px" aria-label="Back to me, now"></button>
+<button class="ib" id="lst" type="button" style="left:287px;top:446px" aria-label="List"></button>
+<div id="list" style="position:absolute;z-index:7;left:10px;right:10px;top:200px;bottom:84px;border-radius:20px;border:.5px solid;overflow-y:auto"></div>
+<div id="card" style="position:absolute;z-index:7;left:10px;right:56px;bottom:84px;border-radius:20px;border:.5px solid;padding:12px"></div>
+<button class="rb" id="r0" type="button" style="left:8px;bottom:12px" aria-label="Today"></button>
+<button class="rb" id="r1" type="button" style="left:46px;bottom:12px" aria-label="7 days"></button>
+<button class="rb" id="r2" type="button" style="left:84px;bottom:12px" aria-label="14 days"></button>
+<div id="scrub" style="position:absolute;z-index:8;left:124px;right:0;bottom:0;height:78px;cursor:ew-resize" role="slider" aria-label="Time"><svg id="ssvg" width="204" height="78" style="position:absolute;left:0;top:0"></svg><div id="spill" class="n" style="position:absolute;top:2px;height:26px;padding:0 10px;border-radius:13px;display:flex;align-items:center;gap:6px;font-size:13px;border-style:solid;border-width:.5px;transform:translateX(-50%);pointer-events:none;white-space:nowrap"></div></div>
+</div>
+</div>
+<p class="legend">Big filled = on now · ring = time left, full at 2 h+ · dotted ring = no fixed end · outlined = starts within 1 h · small dot = later · dashed = late for a fixed start, or closed before you'd arrive · grey map = not yet yours, colour = your reach and places you've been</p>
+<section class="notes">
+<div>
+<h2>Normative (match these)</h2>
+<ul>
+<li>Range icons: calendar frame with one filled day (Today), one filled row (7 days), two filled rows (14 days). Exact geometry in <code>docs/design/icons/</code>; 1.6 stroke, round caps.</li>
+<li>Range icons sit at the left end of the time line. Today steps by hour; 7 and 14 days step by day, with a per-day histogram. Tapping the active icon again shows the whole range.</li>
+<li>Pins: 34 px live with a remaining-time ring (full at 2 h or more, 8 % minimum), 26 px within the hour, 10 px dots later. Outlined in the live colour when starting within the hour; dashed when you'd be late or miss it.</li>
+<li>One live colour, used only for "on now". Violet is the default; Red and Mono are presets. Night land is pure black.</li>
+<li>Chrome positions: live counter top-left, dice and filters top-right, reach rail on the right edge, locate and list below it, list as an overlay over the map.</li>
+</ul>
+</div>
+<div>
+<h2>Illustrative (do not copy)</h2>
+<ul>
+<li>The street grid, river, parks and sample events; the real app draws the MapLibre basemap and live data.</li>
+<li>Line icons for categories and controls are Tabler Icons (MIT), used here as the reference style for the M6 glyph set.</li>
+</ul>
+</div>
+</section>
+</main>
+<script>
+const TI={"music":"<path d=\"M3 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0\"/> <path d=\"M13 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0\"/> <path d=\"M9 17v-13h10v13\"/> <path d=\"M9 8h10\"/>","basket":"<path d=\"M10 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0\"/> <path d=\"M5.001 8h13.999a2 2 0 0 1 1.977 2.304l-1.255 7.152a3 3 0 0 1 -2.966 2.544h-9.512a3 3 0 0 1 -2.965 -2.544l-1.255 -7.152a2 2 0 0 1 1.977 -2.304\"/> <path d=\"M17 10l-2 -6\"/> <path d=\"M7 10l2 -6\"/>","photo":"<path d=\"M15 8h.01\"/> <path d=\"M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12\"/> <path d=\"M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5\"/> <path d=\"M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3\"/>","microphone-2":"<path d=\"M15 12.9a5 5 0 1 0 -3.902 -3.9\"/> <path d=\"M15 12.9l-3.902 -3.899l-7.513 8.584a2 2 0 1 0 2.827 2.83l8.588 -7.515\"/>","masks-theater":"<path d=\"M13.192 9h6.616a2 2 0 0 1 1.992 2.183l-.567 6.182a4 4 0 0 1 -3.983 3.635h-1.5a4 4 0 0 1 -3.983 -3.635l-.567 -6.182a2 2 0 0 1 1.992 -2.183\"/> <path d=\"M15 13h.01\"/> <path d=\"M18 13h.01\"/> <path d=\"M15 16.5c1 .667 2 .667 3 0\"/> <path d=\"M8.632 15.982a4.037 4.037 0 0 1 -.382 .018h-1.5a4 4 0 0 1 -3.983 -3.635l-.567 -6.182a2 2 0 0 1 1.992 -2.183h6.616a2 2 0 0 1 2 2\"/> <path d=\"M6 8h.01\"/> <path d=\"M9 8h.01\"/> <path d=\"M6 12c.764 -.51 1.528 -.63 2.291 -.36\"/>","tools-kitchen-2":"<path d=\"M19 3v12h-5c-.023 -3.681 .184 -7.406 5 -12m0 12v6h-1v-3m-10 -14v17m-3 -17v3a3 3 0 1 0 6 0v-3\"/>","run":"<path d=\"M11.007 5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\"/> <path d=\"M4 17l5 1l.75 -1.5\"/> <path d=\"M15 21v-4l-4 -3l1 -6\"/> <path d=\"M7 12v-3l5 -1l3 3l3 1\"/>","confetti":"<path d=\"M4 5h2\"/> <path d=\"M5 4v2\"/> <path d=\"M11.5 4l-.5 2\"/> <path d=\"M18 5h2\"/> <path d=\"M19 4v2\"/> <path d=\"M15 9l-1 1\"/> <path d=\"M18 13l2 -.5\"/> <path d=\"M18 19h2\"/> <path d=\"M19 18v2\"/> <path d=\"M14 16.518l-6.518 -6.518l-4.39 9.58a1 1 0 0 0 1.329 1.329l9.579 -4.39\"/>","movie":"<path d=\"M4 6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12\"/> <path d=\"M8 4l0 16\"/> <path d=\"M16 4l0 16\"/> <path d=\"M4 8l4 0\"/> <path d=\"M4 16l4 0\"/> <path d=\"M4 12l16 0\"/> <path d=\"M16 8l4 0\"/> <path d=\"M16 16l4 0\"/>","packages":"<path d=\"M7 16.5l-5 -3l5 -3l5 3v5.5l-5 3l0 -5.5\"/> <path d=\"M2 13.5v5.5l5 3\"/> <path d=\"M7 16.545l5 -3.03\"/> <path d=\"M17 16.5l-5 -3l5 -3l5 3v5.5l-5 3l0 -5.5\"/> <path d=\"M12 19l5 3\"/> <path d=\"M17 16.5l5 -3\"/> <path d=\"M12 13.5v-5.5l-5 -3l5 -3l5 3v5.5\"/> <path d=\"M7 5.03v5.455\"/> <path d=\"M12 8l5 -3\"/>","disc":"<path d=\"M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0\"/> <path d=\"M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\"/> <path d=\"M7 12a5 5 0 0 1 5 -5\"/> <path d=\"M12 17a5 5 0 0 0 5 -5\"/>","horse-toy":"<path d=\"M3.5 17.5c5.667 4.667 11.333 4.667 17 0\"/> <path d=\"M19 18.5l-2 -8.5l1 -2l2 1l1.5 -1.5l-2.5 -4.5c-5.052 .218 -5.99 3.133 -7 6h-6a3 3 0 0 0 -3 3\"/> <path d=\"M5 18.5l2 -9.5\"/> <path d=\"M8 20l2 -5h4l2 5\"/>","dice-5":"<path d=\"M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14\"/> <path d=\"M8 8.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0\" fill=\"currentColor\"/> <path d=\"M15 8.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0\" fill=\"currentColor\"/> <path d=\"M15 15.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0\" fill=\"currentColor\"/> <path d=\"M8 15.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0\" fill=\"currentColor\"/> <path d=\"M11.5 12a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0\" fill=\"currentColor\"/>","adjustments-horizontal":"<path d=\"M12 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\"/> <path d=\"M4 6l8 0\"/> <path d=\"M16 6l4 0\"/> <path d=\"M6 12a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\"/> <path d=\"M4 12l2 0\"/> <path d=\"M10 12l10 0\"/> <path d=\"M15 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\"/> <path d=\"M4 18l11 0\"/> <path d=\"M19 18l1 0\"/>","current-location":"<path d=\"M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0\"/> <path d=\"M4 12a8 8 0 1 0 16 0a8 8 0 1 0 -16 0\"/> <path d=\"M12 2l0 2\"/> <path d=\"M12 20l0 2\"/> <path d=\"M20 12l2 0\"/> <path d=\"M2 12l2 0\"/>","list":"<path d=\"M9 6l11 0\"/> <path d=\"M9 12l11 0\"/> <path d=\"M9 18l11 0\"/> <path d=\"M5 6l0 .01\"/> <path d=\"M5 12l0 .01\"/> <path d=\"M5 18l0 .01\"/>","map":"<path d=\"M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13\"/> <path d=\"M9 4v13\"/> <path d=\"M15 7v13\"/>","walk":"<path d=\"M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\"/> <path d=\"M7 21l3 -4\"/> <path d=\"M16 21l-2 -4l-3 -3l1 -6\"/> <path d=\"M6 12l2 -3l4 -1l3 3l3 1\"/>","clock":"<path d=\"M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0\"/> <path d=\"M12 7v5l3 3\"/>","hourglass":"<path d=\"M6.5 7h11\"/> <path d=\"M6.5 17h11\"/> <path d=\"M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1\"/> <path d=\"M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1\"/>","door-enter":"<path d=\"M13 12v.01\"/> <path d=\"M3 21h18\"/> <path d=\"M5 21v-16a2 2 0 0 1 2 -2h6m4 10.5v7.5\"/> <path d=\"M21 7h-7m3 -3l-3 3l3 3\"/>","door-off":"<path d=\"M3 21h18\"/> <path d=\"M6 21v-15\"/> <path d=\"M7.18 3.175c.25 -.112 .528 -.175 .82 -.175h8a2 2 0 0 1 2 2v9\"/> <path d=\"M18 18v3\"/> <path d=\"M3 3l18 18\"/>","clock-exclamation":"<path d=\"M20.986 12.502a9 9 0 1 0 -5.973 7.98\"/> <path d=\"M12 7v5l3 3\"/> <path d=\"M19 16v3\"/> <path d=\"M19 22v.01\"/>","sun":"<path d=\"M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0\"/> <path d=\"M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7\"/>","moon":"<path d=\"M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008\"/>","arrows-diagonal":"<path d=\"M16 4l4 0l0 4\"/> <path d=\"M14 10l6 -6\"/> <path d=\"M8 20l-4 0l0 -4\"/> <path d=\"M4 20l6 -6\"/>"};
+const W=328,H=608,cx=164,cy=280,R=116,NOW=970,X0=8,XW=186,RT=12,RH=196;
+const DAY={bg:'#F1ECE2',minor:'#E3DACA',major:'#FFFFFF',water:'#A8CBDF',park:'#CDE2B4',ink:'#17171A',muted:'#86807A',paper:'#FBFAF7',line:'rgba(23,23,26,.16)',track:'rgba(23,23,26,.12)',veil:'#E6E6E4',veilA:.74};
+const NIGHT={bg:'#000000',minor:'#1C2230',major:'#2E3647',water:'#123049',park:'#173622',ink:'#ECE9E3',muted:'#80838B',paper:'#1A1D23',line:'rgba(236,233,227,.18)',track:'rgba(236,233,227,.14)',veil:'#000000',veilA:.75};
+const HUE={violet:['#6A4CF5','#8C74FF'],red:['#EE2E4E','#FF4766']};
+const RANGES=[{id:'today',days:1},{id:'week',days:7},{id:'later',days:14}];
+const BASE=new Date(2026,9,23);
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const EV=[['music',-180,-120,930,1080,'Koncert kameralny','Nadodrze','f',0,0],['market',240,60,600,1020,'Targ śniadaniowy','Hala Targowa','o',0,0],['exhibition',-60,300,600,1200,'Miasto nocą','BWA Awangarda','o',0,0],['talk',380,-260,990,1080,'Wykład o mostach','Muzeum Architektury','f',0,0],['theatre',-520,420,1140,1290,'Teatr uliczny','Plac Solny','f',0,0],['food',90,-420,1020,1320,'Food trucki','Wyspa Słodowa','o',0,0],['sport',900,700,1080,1200,'Bieg nocny','Park Szczytnicki','f',0,0],['festival',-1400,-900,840,1380,'Festiwal światła','Hydropolis','o',0,0],['cinema',1600,-300,1215,1350,'Kino plenerowe','Pergola','f',0,0],['garage',-300,-250,540,1080,'Wyprzedaż garażowa','Podwórko Ołbińska','o',0,0],['club',420,300,1320,1680,'Noc klubowa','Łaźnia','o',1,0],['food',-2200,1500,1110,1380,'Kolacja sąsiedzka','Ołbin','o',0,0],['market',150,180,1080,1260,'Nocny targ','Nowy Targ','o',0,0],['music',300,-150,1200,1320,'Kwartet smyczkowy','Oratorium Marianum','f',0,1],['market',-200,350,600,900,'Targ staroci','Plac Solny','o',0,2],['theatre',-450,200,1140,1290,'Wesele','Teatr Polski','f',0,3],['food',120,90,1080,1320,'Wieczór pierogów','Nadodrze','o',0,6],['cinema',700,-500,1215,1350,'Kino nocne','Nowe Horyzonty','f',0,5],['festival',-900,600,720,1320,'Festiwal dyni','Park Południowy','o',0,8],['kids',200,-300,600,720,'Teatrzyk dla dzieci','Biblioteka','f',0,9],['music',2600,1800,1260,1410,'Koncert jazzowy','Łaźnia','f',0,11],['garage',-320,-220,540,960,'Wyprzedaż garażowa','Podwórko Ołbińska','o',0,13]];
+const IC={music:'music',market:'basket',exhibition:'photo',talk:'microphone-2',theatre:'masks-theater',food:'tools-kitchen-2',sport:'run',festival:'confetti',cinema:'movie',garage:'packages',club:'disc',kids:'horse-toy'};
+const DET=[100,250,500,1000,2000,5000];
+const st={dark:false,hue:'violet',r:500,t:NOW,range:0,day:null,sel:null,list:false,liveOnly:false};
+let lastDet=500;
+const $=id=>document.getElementById(id);
+const ico=(n,s)=>`<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TI[n]}</svg>`;
+const rangeIco=(k,s)=>`<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v3.5M16 3v3.5M3.5 9.5h17"/>${k===0?'<rect x="6.6" y="12.4" width="3.8" height="3.8" rx="0.9" fill="currentColor" stroke="none"/>':k===1?'<path d="M7 14h10" stroke-width="3"/>':'<path d="M7 13h10M7 17h10" stroke-width="3"/>'}</svg>`;
+const hm=m=>{m=Math.round(m);return Math.floor(m/60)%24+':'+String(m%60).padStart(2,'0')};
+const dateOf=d=>{const x=new Date(BASE);x.setDate(BASE.getDate()+d);return x};
+const dayLabel=d=>{const x=dateOf(d);return d===0?'Today':`${DOW[x.getDay()]} ${x.getDate()}.${String(x.getMonth()+1).padStart(2,'0')}`};
+const dist=e=>Math.hypot(e[1],e[2]);
+const walk=e=>Math.max(1,Math.round(dist(e)*1.3/80));
+const ab=(e,i)=>e[9]*1440+e[i];
+const S=(e,t)=>{const s0=ab(e,3),s1=ab(e,4),live=s0<=t&&s1>t,gone=s1<=t,arr=t+walk(e),miss=!gone&&arr>=s1-5,late=!gone&&!miss&&e[7]==='f'&&arr>s0+5,soon=!live&&!gone&&s0-t<=60;return{live,gone,miss,late,dash:miss||late,soon,arr}};
+const rLabel=r=>r<=2000?ico('walk',14)+Math.max(1,Math.round(r/80))+' min':Math.round(r/1000)+' km';
+(function(){const NS='http://www.w3.org/2000/svg';[[12,'gmin',200],[102,'gmin',200],[12,'gmaj',800],[102,'gmaj',800]].forEach(([a,g,s])=>{const r=a*Math.PI/180,dx=Math.cos(r),dy=Math.sin(r),nx=-dy,ny=dx;for(let i=-30;i<=30;i++){const o=i*s;if(s===200&&i%4===0)continue;const l=document.createElementNS(NS,'line');l.setAttribute('x1',o*nx-7000*dx);l.setAttribute('y1',o*ny-7000*dy);l.setAttribute('x2',o*nx+7000*dx);l.setAttribute('y2',o*ny+7000*dy);l.setAttribute('vector-effect','non-scaling-stroke');$(g).appendChild(l)}});
+const BL=[[-220,-120,300],[160,230,240],[-540,460,260],[-1400,-900,340],[430,-330,200],[920,720,220]],SUB=[[0,0,1],[.4,-.24,.72],[-.36,.3,.78],[.12,.44,.62],[-.2,-.42,.58]],STEP=[1.15,.95,.75,.55];let mb='';BL.forEach(([x,y,r])=>SUB.forEach(([ox,oy,f])=>STEP.forEach(s=>{mb+=`<circle cx="${x+ox*r}" cy="${y+oy*r}" r="${(r*f*s).toFixed(0)}" fill="#000" fill-opacity=".28"/>`})));$('mblobs').innerHTML=mb;
+let mr='';[[1.35,.22],[1.2,.25],[1.05,.3],[.9,.35],[.75,1]].forEach(([s,a])=>{mr+=`<circle cx="${cx}" cy="${cy}" r="${R*s}" fill="#000" fill-opacity="${a}"/>`});[[.7,-.75,.3],[-.8,.6,.28],[.85,.55,.26],[-.6,-.85,.3]].forEach(([ox,oy,f])=>[1,.7].forEach(s=>{mr+=`<circle cx="${cx+ox*R}" cy="${cy+oy*R}" r="${R*f*s}" fill="#000" fill-opacity=".3"/>`}));$('mreach').innerHTML=mr})();
+function ring(e,t,C,size){const sz=size+10,r=sz/2-2.5,c=2*Math.PI*r,o=-5;const base=`<svg width="${sz}" height="${sz}" style="position:absolute;left:${o}px;top:${o}px;pointer-events:none" aria-hidden="true"><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${C.track}" stroke-width="2.5"/>`;if(e[8])return base+`<circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${C.live}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="0.1 6"/></svg>`;const f=Math.max(.08,Math.min(1,(ab(e,4)-t)/120));return base+`<circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${C.live}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${(f*c).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${sz/2} ${sz/2})"/></svg>`}
+function dot(e,s,C,size,plain){const fs=Math.round(size*.52);const bd=plain?C.muted:s.dash?(s.live?C.paper:C.muted):(s.live||s.soon?C.live:C.muted);const fill=!plain&&s.live;return`<div style="width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;background:${fill?C.live:C.paper};color:${fill?C.onLive:C.ink};border:${!plain&&s.dash?2:1.5}px ${!plain&&s.dash?'dashed':'solid'} ${bd}">${ico(IC[e[0]],fs)}</div>`}
+const nDays=()=>RANGES[st.range].days;
+function shown(e){if(st.range===0)return e[9]===0;if(e[9]>=nDays())return false;return st.day===null||e[9]===st.day}
+function render(){
+const P=st.dark?NIGHT:DAY,live=st.hue==='mono'?P.ink:HUE[st.hue][st.dark?1:0],C=Object.assign({},P,{live,onLive:st.hue==='mono'?P.paper:'#fff'}),k=R/st.r,t=st.range===0?st.t:NOW;
+$('hp').style.background=C.bg;
+$('g0').setAttribute('transform',`translate(${cx} ${cy}) scale(${k})`);
+$('parks').setAttribute('fill',C.park);
+$('riv').setAttribute('stroke',C.water);$('riv').setAttribute('stroke-width',Math.max(10,Math.min(60,120*k)));
+$('gmin').setAttribute('stroke',C.minor);$('gmin').setAttribute('stroke-width','1.2');$('gmin').setAttribute('opacity',k<0.045?0:1);
+$('gmaj').setAttribute('stroke',C.major);$('gmaj').setAttribute('stroke-width','4');
+const vo=st.r<=1000?C.veilA:st.r>=5000?0:C.veilA*(1-Math.log(st.r/1000)/Math.log(5));
+$('veil').setAttribute('fill',C.veil);$('veil').setAttribute('opacity',vo.toFixed(2));
+$('mblobs').setAttribute('transform',`translate(${cx} ${cy}) scale(${k})`);
+const me=$('me');me.style.background=C.ink;me.style.borderColor=C.paper;
+let ph='',eh='',cnt=0;
+EV.forEach((e,i)=>{if(e[9]===0){const n=S(e,NOW);if(n.live&&dist(e)<=st.r&&!n.dash)cnt++}});
+EV.forEach((e,i)=>{if(!shown(e))return;const today=e[9]===0;const s=S(e,today?t:NOW);if(today&&s.gone)return;if(st.liveOnly&&!(today&&s.live))return;const d=dist(e),inR=d<=st.r;const x=cx+e[1]*k,y=cy+e[2]*k;
+if(x<14||x>W-14||y<62||y>H-96){const vx=x-cx,vy=y-cy;const f=Math.min(vx>0?(W-14-cx)/vx:vx<0?(14-cx)/vx:1e9,vy>0?(H-96-cy)/vy:vy<0?(62-cy)/vy:1e9);eh+=`<div style="position:absolute;left:${cx+vx*f-5}px;top:${cy+vy*f-5}px;width:10px;height:10px;border-radius:50%;background:${today&&s.live?C.live:C.muted};opacity:${today&&s.live?.9:.5}"></div>`;return}
+const selected=st.sel===i;let size,o,sc=1,inner;
+if(today){size=s.live?34:(s.soon||selected)?26:10;o=s.live||s.soon?1:.55;if(s.dash&&!s.live)o*=.6;inner=size===10?`<div style="width:10px;height:10px;border-radius:50%;background:${C.muted}"></div>`:(s.live?ring(e,t,C,size):'')+dot(e,s,C,size,false)}
+else if(st.day!==null||selected){size=26;o=1;inner=dot(e,s,C,26,true)}
+else{size=10;o=.55;inner=`<div style="width:10px;height:10px;border-radius:50%;background:${C.muted}"></div>`}
+if(!inR){o*=.5;sc=.85}if(selected){sc=1.2;o=1}
+ph+=`<div class="pin" data-i="${i}" style="left:${x}px;top:${y}px;width:${size}px;height:${size}px;opacity:${o.toFixed(2)};transform:translate(-50%,-50%) scale(${sc});z-index:${selected?6:size===34?4:size===26?3:2}">${inner}</div>`});
+$('pins').innerHTML=ph;$('edge').innerHTML=eh;
+const chip=$('chip'),on=st.liveOnly;chip.style.background=on?C.live:C.paper;chip.style.borderColor=on?C.live:C.line;chip.style.color=on?C.onLive:C.ink;chip.setAttribute('aria-pressed',String(on));chip.innerHTML=`<span style="width:9px;height:9px;border-radius:50%;background:${on?C.onLive:cnt?C.live:'transparent'};border:1.5px solid ${on?C.onLive:C.live}"></span>${cnt}`;
+[['dice','dice-5'],['filt','adjustments-horizontal'],['loc','current-location'],['lst',st.list?'map':'list']].forEach(([id,n])=>{const b=$(id);b.style.background=C.paper;b.style.borderColor=C.line;b.style.color=C.ink;b.innerHTML=ico(n,19)});
+[0,1,2].forEach(j=>{const b=$('r'+j),a=st.range===j;b.style.background=a?C.ink:'transparent';b.style.color=a?C.paper:C.ink;b.setAttribute('aria-pressed',String(a));b.innerHTML=rangeIco(j,22)});
+const p=Math.log(st.r/100)/Math.log(50),ty=168+RT+(1-p)*RH;
+let rh=`<div style="position:absolute;left:21px;top:${RT}px;width:2px;height:${RH}px;border-radius:1px;background:${C.line}"></div>`;
+DET.forEach(dv=>{const q=Math.log(dv/100)/Math.log(50);rh+=`<div style="position:absolute;left:19px;top:${RT+(1-q)*RH-3}px;width:6px;height:6px;border-radius:50%;background:${C.muted};opacity:.6"></div>`});
+rh+=`<div style="position:absolute;left:8px;top:${ty-168-14}px;width:28px;height:28px;border-radius:50%;background:${C.paper};border:.5px solid ${C.muted}"></div>`;
+$('rail').innerHTML=rh;$('rail').setAttribute('aria-valuetext',`${st.r} m`);
+const rp=$('rpill');rp.innerHTML=rLabel(st.r);rp.style.background=C.paper;rp.style.borderColor=C.line;rp.style.color=C.ink;rp.style.top=(ty-14)+'px';rp.style.right='48px';
+let sh='',tx,label;const yl=48;
+if(st.range===0){const SPAN=1440-NOW;
+for(let b=0;b<SPAN;b+=30){const m=NOW+b+15;const n=EV.filter(e=>e[9]===0&&e[3]<=m&&e[4]>m).length;const x=X0+b/SPAN*XW;sh+=`<rect x="${x+1.5}" y="${yl-n*2.4}" width="${Math.max(2,XW*30/SPAN-3)}" height="${n*2.4}" rx="1.5" fill="${C.muted}" opacity=".35"/>`}
+for(let h=17;h<=24;h++){const x=X0+(h*60-NOW)/SPAN*XW;sh+=`<line x1="${x}" y1="${yl+3}" x2="${x}" y2="${yl+7}" stroke="${C.muted}"/><text x="${x}" y="${yl+21}" text-anchor="middle" font-size="11" fill="${C.muted}">${h%24===0?'0':h}</text>`}
+tx=X0+(st.t-NOW)/SPAN*XW;label=(st.t===NOW?`<span style="width:7px;height:7px;border-radius:50%;background:${C.live}"></span>`:'')+hm(st.t)}
+else{const n=nDays(),w=XW/n;
+for(let d=0;d<n;d++){const c=EV.filter(e=>e[9]===d).length;const x=X0+d*w;const act=st.day===d;sh+=`<rect x="${x+1}" y="${yl-Math.min(26,c*2.4)}" width="${Math.max(2,w-2)}" height="${Math.min(26,c*2.4)}" rx="1.5" fill="${act?C.ink:C.muted}" opacity="${act?.8:.35}"/>`;const dd=dateOf(d);if(n===7||d%2===0)sh+=`<text x="${x+w/2}" y="${yl+21}" text-anchor="middle" font-size="11" fill="${act?C.ink:C.muted}">${dd.getDate()}</text>`;sh+=`<line x1="${x}" y1="${yl+3}" x2="${x}" y2="${yl+7}" stroke="${C.muted}"/>`}
+tx=st.day===null?X0:X0+(st.day+.5)*w;label=st.day===null?`${dateOf(0).getDate()}–${dateOf(n-1).getDate()}.${String(dateOf(n-1).getMonth()+1).padStart(2,'0')}`:dayLabel(st.day)}
+sh=`<line x1="${X0}" y1="${yl}" x2="${X0+XW}" y2="${yl}" stroke="${C.line}" stroke-width="2" stroke-linecap="round"/>`+sh;
+sh+=`<circle cx="${tx}" cy="${yl}" r="11" fill="${C.paper}" stroke="${C.muted}" stroke-width=".5"/><circle cx="${tx}" cy="${yl}" r="4" fill="${st.range===0&&st.t===NOW||st.range>0&&st.day===null?C.live:C.ink}"/>`;
+$('ssvg').innerHTML=sh;
+const sp=$('spill');sp.style.left=Math.max(34,Math.min(204-34,tx))+'px';sp.style.background=C.paper;sp.style.borderColor=C.line;sp.style.color=C.ink;sp.innerHTML=label;
+const card=$('card');
+if(st.sel!==null&&!st.list){const e=EV[st.sel],today=e[9]===0,s=S(e,today?t:NOW);card.hidden=false;card.style.background=C.paper;card.style.borderColor=C.line;card.style.color=C.ink;
+const left=ab(e,4)-t;let extra='';if(today){if(s.miss)extra=`<span style="color:${C.muted};display:inline-flex;align-items:center;gap:4px">${ico('door-off',15)}</span>`;else if(s.late)extra=`<span style="color:${C.live};display:inline-flex;align-items:center;gap:4px">${ico('clock-exclamation',15)} +${s.arr-ab(e,3)} min</span>`;else if(s.live&&!e[8])extra=`<span style="color:${C.live};display:inline-flex;align-items:center;gap:4px">${ico('hourglass',15)} ${Math.floor(left/60)}:${String(Math.round(left%60)).padStart(2,'0')}</span>`}
+const when=(today?'':dayLabel(e[9])+', ')+hm(e[3])+'–'+(e[8]?'~':'')+hm(e[4]);
+card.innerHTML=`<div style="display:flex;gap:12px;align-items:center"><div style="position:relative;width:34px;height:34px;margin:0 4px;flex:none">${today&&s.live?ring(e,t,C,34):''}${dot(e,s,C,34,!today)}</div><div style="min-width:0;flex:1"><div style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e[5]}</div><div style="font-size:13px;color:${C.muted}">${e[6]}</div></div></div><div class="n" style="display:flex;gap:14px;margin-top:10px;font-size:13px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:4px">${ico(e[7]==='f'?'clock':'door-enter',15)} ${when}</span><span style="display:inline-flex;align-items:center;gap:4px">${ico('walk',15)} ${walk(e)} min</span>${extra}</div>`}else card.hidden=true;
+const L=$('list');
+if(st.list){L.hidden=false;Object.assign(L.style,{background:C.paper,borderColor:C.line,color:C.ink});
+const rows=EV.map((e,i)=>[e,i,S(e,e[9]===0?t:NOW)]).filter(([e,,s])=>shown(e)&&!(e[9]===0&&s.gone)&&dist(e)<=st.r&&(!st.liveOnly||(e[9]===0&&s.live))).sort((a,b)=>(a[0][9]-b[0][9])||(b[2].live-a[2].live)||(a[2].dash-b[2].dash)||(ab(a[0],3)-ab(b[0],3)));
+let html='',lastDay=-1;rows.forEach(([e,i,s])=>{if(st.range>0&&e[9]!==lastDay){lastDay=e[9];html+=`<div class="dayh" style="color:${C.muted}">${dayLabel(e[9])}</div>`}const today=e[9]===0;html+=`<div class="row" data-r="${i}" style="border-bottom:.5px solid ${C.line};opacity:${today&&s.dash?.55:1}">${dot(e,s,C,28,!today)}<div style="flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e[5]}</div><div class="n" style="font-size:12px;color:${today&&s.live?C.live:C.muted};text-align:right">${today&&s.live?'→ '+(e[8]?'~':'')+hm(e[4]):hm(e[3])}<br><span style="color:${C.muted}">${walk(e)} min</span></div></div>`});
+L.innerHTML=html||`<div style="height:100%;display:flex;align-items:center;justify-content:center;color:${C.muted}">${ico('arrows-diagonal',28)}</div>`}else L.hidden=true;
+const mk=(id,on)=>$(id).setAttribute('aria-pressed',String(on));mk('bd',!st.dark);mk('bn',st.dark);mk('hv',st.hue==='violet');mk('hr',st.hue==='red');mk('hm',st.hue==='mono');
+}
+function drag(el,fn,end){el.addEventListener('pointerdown',ev=>{ev.preventDefault();el.setPointerCapture(ev.pointerId);fn(ev);const mv=e=>fn(e),up=()=>{el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);end&&end()};el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up)})}
+drag($('rail'),e=>{const b=$('rail').getBoundingClientRect(),sy=220/b.height;let p=1-(((e.clientY-b.top)*sy)-RT)/RH;p=Math.max(0,Math.min(1,p));st.r=100*Math.pow(50,p);const near=DET.find(d=>Math.abs(Math.log(st.r/d))<0.07);if(near&&near!==lastDet){lastDet=near;if(navigator.vibrate)navigator.vibrate(6)}render()},()=>{st.r=DET.reduce((a,d)=>Math.abs(Math.log(st.r/d))<Math.abs(Math.log(st.r/a))?d:a);render()});
+drag($('scrub'),e=>{const b=$('scrub').getBoundingClientRect(),sx=204/b.width;const x=(e.clientX-b.left)*sx;if(st.range===0){let tt=NOW+(x-X0)/XW*(1440-NOW);tt=Math.max(NOW,Math.min(1440,tt));tt=tt-NOW<10?NOW:Math.round(tt/5)*5;st.t=tt}else{const n=nDays();const d=Math.floor((x-X0)/(XW/n));st.day=Math.max(0,Math.min(n-1,d))}render()});
+$('hp').addEventListener('click',ev=>{const p=ev.target.closest('.pin'),r=ev.target.closest('.row');if(p){st.sel=+p.dataset.i;render();return}if(r){st.sel=+r.dataset.r;st.list=false;render();return}if(ev.target.closest('#card,#list,button,#rail,#scrub'))return;st.sel=null;render()});
+[0,1,2].forEach(j=>{$('r'+j).onclick=()=>{st.range=j;st.day=null;st.sel=null;if(j===0)st.t=NOW;render()}});
+$('chip').onclick=()=>{st.liveOnly=!st.liveOnly;render()};
+$('lst').onclick=()=>{st.list=!st.list;render()};
+$('loc').onclick=()=>{st.r=500;st.t=NOW;st.range=0;st.day=null;st.sel=null;st.list=false;st.liveOnly=false;render()};
+$('filt').onclick=()=>{};
+$('dice').onclick=()=>{const c=EV.map((e,i)=>[e,i]).filter(([e])=>{if(e[9]!==0)return false;const s=S(e,NOW);return s.live&&!s.dash&&dist(e)<=2000});if(!c.length)return;const[e,i]=c[Math.floor(Math.random()*c.length)];if(dist(e)>st.r)st.r=DET.find(d=>d>=dist(e)*1.15)||5000;st.range=0;st.t=NOW;st.sel=i;st.list=false;render()};
+$('bd').onclick=()=>{st.dark=false;render()};$('bn').onclick=()=>{st.dark=true;render()};
+$('hv').onclick=()=>{st.hue='violet';render()};$('hr').onclick=()=>{st.hue='red';render()};$('hm').onclick=()=>{st.hue='mono';render()};
+try{if(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)st.dark=true}catch(e){}
+render();
+</script>
+</body>
+</html>

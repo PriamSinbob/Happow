@@ -838,6 +838,13 @@ button {
   background: var(--ink);
   color: var(--paper);
 }
+/* Whole-day windows as calendar icons (docs/design/icons): no text, the label is aria-label. */
+.chip--icon {
+  justify-content: center;
+  min-width: 40px;
+  padding: 0 9px;
+  color: var(--ink);
+}
 .chip__live {
   width: 7px;
   height: 7px;

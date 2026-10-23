@@ -6,6 +6,8 @@ Spec agreed with the owner in the design session of 2026-10-22 (interactive prot
 
 **Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
+**Visual reference:** `docs/design/` (interactive prototype, exact range icons, README listing what is normative). Slices E to H match it; where this spec's words and the prototype differ, ask the owner.
+
 ## Build plan
 
 Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR to `main` each. The data-only slices come first, so the live app keeps working between PRs; the visuals build on them. Each slice PR updates its row below, the Status line above, and adds a short "Built (slice X)" note under its spec section (built, skipped, open), like §13.4 and §14.
@@ -396,7 +398,7 @@ Added 2026-10-22, so the map is useful for planning and fills up while few event
 
 ### 13.2 Icons
 
-- Calendar line icons, 24 px, same stroke as the glyph set:
+- Calendar line icons, 24 px, exactly as in `docs/design/icons/range-*.svg` (1.6 stroke, round caps; use the files, don't redraw):
   - **Today:** one filled day square.
   - **Week:** one filled row.
   - **Later:** two filled rows.
