@@ -2,13 +2,14 @@
 
 Visual source of truth for the M6 and M7 UI. Where the milestone specs describe a screen in words, these files show it. When building UI, match them; any deviation needs the owner's OK first.
 
-| File                    | What                                                                                                                                                                 |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `prototype.html`        | Interactive prototype of the map screen, agreed with the owner on 2026-10-22. It is self-contained: open it in a browser (no build, no network), or read its source. |
-| `icons/range-today.svg` | Time range icon: Today (calendar with one filled day).                                                                                                               |
-| `icons/range-week.svg`  | Time range icon: 7 days (one filled row).                                                                                                                            |
-| `icons/range-later.svg` | Time range icon: 14 days (two filled rows).                                                                                                                          |
-| `settings-rows.html`    | The settings sheet's wordless rows (price, add, language, about, footer), approved by the owner on 2026-10-23. Self-contained; toggle day and night.                 |
+| File                    | What                                                                                                                                                                       |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prototype.html`        | Interactive prototype of the map screen, agreed with the owner on 2026-10-22. It is self-contained: open it in a browser (no build, no network), or read its source.       |
+| `icons/range-today.svg` | Time range icon: Today (calendar with one filled day).                                                                                                                     |
+| `icons/range-week.svg`  | Time range icon: 7 days (one filled row).                                                                                                                                  |
+| `icons/range-later.svg` | Time range icon: 14 days (two filled rows).                                                                                                                                |
+| `settings-rows.html`    | The settings sheet's wordless rows (price, add, language, about, footer), approved by the owner on 2026-10-23. Self-contained; toggle day and night.                       |
+| `map-shortcut.html`     | The chip beside the live counter: a shortcut to one filter (family mode or a category). Tap toggles, hold picks. Fixed-width counter. Approved by the owner on 2026-10-23. |
 
 ## Normative: match exactly
 
@@ -33,7 +34,8 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
   - Food picks its glyph per event from words in the title or venue (`glyphRules` in `config/categories.json`): cup for cafés, beer mug for pubs, bars and breweries, utensils otherwise. Never chosen at random: the glyph must say what the place is.
   - Change a glyph only with the owner's OK.
 
-- **Settings sheet rows** (M6 §15, `settings-rows.html`): black and white only, two ticket toggles (both on by default, last one can't be switched off), circled plus with fanned glyphs, globe with small PL / EN fields, symmetric circled "i" with gear and shield, icon-only footer. Category colour tints go everywhere.
+- **Settings sheet rows** (M6 §15, `settings-rows.html`): black and white only, two ticket toggles (both on by default, last one can't be switched off) and a separate family-mode tile on the same line (all 88 × 44), circled plus with fanned glyphs, globe with small PL / EN fields, symmetric circled "i" with gear and shield, icon-only footer. Category colour tints go everywhere.
+- **Map shortcut chip** (`map-shortcut.html`): 38 px round chip right of a fixed-width counter (dot and number centred); on = `ink` fill, off = `paper`; hold opens a grid with family mode first, then the categories. Family mode has its own glyph (adult and child), distinct from the kids horse.
 - **Touch-first: no hover styles** (owner, 2026-10-23).
 
 ## Illustrative: don't copy

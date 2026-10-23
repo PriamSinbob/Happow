@@ -19,8 +19,8 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data                      | —     | merged (#12)                             |
 | D     | §3                      | Colour tokens, day/night themes, presets, contrast test                       | —     | merged (#13)                             |
 | E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge                        | C, D  | merged (#14)                             |
-| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay                      | B, E  | in review (`m6-layout`)                  |
-| G     | §4.4 UI, §7, §15        | Family-mode filter and chip; dice; wordless settings sheet, no category tints | C, F  |                                          |
+| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay                      | B, E  | merged (#17)                             |
+| G     | §4.4 UI, §7, §15        | Family-mode filter and chip; dice; wordless settings sheet, no category tints | C, F  | in progress (`m6-family-dice`)           |
 | H     | §6                      | Lit map and the local atlas                                                   | F     |                                          |
 | —     | §8, §9                  | Accounts and premium; co-presence                                             | —     | out of M6 (build later / after the core) |
 
@@ -139,6 +139,60 @@ Plan agreed with the owner on 2026-10-23. Branch `m6-layout`. The top bar, windo
 - **Core helpers, unit-tested:** rail position ↔ metres and nearest detent, reach label, time-line snapping, histogram bins (30 min and per day, across the 25 Oct DST change), edge-dot clamping.
 - **Out of scope:** family chip and dice (G), veil and lit areas (H).
 - **Steps:** (1) this plan; (2) core helpers + tests; (3) config, filter state and the time line; (4) rail with zoom coupling, locate; (5) counter, settings sheet, list overlay; (6) long-press, pin hit tolerance and edge dots; (7) spec report and PR.
+
+### Slice G: family mode, dice, wordless settings
+
+Plan agreed with the owner on 2026-10-23, including the mockups `settings-rows.html` (family tile) and `map-shortcut.html`. Branch `m6-family-dice`. Builds §4.4 UI, §7 and §15 on top of slice F.
+
+- **Black and white (§15).** New tokens `sunken`, `raised` and `onRaised` in `config/theme.json` (day and night), added to the contrast test. Category colour tints go from the category chips (settings and add-event form), card icons (`EventMeta`), the detail hero and the Going-there marker. Glyph tiles use `paper2`; the selected chip is an `ink` tile with a `paper` glyph; the marker outline is `ink`. `color` stays in `categories.json`, but nothing reads it.
+- **Settings sheet rows (§15, `settings-rows.html`).** Wordless rows, matching the mockup's sizes and states:
+  - price: two ticket toggles on a `sunken` track, both on to start. The last one that is on can't be turned off, and nudges instead. They map to the existing `price` filter (both on = any), so saved state needs no migration.
+  - add event: a circled plus with fanned glyphs.
+  - language: a globe with small PL and EN fields.
+  - about: a circled "i" with dice, gear, shield and tag.
+  - footer: clear is a `filter-off` outline; show is a check with the count.
+  - No hover styles anywhere. Every icon-only control keeps a translated `aria-label`.
+  - family mode: on the same line as the tickets, as its own `sunken` track with one tile, 10 px after the ticket track (two separate controls, not one block), off to start. To fit 380 px, all three tiles are 88 × 44 instead of §15's 130 × 44 (owner, 2026-10-23; mockup: `settings-rows.html`).
+  - Text headings in the sheet go (settings title, "Filters", "Price"). The category chips keep their names.
+- **Family mode (§4.4).**
+  - **State.** A family toggle in the filter state, remembered on the device and counted in `activeCount`. Nothing about it is sent.
+  - **Filtering.** `familyMatch` (built in slice C) runs once in `App`, before reach and time filtering. One filtered list then feeds map, list, counter, hotspot, edge dots and dice.
+  - **Not confirmed.** "Unconfirmed" events stay. Their card and detail show a "not confirmed" line next to the family glyph; the pins stay as they are.
+  - **Always shown.** Cards and details show the family glyph for family events, whether or not family mode is on (§4.4 markings; the age badge on pins is already in from slice E).
+  - **Glyph.** Family mode gets its own glyph, drawn for Happow: an adult and a child. The kids category keeps the horse, so the two don't look the same in the shortcut picker. Needs the owner's OK (the glyph rule in `docs/design/README.md`).
+- **Map shortcut chip** (owner's idea, 2026-10-23; replaces the family-only chip in §5; mockup: `docs/design/map-shortcut.html`).
+  - A 38 px round button beside the live counter, always shown. The counter has a fixed width (fits three digits) with the dot and number centred in it, so the chip never moves when the count changes (owner, 2026-10-23).
+  - It is a shortcut to one filter the user picks: family mode (the default) or one category.
+  - Tap: that filter on or off. On = `ink` fill with a `paper` glyph, like the filled counter; off = `paper` with an `ink` glyph, like the other map buttons.
+  - Hold (500 ms, `vibrate(6)`): a grid opens under the top row with family mode first, then the categories in config order. The current one has an `ink` ring. Picking one makes it the shortcut and turns it on; tapping the map closes the grid.
+  - A category shortcut on = only that category; off = back to the categories chosen before. It is the same filter state as the settings sheet, so the sheet's chips and tiles show it.
+  - Remembered on the device. `aria-pressed` and the option's name as its label; the grid is a `radiogroup`.
+- **Dice (§7, prototype).**
+  - **Button.** A round button with Tabler `dice-5`, beside settings at the top right.
+  - **Pool.** Events that pass the filters (family included), aren't late (not dashed) and are within `dice.maxDistanceM` (2 km, config). Respects live-only. The prototype rolls only events that are live now; the plan widens that to live or starting within the next 60 min, the same set as the default "now" view (§5).
+  - **Roll.** No repeats within a session. Each re-roll down-weights that category on this device; opening the card or starting Going there up-weights it. The weights live in localStorage.
+  - **Result.** The time line goes to Today/now, the list closes, and the pin is selected with its card open. If the event is beyond the reach, the reach grows to the first detent at ≥ 1.15 × its distance, as the prototype does.
+  - **Long-press.** Opens a fan of the user's top 5 categories (by weight); picking one rolls within it.
+  - **Empty pool.** A short toast, "Nic w pobliżu / Nothing nearby".
+- **Core helpers, unit-tested:**
+  - `rollDice(pool, {seen, weights, category?}, random)`: weighted, no repeats, injectable random.
+  - weight updates.
+  - reach-after-roll detent.
+  - the price-toggle ↔ `PriceFilter` mapping.
+- **Out of scope:** lit map and the local atlas (H). The About page content (theme, colour, moderator sign-in) stays as it is.
+- **Steps:**
+  1. this plan
+  2. tokens, contrast test, removing tints
+  3. settings sheet rows
+  4. family mode and the map shortcut chip: filter, chip, picker, card markings
+  5. dice: core helper and tests, button, long-press fan
+  6. design-review subagent, spec report and PR
+
+**Owner decisions (2026-10-23):**
+
+1. Dice at the top right beside settings, as in the prototype and §5.
+2. Family mode is broader than the kids category, so it stays: the category shows only kids events; family mode also shows family events from other categories, all-ages and up-to-12 events, and (marked "not confirmed") likely family categories that end by 21:00. It hides 13+ events and anything starting after 21:00. Its tile goes under the price toggles. The chip beside the counter becomes a shortcut the user sets to one filter: family mode, food, music, …
+3. The dice picks from events that are live or start within 60 minutes.
 
 ### Working notes
 
