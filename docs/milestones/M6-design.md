@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
+**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E), §5 and §13.2–§13.5 built (slice F); the rest not built. List style B (§5) approved by the owner on a phone (2026-10-23). Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
 **Visual reference:** `docs/design/` (interactive prototype, exact range icons, README listing what is normative). Slices E to H match it; where this spec's words and the prototype differ, ask the owner.
 
@@ -18,8 +18,8 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest     | —     | merged (#10)                             |
 | C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | merged (#12)                             |
 | D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | merged (#13)                             |
-| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  | in review (#14)                          |
-| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  |                                          |
+| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  | merged (#14)                             |
+| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  | in review (`m6-layout`)                  |
 | G     | §4.4 UI, §7             | Family-mode filter and chip; dice                        | C, F  |                                          |
 | H     | §6                      | Lit map and the local atlas                              | F     |                                          |
 | —     | §8, §9                  | Accounts and premium; co-presence                        | —     | out of M6 (build later / after the core) |
@@ -116,6 +116,29 @@ Plan agreed with the owner on 2026-10-22 (glyphs drawn in code for now; a design
 - **Tests.** Core: `pinState`, `ringStep`, sort keys. Web: the GeoJSON builder (features, properties, sort keys) on fixtures; sprite ids complete for every category.
 - **Out of scope:** colours of the list and cards (F), family-mode filtering (G).
 - **Steps and pushes:** (1) this plan; (2) core helpers + tests; (3) GeoJSON builder + tests; (4) sprites; (5) MapView switch to symbol layers, taps and selection; (6) spec report and PR.
+
+### Slice F: map-screen layout
+
+Plan agreed with the owner on 2026-10-23. Branch `m6-layout`. The top bar, window chips and bottom panel give way to the prototype's layout (`docs/design/prototype.html`).
+
+- **Top-left: live counter `● N`** (§5). Live, inside the reach, not dashed. Tap toggles live-only; the counter fills while it is on. It always counts what is on now, whatever the range (§13.5).
+- **Top-right: settings.** One icon button, no text (owner's call: tidy chrome). It opens the former filter sheet, renamed Ustawienia / Settings: a Filters segment first (categories, price), then rows below it for "Dodaj wydarzenie / Add event", the language switch and "O aplikacji / About" (theme and colour stay in About). The dice joins it in slice G.
+- **Removed from the map screen:** brand pill, language chip, add button in the top bar, summary sentence, Now / 2 h / 6 h / Today chips, radius slider and scale, Map/List switch.
+- **Right rail (reach).** 2 px track, 28 px thumb, value pill beside it; ~20 px from the edge, lower-middle. Detents 100 / 250 / 500 / 1000 / 2000 / 5000 m on a log scale; the pill shows walking minutes up to 2 km, then km; `vibrate(6)` per detent; snaps to the nearest detent on release. `role="slider"`, arrow keys step detents.
+  - **Radius↔zoom coupling.** While dragging, the map zooms so the reach keeps its size on screen; events are re-filtered only when the detent changes.
+  - **City mode via pinch** (owner: OK). Pinching out past the 5 km view sets a city reach (`radius.maxM`, the 25 km snapshot) and the pill shows "miasto / city"; dragging the rail returns to ≤ 5 km.
+- **Below the rail:** locate (reach 500 m, time now, drops the "from here" point) and the list button (list icon on the map, map icon in the list).
+- **Bottom: time line** (§5, §13.2, §13.3). Range icons from `docs/design/icons/range-*.svg` at its left end, 36 px touch area, active one ink-filled, tapping it again shows the whole range.
+  - Today: now → midnight, hour ticks (numerals), 30-min histogram, snap to now within 10 min, else 5-min steps. Pins use `pinState(event, t)`.
+  - 7 / 14 days: day ticks (date numerals), per-day histogram; whole range by default as 10 px dots; dragging selects a day, whose events get 26 px glyph pins and the other days hide.
+  - Config: `timeWindows` becomes today / week / later; `defaultTimeWindow` "now" means Today at the current time. A saved now / 2h / 6h falls back to it. No extra requests: scrubbing filters the loaded snapshot.
+- **List overlay (style B).** A panel over the map, rows as in the prototype; tapping a row returns to the map with that pin selected. Day headers and dated times for 7 / 14 days (§13.5).
+- **Map.** Long-press = plan from here (a plain tap closes a card or picks a pin). Taps on pins get a hit tolerance, so 10 px dots are tappable.
+- **Edge dots** replace chevrons: 10 px dots for off-screen events clamped to the screen edge, live hue when live; the 24 nearest only (owner: no need for every event beyond the circle; zoom out for that). Tap pans to the event.
+- **Hotspot** stays a DOM marker; the outside-radius count bubbles go (faded outside pins and edge dots show what lies beyond the reach) (owner: OK).
+- **Core helpers, unit-tested:** rail position ↔ metres and nearest detent, reach label, time-line snapping, histogram bins (30 min and per day, across the 25 Oct DST change), edge-dot clamping.
+- **Out of scope:** family chip and dice (G), veil and lit areas (H).
+- **Steps:** (1) this plan; (2) core helpers + tests; (3) config, filter state and the time line; (4) rail with zoom coupling, locate; (5) counter, settings sheet, list overlay; (6) long-press, pin hit tolerance and edge dots; (7) spec report and PR.
 
 ### Working notes
 
@@ -329,6 +352,18 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
   - the Map/List segmented control
   - the time-window chips
 
+- **Built** (slice F, 2026-10-23): §5, §13.2, §13.3 and §13.5.
+  - **Map screen.** Live counter top-left (tap = live only; it always counts now), a settings button top-right (icon only) opening Ustawienia / Settings: filters, then add event, language and About. Top bar, window chips, radius slider, summary sentence and Map/List switch are gone.
+  - **Reach rail** (`ReachRail.tsx`): log scale between `radius.detentsM`, walking minutes up to 2 km, `vibrate(6)` per detent, snap on release, arrow keys. While dragging, the map jumps to the radius under the finger (`cameraForBounds`, no animation); events re-filter only on a detent. Pinching out past 1.6 × 5 km sets the city reach (`radius.maxM`, pill "miasto / city").
+  - **Time line** (`TimeLine.tsx`): range icons from the design files, Today from now to midnight with hour numerals and a 30-min histogram (snap to now within 10 min, else 5 min), 7 / 14 days with date numerals and a per-day histogram. Pins read the time on the line; 7 / 14 days show dots, a picked day shows 26 px glyph pins. Time windows are today / week / later; no extra requests.
+  - **Days.** An event counts on a day if it starts then, or started earlier and runs at least `timeline.carryOverMin` (6 h) into it: a festival shows every day, a 22:15–0:15 show only on the day it starts.
+  - **List style B**: an overlay over the map, day headers for 7 / 14 days; a row returns to the map with its pin selected.
+  - **Map.** Long-press (right-click on desktop) = plan from here; a tap picks the nearest pin within 14 px, so 10 px dots are tappable, or closes the card. Edge dots for the 24 nearest events beyond the reach (`density.maxEdgeDots`), live hue when live; tap pans there. The faded outside pins are the same 24. Hotspot stays a DOM marker; outside-radius bubbles and chevrons are gone.
+  - **Core** (`packages/core/src/timeline.ts`, unit-tested): rail scale and detents, reach label, time snapping, 30-min and per-day bins (25 Oct DST week), `isOnDay`, edge clamping.
+  - Skipped: dice and the family chip (slice G); the first-launch rail nudge (§1); iOS has no haptics (Vibration API).
+  - Checked by the owner on a phone (2026-10-23, preview build): rail drag, pinch to city mode, long-press, list style B. "Much better than the live app."
+  - Open: the 60 fps target with 500 events is not measured. Edge dots and map pins are not keyboard-focusable; the list is the keyboard and screen-reader path. Many events sat on one city-centre point because of a geocoder fallback, fixed separately (`fix-geocode-city-centre`).
+
 ## 6. Lit map (explored areas)
 
 - **Mechanism.** A full-colour basemap with a veil on top that has soft holes. MapLibre cannot desaturate part of a vector map (`raster-saturation` is raster-only).
@@ -413,7 +448,6 @@ Atlas sync design:
 
 ## 12. Open
 
-- List style B: owner review on the working app.
 - Premium pricing and payment provider.
 - Co-presence timing (after the core).
 - Later window length (14 days) to confirm in use.

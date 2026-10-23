@@ -48,66 +48,6 @@ button {
 }
 
 /* ---------- Top bar ---------- */
-.topbar {
-  position: absolute;
-  z-index: 20;
-  top: calc(12px + var(--safe-top));
-  left: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  pointer-events: none;
-}
-.topbar > * {
-  pointer-events: auto;
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px 8px 10px;
-  background: var(--paper);
-  border-radius: 999px;
-  box-shadow: var(--shadow-lg);
-}
-.brand__dot {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    var(--ink) 0 32%,
-    transparent 34% 52%,
-    color-mix(in srgb, var(--ink) 45%, transparent) 54% 66%,
-    transparent 68%
-  );
-}
-.brand__name {
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-.brand__region {
-  font-size: 13px;
-  color: var(--muted);
-  padding-left: 8px;
-  border-left: 1px solid var(--line);
-}
-.topbar__actions {
-  display: flex;
-  gap: 8px;
-}
-.chip-btn {
-  height: 40px;
-  min-width: 44px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--paper);
-  box-shadow: var(--shadow-lg);
-  font-weight: 700;
-  font-size: 13px;
-}
 .icon-btn {
   display: inline-grid;
   place-items: center;
@@ -125,21 +65,14 @@ button {
   box-shadow: var(--shadow-lg);
   color: var(--ink);
 }
-.icon-btn--raised[data-status='locating'] svg {
-  animation: spin 1.4s linear infinite;
-}
-.icon-btn--raised[data-status='denied'],
-.icon-btn--raised[data-status='unavailable'] {
-  color: var(--muted);
-}
 
 /* ---------- Banner ---------- */
 .banner {
   position: absolute;
   z-index: 19;
-  top: calc(112px + var(--safe-top));
+  top: calc(62px + var(--safe-top));
   left: 12px;
-  right: 12px;
+  right: 72px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -165,12 +98,6 @@ button {
   padding: 4px 6px;
 }
 
-.list-wrap .banner {
-  position: static;
-  max-width: 640px;
-  margin: 0 auto 10px;
-}
-
 /* ---------- Stage ---------- */
 .stage {
   position: absolute;
@@ -184,19 +111,10 @@ button {
   position: absolute;
   inset: 0;
 }
-.list-wrap {
-  position: absolute;
-  inset: 0;
-  overflow-y: auto;
-  /* Bottom: room to scroll the last row above the floating "Map" button. */
-  padding: calc(116px + var(--safe-top)) 12px calc(88px + var(--safe-bottom));
-  background: var(--paper-2);
-  -webkit-overflow-scrolling: touch;
-}
 
 /* ---------- Markers ---------- */
-/* MapLibre positions .marker with an inline transform, so the pin shape lives on an inner
-   element: rotating .marker itself would be overwritten. */
+/* "Going there" target: MapLibre positions .marker with an inline transform, so the pin shape
+   lives on an inner element: rotating .marker itself would be overwritten. */
 .marker {
   --cat: var(--muted);
   display: grid;
@@ -220,58 +138,16 @@ button {
   color: var(--ink);
   transition: transform 0.15s ease;
 }
-.marker.is-selected .marker__pin {
-  transform: rotate(-45deg) scale(1.25);
-}
 .marker__pin > span {
   /* Grid, not block: the glyph SVG sits centred instead of on a text baseline. */
   display: grid;
   transform: rotate(45deg);
 }
-/* A tapped spot: "Search from here" floats above its pin. */
-.candidate {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  z-index: 20;
+.marker.is-target .marker__pin {
+  transform: rotate(-45deg) scale(1.15);
 }
-.candidate__actions {
-  display: flex;
-  align-items: center;
-  height: 40px;
-  border-radius: 999px;
-  background: var(--ink);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-}
-.candidate__actions button {
-  height: 100%;
-  border: 0;
-  background: none;
-  color: var(--paper);
-  font-weight: 700;
-  font-size: 14px;
-  white-space: nowrap;
-}
-.candidate__go {
-  padding: 0 12px 0 16px;
-}
-.candidate__cancel {
-  padding: 0 14px 0 10px;
-  border-left: 1px solid color-mix(in srgb, var(--paper) 20%, transparent) !important;
-  opacity: 0.8;
-}
-.candidate .point-pin {
-  opacity: 0.55;
-}
-/* Circle pinned elsewhere: the locate button shows it is not following you. */
-.icon-btn--raised[data-pinned='true'] {
-  color: var(--muted);
-  box-shadow:
-    0 0 0 2px var(--ink),
-    var(--shadow-lg);
-}
+/* MapLibre positions .marker with an inline transform, so the pin shape lives on an inner
+   element: rotating .marker itself would be overwritten. */
 /* The pinned search point: distances and walking times count from here. */
 .point-pin {
   width: 22px;
@@ -302,48 +178,381 @@ button {
     var(--shadow-sm);
 }
 
-/* ---------- Density hints ---------- */
-/* Edge-of-screen pointer to events off the visible map. */
-.chevron {
+/* ---------- Map screen controls (M6 §5) ---------- */
+/* Top row: live counter at the left, settings at the right. */
+.hud-top {
   position: absolute;
-  z-index: 5;
-  display: inline-flex;
+  z-index: 20;
+  top: calc(12px + var(--safe-top));
+  left: 12px;
+  right: 12px;
+  display: flex;
   align-items: center;
-  gap: 4px;
-  height: 30px;
-  padding: 0 10px 0 7px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-  box-shadow: var(--shadow-lg);
-  transform: translate(-50%, -50%);
-  transition:
-    left 0.12s linear,
-    top 0.12s linear;
+  gap: 8px;
+  pointer-events: none;
 }
-.chevron__arrow {
-  flex: none;
-  color: var(--paper);
+.hud-top > * {
+  pointer-events: auto;
 }
-/* Events beyond the radius but on screen: a count bubble; tap widens the radius. */
-.ghost {
-  display: grid;
-  place-items: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 7px;
-  border: 2px dashed color-mix(in srgb, var(--ink) 45%, var(--paper));
+.hud-top .map-btn {
+  margin-left: auto;
+}
+.hud-error {
+  padding: 6px 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  color: var(--ink);
+  background: var(--paper);
+  color: var(--error-ink);
   font-size: 12px;
-  font-weight: 800;
   box-shadow: var(--shadow-sm);
 }
+/* ● N: what is on now. Filled while "live only" is on. */
+.counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 15px 0 13px;
+  border: 0.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--shadow-sm);
+}
+.counter__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--live);
+}
+.counter__dot.has-live {
+  background: var(--live);
+}
+.counter.is-on {
+  background: var(--live);
+  border-color: var(--live);
+  color: var(--on-live);
+}
+.counter.is-on .counter__dot {
+  background: var(--on-live);
+  border-color: var(--on-live);
+}
+/* Round icon buttons on the map: settings, locate, list. No text; the name is the aria-label. */
+.map-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0.5px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+.map-btn:focus-visible,
+.counter:focus-visible,
+.range-btn:focus-visible,
+.rail__track:focus-visible,
+.timeline__track:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.map-btn__badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 1.5px solid var(--paper);
+}
+.map-btn[data-status='locating'] svg {
+  animation: spin 1.4s linear infinite;
+}
+.map-btn[data-status='denied'],
+.map-btn[data-status='unavailable'] {
+  color: var(--muted);
+}
+.map-btn[data-pinned='true'] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Reach rail (§5): right edge, lower middle, inset from the back-gesture edge. */
+.rail {
+  position: absolute;
+  z-index: 18;
+  right: 8px;
+  top: calc(50% - 150px);
+  width: 44px;
+  height: 224px;
+}
+.rail__track {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  cursor: ns-resize;
+}
+.rail__line {
+  position: absolute;
+  left: 21px;
+  top: 14px;
+  width: 2px;
+  height: 196px;
+  border-radius: 1px;
+  background: var(--line);
+}
+.rail__stop {
+  position: absolute;
+  left: 19px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.6;
+}
+.rail__thumb {
+  position: absolute;
+  left: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 0.5px solid var(--muted);
+  box-shadow: var(--shadow-sm);
+}
+.rail__pill {
+  position: absolute;
+  right: 46px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border: 0.5px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.rail-buttons {
+  position: absolute;
+  z-index: 18;
+  right: 10px;
+  top: calc(50% + 84px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Time line (§5, §13.2, §13.3): range icons at the left, the track to the right. */
+.timeline-bar {
+  position: absolute;
+  z-index: 16;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(to top, var(--paper) 55%, transparent);
+}
+.timeline {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 0 0 0 8px;
+}
+.timeline__ranges {
+  display: flex;
+  gap: 2px;
+  padding-bottom: 12px;
+}
+.range-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+}
+.range-btn.is-active {
+  background: var(--ink);
+  color: var(--paper);
+}
+.timeline__track {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 78px;
+  touch-action: none;
+  cursor: ew-resize;
+}
+.timeline__track svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.timeline__line {
+  stroke: var(--line);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.timeline__bar {
+  fill: var(--muted);
+  opacity: 0.35;
+}
+.timeline__bar.is-active {
+  fill: var(--ink);
+  opacity: 0.8;
+}
+.timeline__tick {
+  stroke: var(--muted);
+}
+.timeline__num {
+  fill: var(--muted);
+  font-size: 11px;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+.is-active > .timeline__num {
+  fill: var(--ink);
+}
+.timeline__thumb {
+  fill: var(--paper);
+  stroke: var(--muted);
+  stroke-width: 0.5;
+}
+.timeline__knob {
+  fill: var(--ink);
+}
+.timeline__knob.is-now {
+  fill: var(--live);
+}
+.timeline__pill {
+  position: absolute;
+  top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 0.5px solid var(--line);
+  border-radius: 13px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.timeline__live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--live);
+}
+
+/* List style B (§5): an overlay over the map; the map stays visible above it. */
+.list-overlay {
+  position: absolute;
+  z-index: 17;
+  left: 10px;
+  right: 60px;
+  top: calc(64px + var(--safe-top));
+  bottom: 92px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 0.5px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  box-shadow: var(--shadow-lg);
+  -webkit-overflow-scrolling: touch;
+  animation: rise 0.18s ease-out;
+}
+.list__day {
+  padding: 8px 4px 2px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Off-screen events (§5): 10 px dots on the edge; a bigger invisible target around each. */
+.edge-dot {
+  position: absolute;
+  z-index: 5;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.edge-dot::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 7px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.5;
+}
+.edge-dot.is-live::after {
+  background: var(--live);
+  opacity: 0.9;
+}
+
+/* Settings: filters first, then the other rows. */
+.settings__group {
+  margin: 4px 0 0;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.settings__rows {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.settings__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 4px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+  text-align: left;
+}
+.settings__label {
+  flex: 1;
+}
+.settings__value {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ---------- Density hints ---------- */
 /* Busiest cell within reach. */
 .hotspot {
   position: relative;
@@ -444,9 +653,9 @@ button {
   position: absolute;
   z-index: 15;
   left: 0;
-  right: 0;
+  right: 56px;
   bottom: 0;
-  padding: 0 10px calc(10px + var(--safe-bottom));
+  padding: 0 0 8px 10px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -454,119 +663,6 @@ button {
 }
 .sheet > * {
   pointer-events: auto;
-}
-.panel {
-  background: var(--paper);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 14px 16px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.panel__summary {
-  font-size: 15px;
-  line-height: 1.3;
-}
-.panel[hidden] {
-  display: none;
-}
-/* List view: the only control at the bottom, back to the map. */
-.to-map {
-  position: absolute;
-  z-index: 15;
-  left: 50%;
-  bottom: calc(16px + var(--safe-bottom));
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 46px;
-  padding: 0 20px 0 16px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--paper);
-  font-weight: 700;
-  font-size: 15px;
-  box-shadow: var(--shadow-lg);
-}
-.panel__error {
-  display: block;
-  margin-top: 4px;
-  font-size: 13px;
-  color: var(--error-ink);
-}
-
-/* Radius slider */
-.radius {
-  display: grid;
-  gap: 6px;
-}
-.radius__label {
-  font-size: 13px;
-  color: var(--muted);
-}
-.radius__label strong {
-  color: var(--ink);
-  font-size: 15px;
-  margin-left: 4px;
-}
-.radius__scale {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--muted);
-}
-.radius input[type='range'] {
-  --fill: 30%;
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 28px;
-  margin: 0;
-  background: transparent;
-  touch-action: pan-y;
-}
-.radius input[type='range']::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(to right, var(--ink) var(--fill), var(--line) var(--fill));
-}
-.radius input[type='range']::-moz-range-track {
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(to right, var(--ink) var(--fill), var(--line) var(--fill));
-}
-.radius input[type='range']::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 26px;
-  height: 26px;
-  margin-top: -10px;
-  border-radius: 50%;
-  background: var(--paper);
-  border: 0;
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.08),
-    0 2px 8px rgb(0 0 0 / 0.25);
-}
-.radius input[type='range']::-moz-range-thumb {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--paper);
-  border: 0;
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.08),
-    0 2px 8px rgb(0 0 0 / 0.25);
-}
-.radius input[type='range']:focus-visible {
-  outline: none;
-}
-.radius input[type='range']:focus-visible::-webkit-slider-thumb {
-  box-shadow:
-    0 0 0 4px color-mix(in srgb, var(--ink) 35%, transparent),
-    0 2px 8px rgb(0 0 0 / 0.25);
 }
 
 /* Segmented control */
@@ -749,84 +845,6 @@ button {
 }
 
 /* ---------- Filter bar (time window + filters) ---------- */
-.filterbar {
-  position: absolute;
-  z-index: 18;
-  top: calc(62px + var(--safe-top));
-  left: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  pointer-events: none;
-}
-.filterbar > * {
-  pointer-events: auto;
-}
-.chips {
-  display: inline-flex;
-  flex: none;
-  gap: 2px;
-  padding: 3px;
-  background: var(--paper);
-  border-radius: 999px;
-  box-shadow: var(--shadow-lg);
-}
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: none;
-  height: 34px;
-  padding: 0 13px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 650;
-  white-space: nowrap;
-}
-.chip.is-active {
-  background: var(--ink);
-  color: var(--paper);
-}
-/* Whole-day windows as calendar icons (docs/design/icons): no text, the label is aria-label. */
-.chip--icon {
-  justify-content: center;
-  min-width: 40px;
-  padding: 0 9px;
-  color: var(--ink);
-}
-.chip__live {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--live);
-}
-.chip--filters {
-  height: 40px;
-  margin-left: auto;
-  background: var(--paper);
-  color: var(--ink);
-  box-shadow: var(--shadow-lg);
-}
-.chip--filters.has-active {
-  box-shadow:
-    0 0 0 2px var(--ink),
-    var(--shadow-lg);
-}
-.chip__count {
-  display: inline-grid;
-  place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 12px;
-}
 
 /* ---------- Filter sheet ---------- */
 .overlay {
@@ -1207,11 +1225,6 @@ button {
 .list-around__more {
   display: block;
   margin: 12px auto 0;
-}
-
-/* Attribution (required by OSM) sits under the top bar, clear of the bottom sheet. */
-.maplibregl-ctrl-top-right {
-  top: calc(106px + var(--safe-top));
 }
 
 @keyframes spin {
@@ -1859,9 +1872,6 @@ label.choice input {
   font-size: 10px;
   color: var(--muted);
 }
-.marker.is-target .marker__pin {
-  transform: rotate(-45deg) scale(1.15);
-}
 
 /* MapLibre controls follow the theme. */
 .maplibregl-ctrl.maplibregl-ctrl-attrib,
@@ -1878,4 +1888,9 @@ label.choice input {
 [data-theme='night'] .maplibregl-ctrl-icon,
 [data-theme='night'] .maplibregl-ctrl-attrib-button {
   filter: invert(1);
+}
+
+/* Attribution (required by OSM) sits bottom-left, just above the time line. */
+.maplibregl-ctrl-bottom-left {
+  bottom: calc(80px + var(--safe-bottom));
 }

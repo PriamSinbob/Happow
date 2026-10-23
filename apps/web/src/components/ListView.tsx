@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import type { NearbyEvent } from '@happow/core';
-import { formatDistance } from '../format';
+import { useState, type ReactNode } from 'react';
+import type { Language, NearbyEvent } from '@happow/core';
+import { region } from '../config';
+import { formatDistance, formatRelativeDay } from '../format';
 import type { Guidance } from '../hooks/useGuidance';
 import { useI18n } from '../i18n';
 import { CategoryIcon, useEventText } from './EventMeta';
@@ -19,6 +20,10 @@ interface Props {
   onSelect: (id: string) => void;
   onExpand: (radius: number) => void;
   onClearFilters: () => void;
+  /** 7 / 14 days: rows by day, each day under a header (§13.5). */
+  byDay?: boolean;
+  /** Events that started earlier are listed from this day on (now, or the picked day). */
+  dayFrom?: Date;
 }
 
 export function Row({
@@ -60,6 +65,30 @@ export function Row({
   );
 }
 
+function DayGroup({ day, children }: { day: string | null; children: ReactNode }) {
+  return (
+    <>
+      {day && (
+        <li className="list__day" role="presentation">
+          {day}
+        </li>
+      )}
+      {children}
+    </>
+  );
+}
+
+/** Events by the day they are on from now (a running festival counts today), soonest first. */
+function byDay(events: NearbyEvent[], dayFrom: Date, now: Date, lang: Language) {
+  const from = (e: NearbyEvent) => Math.max(Date.parse(e.startAt), dayFrom.getTime());
+  const groups = new Map<string, NearbyEvent[]>();
+  for (const e of [...events].sort((a, b) => from(a) - from(b) || a.distanceM - b.distanceM)) {
+    const day = formatRelativeDay(new Date(from(e)).toISOString(), now, region.timezone, lang);
+    groups.set(day, [...(groups.get(day) ?? []), e]);
+  }
+  return [...groups].map(([day, evs]) => ({ day, events: evs }));
+}
+
 /** Rows of the "more around" section shown at first and added per "show more". */
 const AROUND_PAGE = 30;
 
@@ -87,8 +116,15 @@ export function ListView(props: Props) {
         </div>
       ) : (
         <ul className="list">
-          {props.events.map((ev) => (
-            <Row key={ev.id} ev={ev} now={props.now} onSelect={props.onSelect} />
+          {(props.byDay
+            ? byDay(props.events, props.dayFrom ?? props.now, props.now, lang)
+            : [{ day: null, events: props.events }]
+          ).map((g) => (
+            <DayGroup key={g.day ?? ''} day={g.day}>
+              {g.events.map((ev) => (
+                <Row key={ev.id} ev={ev} now={props.now} onSelect={props.onSelect} />
+              ))}
+            </DayGroup>
           ))}
         </ul>
       )}

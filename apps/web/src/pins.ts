@@ -20,7 +20,8 @@ export interface PinGroup {
 export interface PinProps {
   key: string;
   cluster: boolean;
-  kind: PinState['kind'];
+  /** 'day': an event of the day picked on the 7 / 14-day line (26 px, glyph, no live hue). */
+  kind: PinState['kind'] | 'day';
   glyph: string;
   /** Ring sprite id for live pins, '' otherwise. */
   ring: string;
@@ -56,7 +57,7 @@ export function glyphOf(ev: Pick<NearbyEvent, 'categoryIds' | 'title' | 'venue'>
 /** Age limits from this one up get the numeral badge (§4.4). */
 export const AGE_BADGE_MIN = 16;
 
-const RANK = { live: 0, soon: 1, later: 2 } as const;
+const RANK = { live: 0, soon: 1, day: 1, later: 2 } as const;
 
 /** The pin a group shows: its most urgent event (live > soon > later), nearest first. */
 function lead(events: NearbyEvent[], states: Map<string, PinState>): NearbyEvent {
@@ -65,10 +66,24 @@ function lead(events: NearbyEvent[], states: Map<string, PinState>): NearbyEvent
   )[0]!;
 }
 
+/**
+ * How pins read the time (§13.3, §13.5): 'time' for Today at `now` (the time on the line);
+ * 'range' for the whole 7 / 14 days, every pin a 10 px dot; 'day' for one picked day, every pin a
+ * 26 px glyph.
+ */
+export type PinMode = 'time' | 'range' | 'day';
+
 export function pinFeatures(
   groups: PinGroup[],
-  ctx: { now: Date; center: LatLng; radiusM: number; selectedId: string | null },
+  ctx: {
+    now: Date;
+    center: LatLng;
+    radiusM: number;
+    selectedId: string | null;
+    mode?: PinMode;
+  },
 ): PinCollection {
+  const mode = ctx.mode ?? 'time';
   const states = new Map<string, PinState>();
   for (const g of groups)
     for (const e of g.events)
@@ -87,7 +102,18 @@ export function pinFeatures(
     type: 'FeatureCollection',
     features: groups.map((g) => {
       const first = lead(g.events, states);
-      const s = states.get(first.id)!;
+      const live = states.get(first.id)!;
+      // Future days carry no live, soon or late: those only mean something today.
+      const s: Omit<PinState, 'kind'> & { kind: PinProps['kind'] } =
+        mode === 'time'
+          ? live
+          : {
+              ...live,
+              kind: mode === 'day' ? 'day' : 'later',
+              ring: null,
+              dotted: false,
+              late: false,
+            };
       const selected = g.events.some((e) => e.id === ctx.selectedId);
       const age = Math.max(...g.events.map((e) => e.ageMin ?? -1));
       return {

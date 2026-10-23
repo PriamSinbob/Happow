@@ -86,6 +86,8 @@ export const appConfigSchema = z.object({
     minM: z.number().positive(),
     maxM: z.number().positive(),
     defaultM: z.number().positive(),
+    /** Reach rail stops (§5), ascending; past the last one is city mode (maxM), via pinch. */
+    detentsM: z.array(z.number().positive()).min(2),
   }),
   walkingSpeedMPerMin: z.number().positive(),
   /** When the user would get to an event, for the late (dashed) state of pins. */
@@ -109,10 +111,21 @@ export const appConfigSchema = z.object({
     searchRadiusM: z.number().positive(),
     /** A cell needs at least this many events to be called a hotspot. */
     hotspotMinEvents: z.number().int().positive(),
-    /** Off-screen chevrons shown at once. */
-    maxChevrons: z.number().int().min(0),
+    /** Off-screen events shown as edge dots at once: the nearest ones (§5). */
+    maxEdgeDots: z.number().int().min(0),
   }),
   timeWindows: z.array(timeWindowSchema).min(1),
+  /** The time line under the map (§5, §13.3). */
+  timeline: z.object({
+    /** A drag ending this close to now snaps back to now. */
+    snapNowMin: z.number().nonnegative(),
+    /** Otherwise the Today line moves in steps of this many minutes. */
+    stepMin: z.number().int().positive(),
+    /** Width of the Today histogram's bins. */
+    binMin: z.number().int().positive(),
+    /** An event from an earlier day counts on a day only if it runs this long into it. */
+    carryOverMin: z.number().int().nonnegative(),
+  }),
   defaultTimeWindow: z.string(),
   dedup: z.object({
     /** Two listings starting further apart than this are never the same event. */

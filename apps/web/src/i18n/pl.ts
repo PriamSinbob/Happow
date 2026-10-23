@@ -3,19 +3,10 @@ import type { MessageKey } from './en';
 export const pl: Record<MessageKey, string> = {
   'app.tagline': 'Dzieje się teraz',
   'header.locate': 'Pokaż moją lokalizację',
-  'header.language': 'Zmień język',
-  'view.map': 'Mapa',
   'view.list': 'Lista',
-  'view.label': 'Widok',
   'radius.label': 'Promień',
-  'summary.count':
-    '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} w promieniu {radius}',
-  'summary.countPoint':
-    '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} w promieniu {radius} od punktu',
-  'point.searchHere': 'Szukaj stąd',
   'point.back': 'Wróć do mojej lokalizacji',
   'point.label': 'Punkt wyszukiwania: odległości liczone od tego miejsca',
-  'summary.loading': 'Rozglądamy się…',
   'summary.error': 'Nie udało się pobrać wydarzeń. Pokazujemy to, co mamy.',
   'list.empty.title': 'Nic w promieniu {radius}',
   'list.empty.expand': 'Zwiększ do {radius}',
@@ -55,17 +46,10 @@ export const pl: Record<MessageKey, string> = {
   'map.attribution': 'Mapa',
   'map.you': 'Tu jesteś',
   'window.label': 'Kiedy',
-  'window.now': 'Teraz',
   'window.today': 'Dziś',
   'window.hours': '{hours} h',
   'window.days': '{days} dni',
-  'summary.window.days': 'w ciągu {days} dni',
-  'summary.window.now': 'trwa teraz',
-  'summary.window.hours': 'w ciągu {hours} h',
-  'summary.window.today': 'dziś',
-  'filters.open': 'Filtry',
   'filters.title': 'Filtry',
-  'filters.close': 'Zamknij filtry',
   'filters.categories': 'Kategorie',
   'filters.price': 'Cena',
   'filters.price.any': 'Dowolna',
@@ -116,10 +100,6 @@ export const pl: Record<MessageKey, string> = {
     '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} blisko siebie. Przybliż.',
   'place.title':
     '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} w tym miejscu',
-  'cluster.label':
-    '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} {distance} {direction}, poza Twoim promieniem. Zwiększ promień, by je zobaczyć.',
-  'chevron.label':
-    '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} {distance} {direction}. Przesuń tam mapę.',
   'hotspot.label':
     'Tu dzieje się najwięcej: {place}, {count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}}',
   'header.add': 'Dodaj wydarzenie',
@@ -288,4 +268,17 @@ export const pl: Record<MessageKey, string> = {
   'nav.noLocation': 'Lokalizacja jest wyłączona. Włącz ją albo użyj Map Google.',
   'nav.you': 'Ty',
   offline: 'Offline — pokazujemy zapisane dane',
+  'settings.open': 'Ustawienia',
+  'settings.title': 'Ustawienia',
+  'settings.close': 'Zamknij ustawienia',
+  'settings.language': 'Język',
+  'language.pl': 'Polski',
+  'language.en': 'English',
+  'counter.label':
+    '{count, plural, =0 {Nic teraz nie trwa} one {# wydarzenie trwa teraz} few {# wydarzenia trwają teraz} other {# wydarzeń trwa teraz}}. Pokaż tylko to, co trwa teraz',
+  'reach.min': '{min} min',
+  'reach.km': '{km} km',
+  'reach.city': 'miasto',
+  'timeline.label': 'Czas',
+  'timeline.now': 'Teraz',
 };

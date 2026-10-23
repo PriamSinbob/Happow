@@ -13,4 +13,5 @@ export * from './confidence.js';
 export * from './entry.js';
 export * from './colour.js';
 export * from './pins.js';
+export * from './timeline.js';
 export * from './glyph.js';

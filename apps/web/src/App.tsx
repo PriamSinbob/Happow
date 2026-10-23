@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { snapRadius, type Language, type LatLng } from '@happow/core';
+import {
+  dayStarts,
+  isOnDay,
+  isRunning,
+  pinState,
+  snapRadius,
+  type LatLng,
+  type NearbyEvent,
+} from '@happow/core';
 import { trackView } from './analytics';
 import { config, region } from './config';
 import { createRepository } from './data';
 import { withFlag, useMyReports } from './flags';
-import { formatDistance } from './format';
 import { useEventDetail } from './hooks/useEventDetail';
 import { useEvents } from './hooks/useEvents';
 import { useGuidance } from './hooks/useGuidance';
@@ -20,40 +27,49 @@ import { AddEvent } from './components/AddEvent';
 import { EventCard } from './components/EventCard';
 import { EventDetail } from './components/EventDetail';
 import { GoThere } from './components/GoThere';
-import { FilterBar, windowSummary } from './components/FilterBar';
-import { FilterSheet } from './components/FilterSheet';
 import { GuidanceCard } from './components/Guidance';
+import { Icon } from './components/Icons';
 import { ListView } from './components/ListView';
 import { MapView } from './components/MapView';
 import { Moderation } from './components/Moderation';
 import { PlaceCard } from './components/PlaceCard';
-import { Icon } from './components/Icons';
-import { RadiusControl } from './components/RadiusControl';
+import { ReachRail } from './components/ReachRail';
+import { SettingsSheet } from './components/SettingsSheet';
+import { TimeLine } from './components/TimeLine';
+import type { PinMode } from './pins';
 import { storage } from './storage';
 import { useTheme } from './theme';
 
 type View = 'map' | 'list';
 
+const { minM, maxM, defaultM } = config.app.radius;
+const { maxEdgeDots } = config.app.density;
+
 export function App() {
-  const { t, lang, setLang } = useI18n();
+  const { t, lang } = useI18n();
   const repo = useMemo(createRepository, []);
   const location = useGeolocation(region);
   const [radius, setRadius] = useRadius();
-  const [view, setView] = useState<View>(() => (storage.get('view') === 'list' ? 'list' : 'map'));
+  const [previewRadius, setPreviewRadius] = useState<number | null>(null);
+  const [view, setView] = useState<View>('map');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // "OK" on the location notice is remembered on this device; the locate button shows it again.
   const [bannerDismissed, setBannerDismissed] = useState(
     () => storage.get('locationNoticeDismissed') === '1',
   );
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const filters = useFilters();
+  // The time line (§5, §13.3): a time today (null = now), or a day of the 7 / 14 days.
+  const [at, setAt] = useState<Date | null>(null);
+  const [day, setDay] = useState<number | null>(null);
+  const [liveOnly, setLiveOnly] = useState(false);
   // Searches move only after ~100 m; labels and windows follow a minute clock, not downloads.
   const userCenter = useStableCenter(location.center, config.app.refresh.moveThresholdM);
   // Auto day/night follows sunrise and sunset where the user is.
   const { setPoint: setThemePoint } = useTheme();
   useEffect(() => setThemePoint(userCenter), [userCenter, setThemePoint]);
-  // Tap the map → "Search from here" pins the circle to that spot (another district, a taxi
-  // drop-off); distances and walking times then count from it. The locate button returns to the user.
+  // Long-press the map → plan from that spot (another district, a taxi drop-off); distances and
+  // walking times then count from it. The locate button returns to the user.
   const [point, setPoint] = useState<LatLng | null>(null);
   const searchCenter = point ?? userCenter;
   const clock = useMinuteClock();
@@ -70,14 +86,52 @@ export function App() {
   const { clusters, loading, error, now } = loaded;
   // Status reports from this device show at once; everyone else's arrive with the next reload.
   const [myReports, addMyReport] = useMyReports();
-  const events = useMemo(
-    () => loaded.events.map((e) => withFlag(e, myReports)),
-    [loaded.events, myReports],
+  const flagged = useCallback(
+    (list: NearbyEvent[]) => list.map((e) => withFlag(e, myReports)),
+    [myReports],
   );
-  const selected = events.find((e) => e.id === selectedId) ?? null;
+
+  // What the time line selects. Today: what is still on at the time looked at, drawn for that
+  // time. 7 / 14 days: everything as dots, or one day's events as glyph pins.
+  const days = 'days' in filters.window ? filters.window.days : 0;
+  const starts = useMemo(() => (days ? dayStarts(now, region.timezone, days) : []), [days, now]);
+  const pinTime = days ? now : (at ?? now);
+  const pinMode: PinMode = days ? (day === null ? 'range' : 'day') : 'time';
+  const visible = useCallback(
+    (e: NearbyEvent) => {
+      if (liveOnly) return isRunning(e, now);
+      if (!days) return Date.parse(e.endAt) > pinTime.getTime();
+      if (day === null) return true;
+      return isOnDay(e, starts[day]!, starts[day + 1]!, config.app.timeline.carryOverMin);
+    },
+    [liveOnly, days, day, starts, now, pinTime],
+  );
+  const events = useMemo(
+    () => flagged(loaded.events.filter(visible)),
+    [flagged, loaded.events, visible],
+  );
+  const around = useMemo(
+    () => flagged(loaded.around.filter(visible)),
+    [flagged, loaded.around, visible],
+  );
+  // The map shows the reach plus the nearest events beyond it (faded, or edge dots off screen).
+  const mapEvents = useMemo(() => [...events, ...around.slice(0, maxEdgeDots)], [events, around]);
+
+  // ● N: on now, in reach, worth going to (not dashed). Always now, whatever the line shows.
+  const liveCount = useMemo(
+    () =>
+      loaded.events.filter((e) => {
+        if (!isRunning(e, now)) return false;
+        return !pinState(e, now, e.distanceM, radius, config.categories, config.app).late;
+      }).length,
+    [loaded.events, now, radius],
+  );
+
+  const all = useMemo(() => [...events, ...around], [events, around]);
+  const selected = all.find((e) => e.id === selectedId) ?? null;
   // A pin with several events at one place lists them; ids that left the results drop out.
   const [placeIds, setPlaceIds] = useState<string[] | null>(null);
-  const placeEvents = placeIds ? events.filter((e) => placeIds.includes(e.id)) : [];
+  const placeEvents = placeIds ? all.filter((e) => placeIds.includes(e.id)) : [];
   const guidance = useGuidance(clusters, searchCenter, radius);
   const [hotspotOpen, setHotspotOpen] = useState(false);
   const [recenter, setRecenter] = useState(0);
@@ -91,135 +145,60 @@ export function App() {
   useEffect(() => trackView(route?.name ?? 'map'), [route?.name]);
   const saved = useSaved();
 
-  const panel = useRef<HTMLElement>(null);
-  const sheet = useRef<HTMLDivElement>(null);
-  const [panelHeight, setPanelHeight] = useState(180);
-  const [sheetHeight, setSheetHeight] = useState(200);
+  // The time line's height: the map keeps the reach clear of it.
+  const timeline = useRef<HTMLDivElement>(null);
+  const [timelineHeight, setTimelineHeight] = useState(90);
   useLayoutEffect(() => {
-    const p = panel.current;
-    const s = sheet.current;
-    if (!p || !s) return;
-    const ro = new ResizeObserver(() => {
-      // Hidden in the list view (0 px): keep the map's last inset so it doesn't re-fit on return.
-      if (p.offsetHeight > 0) setPanelHeight(p.offsetHeight);
-      setSheetHeight(s.offsetHeight);
-    });
-    ro.observe(p);
-    ro.observe(s);
+    const el = timeline.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setTimelineHeight(el.offsetHeight));
+    ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => storage.set('view', view), [view]);
-
-  const regionName = region.name[lang];
-  const banner =
-    !bannerDismissed && location.status !== 'ok' && location.status !== 'locating'
-      ? t(`location.${location.status}`, { region: regionName })
-      : null;
-  const nextRadius =
-    radius < config.app.radius.maxM
-      ? snapRadius(radius * 2.5, config.app.radius.minM, config.app.radius.maxM)
-      : null;
-  const bannerEl = banner && (
-    <div className="banner" role="status">
-      <span>{banner}</span>
-      <span className="banner__actions">
-        {location.status !== 'outside' && (
-          <button type="button" onClick={location.retry}>
-            {t('location.useMine')}
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => {
-            setBannerDismissed(true);
-            storage.set('locationNoticeDismissed', '1');
-          }}
-        >
-          {t('location.dismiss')}
-        </button>
-      </span>
-    </div>
-  );
-  // The list starts clean: map cards, a hotspot card or a proposed point don't wait behind it.
-  const showList = () => {
-    setView('list');
+  const clearCards = () => {
     setSelectedId(null);
     setPlaceIds(null);
     setHotspotOpen(false);
   };
-  const otherLang = config.app.languages.find((l) => l !== lang) as Language | undefined;
+  const banner =
+    !bannerDismissed && location.status !== 'ok' && location.status !== 'locating'
+      ? t(`location.${location.status}`, { region: region.name[lang] })
+      : null;
+  const nextRadius = radius < maxM ? snapRadius(radius * 2.5, minM, maxM) : null;
+  // Locate: back to the user, the default reach and now (§5).
+  const locate = () => {
+    setBannerDismissed(false);
+    setPoint(null);
+    setRadius(defaultM);
+    filters.setWindow('today');
+    setAt(null);
+    setDay(null);
+    setLiveOnly(false);
+    setView('map');
+    clearCards();
+    setRecenter((n) => n + 1);
+    location.retry();
+  };
+  const toggleLive = () => {
+    // Live-only is about right now: from a later time or day, it returns to now.
+    if (!liveOnly) {
+      filters.setWindow('today');
+      setAt(null);
+      setDay(null);
+    }
+    setLiveOnly((v) => !v);
+  };
 
   return (
     <div className="app">
-      <header className="topbar">
-        <button
-          type="button"
-          className="brand"
-          onClick={() => go({ name: 'about' })}
-          aria-label={`${t('header.about')}, ${regionName}`}
-        >
-          <span className="brand__dot" aria-hidden />
-          <span className="brand__name">Happow</span>
-          <span className="brand__region">{regionName}</span>
-        </button>
-        <div className="topbar__actions">
-          <button
-            type="button"
-            className="icon-btn icon-btn--raised"
-            onClick={() => go({ name: 'add' })}
-            aria-label={t('header.add')}
-          >
-            <Icon name="plus" />
-          </button>
-          {otherLang && (
-            <button
-              type="button"
-              className="chip-btn"
-              onClick={() => setLang(otherLang)}
-              aria-label={t('header.language')}
-            >
-              {otherLang.toUpperCase()}
-            </button>
-          )}
-          <button
-            type="button"
-            className="icon-btn icon-btn--raised"
-            onClick={() => {
-              setBannerDismissed(false);
-              setPoint(null);
-              setRecenter((n) => n + 1);
-              location.retry();
-            }}
-            aria-label={t(point ? 'point.back' : 'header.locate')}
-            data-status={location.status}
-            data-pinned={point !== null}
-          >
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
-              <path
-                fill="currentColor"
-                d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9 3h-2.07A7 7 0 0 0 13 5.07V3h-2v2.07A7 7 0 0 0 5.07 11H3v2h2.07A7 7 0 0 0 11 18.93V21h2v-2.07A7 7 0 0 0 18.93 13H21v-2Zm-9 6a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"
-              />
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      <FilterBar
-        window={filters.window}
-        onWindow={filters.setWindow}
-        activeCount={filters.activeCount}
-        onOpenFilters={() => setFiltersOpen(true)}
-      />
-
-      {view === 'map' && bannerEl}
-
       <main className="stage">
         <MapView
           center={searchCenter}
           radiusM={radius}
-          events={events}
-          now={now}
+          events={mapEvents}
+          now={pinTime}
+          pinMode={pinMode}
           selectedId={selectedId}
           onSelect={(id) => {
             setSelectedId(id);
@@ -231,47 +210,125 @@ export function App() {
             setPlaceIds(ids);
             setHotspotOpen(false);
           }}
-          bottomInset={panelHeight}
-          overlayInset={sheetHeight}
+          bottomInset={timelineHeight}
           recenter={recenter}
-          hidden={view !== 'map'}
-          clusters={clusters}
           hotspot={guidance.hotspot}
           onHotspot={() => {
             setSelectedId(null);
             setHotspotOpen(true);
           }}
-          onExpand={setRadius}
+          previewRadiusM={previewRadius}
+          onCity={() => setRadius(maxM)}
           pinned={point !== null}
-          cardOpen={selected !== null || placeEvents.length > 0 || hotspotOpen}
           onSetPoint={(p) => {
             setPoint(p);
-            setSelectedId(null);
-            setPlaceIds(null);
-            setHotspotOpen(false);
+            clearCards();
           }}
         />
-        {view === 'list' && (
-          <div className="list-wrap">
-            {bannerEl}
-            <ListView
-              events={events}
-              now={now}
-              radiusM={radius}
-              nextRadiusM={nextRadius}
-              around={loaded.around}
-              guidance={guidance}
-              filtered={filtered}
-              onSelect={openDetail}
-              onExpand={setRadius}
-              onClearFilters={filters.clear}
-            />
-          </div>
-        )}
       </main>
 
-      <div className="sheet" ref={sheet}>
-        {/* Cards belong to the map; in the list a row opens the full event page. */}
+      <div className="hud-top">
+        <button
+          type="button"
+          className={`counter${liveOnly ? ' is-on' : ''}`}
+          aria-pressed={liveOnly}
+          aria-label={t('counter.label', { count: liveCount })}
+          onClick={toggleLive}
+        >
+          <span className={`counter__dot${liveCount ? ' has-live' : ''}`} aria-hidden />
+          {loading && loaded.events.length === 0 ? '…' : liveCount}
+        </button>
+        {error && (
+          <span className="hud-error" role="status">
+            {t('summary.error')}
+          </span>
+        )}
+        <button
+          type="button"
+          className={`map-btn${filtered ? ' has-active' : ''}`}
+          aria-label={t('settings.open')}
+          aria-haspopup="dialog"
+          onClick={() => setSettingsOpen(true)}
+        >
+          <Icon name="sliders" />
+          {filtered && <span className="map-btn__badge" aria-hidden />}
+        </button>
+      </div>
+
+      {banner && (
+        <div className="banner" role="status">
+          <span>{banner}</span>
+          <span className="banner__actions">
+            {location.status !== 'outside' && (
+              <button type="button" onClick={location.retry}>
+                {t('location.useMine')}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setBannerDismissed(true);
+                storage.set('locationNoticeDismissed', '1');
+              }}
+            >
+              {t('location.dismiss')}
+            </button>
+          </span>
+        </div>
+      )}
+
+      <ReachRail radiusM={radius} onChange={setRadius} onPreview={setPreviewRadius} />
+      <div className="rail-buttons">
+        <button
+          type="button"
+          className="map-btn"
+          onClick={locate}
+          aria-label={t(point ? 'point.back' : 'header.locate')}
+          data-status={location.status}
+          data-pinned={point !== null}
+        >
+          <Icon name="locate" />
+        </button>
+        <button
+          type="button"
+          className="map-btn"
+          aria-label={t(view === 'list' ? 'view.toMap' : 'view.list')}
+          aria-pressed={view === 'list'}
+          onClick={() => {
+            clearCards();
+            setView(view === 'list' ? 'map' : 'list');
+          }}
+        >
+          <Icon name={view === 'list' ? 'map' : 'list'} />
+        </button>
+      </div>
+
+      {view === 'list' && (
+        <section className="list-overlay" aria-label={t('view.list')}>
+          <ListView
+            events={events}
+            now={now}
+            radiusM={radius}
+            nextRadiusM={nextRadius}
+            around={around}
+            guidance={guidance}
+            filtered={filtered}
+            byDay={days > 0}
+            dayFrom={days && day !== null ? starts[day]! : now}
+            // A row returns to the map with its pin selected (§5, list style B).
+            onSelect={(id) => {
+              setView('map');
+              setPlaceIds(null);
+              setHotspotOpen(false);
+              setSelectedId(id);
+            }}
+            onExpand={setRadius}
+            onClearFilters={filters.clear}
+          />
+        </section>
+      )}
+
+      <div className="sheet" style={{ bottom: timelineHeight }}>
         {view === 'map' && selected ? (
           <div className="sheet__card">
             <EventCard
@@ -324,60 +381,46 @@ export function App() {
             </div>
           )
         )}
-        {/* Map only: the list has no circle to control. Kept mounted (hidden) so its measured
-            height stays put and the map doesn't re-fit on every return from the list. */}
-        <section
-          className="panel"
-          ref={panel}
-          aria-label={t('radius.label')}
-          hidden={view !== 'map'}
-        >
-          <div className="panel__summary" aria-live="polite">
-            {loading && events.length === 0 ? (
-              t('summary.loading')
-            ) : (
-              <>
-                <strong>
-                  {t(point ? 'summary.countPoint' : 'summary.count', {
-                    count: events.length,
-                    radius: formatDistance(radius, lang),
-                  })}
-                </strong>{' '}
-                <span className="muted">· {windowSummary(t, filters.window)}</span>
-              </>
-            )}
-            {error && <span className="panel__error">{t('summary.error')}</span>}
-          </div>
-          <RadiusControl radius={radius} onChange={setRadius} />
-          <div className="segmented" role="tablist" aria-label={t('view.label')}>
-            {(['map', 'list'] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                role="tab"
-                aria-selected={view === v}
-                className={view === v ? 'is-active' : ''}
-                onClick={() => (v === 'list' ? showList() : setView('map'))}
-              >
-                {t(`view.${v}`)}
-              </button>
-            ))}
-          </div>
-        </section>
       </div>
-      {view === 'list' && (
-        <button type="button" className="to-map" onClick={() => setView('map')}>
-          <Icon name="pin" size={18} />
-          {t('view.toMap')}
-        </button>
-      )}
 
-      {filtersOpen && (
-        <FilterSheet
+      <div className="timeline-bar" ref={timeline}>
+        <TimeLine
+          window={filters.window}
+          onWindow={(id) => {
+            filters.setWindow(id);
+            setLiveOnly(false);
+            clearCards();
+          }}
+          now={now}
+          timeZone={region.timezone}
+          at={at}
+          onAt={(v) => {
+            setAt(v);
+            if (v) setLiveOnly(false);
+          }}
+          day={day}
+          onDay={(d) => {
+            setDay(d);
+            if (d !== null) setLiveOnly(false);
+          }}
+          events={loaded.events}
+        />
+      </div>
+
+      {settingsOpen && (
+        <SettingsSheet
           filters={filters}
           count={events.length}
           loading={loading}
-          onClose={() => setFiltersOpen(false)}
+          onClose={() => setSettingsOpen(false)}
+          onAdd={() => {
+            setSettingsOpen(false);
+            go({ name: 'add' });
+          }}
+          onAbout={() => {
+            setSettingsOpen(false);
+            go({ name: 'about' });
+          }}
         />
       )}
       {detailId && (

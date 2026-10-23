@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { windowRows } from '../src/components/FilterBar';
+import { windowRows } from '../src/windows';
 import { RangeIcon } from '../src/components/Icons';
 
 // Tests run from apps/web (jsdom), so resolve the design files from the working directory.

@@ -57,14 +57,18 @@ export function addPinLayers(m: maplibregl.Map) {
         'case',
         get('cluster'),
         1.1,
-        ['match', get('kind'), 'live', 1, 'soon', 26 / PIN_PX, 10 / PIN_PX],
+        ['match', get('kind'), 'live', 1, ['soon', 'day'], 26 / PIN_PX, 10 / PIN_PX],
       ]),
     },
     paint: { 'icon-opacity': opacity },
   });
   layer({
     id: 'pin-outline',
-    filter: ['all', notCluster, ['any', isKind('soon'), ['all', isKind('live'), get('late')]]],
+    filter: [
+      'all',
+      notCluster,
+      ['any', isKind('soon'), isKind('day'), ['all', isKind('live'), get('late')]],
+    ],
     layout: {
       ...common,
       'icon-image': ['case', get('late'), 'pin-outline-dashed', 'pin-outline'],
@@ -139,10 +143,10 @@ export function pinPaint(
         'case',
         get('cluster'),
         t.ink,
-        ['match', get('kind'), 'live', live, 'soon', t.paper, t.muted],
+        ['match', get('kind'), 'live', live, ['soon', 'day'], t.paper, t.muted],
       ],
     ],
-    ['pin-outline', 'icon-color', ['match', get('kind'), 'live', onLive, live]],
+    ['pin-outline', 'icon-color', ['match', get('kind'), 'live', onLive, 'day', t.muted, live]],
     ['pin-glyph', 'icon-color', ['match', get('kind'), 'live', onLive, t.ink]],
     ['pin-count', 'text-color', ['case', get('cluster'), t.paper, t.ink]],
     ['pin-count', 'text-halo-color', ['case', get('cluster'), t.ink, t.paper]],

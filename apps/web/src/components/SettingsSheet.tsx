@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
-import type { PriceFilter } from '@happow/core';
+import type { Language, PriceFilter } from '@happow/core';
 import { config } from '../config';
 import type { FiltersState } from '../hooks/useFilters';
 import { useI18n } from '../i18n';
-import { Glyph, Icon } from './Icons';
+import { Glyph, Icon, type IconName } from './Icons';
 
 const PRICES: PriceFilter[] = ['any', 'free', 'paid'];
 
@@ -12,11 +12,17 @@ interface Props {
   count: number;
   loading: boolean;
   onClose: () => void;
+  onAdd: () => void;
+  onAbout: () => void;
 }
 
-/** Category multi-select and price filter. Changes apply live; the count updates behind the sheet. */
-export function FilterSheet({ filters, count, loading, onClose }: Props) {
-  const { t, lang } = useI18n();
+/**
+ * Settings (§5): the filters first (categories, price; they apply live and the count updates
+ * behind the sheet), then adding an event, the language and About.
+ */
+export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout }: Props) {
+  const { t, lang, setLang } = useI18n();
+  const otherLang = config.app.languages.find((l) => l !== lang) as Language | undefined;
   const dialog = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,22 +39,23 @@ export function FilterSheet({ filters, count, loading, onClose }: Props) {
         className="filter-sheet"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="filters-title"
+        aria-labelledby="settings-title"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
         <header className="filter-sheet__head">
-          <h2 id="filters-title">{t('filters.title')}</h2>
+          <h2 id="settings-title">{t('settings.title')}</h2>
           <button
             type="button"
             className="icon-btn"
             onClick={onClose}
-            aria-label={t('filters.close')}
+            aria-label={t('settings.close')}
           >
             <Icon name="close" size={18} />
           </button>
         </header>
 
+        <h3 className="settings__group">{t('filters.title')}</h3>
         <section className="filter-sheet__section">
           <h3>{t('filters.categories')}</h3>
           <div className="cat-grid">
@@ -91,6 +98,19 @@ export function FilterSheet({ filters, count, loading, onClose }: Props) {
           </div>
         </section>
 
+        <ul className="settings__rows">
+          <SettingsRow icon="plus" label={t('header.add')} onClick={onAdd} />
+          {otherLang && (
+            <SettingsRow
+              icon="language"
+              label={t('settings.language')}
+              value={t(`language.${otherLang}`)}
+              onClick={() => setLang(otherLang)}
+            />
+          )}
+          <SettingsRow icon="info" label={t('header.about')} onClick={onAbout} />
+        </ul>
+
         <footer className="filter-sheet__foot">
           <button
             type="button"
@@ -106,5 +126,27 @@ export function FilterSheet({ filters, count, loading, onClose }: Props) {
         </footer>
       </div>
     </div>
+  );
+}
+
+function SettingsRow({
+  icon,
+  label,
+  value,
+  onClick,
+}: {
+  icon: IconName;
+  label: string;
+  value?: string;
+  onClick: () => void;
+}) {
+  return (
+    <li>
+      <button type="button" className="settings__row" onClick={onClick}>
+        <Icon name={icon} size={20} />
+        <span className="settings__label">{label}</span>
+        {value && <span className="settings__value">{value}</span>}
+      </button>
+    </li>
   );
 }

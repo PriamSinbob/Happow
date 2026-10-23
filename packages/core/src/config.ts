@@ -41,6 +41,10 @@ export function loadConfig(): HappowConfig {
   const { minM, maxM, defaultM } = app.radius;
   if (!(minM <= defaultM && defaultM <= maxM))
     errors.push('radius must satisfy minM ≤ defaultM ≤ maxM');
+  const det = app.radius.detentsM;
+  if (det.some((d, i) => i > 0 && d <= det[i - 1]!) || det[0]! < minM || det.at(-1)! > maxM)
+    errors.push('radius.detentsM must ascend within minM–maxM');
+  if (!det.includes(defaultM)) errors.push('radius.defaultM must be one of radius.detentsM');
   if (app.h3.densityResolution >= app.h3.eventResolution)
     errors.push('h3.densityResolution must be coarser (lower) than h3.eventResolution');
   if (app.density.searchRadiusM < app.radius.defaultM)
