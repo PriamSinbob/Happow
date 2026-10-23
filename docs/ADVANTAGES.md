@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Why someone would use Happow over a listings site, a ticket app or Google Maps. Every item is tagged so the list stays honest:
 
-- **Status:** `Live` = in the app today · `M6` / `M7` = specified in [M6-design](milestones/M6-design.md) / [M7-search-follow](milestones/M7-search-follow.md) · `Later` = designed, not scheduled.
+- **Status:** `Live` = in the app today · `M6` / `M7` / `M8` = specified in [M6-design](milestones/M6-design.md) / [M7-search-follow](milestones/M7-search-follow.md) / [M8-accounts-private](milestones/M8-accounts-private.md) · `Later` = designed, not scheduled.
 - **Tier:** see [Free and paid](#free-and-paid) at the end. Unless marked otherwise, an item is free for everyone, with no account.
 
 ## Built around "now"
@@ -101,7 +101,8 @@ Why someone would use Happow over a listings site, a ticket app or Google Maps. 
 
 ## Contribute
 
-- **Add an event from a link.** Paste the event's page and the form fills itself (structured data first, AI as fallback); you only confirm. `Live`
+- **Add an event from a link.** Paste the event's page and the form fills itself (structured data first, AI as fallback); you only confirm. Code built, switched off; on with a free account, 30 links a month. `M8`
+- **A page just for adding.** `/add` opens from the app-icon shortcut or, on Android, straight from the share sheet with the link filled in; "add another" keeps the venue and date for a series. `M8`
 - **Report problems** in two taps. `Live`
 
 ## Bring people along
@@ -111,6 +112,8 @@ Why someone would use Happow over a listings site, a ticket app or Google Maps. 
 - **Say you're going.** Tap "I'm going" on a shared event. The sharer sees how many people from their link are going, without names unless both choose to. `Later`
 - **Share as an image or QR code.** A ready-made card for Instagram Stories, and a QR code for posters and flyers. `Later`
 - **Old links still work.** A link to an ended event shows what's on now near that place. `Later`
+- **Private events for invited people only.** A birthday, a club meet-up or a family picnic on the same map, seen only by those you invite: by link, email or a saved group. Guests open the link without an account; the exact address appears once they accept. Creating is Premium (free for early users); joining is free. `M8`
+- **Everything you plan in one agenda.** Saved events and accepted invitations in one list by day, offline, exportable to your calendar. `M8`
 
 ## Follow the artists you like
 
@@ -129,7 +132,7 @@ Why someone would use Happow over a listings site, a ticket app or Google Maps. 
 
 ## Free and paid
 
-Map, events, filters, details and navigation are free for everyone, always. Paid features add convenience and personalisation, never visibility.
+Map, events, filters, details and navigation are free for everyone, always. Paid features add convenience and personalisation, never visibility. Premium is given free to the first users for a limited period; when it ends nothing they made is taken away, only new creation stops ([M8 §8](milestones/M8-accounts-private.md)).
 
 | Feature                                                             | No account | Free account | Premium |
 | ------------------------------------------------------------------- | ---------- | ------------ | ------- |
@@ -141,6 +144,11 @@ Map, events, filters, details and navigation are free for everyone, always. Paid
 | Violet and Mono colour presets                                      | ✓          | ✓            | ✓       |
 | Settings page, Tally red preset                                     |            | ✓            | ✓       |
 | Export and import your lit map                                      |            | ✓            | ✓       |
+| Saved agenda on the phone                                           | ✓          | ✓            | ✓       |
+| Saved agenda synced across devices                                  |            | ✓            | ✓       |
+| See and answer private-event invitations                            | link only  | ✓            | ✓       |
+| Create private events and invite people                             |            |              | ✓       |
+| Add from a link (autofill), links per month                         |            | 30           | 300     |
 | Encrypted lit-map sync and backup across devices and phone upgrades |            |              | ✓       |
 | Extended colour presets (Magenta and future ones)                   |            |              | ✓       |
 | Alerts when a followed artist announces a date; follows synced      |            |              | ✓       |

@@ -2,7 +2,7 @@
 
 Oct 23, 2026
 
-Spec from the owner's requests of 2026-10-23; Q1–Q4 decided by the owner the same day (see §9). Builds on M6 (merged through slice H, #19) and on "Private events with invitations" in `docs/BRIEF.md` → Future features, which this spec turns into a build plan. M7 (search and follow) can run before or after it; nothing here depends on M7.
+Spec from the owner's requests of 2026-10-23; Q1–Q4 decided by the owner the same day (see §10). Builds on M6 (merged through slice H, #19) and on "Private events with invitations" in `docs/BRIEF.md` → Future features, which this spec turns into a build plan. M7 (search and follow) can run before or after it; nothing here depends on M7.
 
 **Status:** spec agreed (decisions of 2026-10-23), not built. Build it in the usual way: plan per slice, show the plan, build.
 
@@ -16,7 +16,7 @@ Spec from the owner's requests of 2026-10-23; Q1–Q4 decided by the owner the s
 
 ## Build plan
 
-One branch and one PR to `main` per slice, as in M6. Slices A–C need no accounts and can ship in any order; D unlocks E and F.
+One branch and one PR to `main` per slice, as in M6. Slices A–C need no accounts and can ship in any order; D unlocks E, F and G. G lands before F, so creating private events is gated from the first day.
 
 | Slice | Spec   | What                                                                   | Needs | Status |
 | ----- | ------ | ---------------------------------------------------------------------- | ----- | ------ |
@@ -25,7 +25,8 @@ One branch and one PR to `main` per slice, as in M6. Slices A–C need no accoun
 | C     | §3     | Add page at `/add`, PWA shortcut and share target                      | —     |        |
 | D     | §5     | User accounts: sign-in, profile, consent, export, delete; saved sync   | —     |        |
 | E     | §6     | Private events: data, enforcement, `/api/private`, leak tests          | D     |        |
-| F     | §7     | Invitations, RSVP, private UI in the add page, map and agenda          | E     |        |
+| F     | §7     | Invitations, RSVP, private UI in the add page, map and agenda          | E, G  |        |
+| G     | §8     | Plans, entitlements and early-access grants                            | D     |        |
 
 ## 1. Reach circle removed
 
@@ -58,7 +59,7 @@ One branch and one PR to `main` per slice, as in M6. Slices A–C need no accoun
 - **Ways in.**
   - PWA manifest `shortcuts`: long-press the installed app icon → Add event.
   - PWA `share_target`: share a link from the browser or the Facebook app straight into `/add?url=…`. Android installed PWA only; iOS has no share target, so pasting stays the path there.
-- **Autofill** (owner, 2026-10-23, Q4): on for signed-in users with a monthly quota per account (`submissions.autofillPerAccountMonth` in config, usage shown on the add page); anonymous users keep the manual form. This replaces the 2026-10-21 decision to wait for the organiser subscription: slice C updates `docs/BRIEF.md` accordingly. Until slice D lands, a shared link only fills the official-link field.
+- **Autofill** (owner, 2026-10-23, Q4): on for signed-in users with 30 links a month per account (`autofill.perMonth` per plan in `config/plans.json`, §8; usage shown on the add page as "12 / 30"). Only successful fills count; a page that yields nothing is free. Premium gets a higher quota for organisers with series; anonymous users keep the manual form. This replaces the 2026-10-21 decision to wait for the organiser subscription: slice C updates `docs/BRIEF.md` accordingly. Until slice D lands, a shared link only fills the official-link field.
 - **Signed in (slice D):** submissions are tied to the account, and a "Moje / Mine" view on the add page lists them with their state (pending, published, rejected) and lets the submitter edit or cancel their own events. Anonymous submissions keep working as today.
 
 ## 4. About screen in the §15 style
@@ -80,7 +81,11 @@ A mockup `docs/design/about-rows.html` comes first, for the owner's OK (CLAUDE.m
   - Email with a 6-digit code as the default, and the magic link in the same email. The code matters for installed PWAs: on iOS a home-screen web app keeps its storage apart from Safari, so a magic link opened from Mail signs the user in to Safari, not to the installed app.
   - Google as the second method (owner, Q1). Apple later: it needs a paid Apple Developer Program membership. Test the Google redirect inside an installed iOS app; the email code is the fallback there.
   - Passkeys come later with the atlas sync (M6 §8).
-- **Email delivery.** Supabase's built-in SMTP is rate-limited and meant for testing; sign-in and invitation emails need a custom SMTP provider (Cloudflare Email Service, Resend or Postmark) before anyone else uses it.
+- **Email delivery.** Supabase's built-in SMTP delivers only to the project's team members, at 2 messages an hour, and is for testing. Sign-in and invitation emails need custom SMTP from an address on the app's own domain (a `workers.dev` subdomain or Gmail cannot be a sender). Candidates, checked 2026-10-23:
+  - Cloudflare Email Service (Beta): SMTP or a Workers binding; 3,000 emails a month included on Workers Paid, then $0.35 per 1,000; not available on Workers Free.
+  - Resend free plan: 3,000 a month, 100 a day, 3 domains.
+  - Brevo free plan: 300 a day.
+  - Email Routing (Cloudflare, free) forwards `kontakt@` and similar addresses on the domain to an existing inbox; it does not send.
 - **Profile.** `profiles (user_id, display_name, created_at)`; the display name is optional and shown only to people one invites or is invited by.
 - **GDPR.** Consent to terms and privacy at sign-up; export (JSON of profile, saved, contacts, groups, invitations, own events); delete account cascades to all of those. Public events one submitted stay published but lose the link to the account.
 - **Nothing public needs an account.** Browsing, filters, saving on the device, adding public events and reporting stay anonymous.
@@ -102,7 +107,7 @@ Data model from the brief: on `events`, `visibility` ('public' / 'private', defa
 
 ## 7. Invitations and private UI
 
-- **Creating.** The add page gets a Public / Private toggle once signed in. Private events skip public moderation (only invitees see them) but keep the abuse limits.
+- **Creating** is a premium entitlement (`private.create`, §8); joining, answering and seeing invitations are free for every signed-in user, and viewing by link needs no account (Q2). The add page shows the Public / Private toggle to everyone signed in; without the entitlement, Private shows the premium mark and what it unlocks. Private events skip public moderation (only invitees see them) but keep the abuse limits.
 - **Inviting** from the event, in one sheet:
   - **Link:** a capability token (128-bit, stored hashed, revocable, optional expiry). Without an account, the link shows the event (title, time, area; owner, Q2); answering needs sign-in, and accepting reveals the address. `GET /api/invite/:token` is `no-store` and rate-limited per IP.
   - **Email:** sends an invitation; the recipient signs up or in to accept.
@@ -112,7 +117,39 @@ Data model from the brief: on `events`, `visibility` ('public' / 'private', defa
 - **On the map:** private pins keep the time encoding (live, soon, later, ring) and carry a small lock mark, so they read as "mine" without a new colour (the live hue keeps its one meaning). Settled in the mockup.
 - **In the agenda (§2):** own private events and accepted invitations appear with the saved ones; pending invitations sit on top until answered.
 
-## 8. Acceptance
+## 8. Plans, entitlements and early access
+
+Owner, 2026-10-23: the app is designed from now on as partly paid, with paid features given free for a limited time. Paid never buys visibility: every public event is still shown to everyone, equally (brief, Monetization).
+
+- **Entitlements, not plan checks.** Code asks for a feature, never for a plan name: `can(user, 'private.create')`, `quota(user, 'autofill.perMonth')`. A new `config/plans.json` maps plans to entitlements, so moving a feature between tiers is a config change:
+
+  | Entitlement                    | No account | Account | Premium |
+  | ------------------------------ | ---------- | ------- | ------- |
+  | `private.join` (see, answer)   | link only  | ✓       | ✓       |
+  | `private.create`               |            |         | ✓       |
+  | `autofill.perMonth`            | 0          | 30      | 300     |
+  | `saved.sync`                   |            | ✓       | ✓       |
+  | `presets.account` (Tally red)  |            | ✓       | ✓       |
+  | `presets.premium` (Magenta, …) |            |         | ✓       |
+  | `atlas.sync` (M6 §8)           |            |         | ✓       |
+  | `alerts.newDates` (M7 §5)      |            |         | ✓       |
+
+- **Grants.** `plan_grants (user_id, plan, source, starts_at, ends_at, note)`; `source` is `early_access`, `manual`, `trial` or `purchase` (purchase waits for the payment provider). The effective plan is the highest active grant, else `account`. Checked in the Worker for API features and inside the SQL functions that create private events or invitations, so the client is never the gate.
+- **Early access.** `config/plans.json` → `earlyAccess: { plan: "premium", cohortCap, signupBefore, until }`. Every account created while the cohort is open (fewer than `cohortCap` grants, before `signupBefore`) gets a premium grant ending at the fixed date `until`. One grant per account; Google and email accounts count alike. `manual` grants let the owner add testers or organisers outside the cohort.
+- **What the user sees.**
+  - The account row in About shows the plan and its end: a small premium mark and "do 30.06.2027" / "until 30.06.2027".
+  - Gated controls are visible to everyone, with the premium mark; tapping one without the entitlement opens a short sheet saying what it unlocks. No nagging elsewhere, no counters, no upsell on the map (pull, not push: M6 §1).
+  - Reminders 30 and 7 days before a grant ends: one email each, plus the account row.
+- **When a grant ends.** Nothing a user made is taken away; only new creation stops.
+  - Existing private events stay visible to their invitees until they end, and the owner can still edit, cancel and invite to them.
+  - Autofill falls back to the account quota.
+  - Premium presets fall back to Violet; synced data stays downloadable.
+  - No automatic switch to a paid plan: no payment details are collected in early access, so nothing can be charged without the user choosing to buy.
+- **Terms.** The terms of use name the early-access period and what changes at its end, before anyone gets a grant.
+- **Tests.** Effective-plan resolution (overlapping grants, expiry at the boundary, the cohort cap under concurrent sign-ups), gating in the SQL functions, and the end-of-grant behaviour above.
+- **Out of scope:** pricing and the payment provider (M6 §12), still deferred.
+
+## 9. Acceptance
 
 - The map shows no reach outline; the reach still reads from the lit area at street zoom.
 - The saved agenda lists every saved event offline, including ones outside today's snapshot, after a reload.
@@ -121,17 +158,19 @@ Data model from the brief: on `events`, `visibility` ('public' / 'private', defa
 - Sign-in by code works in an installed iOS home-screen app.
 - No private event or detail reaches an anonymous user or a non-invitee through any endpoint, cache or preview (the §6 tests).
 
-## 9. Decisions and open questions
+## 10. Decisions and open questions
 
 Decided by the owner on 2026-10-23:
 
 - **Q1 sign-in:** email code (with the magic link in the same email) plus Google.
 - **Q2 invitation link:** shows the event without an account; signing in is needed only to answer.
 - **Q3 address:** area and time until the invitee accepts.
-- **Q4 autofill:** on for signed-in users with a monthly per-account quota.
+- **Q4 autofill:** on for signed-in users, 30 links a month per account; premium 300.
+- **Private events:** joining is free for every signed-in user; creating is premium, given free to an early-access cohort (§8).
+- **Paid model:** partly paid, with paid features free for a limited time (§8).
 
 Open:
 
-- Private events are assumed free for every signed-in user (nothing in `docs/ADVANTAGES.md` puts them behind premium); confirm before slice E.
-- SMTP provider for sign-in and invitation emails (§5).
-- The autofill quota number (100 links a month in the brief's example).
+- Early-access parameters: `cohortCap`, `signupBefore` and the fixed end date `until`.
+- Own domain and email provider for sign-in and invitation emails (§5).
+- Pricing and payment provider (M6 §12).
