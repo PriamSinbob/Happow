@@ -68,7 +68,8 @@
   "timeline": {
     "snapNowMin": 10,
     "stepMin": 5,
-    "binMin": 30
+    "binMin": 30,
+    "carryOverMin": 360
   },
   "defaultTimeWindow": "today",
   "dedup": {

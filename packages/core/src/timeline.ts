@@ -92,12 +92,28 @@ export function dayIndex(at: Date, starts: readonly Date[]): number {
   return -1;
 }
 
-/** Events overlapping each day (a multi-day festival counts on every day it runs). */
-export function dayBins(events: readonly Span[], starts: readonly Date[], now: Date): number[] {
+/**
+ * Whether an event is on the day [from, to): it starts that day, or it started earlier and runs at
+ * least `carryOverMin` into it. A festival counts on every day; a show from 22:15 to 0:15 only on
+ * the day it starts.
+ */
+export function isOnDay(event: Span, from: Date, to: Date, carryOverMin: number): boolean {
+  const s = Date.parse(event.startAt);
+  const e = Date.parse(event.endAt);
+  if (s >= to.getTime() || e <= from.getTime()) return false;
+  return s >= from.getTime() || e - from.getTime() >= carryOverMin * MIN;
+}
+
+/** Events on each day (see `isOnDay`); today counts only what is not over yet. */
+export function dayBins(
+  events: readonly Span[],
+  starts: readonly Date[],
+  now: Date,
+  carryOverMin: number,
+): number[] {
   return starts.slice(0, -1).map((s, i) => {
-    const from = Math.max(s.getTime(), now.getTime());
-    const to = starts[i + 1]!.getTime();
-    return events.filter((e) => Date.parse(e.startAt) < to && Date.parse(e.endAt) > from).length;
+    const from = new Date(Math.max(s.getTime(), now.getTime()));
+    return events.filter((e) => isOnDay(e, from, starts[i + 1]!, carryOverMin)).length;
   });
 }
 

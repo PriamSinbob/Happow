@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
+**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E), §5 and §13.2–§13.5 built (slice F); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
 **Visual reference:** `docs/design/` (interactive prototype, exact range icons, README listing what is normative). Slices E to H match it; where this spec's words and the prototype differ, ask the owner.
 
@@ -19,7 +19,7 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data | —     | merged (#12)                             |
 | D     | §3                      | Colour tokens, day/night themes, presets, contrast test  | —     | merged (#13)                             |
 | E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge   | C, D  | merged (#14)                             |
-| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  | in progress (`m6-layout`)                |
+| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay | B, E  | in review (`m6-layout`)                  |
 | G     | §4.4 UI, §7             | Family-mode filter and chip; dice                        | C, F  |                                          |
 | H     | §6                      | Lit map and the local atlas                              | F     |                                          |
 | —     | §8, §9                  | Accounts and premium; co-presence                        | —     | out of M6 (build later / after the core) |
@@ -345,6 +345,17 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
   - the radius label and scale
   - the Map/List segmented control
   - the time-window chips
+
+- **Built** (slice F, 2026-10-23): §5, §13.2, §13.3 and §13.5.
+  - **Map screen.** Live counter top-left (tap = live only; it always counts now), a settings button top-right (icon only) opening Ustawienia / Settings: filters, then add event, language and About. Top bar, window chips, radius slider, summary sentence and Map/List switch are gone.
+  - **Reach rail** (`ReachRail.tsx`): log scale between `radius.detentsM`, walking minutes up to 2 km, `vibrate(6)` per detent, snap on release, arrow keys. While dragging, the map jumps to the radius under the finger (`cameraForBounds`, no animation); events re-filter only on a detent. Pinching out past 1.6 × 5 km sets the city reach (`radius.maxM`, pill "miasto / city").
+  - **Time line** (`TimeLine.tsx`): range icons from the design files, Today from now to midnight with hour numerals and a 30-min histogram (snap to now within 10 min, else 5 min), 7 / 14 days with date numerals and a per-day histogram. Pins read the time on the line; 7 / 14 days show dots, a picked day shows 26 px glyph pins. Time windows are today / week / later; no extra requests.
+  - **Days.** An event counts on a day if it starts then, or started earlier and runs at least `timeline.carryOverMin` (6 h) into it: a festival shows every day, a 22:15–0:15 show only on the day it starts.
+  - **List style B**: an overlay over the map, day headers for 7 / 14 days; a row returns to the map with its pin selected.
+  - **Map.** Long-press (right-click on desktop) = plan from here; a tap picks the nearest pin within 14 px, so 10 px dots are tappable, or closes the card. Edge dots for the 24 nearest events beyond the reach (`density.maxEdgeDots`), live hue when live; tap pans there. The faded outside pins are the same 24. Hotspot stays a DOM marker; outside-radius bubbles and chevrons are gone.
+  - **Core** (`packages/core/src/timeline.ts`, unit-tested): rail scale and detents, reach label, time snapping, 30-min and per-day bins (25 Oct DST week), `isOnDay`, edge clamping.
+  - Skipped: dice and the family chip (slice G); the first-launch rail nudge (§1); iOS has no haptics (Vibration API).
+  - Open: list style B still needs the owner's review on a phone. Not yet tried on a real phone: rail drag at 60 fps with 500 events, pinch to city mode, long-press on touch. Edge dots and map pins are not keyboard-focusable; the list is the keyboard and screen-reader path. Many events sat on one city-centre point because of a geocoder fallback, fixed separately (`fix-geocode-city-centre`).
 
 ## 6. Lit map (explored areas)
 

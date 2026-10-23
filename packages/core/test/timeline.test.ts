@@ -4,6 +4,7 @@ import {
   dayBins,
   dayIndex,
   dayStarts,
+  isOnDay,
   loadConfig,
   nearestDetent,
   radiusToRail,
@@ -96,11 +97,23 @@ describe('time line', () => {
         span('2026-10-23T08:00:00Z', '2026-10-23T10:00:00Z'), // over before now
         span('2026-10-23T18:00:00Z', '2026-10-23T20:00:00Z'), // tonight
         span('2026-10-23T10:00:00Z', '2026-10-25T20:00:00Z'), // a three-day festival
+        span('2026-10-24T20:15:00Z', '2026-10-24T22:15:00Z'), // Sat 22:15–0:15: Saturday only
       ],
       starts,
       fri,
+      app.timeline.carryOverMin,
     );
-    expect(bins).toEqual([2, 1, 1]);
+    expect(bins).toEqual([2, 2, 1]);
+  });
+
+  it('counts a late show on the day it starts, a festival on every day', () => {
+    const sun = new Date('2026-10-24T22:00:00Z');
+    const mon = new Date('2026-10-25T23:00:00Z');
+    const late = span('2026-10-25T20:15:00Z', '2026-10-25T23:15:00Z');
+    const fest = span('2026-10-24T08:00:00Z', '2026-10-27T18:00:00Z');
+    expect(isOnDay(late, sun, mon, 360)).toBe(true);
+    expect(isOnDay(late, mon, new Date(mon.getTime() + 86_400_000), 360)).toBe(false);
+    expect(isOnDay(fest, mon, new Date(mon.getTime() + 86_400_000), 360)).toBe(true);
   });
 });
 

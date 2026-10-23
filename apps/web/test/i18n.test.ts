@@ -15,14 +15,13 @@ describe('i18n', () => {
   });
 
   it('applies Polish plural rules', () => {
-    const c = (n: number) => translate('pl', 'summary.count', { count: n, radius: '500 m' });
-    expect(c(1)).toBe('1 wydarzenie w promieniu 500 m');
-    expect(c(3)).toBe('3 wydarzenia w promieniu 500 m');
-    expect(c(5)).toBe('5 wydarzeń w promieniu 500 m');
-    expect(c(22)).toBe('22 wydarzenia w promieniu 500 m');
-    expect(translate('en', 'summary.count', { count: 1, radius: '1 km' })).toBe(
-      '1 event within 1 km',
-    );
+    const c = (n: number) => translate('pl', 'counter.label', { count: n }).split('.')[0];
+    expect(c(0)).toBe('Nic teraz nie trwa');
+    expect(c(1)).toBe('1 wydarzenie trwa teraz');
+    expect(c(3)).toBe('3 wydarzenia trwają teraz');
+    expect(c(5)).toBe('5 wydarzeń trwa teraz');
+    expect(c(22)).toBe('22 wydarzenia trwają teraz');
+    expect(translate('en', 'counter.label', { count: 1 }).split('.')[0]).toBe('1 event on now');
   });
 
   it('has labels for every category in every configured language', () => {

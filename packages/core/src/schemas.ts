@@ -111,6 +111,8 @@ export const appConfigSchema = z.object({
     stepMin: z.number().int().positive(),
     /** Width of the Today histogram's bins. */
     binMin: z.number().int().positive(),
+    /** An event from an earlier day counts on a day only if it runs this long into it. */
+    carryOverMin: z.number().int().nonnegative(),
   }),
   defaultTimeWindow: z.string(),
   dedup: z.object({
