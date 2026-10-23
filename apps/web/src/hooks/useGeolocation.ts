@@ -8,6 +8,8 @@ export interface LocationState {
   status: LocationStatus;
   /** The user's real position, when known. */
   position: LatLng | null;
+  /** How precise `position` is, in metres (the atlas records only precise fixes). */
+  accuracy: number | null;
   /** Where we search from: the user's position inside the region, otherwise the region centre. */
   center: LatLng;
   /** A precise fix now (the locate button). */
@@ -24,7 +26,7 @@ const INTERVAL_MS = config.app.refresh.locationMinutes * 60_000;
  */
 export function useGeolocation(region: Region): LocationState {
   const [status, setStatus] = useState<LocationStatus>('locating');
-  const [position, setPosition] = useState<LatLng | null>(null);
+  const [fix, setFix] = useState<{ position: LatLng; accuracy: number } | null>(null);
   const last = useRef<{ pos: LatLng; accuracy: number; at: number } | null>(null);
 
   const ask = useCallback(
@@ -46,7 +48,7 @@ export function useGeolocation(region: Region): LocationState {
             return;
           }
           last.current = { pos: here, accuracy, at: Date.now() };
-          setPosition(here);
+          setFix({ position: here, accuracy });
           setStatus(isInBbox(here, region.bbox) ? 'ok' : 'outside');
         },
         (err) => {
@@ -86,8 +88,9 @@ export function useGeolocation(region: Region): LocationState {
   }, [ask]);
 
   const retry = useCallback(() => ask(true), [ask]);
+  const position = fix?.position ?? null;
   const center = status === 'ok' && position ? position : region.center;
-  return { status, position, center, retry };
+  return { status, position, accuracy: fix?.accuracy ?? null, center, retry };
 }
 
 /**

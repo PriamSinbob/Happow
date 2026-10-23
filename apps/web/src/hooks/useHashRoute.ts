@@ -6,7 +6,8 @@ export type Route =
   | { name: 'go'; id: string }
   | { name: 'add' }
   | { name: 'moderate' }
-  | { name: 'about' };
+  | { name: 'about' }
+  | { name: 'atlas' };
 
 /** Screens about one event: its detail, and "Going there". */
 const WITH_ID = { event: '#/e/', go: '#/go/' } as const;
@@ -25,6 +26,7 @@ function read(): Route | null {
   if (h === '#/add') return { name: 'add' };
   if (h === '#/moderate') return { name: 'moderate' };
   if (h === '#/about') return { name: 'about' };
+  if (h === '#/atlas') return { name: 'atlas' };
   return null;
 }
 

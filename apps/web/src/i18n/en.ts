@@ -273,6 +273,16 @@ export const en = {
   'dice.roll': 'Surprise me',
   'dice.pick': 'Surprise me from a category',
   'dice.empty': 'Nothing nearby right now',
+  'atlas.label':
+    '{count, plural, =0 {Places you have been: none yet} one {Places you have been: # area} other {Places you have been: # areas}}',
+  'atlas.title': 'Your places',
+  'atlas.export': 'Save my places to a file',
+  'atlas.import': 'Add places from a file',
+  'atlas.clear': 'Forget my places (hold)',
+  'atlas.saved': 'Saved',
+  'atlas.imported': '{count, plural, one {Added # area} other {Added # areas}}',
+  'atlas.badFile': 'Not a Happow places file',
+  'atlas.cleared': 'Places forgotten',
 } as const;
 
 export type MessageKey = keyof typeof en;

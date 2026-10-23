@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl, { type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
+  areaKey,
   circleBounds,
   circleRing,
   clampToEdge,
   distanceM,
   isRunning,
+  veilBox,
   type LatLng,
   type NearbyEvent,
 } from '@happow/core';
+import { addVeil, drawVeil, moveVeil, paintVeil, uploadVeil, type LitCell } from '../atlas/veil';
 import { config, region } from '../config';
 import type { Guidance } from '../hooks/useGuidance';
 import { useI18n } from '../i18n';
@@ -45,6 +48,9 @@ interface Props {
   pinned: boolean;
   /** Long-press on the map: plan from that spot. */
   onSetPoint: (point: LatLng) => void;
+  /** The local atlas (§6): lit cells, null until loaded (the veil then lights the reach only). */
+  lit: readonly LitCell[] | null;
+  cellRadiusM: number;
 }
 
 interface EdgeDot {
@@ -71,6 +77,13 @@ const CITY_FACTOR = 1.6;
 const REFIT_AFTER_M = 30;
 
 const RADIUS_SOURCE = 'radius';
+const { atlas, refresh } = config.app;
+
+/** The veil's canvas covers this box around the area snapshot's grid point. */
+function boxAround(center: LatLng) {
+  const k = areaKey(center, config.app.density.searchRadiusM, refresh);
+  return veilBox({ lat: k.lat, lng: k.lng }, atlas.veilRadiusM);
+}
 const RADIUS_PAINT: OwnLayerPaint = [
   ['radius-fill', 'fill-color', 'ink'],
   ['radius-line', 'line-color', 'ink'],
@@ -211,6 +224,33 @@ export function MapView(props: Props) {
   const [edgeDots, setEdgeDots] = useState<EdgeDot[]>([]);
   const latest = useRef(props);
   latest.current = props;
+  // The veil (§6): one small canvas, redrawn only when what it shows changes.
+  const veilCanvas = useRef<HTMLCanvasElement | null>(null);
+  veilCanvas.current ??= Object.assign(document.createElement('canvas'), {
+    width: atlas.canvasPx,
+    height: atlas.canvasPx,
+  });
+  const boxKey = areaKey(props.center, config.app.density.searchRadiusM, refresh);
+  const box = useMemo(
+    () => boxAround(props.center),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [boxKey.lat, boxKey.lng],
+  );
+  const boxRef = useRef(box);
+  boxRef.current = box;
+  const redrawVeil = (m: maplibregl.Map) => {
+    const p = latest.current;
+    const ctx = veilCanvas.current!.getContext('2d');
+    if (!ctx || !m.getSource('veil')) return;
+    drawVeil(ctx, {
+      box: boxRef.current,
+      colour: themeRef.current.tokens.veil,
+      cells: p.lit ?? [],
+      cellRadiusM: p.cellRadiusM,
+      reach: { centre: p.center, radiusM: p.radiusM },
+    });
+    uploadVeil(m);
+  };
 
   // Create the map once.
   useEffect(() => {
@@ -244,6 +284,9 @@ export function MapView(props: Props) {
     });
     m.on('style.load', () => {
       const p = latest.current;
+      // Under the basemap labels and below our own layers (radius, pins).
+      addVeil(m, veilCanvas.current!, boxRef.current);
+      paintVeil(m, themeRef.current.tokens);
       if (!m.getSource(RADIUS_SOURCE)) {
         m.addSource(RADIUS_SOURCE, { type: 'geojson', data: radiusFeature(p.center, p.radiusM) });
         m.addLayer({
@@ -500,6 +543,20 @@ export function MapView(props: Props) {
     zoom,
     styleReady,
   ]);
+
+  // The veil follows the snapshot's grid point; its canvas is redrawn only when the lit cells, the
+  // reach (a detent released, locate, long-press) or the theme change. Pan and zoom never redraw
+  // it: the GPU moves the texture and the zoom fade is a style expression.
+  useEffect(() => {
+    if (map.current) moveVeil(map.current, box);
+  }, [box]);
+  useEffect(() => {
+    if (map.current) paintVeil(map.current, tokens);
+  }, [tokens, styleReady]);
+  useEffect(() => {
+    if (map.current) redrawVeil(map.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.lit, props.cellRadiusM, props.center, props.radiusM, tokens.veil, box, styleReady]);
 
   // Day/night or preset changed: pin colours are paint properties, no sprite rebuild.
   useEffect(() => {

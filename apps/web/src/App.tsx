@@ -20,6 +20,7 @@ import {
   type NearbyEvent,
 } from '@happow/core';
 import { trackView } from './analytics';
+import { useAtlas } from './atlas/useAtlas';
 import { categoriesById, config, region } from './config';
 import { createRepository } from './data';
 import { withFlag, useMyReports } from './flags';
@@ -36,6 +37,7 @@ import { useLongPress } from './hooks/useLongPress';
 import { useShortcut } from './hooks/useShortcut';
 import { useI18n } from './i18n';
 import { About } from './components/About';
+import { AtlasScreen } from './components/Atlas';
 import { AddEvent } from './components/AddEvent';
 import { EventCard } from './components/EventCard';
 import { EventDetail } from './components/EventDetail';
@@ -82,6 +84,8 @@ export function App() {
   const { t, lang } = useI18n();
   const repo = useMemo(createRepository, []);
   const location = useGeolocation(region);
+  // The local atlas (§6): on this device only; a "from here" point is never recorded.
+  const atlas = useAtlas(location.status === 'ok' ? location.position : null, location.accuracy);
   const [radius, setRadius] = useRadius();
   const [previewRadius, setPreviewRadius] = useState<number | null>(null);
   const [view, setView] = useState<View>('map');
@@ -372,6 +376,8 @@ export function App() {
             setPoint(p);
             clearCards();
           }}
+          lit={atlas.lit}
+          cellRadiusM={atlas.cellRadiusM}
         />
       </main>
 
@@ -606,6 +612,7 @@ export function App() {
       {settingsOpen && (
         <SettingsSheet
           filters={filters}
+          atlasCount={atlas.count}
           count={events.length}
           loading={loading}
           onClose={() => setSettingsOpen(false)}
@@ -616,6 +623,10 @@ export function App() {
           onAbout={() => {
             setSettingsOpen(false);
             go({ name: 'about' });
+          }}
+          onAtlas={() => {
+            setSettingsOpen(false);
+            go({ name: 'atlas' });
           }}
         />
       )}
@@ -637,6 +648,7 @@ export function App() {
           ev={detail.ev && withFlag(detail.ev, myReports)}
           now={clock}
           refresh={(id, from) => repo.byId(id, from)}
+          onArrive={atlas.arrive}
           onClose={close}
         />
       )}
@@ -644,6 +656,7 @@ export function App() {
         <AddEvent onClose={close} onOpenEvent={(id) => go({ name: 'event', id }, true)} />
       )}
       {route?.name === 'moderate' && <Moderation onClose={close} />}
+      {route?.name === 'atlas' && <AtlasScreen atlas={atlas} onClose={close} />}
       {route?.name === 'about' && (
         <About onClose={close} onModerate={() => go({ name: 'moderate' }, true)} />
       )}

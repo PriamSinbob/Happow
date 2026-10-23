@@ -688,8 +688,76 @@ div.settings-row {
 .sheet-btn__count {
   font-variant-numeric: tabular-nums;
 }
+/* The atlas (§6, docs/design/atlas.html): a row in settings opens "Your places", with export,
+   import and a hold-to-clear bin. */
+.atlas-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 32px 16px;
+  color: var(--ink);
+}
+.atlas-screen__main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.atlas-screen__count {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.atlas-screen__actions {
+  display: flex;
+  gap: 28px;
+}
+.atlas-row__btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+}
+.atlas-row__main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.atlas-row__count {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--quiet);
+}
+.atlas-row__clear {
+  color: var(--quiet);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.atlas-row__ring {
+  position: absolute;
+  inset: 0;
+  color: var(--ink);
+}
+.atlas-row__toast {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 600;
+}
 .toggle:focus-visible,
 .lang-code:focus-visible,
+.atlas-row__btn:focus-visible,
 .settings-row:focus-visible,
 .sheet-btn:focus-visible {
   outline: 2px solid var(--ink);

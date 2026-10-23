@@ -3,15 +3,19 @@ import { priceFromToggles, priceToggles, type Language } from '@happow/core';
 import { config } from '../config';
 import type { FiltersState } from '../hooks/useFilters';
 import { useI18n } from '../i18n';
+import { AtlasEntry } from './Atlas';
 import { Glyph, Icon } from './Icons';
 
 interface Props {
   filters: FiltersState;
+  /** Lit areas in the local atlas (§6). */
+  atlasCount: number;
   count: number;
   loading: boolean;
   onClose: () => void;
   onAdd: () => void;
   onAbout: () => void;
+  onAtlas: () => void;
 }
 
 /** Fanned category glyphs beside the add button, shrinking and fading outward (§15). */
@@ -25,10 +29,20 @@ const FAN_RIGHT = ['basket', 'beer', 'confetti'];
 
 /**
  * Settings (§5, §15; `docs/design/settings-rows.html`): the category chips, then wordless rows in
- * black and white: price and family toggles, add event, language, About, and the footer. Filters
+ * black and white: price and family toggles, add event, language, the atlas, About, and the
+ * footer. Filters
  * apply live and the count updates behind the sheet.
  */
-export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout }: Props) {
+export function SettingsSheet({
+  filters,
+  atlasCount,
+  count,
+  loading,
+  onClose,
+  onAdd,
+  onAbout,
+  onAtlas,
+}: Props) {
   const { t, lang, setLang } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
   // The last price toggle that is on can't go off: it nudges instead.
@@ -156,6 +170,8 @@ export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout
           </span>
           {languages.slice(half).map(langButton)}
         </div>
+
+        <AtlasEntry count={atlasCount} onOpen={onAtlas} />
 
         <button
           type="button"

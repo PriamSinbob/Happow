@@ -33,11 +33,13 @@ function sheet(over: Partial<FiltersState> = {}) {
   render(
     <SettingsSheet
       filters={filters}
+      atlasCount={0}
       count={476}
       loading={false}
       onClose={vi.fn()}
       onAdd={vi.fn()}
       onAbout={vi.fn()}
+      onAtlas={vi.fn()}
     />,
     { wrapper },
   );
