@@ -83,7 +83,7 @@ export function checkPreset(preset: ThemePreset, config: ThemeConfig): string[] 
 }
 
 /**
- * Text tokens: ink on paper, paper2 and land; muted on paper, land and the toggle track; content on
+ * Text tokens: ink on paper, paper2 and land; muted on paper and land; quiet (off controls) on the track and paper; content on
  * an "on" toggle; notice inks on their fills.
  */
 export function checkTokens(name: ThemeName, t: ThemeTokens, config: ThemeConfig): string[] {
@@ -96,6 +96,8 @@ export function checkTokens(name: ThemeName, t: ThemeTokens, config: ThemeConfig
     ['muted', 'land', t.land, muted],
     ['muted', 'sunken', t.sunken, muted],
     ['onRaised', 'raised', t.raised, ink],
+    ['quiet', 'sunken', t.sunken, ink],
+    ['quiet', 'paper', t.paper, ink],
     ['warnInk', 'warn', t.warn, ink],
     ['errorInk', 'error', t.error, ink],
   ];

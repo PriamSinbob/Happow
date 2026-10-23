@@ -60,8 +60,8 @@ describe('contrast test: every shipped preset and theme meets §3.2', () => {
     const bad = { ...theme, themes: { ...theme.themes, day: { ...theme.themes.day, ink: 'red' } } };
     expect(themeConfigSchema.safeParse(bad).success).toBe(false);
     // An "off" toggle's icon must stay readable on the track (§15).
-    const dim = { ...theme.themes.day, sunken: '#B0AAA0' };
-    expect(checkTokens('day', dim, theme).join()).toMatch(/muted on sunken/);
+    const dim = { ...theme.themes.day, sunken: '#8A847C' };
+    expect(checkTokens('day', dim, theme).join()).toMatch(/quiet on sunken/);
   });
 });
 

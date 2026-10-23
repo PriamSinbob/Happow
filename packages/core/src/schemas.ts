@@ -296,6 +296,8 @@ export const themeTokensSchema = z.object({
   /** A toggle that is on, and what sits on it (§15). */
   raised: hex,
   onRaised: hex,
+  /** What is off in the settings sheet: toggles, language codes, clear (§15, owner 2026-10-23). */
+  quiet: hex,
   line: hex,
   /** Behind dialogs, at partial opacity. */
   scrim: hex,

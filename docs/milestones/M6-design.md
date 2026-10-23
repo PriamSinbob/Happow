@@ -173,7 +173,7 @@ Plan agreed with the owner on 2026-10-23, including the mockups `settings-rows.h
   - **Roll.** No repeats within a session. Each re-roll down-weights that category on this device; opening the card or starting Going there up-weights it. The weights live in localStorage.
   - **Result.** The time line goes to Today/now, the list closes, and the pin is selected with its card open. If the event is beyond the reach, the reach grows to the first detent at ≥ 1.15 × its distance, as the prototype does.
   - **Long-press.** Opens a fan of the user's top 5 categories (by weight); picking one rolls within it.
-  - **Empty pool.** A short toast, "Nic w pobliżu / Nothing nearby".
+  - **Empty pool.** A short toast with a crossed O, no words (owner, 2026-10-23).
 - **Core helpers, unit-tested:**
   - `rollDice(pool, {seen, weights, category?}, random)`: weighted, no repeats, injectable random.
   - weight updates.
@@ -452,7 +452,7 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
   - **Roll** (`rollDice`): weighted by category; no repeats until every event in the pool has been shown, then the cycle starts over, skipping the last one. Re-rolling while the result is open lowers its category (× 0.7); opening it (× 1.2) or Going there (× 1.5) raises it; weights stay between 0.2 and 5, in localStorage.
   - **Result.** Today, now, the map, the card open; a reach too small grows to the first detent at ≥ 1.15 × the distance.
   - **Hold.** A grid under the top row with up to 5 categories that have events in the pool, by weight (the same grid as the map shortcut, not a fan at the button).
-  - **Empty pool.** A toast: "Teraz nic w pobliżu / Nothing nearby right now".
+  - **Empty pool.** A wordless toast: a crossed O (owner, 2026-10-23); screen readers hear "Teraz nic w pobliżu / Nothing nearby right now".
 
 ## 8. Accounts and premium (design now, build later)
 
@@ -614,4 +614,6 @@ Agreed with the owner on 2026-10-23 after four mockup rounds. Reference: `docs/d
   - **Touch-first.** No hover styles in the stylesheet (checked by a test).
   - **Tests.** `packages/core/test/dice.test.ts`, `apps/web/test/slice-g.test.tsx`; design review run (verdict and owner questions in the PR).
   - Skipped: none of §15.
-  - Open: the chip is 40 px like the other map buttons (mockup: 38 px); the inactive language code (10.5 px, muted on sunken) is below the 11 px and 4.5:1 text floors, as the mockup has it.
+  - **Off controls.** Tickets, the family tile, language codes and clear use one darker token, `quiet` (#5C5852 / #A9ACB3, ≥ 5.7:1 on the track and on paper), instead of `muted` (owner, 2026-10-23).
+  - **Owner decisions on the review (2026-10-23):** the chip stays 40 px like the other map buttons (mockup: 38 px); choosing another shortcut turns the previous one off, family mode included; the dice hold opens the shared grid under the top row, not a fan at the button.
+  - Open: the language codes stay 10.5 px as in the mockup (below the 11 px floor).

@@ -441,8 +441,13 @@ export function App() {
         />
       )}
       {toast && (
-        <div className="toast" role="status" style={{ bottom: timelineHeight + 12 }}>
-          {toast}
+        <div
+          className="toast toast--icon"
+          role="status"
+          aria-label={toast}
+          style={{ bottom: timelineHeight + 12 }}
+        >
+          <Icon name="none" size={22} />
         </div>
       )}
 
