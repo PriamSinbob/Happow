@@ -1,4 +1,11 @@
-import { distanceM, pinState, type LatLng, type NearbyEvent, type PinState } from '@happow/core';
+import {
+  distanceM,
+  eventGlyph,
+  pinState,
+  type LatLng,
+  type NearbyEvent,
+  type PinState,
+} from '@happow/core';
 import { categoriesById, config } from './config';
 
 /** A spot on the map: one place (one or more events there) or nearby places merged at this zoom. */
@@ -40,6 +47,11 @@ export interface PinFeature {
 export interface PinCollection {
   type: 'FeatureCollection';
   features: PinFeature[];
+}
+
+/** The event's glyph: its first category's, or a variant from that category's rules (café, bar). */
+export function glyphOf(ev: Pick<NearbyEvent, 'categoryIds' | 'title' | 'venue'>): string {
+  return eventGlyph(categoriesById.get(ev.categoryIds[0]!), [ev.title, ev.venue?.name ?? '']);
 }
 
 /** Age limits from this one up get the numeral badge (§4.4). */
@@ -111,7 +123,7 @@ export function pinFeatures(
           key: g.key,
           cluster: g.kind === 'cluster',
           kind: s.kind,
-          glyph: categoriesById.get(first.categoryIds[0]!)?.glyph ?? 'dot',
+          glyph: glyphOf(first),
           ring: s.ring === null ? '' : s.dotted ? 'ring-dotted' : `ring-${s.ring}`,
           late: s.late,
           outside: s.outside,

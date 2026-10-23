@@ -3,7 +3,7 @@ import type { Language, PriceFilter } from '@happow/core';
 import { config } from '../config';
 import type { FiltersState } from '../hooks/useFilters';
 import { useI18n } from '../i18n';
-import { Icon, type IconName } from './Icons';
+import { Glyph, Icon, type IconName } from './Icons';
 
 const PRICES: PriceFilter[] = ['any', 'free', 'paid'];
 
@@ -71,7 +71,7 @@ export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout
                   onClick={() => filters.toggleCategory(c.id)}
                 >
                   <span className="cat-chip__icon" aria-hidden>
-                    {c.icon}
+                    <Glyph id={c.glyph} size={18} />
                   </span>
                   <span className="cat-chip__label">{c.labels[lang]}</span>
                 </button>

@@ -47,6 +47,23 @@ export interface NominatimOptions {
   sleep?: (ms: number) => Promise<void>;
 }
 
+/** Nominatim `addresstype`s too coarse for a 500 m radius: the hit is an area, not a place. */
+const AREA_TYPES = new Set([
+  'country',
+  'state',
+  'region',
+  'province',
+  'county',
+  'municipality',
+  'city',
+  'town',
+  'village',
+  'city_district',
+  'district',
+  'borough',
+  'suburb',
+]);
+
 const clean = (s: string | null | undefined) => s?.replace(/\s+/g, ' ').trim() || null;
 /** "ul. Wystawowa 1" → "Wystawowa 1": Nominatim matches street names better without the prefix. */
 const street = (s: string | null | undefined) =>
@@ -77,11 +94,28 @@ export class NominatimGeocoder implements Geocoder {
         'venue',
         { q: [clean(q.venueName), postal, city].filter(Boolean).join(', ') },
       ]);
-    if (postal) attempts.push(['postcode', { postalcode: postal, ...(city && { city }) }]);
 
     for (const [precision, params] of attempts) {
-      const hit = await this.search(params, q.countryCode, bbox, postal);
+      const hit = await this.search(params, q.countryCode, bbox, { postal });
       if (hit) return { ...hit, precision };
+    }
+    // Listings can carry a wrong postcode (wroclaw.pl: "Sucha 1, 50-529" for 50-086), which the
+    // check above rejects. The street alone still counts if the hit is in the city we asked for.
+    if (street(q.street) && city && postal) {
+      const hit = await this.search({ street: street(q.street)!, city }, q.countryCode, bbox, {
+        city,
+      });
+      if (hit) return { ...hit, precision: 'address' };
+    }
+    if (postal) {
+      // Only a hit that carries the postcode: an unknown one makes Nominatim answer with the city.
+      const hit = await this.search(
+        { postalcode: postal, ...(city && { city }) },
+        q.countryCode,
+        bbox,
+        { postal, requirePostal: true },
+      );
+      if (hit) return { ...hit, precision: 'postcode' };
     }
     return null;
   }
@@ -89,12 +123,13 @@ export class NominatimGeocoder implements Geocoder {
   /**
    * One lookup. A hit whose postcode differs from the one we know is a same-named street
    * elsewhere in the bbox (a village's "Wolności 1" for the city's "pl. Wolności 1"): not a match.
+   * Without a postcode, `city` does that job. A whole city or district is never a place.
    */
   private async search(
     params: Record<string, string>,
     countryCode: string | null | undefined,
     bbox: Bbox,
-    postal: string | null,
+    check: { postal?: string | null; requirePostal?: boolean; city?: string },
   ): Promise<{ point: LatLng; label: string } | null> {
     const wait = this.next - Date.now();
     if (wait > 0) await this.sleep(wait);
@@ -119,12 +154,22 @@ export class NominatimGeocoder implements Geocoder {
       lat: string;
       lon: string;
       display_name: string;
-      address?: { postcode?: string };
+      addresstype?: string;
+      address?: Record<string, string | undefined>;
     }[];
     const r = rows[0];
     if (!r) return null;
+    if (r.addresstype && AREA_TYPES.has(r.addresstype)) return null;
     const digits = (s: string) => s.replace(/\D/g, '');
-    if (postal && r.address?.postcode && digits(r.address.postcode) !== digits(postal)) return null;
+    const { postal, requirePostal, city } = check;
+    const hitPostal = r.address?.postcode;
+    if (postal && hitPostal && digits(hitPostal) !== digits(postal)) return null;
+    if (requirePostal && !hitPostal) return null;
+    if (city) {
+      const a = r.address ?? {};
+      const place = a.city ?? a.town ?? a.village ?? a.municipality;
+      if (!place || place.toLowerCase() !== city.toLowerCase()) return null;
+    }
     const lat = Number(r.lat);
     const lng = Number(r.lon);
     return Number.isFinite(lat) && Number.isFinite(lng)
@@ -142,7 +187,9 @@ export class CachedGeocoder implements Geocoder {
 
   static key(q: GeoQuery, bbox: Bbox): string {
     const norm = (s: string | null | undefined) => clean(s)?.toLowerCase() ?? '';
+    // v2: earlier answers could be the city centre for an unknown postcode; look them up again.
     return [
+      'v2',
       norm(q.venueName),
       norm(street(q.street)),
       norm(q.postalCode),

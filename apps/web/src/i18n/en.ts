@@ -237,6 +237,7 @@ export const en = {
   'about.contactFallback':
     'Use "Report a problem" on any event. A contact address for formal notices will be published here.',
   'about.draft': 'Draft text for the pilot. It will be reviewed before the public launch.',
+  'about.licenses': 'Third-party licences',
   'about.attribution':
     'Map data © OpenStreetMap contributors, tiles by OpenFreeMap. Event details © their organisers and sources.',
   'about.moderate': 'Moderator sign-in',

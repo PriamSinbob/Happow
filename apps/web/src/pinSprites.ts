@@ -1,5 +1,6 @@
 import type maplibregl from 'maplibre-gl';
 import { RING_STEPS } from '@happow/core';
+import { drawGlyph, GLYPH_IDS } from './glyphs';
 
 /**
  * Pin sprites drawn in code: shapes go onto a canvas as alpha masks, become signed distance
@@ -20,172 +21,8 @@ const GLYPH_PX = 18;
 
 type Draw = (c: CanvasRenderingContext2D) => void;
 
-/** Category glyphs on a 24-unit grid, line style (2-unit round strokes). */
-const GLYPHS: Record<string, Draw> = {
-  note: (c) => {
-    c.beginPath();
-    c.arc(8, 17, 3, 0, Math.PI * 2);
-    c.moveTo(11, 17);
-    c.lineTo(11, 4);
-    c.lineTo(18, 7);
-    c.stroke();
-  },
-  mask: (c) => {
-    c.beginPath();
-    c.moveTo(5, 5);
-    c.lineTo(19, 5);
-    c.quadraticCurveTo(19, 21, 12, 21);
-    c.quadraticCurveTo(5, 21, 5, 5);
-    c.moveTo(8.5, 10);
-    c.lineTo(10.5, 10);
-    c.moveTo(13.5, 10);
-    c.lineTo(15.5, 10);
-    c.moveTo(9, 15);
-    c.quadraticCurveTo(12, 17.5, 15, 15);
-    c.stroke();
-  },
-  film: (c) => {
-    c.beginPath();
-    c.rect(4, 5, 16, 14);
-    c.moveTo(8, 5);
-    c.lineTo(8, 19);
-    c.moveTo(16, 5);
-    c.lineTo(16, 19);
-    c.moveTo(4, 12);
-    c.lineTo(20, 12);
-    c.stroke();
-  },
-  frame: (c) => {
-    c.beginPath();
-    c.rect(4, 4, 16, 16);
-    c.moveTo(4, 17);
-    c.lineTo(10, 11);
-    c.lineTo(14, 15);
-    c.lineTo(16, 13);
-    c.lineTo(20, 17);
-    c.stroke();
-    c.beginPath();
-    c.arc(15, 8.5, 1.5, 0, Math.PI * 2);
-    c.stroke();
-  },
-  tent: (c) => {
-    c.beginPath();
-    c.moveTo(3, 20);
-    c.lineTo(12, 5);
-    c.lineTo(21, 20);
-    c.closePath();
-    c.moveTo(12, 20);
-    c.lineTo(12, 13);
-    c.moveTo(12, 5);
-    c.lineTo(12, 2.5);
-    c.stroke();
-  },
-  spark: (c) => {
-    c.beginPath();
-    c.moveTo(12, 3);
-    c.quadraticCurveTo(13, 11, 21, 12);
-    c.quadraticCurveTo(13, 13, 12, 21);
-    c.quadraticCurveTo(11, 13, 3, 12);
-    c.quadraticCurveTo(11, 11, 12, 3);
-    c.stroke();
-  },
-  ball: (c) => {
-    c.beginPath();
-    c.arc(12, 12, 8.5, 0, Math.PI * 2);
-    c.moveTo(3.5, 12);
-    c.lineTo(20.5, 12);
-    c.moveTo(12, 3.5);
-    c.quadraticCurveTo(7, 12, 12, 20.5);
-    c.moveTo(12, 3.5);
-    c.quadraticCurveTo(17, 12, 12, 20.5);
-    c.stroke();
-  },
-  basket: (c) => {
-    c.beginPath();
-    c.moveTo(3, 10);
-    c.lineTo(21, 10);
-    c.lineTo(18.5, 20);
-    c.lineTo(5.5, 20);
-    c.closePath();
-    c.moveTo(7, 10);
-    c.quadraticCurveTo(12, 1, 17, 10);
-    c.moveTo(12, 13);
-    c.lineTo(12, 17);
-    c.stroke();
-  },
-  tag: (c) => {
-    c.beginPath();
-    c.moveTo(3, 3);
-    c.lineTo(12, 3);
-    c.lineTo(21, 12);
-    c.lineTo(12, 21);
-    c.lineTo(3, 12);
-    c.closePath();
-    c.stroke();
-    c.beginPath();
-    c.arc(8, 8, 1.5, 0, Math.PI * 2);
-    c.stroke();
-  },
-  kite: (c) => {
-    c.beginPath();
-    c.moveTo(12, 2.5);
-    c.lineTo(18, 9);
-    c.lineTo(12, 16);
-    c.lineTo(6, 9);
-    c.closePath();
-    c.moveTo(12, 16);
-    c.quadraticCurveTo(9, 18.5, 12, 19.5);
-    c.quadraticCurveTo(15, 20.5, 12, 22);
-    c.stroke();
-  },
-  cup: (c) => {
-    c.beginPath();
-    c.moveTo(4, 9);
-    c.lineTo(16, 9);
-    c.lineTo(15, 20);
-    c.lineTo(5, 20);
-    c.closePath();
-    c.moveTo(16, 11);
-    c.quadraticCurveTo(21, 11, 20, 15);
-    c.quadraticCurveTo(19, 17, 15.5, 17);
-    c.moveTo(8, 3);
-    c.lineTo(8, 6);
-    c.moveTo(12, 3);
-    c.lineTo(12, 6);
-    c.stroke();
-  },
-  mic: (c) => {
-    c.beginPath();
-    c.moveTo(9, 7);
-    c.arc(12, 7, 3, Math.PI, 0);
-    c.lineTo(15, 12);
-    c.arc(12, 12, 3, 0, Math.PI);
-    c.closePath();
-    c.moveTo(6, 11);
-    c.quadraticCurveTo(6, 17.5, 12, 17.5);
-    c.quadraticCurveTo(18, 17.5, 18, 11);
-    c.moveTo(12, 17.5);
-    c.lineTo(12, 21);
-    c.stroke();
-  },
-  candle: (c) => {
-    c.beginPath();
-    c.rect(8.5, 10, 7, 11);
-    c.moveTo(12, 10);
-    c.lineTo(12, 8);
-    c.moveTo(12, 2.5);
-    c.quadraticCurveTo(15.5, 6, 12, 7.5);
-    c.quadraticCurveTo(8.5, 6, 12, 2.5);
-    c.stroke();
-  },
-  dot: (c) => {
-    c.beginPath();
-    c.arc(12, 12, 3.5, 0, Math.PI * 2);
-    c.fill();
-  },
-};
-
-export const GLYPH_IDS = Object.keys(GLYPHS);
+/** Category glyphs come from the shared set (glyphs.ts), so pins, cards and lists match. */
+export { GLYPH_IDS };
 
 /** Every sprite id the pin layers use. */
 export function spriteIds(): string[] {
@@ -246,11 +83,11 @@ export function addPinSprites(m: maplibregl.Map) {
     // The smallest step keeps an 8 % stub until the event ends (§4.1).
     add(`ring-${i}`, RING_PX, ring(Math.max(0.08, i / RING_STEPS), false));
   add('ring-dotted', RING_PX, ring(1, true));
-  for (const [id, draw] of Object.entries(GLYPHS))
+  for (const id of GLYPH_IDS)
     add(`glyph-${id}`, GLYPH_PX, (c) => {
       c.scale(GLYPH_PX / 24, GLYPH_PX / 24);
       c.lineWidth = 2;
-      draw(c);
+      drawGlyph(c, id);
     });
 }
 

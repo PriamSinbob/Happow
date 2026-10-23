@@ -160,6 +160,90 @@ describe('NominatimGeocoder', () => {
     );
   });
 
+  // Recorded 2026-10-23: wroclaw.pl lists Cinema City Wroclavia as "Sucha 1, 50-529"; the real
+  // postcode is 50-086, and Nominatim answers the unknown 50-529 with the city of Wrocław itself.
+  const wroclavia = {
+    lat: '51.0964161',
+    lon: '17.0348220',
+    display_name: 'Cinema City, 1, Sucha, Wrocław',
+    addresstype: 'shop',
+    address: { postcode: '50-086', city: 'Wrocław' },
+  };
+  const cityCentre = {
+    lat: '51.1089776',
+    lon: '17.0326689',
+    display_name: 'Wrocław, województwo dolnośląskie, Polska',
+    addresstype: 'city',
+    address: { city: 'Wrocław' },
+  };
+  const wrongPostcode = {
+    venueName: 'Cinema City Wroclavia',
+    street: 'Sucha 1',
+    postalCode: '50-529',
+    city: 'Wrocław',
+  };
+
+  it('finds the street in the city when the listed postcode is wrong', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(ok([wroclavia])) // street + postcode: postcode differs
+      .mockResolvedValueOnce(ok([])) // venue
+      .mockResolvedValueOnce(ok([wroclavia])); // street in the city
+    const g = new NominatimGeocoder({
+      endpoint: 'https://n.example',
+      userAgent: 'u',
+      minIntervalMs: 0,
+      fetch: fetchMock,
+    });
+    const r = await g.geocode(wrongPostcode, bbox);
+    expect(r).toMatchObject({ point: { lat: 51.0964161, lng: 17.034822 }, precision: 'address' });
+    const third = new URL(fetchMock.mock.calls[2]![0] as string).searchParams;
+    expect(third.get('street')).toBe('Sucha 1');
+    expect(third.get('city')).toBe('Wrocław');
+    expect(third.get('postalcode')).toBeNull();
+  });
+
+  it('never answers with the city centre', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok([cityCentre])) // street in the city: an area, not a place
+      .mockResolvedValueOnce(ok([cityCentre])); // postcode: the city, without a postcode
+    const g = new NominatimGeocoder({
+      endpoint: 'https://n.example',
+      userAgent: 'u',
+      minIntervalMs: 0,
+      fetch: fetchMock,
+    });
+    expect(await g.geocode(wrongPostcode, bbox)).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('rejects the street-in-city fallback when the hit is in another place', async () => {
+    const psary = {
+      lat: '51.1843',
+      lon: '17.0291',
+      display_name: '1, Wolności, Psary',
+      addresstype: 'place',
+      address: { village: 'Psary' },
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok([psary]))
+      .mockResolvedValueOnce(ok([]));
+    const g = new NominatimGeocoder({
+      endpoint: 'https://n.example',
+      userAgent: 'u',
+      minIntervalMs: 0,
+      fetch: fetchMock,
+    });
+    expect(
+      await g.geocode({ street: 'pl. Wolności 1', postalCode: '50-071', city: 'Wrocław' }, bbox),
+    ).toBeNull();
+  });
+
   it('gives up on a city alone (useless for a 500 m radius)', async () => {
     const fetchMock = vi.fn();
     const g = new NominatimGeocoder({

@@ -1,4 +1,5 @@
 {
+  "effortLevel": "high",
   "permissions": {
     "deny": [
       "mcp__AccuWeather",

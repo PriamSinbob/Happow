@@ -26,11 +26,18 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
   - list style B: an overlay over the map
 - **Lit map** (§6). A grey veil with soft, cloud-like holes for your reach and the places you've been. It fades out as you zoom out.
 
+- **Category glyphs** (owner's choice, 2026-10-23): one set in `apps/web/src/glyphs.ts` for pins, cards, detail, filter chips and the add form. No emoji.
+  - From Tabler Icons: music, theatre (masks), cinema (film), exhibition (photo), festival (confetti), happening (sparkles), sport (runner), market (basket), kids (rocking horse), food (utensils).
+  - Drawn for Happow: garage sale (tag), talk (microphone), religious (candle), café (cup), bar (beer mug), other (dot).
+  - Food picks its glyph per event from words in the title or venue (`glyphRules` in `config/categories.json`): cup for cafés, beer mug for pubs, bars and breweries, utensils otherwise. Never chosen at random: the glyph must say what the place is.
+  - Change a glyph only with the owner's OK.
+
 ## Illustrative: don't copy
 
 - The street grid, river, parks and sample events. The app draws the MapLibre basemap and real data.
 - The demo clock (Friday 23 October, 16:10) and the hard-coded walking speed.
-- Category and control glyphs are [Tabler Icons](https://tabler.io/icons) (MIT), inlined as the reference style for the M6 glyph set (§4.3). If the app adopts them, keep the MIT notice.
+- Category glyphs in the prototype are older placeholders. The reference is the app's set in `apps/web/src/glyphs.ts` (see below).
+- Control icons in the prototype (dice, filters, locate, list) are also Tabler placeholders; if the app adopts Tabler, keep its MIT notice.
 
 ## Where the owner sees it
 
