@@ -49,7 +49,7 @@
       "graceMin": 0,
       "family": "likely",
       "icon": "🎪",
-      "glyph": "tent",
+      "glyph": "confetti",
       "color": "#c2410c"
     },
     {
@@ -70,7 +70,7 @@
       "graceMin": 15,
       "family": "likely",
       "icon": "⚽",
-      "glyph": "ball",
+      "glyph": "run",
       "color": "#15803d"
     },
     {
@@ -103,7 +103,7 @@
       "graceMin": 5,
       "family": "yes",
       "icon": "🧸",
-      "glyph": "kite",
+      "glyph": "horse",
       "color": "#0284c7"
     },
     {
@@ -114,7 +114,78 @@
       "graceMin": 0,
       "family": "likely",
       "icon": "🍽️",
-      "glyph": "cup",
+      "glyph": "utensils",
+      "glyphRules": [
+        {
+          "glyph": "utensils",
+          "words": [
+            "bar mleczn*",
+            "barze mleczn*",
+            "barem mleczn*",
+            "milk bar",
+            "bar salatkowy",
+            "salad bar",
+            "sushi",
+            "bistro*",
+            "restaurac*",
+            "restaurant*",
+            "food truck*",
+            "foodtruck*"
+          ]
+        },
+        {
+          "glyph": "cup",
+          "words": [
+            "kawiar*",
+            "kawa",
+            "kawe",
+            "kawy",
+            "kawka",
+            "cafe",
+            "caffe",
+            "coffee",
+            "espresso",
+            "bar kawowy",
+            "herbaciarni*",
+            "tea room",
+            "cukierni*"
+          ]
+        },
+        {
+          "glyph": "beer",
+          "words": [
+            "pub",
+            "pubu",
+            "pubie",
+            "pubem",
+            "puby",
+            "pubow",
+            "pubach",
+            "bar",
+            "baru",
+            "barze",
+            "barem",
+            "bary",
+            "barow",
+            "barach",
+            "browar*",
+            "brewery",
+            "brewpub",
+            "taproom",
+            "multitap",
+            "piwiarni*",
+            "piwo",
+            "piwa",
+            "piw",
+            "piwem",
+            "piwny",
+            "piwne",
+            "piwnym",
+            "beer",
+            "craft beer"
+          ]
+        }
+      ],
       "color": "#ea580c"
     },
     {

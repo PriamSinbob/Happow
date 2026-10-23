@@ -110,7 +110,7 @@ Plan agreed with the owner on 2026-10-22 (glyphs drawn in code for now; a design
 - **Ring = time left.** 12 ring states in 10-minute steps on the 2 h scale (full at ≥ 120 min, 8 % minimum stub); a dotted full ring for `endEstimated` ("till late"). Core helper `ringStep(event, now)`.
 - **Sprites, generated at runtime** (no binary assets in the repo): a small canvas builder in `apps/web/src/pinSprites.ts` draws SDF-style images and adds them with `map.addImage(id, img, { sdf: true })`, so colour stays a paint property (`icon-color` from the theme tokens; no rebuild on theme change):
   - pin body (filled disc, outlined disc, dashed outline), 12 ring arcs + dotted ring, small dot;
-  - one consistent monochrome line glyph per category (14 glyphs, simple strokes drawn in code from config `icon` ids: the emoji icons in `config/categories.json` get a `glyph` id alongside; emoji stay for the list until F).
+  - one consistent monochrome line glyph per category (14 glyphs, simple strokes drawn in code from config `icon` ids: the emoji icons in `config/categories.json` get a `glyph` id alongside). Superseded 2026-10-23: see "Glyph set" below.
 - **Age badge.** `ageMin ≥ 16` gets a small numeral badge ("18+") at the upper right: a text-field symbol on the pin, no translation needed.
 - **Grouping.** Today's same-place grouping and zoom clustering move to a pure function feeding the GeoJSON (count badge kept); MapLibre's own collision then thins the rest by priority.
 - **Tests.** Core: `pinState`, `ringStep`, sort keys. Web: the GeoJSON builder (features, properties, sort keys) on fixtures; sprite ids complete for every category.
@@ -208,7 +208,7 @@ Night intent: streets on a switched-off OLED phone. Outside lit areas only stree
   - `src/mapTheme.ts`: recolours the basemap and our own layers (radius, route) in place on style load and on every theme change, for the main map, "Going there" and the add-event pin map.
   - About → "Wygląd / Appearance": Auto / Dzień / Noc and Fiolet / Mono (Violet / Mono).
 - Skipped: the veil and black unlit areas (slice H: until then the whole map uses the lit colours); account and premium presets are in the config and the contrast test but not selectable (§8); pins keep their category colours until slice E.
-- Open: the raster fallback map (when OpenFreeMap is down) is not recoloured, so it stays light at night. Category tints on the list icons and chips are mixed onto the theme paper; they go with the glyph set in slice E. Check OLED smear on a real phone at night.
+- Open: the raster fallback map (when OpenFreeMap is down) is not recoloured, so it stays light at night. Category tints on the list icons and chips are mixed onto the theme paper; whether they stay is an open owner question (glyph set PR, 2026-10-23). Check OLED smear on a real phone at night.
 
 ## 4. Pins
 
@@ -254,7 +254,13 @@ Add `entry: 'fixed' | 'open'` and `graceMin` to the event model. Category defaul
   - **Layers** (`apps/web/src/pinLayers.ts`): one `pins` GeoJSON source and symbol layers for ring, disc, outline, glyph, count, flag mark and age badge. Sizes 34 / 26 / 10 px, outside ×0.85 at half opacity, selected ×1.2 on top. Only live pins use the live hue.
   - **Data** (`apps/web/src/pins.ts`): `pinFeatures` turns places and zoom clusters into features; a place shows its most urgent event, the count, the highest 16+/18+ badge and a "!" when a single event is flagged. Taps use `queryRenderedFeatures`.
   - Skipped: collision thinning. Pins overlap freely and the draw order (`symbol-sort-key`) puts live over soon over later; the existing 48 px zoom clustering keeps them apart. Hotspot, outside-radius bubbles, the pinned point and "Going there" keep DOM markers until slice F.
-  - Open: pins are no longer focusable buttons, so screen-reader users reach events through the list (the list button stays on the map screen); a keyboard path on the map is for slice F. Glyphs may be replaced by a designed set. A "number but found null" console warning comes from the Positron style itself, not from these layers.
+  - Open: pins are no longer focusable buttons, so screen-reader users reach events through the list (the list button stays on the map screen); a keyboard path on the map is for slice F. A "number but found null" console warning comes from the Positron style itself, not from these layers.
+
+- **Glyph set** (owner's choice, 2026-10-23; replaces the slice E drawings and every category emoji):
+  - One set in `apps/web/src/glyphs.ts` (SVG path data) for pins (drawn into the SDF sprites), cards, the detail view, filter chips, the add form and the Going-there marker.
+  - Tabler Icons (MIT, notice in `/third-party-licenses.txt`): music, theatre, cinema, exhibition, festival (confetti), happening (sparkles), sport (runner), market (basket), kids (rocking horse), food (utensils). Drawn for Happow: garage sale (tag), talk (microphone), religious (candle), café (cup), bar (beer mug), other (dot).
+  - Food picks its glyph per event (core `eventGlyph`, `glyphRules` in `config/categories.json`): the title is checked before the venue; utensils for places that serve food (milk bars, bistros, restaurants, food trucks), cup for cafés, beer mug for pubs, bars and breweries. Never random.
+  - Selected category chips: ink tile with a paper glyph (as the active range icon).
 
 ### 4.4 Age limits and family mode
 

@@ -1,3 +1,4 @@
+import { GLYPHS, isGlyphId, type Glyph as GlyphDef } from '../glyphs';
 /** Small inline icon set (24×24, currentColor). Decorative: callers provide the accessible name. */
 const paths = {
   filter: 'M4 6h16M7 12h10M10 18h4',
@@ -85,4 +86,46 @@ export function RangeIcon({ rows, size = 22 }: { rows: 0 | 1 | 2; size?: number 
       {rows === 2 && <path d="M7 13h10M7 17h10" strokeWidth={3} />}
     </svg>
   );
+}
+
+/** A category glyph from the shared set (glyphs.ts). Decorative: callers provide the name. */
+export function Glyph({
+  id,
+  size = 20,
+  strokeWidth = 2,
+}: {
+  id: string;
+  size?: number;
+  /** In 24-grid units: 2 suits icon sizes; large glyphs need less to keep the line weight. */
+  strokeWidth?: number;
+}) {
+  const g: GlyphDef = GLYPHS[isGlyphId(id) ? id : 'dot'];
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      aria-hidden
+      fill={g.fill ? 'currentColor' : 'none'}
+      stroke={g.fill ? 'none' : 'currentColor'}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {g.paths.map((d) => (
+        <path key={d} d={d} />
+      ))}
+    </svg>
+  );
+}
+
+/** The same glyph as an SVG string, for elements built outside React (map markers). */
+export function glyphSvg(id: string, size: number): string {
+  const g: GlyphDef = GLYPHS[isGlyphId(id) ? id : 'dot'];
+  const paint = g.fill
+    ? 'fill="currentColor" stroke="none"'
+    : 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" ${paint}>${g.paths
+    .map((d) => `<path d="${d}"/>`)
+    .join('')}</svg>`;
 }

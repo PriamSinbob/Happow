@@ -28,11 +28,23 @@ export const categorySchema = z.object({
    */
   family: z.enum(['yes', 'likely', 'no']).optional(),
   icon: z.string().min(1),
-  /** Monochrome map glyph from the app's drawn set (apps/web/src/pinSprites.ts). */
+  /** Monochrome glyph from the app's set (apps/web/src/glyphs.ts), on pins, cards and lists. */
   glyph: z
     .string()
     .regex(/^[a-z-]+$/)
     .default('dot'),
+  /**
+   * Per-event glyph variants: the first rule with a word in the event's title or venue wins
+   * (core `eventGlyph`). A word ending in `*` matches any word starting with it.
+   */
+  glyphRules: z
+    .array(
+      z.object({
+        glyph: z.string().regex(/^[a-z-]+$/),
+        words: z.array(z.string().min(1)).min(1),
+      }),
+    )
+    .optional(),
   color: z.string().regex(/^#[0-9a-f]{6}$/i),
 });
 export const categoriesConfigSchema = z.object({ categories: z.array(categorySchema).min(1) });

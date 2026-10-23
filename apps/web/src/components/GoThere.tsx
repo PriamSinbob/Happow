@@ -9,7 +9,8 @@ import { useI18n } from '../i18n';
 import { useMapTheme, type OwnLayerPaint } from '../mapTheme';
 import { pathLength, progress } from '../nav';
 import { FlagNotice } from './EventMeta';
-import { Icon } from './Icons';
+import { glyphSvg, Icon } from './Icons';
+import { glyphOf } from '../pins';
 import { rasterStyle } from './MapView';
 
 const nav = config.app.navigation;
@@ -281,7 +282,9 @@ function TripMap({
       const cat = categoriesById.get(ev.categoryIds[0]!);
       el.style.setProperty('--cat', cat?.color ?? 'var(--muted)');
       const pin = Object.assign(document.createElement('span'), { className: 'marker__pin' });
-      pin.append(Object.assign(document.createElement('span'), { textContent: cat?.icon ?? '📍' }));
+      pin.append(
+        Object.assign(document.createElement('span'), { innerHTML: glyphSvg(glyphOf(ev), 18) }),
+      );
       el.append(pin);
       // A marker needs its position before it is added to the map.
       venue.current = new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([

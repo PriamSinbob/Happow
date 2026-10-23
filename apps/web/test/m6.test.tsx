@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import seed from '../../../data/seed/wroclaw.events.json';
@@ -86,8 +88,10 @@ describe('themes (slice D)', () => {
     expect(selectablePresets.map((p) => p.id)).toEqual(['violet', 'mono']);
   });
 
-  it('the stylesheet uses theme tokens, not fixed colours', async () => {
-    const css = (await import('../src/styles.css?raw')).default;
-    expect(css.match(/#[0-9a-f]{3,6}\b/gi) ?? []).toEqual([]);
+  it('the stylesheet uses theme tokens, not fixed colours', () => {
+    // Read from disk: Vitest serves `?raw` CSS imports as an empty string.
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    expect(css.length).toBeGreaterThan(1000);
+    expect(css.match(/#[0-9a-f]{3,8}\b/gi) ?? []).toEqual([]);
   });
 });

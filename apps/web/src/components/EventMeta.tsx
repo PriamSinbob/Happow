@@ -12,7 +12,8 @@ import {
   navigationUrl,
 } from '../format';
 import { useI18n } from '../i18n';
-import { Icon } from './Icons';
+import { Glyph, Icon } from './Icons';
+import { glyphOf } from '../pins';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
 
@@ -64,7 +65,7 @@ export function CategoryIcon({ ev, size = 40 }: { ev: NearbyEvent; size?: number
       style={{ ['--cat' as string]: cat?.color ?? 'var(--muted)', width: size, height: size }}
       aria-hidden
     >
-      {cat?.icon ?? '📍'}
+      <Glyph id={glyphOf(ev)} size={Math.round(size * 0.55)} />
     </span>
   );
 }

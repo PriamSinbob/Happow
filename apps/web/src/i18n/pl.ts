@@ -268,6 +268,7 @@ export const pl: Record<MessageKey, string> = {
   'about.contactFallback':
     'Użyj „Zgłoś problem” przy wydarzeniu. Adres do formalnych zgłoszeń opublikujemy tutaj.',
   'about.draft': 'Wersja robocza na czas pilotażu. Zostanie sprawdzona przed publicznym startem.',
+  'about.licenses': 'Licencje zewnętrzne',
   'about.attribution':
     'Dane mapy © współtwórcy OpenStreetMap, kafelki OpenFreeMap. Informacje o wydarzeniach © ich organizatorzy i źródła.',
   'about.moderate': 'Logowanie moderatora',
