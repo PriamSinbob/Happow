@@ -193,6 +193,11 @@ button {
 .hud-top > * {
   pointer-events: auto;
 }
+.hud-top > .counter,
+.hud-top > .map-btn,
+.hud-top__end {
+  flex: none;
+}
 .hud-top__end {
   display: flex;
   gap: 8px;
@@ -207,7 +212,7 @@ button {
 /* The grid a hold opens under the top row: glyphs only, the current one ringed. */
 .pick-grid {
   position: absolute;
-  z-index: 21;
+  z-index: 22;
   top: calc(60px + var(--safe-top));
   left: 12px;
   right: 12px;
@@ -220,7 +225,13 @@ button {
   border-radius: 16px;
   background: var(--paper);
   box-shadow: var(--shadow-lg);
-  animation: rise 0.16s ease-out;
+  animation: drop 0.16s ease-out;
+}
+/* Taps outside the grid only close it. */
+.pick-grid-backdrop {
+  position: absolute;
+  z-index: 21;
+  inset: 0;
 }
 .pick-grid__opt {
   display: grid;
@@ -240,6 +251,10 @@ button {
   outline-offset: 2px;
 }
 .hud-error {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 6px 10px;
   border-radius: 999px;
   background: var(--paper);
@@ -626,6 +641,7 @@ div.settings-row {
   background: var(--sunken);
 }
 .lang-code {
+  position: relative;
   width: 32px;
   height: 22px;
   padding: 0;
@@ -636,6 +652,12 @@ div.settings-row {
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
+}
+/* A 44 × 36 touch target around the small field. */
+.lang-code::before {
+  content: '';
+  position: absolute;
+  inset: -7px -6px;
 }
 .lang-code.is-on {
   background: var(--raised);
@@ -1358,6 +1380,12 @@ div.settings-row {
 @keyframes fade {
   from {
     opacity: 0;
+  }
+}
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
   }
 }
 @keyframes nudge {

@@ -60,11 +60,14 @@ const { minM, maxM, defaultM } = config.app.radius;
 const { maxEdgeDots } = config.app.density;
 
 /**
- * Family mode moves the hotspot to the device (the density query does not know the mode): cells
- * of about 670 × 620 m in Poland, near the r8 cells the server uses.
+ * Family mode moves the hotspot to the device (the density query does not know the mode): square
+ * cells of `density.deviceCellM`, near the r8 cells the server uses.
  */
-const familyCell = (e: HappowEvent) =>
-  `${Math.floor(e.point.lat / 0.006)}:${Math.floor(e.point.lng / 0.009)}`;
+const familyCell = (e: HappowEvent) => {
+  const lat = config.app.density.deviceCellM / 111_320;
+  const lng = lat / Math.cos((e.point.lat * Math.PI) / 180);
+  return `${Math.floor(e.point.lat / lat)}:${Math.floor(e.point.lng / lng)}`;
+};
 
 function savedWeights(): DiceWeights {
   try {
@@ -261,12 +264,22 @@ export function App() {
     setRecenter((n) => n + 1);
     location.retry();
   };
+  // Events reported cancelled or moved are never rolled.
+  const dicePoolNow = useMemo(
+    () =>
+      dicePool(
+        flagged([...familyEvents, ...familyAround]).filter((e) => !e.flag),
+        now,
+        {
+          ...config.app.dice,
+          liveOnly,
+          late: (e) => pinState(e, now, e.distanceM, radius, config.categories, config.app).late,
+        },
+      ),
+    [flagged, familyEvents, familyAround, now, liveOnly, radius],
+  );
   const roll = (category?: string) => {
-    const pool = dicePool([...familyEvents, ...familyAround], now, {
-      ...config.app.dice,
-      liveOnly,
-      late: (e) => pinState(e, now, e.distanceM, radius, config.categories, config.app).late,
-    });
+    const pool = dicePoolNow;
     // Rolling again while the last result is open counts as "not this one".
     let weights = diceWeights;
     const last = rolledId === selectedId ? pool.find((e) => e.id === rolledId) : undefined;
@@ -303,8 +316,11 @@ export function App() {
     { id: 'family', glyph: 'family', label: t('family.mode') },
     ...config.categories.map((c) => ({ id: c.id, glyph: c.glyph, label: c.labels[lang] })),
   ];
+  // Only categories the dice can roll right now, by weight.
   const diceOptions = topCategories(
-    config.categories.map((c) => c.id),
+    config.categories
+      .map((c) => c.id)
+      .filter((id) => dicePoolNow.some((e) => e.categoryIds.includes(id))),
     diceWeights,
     config.app.dice.fanSize,
   ).map((id) => {

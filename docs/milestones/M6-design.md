@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E), §5 and §13.2–§13.5 built (slice F); the rest not built. List style B (§5) approved by the owner on a phone (2026-10-23). Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
+**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E), §5 and §13.2–§13.5 built (slice F), §4.4 UI, §7 and §15 built (slice G); the rest (§6, slice H) not built. List style B (§5) approved by the owner on a phone (2026-10-23). Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
 **Visual reference:** `docs/design/` (interactive prototype, exact range icons, README listing what is normative). Slices E to H match it; where this spec's words and the prototype differ, ask the owner.
 
@@ -20,7 +20,7 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | D     | §3                      | Colour tokens, day/night themes, presets, contrast test                       | —     | merged (#13)                             |
 | E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge                        | C, D  | merged (#14)                             |
 | F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay                      | B, E  | merged (#17)                             |
-| G     | §4.4 UI, §7, §15        | Family-mode filter and chip; dice; wordless settings sheet, no category tints | C, F  | in progress (`m6-family-dice`)           |
+| G     | §4.4 UI, §7, §15        | Family-mode filter and chip; dice; wordless settings sheet, no category tints | C, F  | in review (`m6-family-dice`)             |
 | H     | §6                      | Lit map and the local atlas                                                   | F     |                                          |
 | —     | §8, §9                  | Accounts and premium; co-presence                                             | —     | out of M6 (build later / after the core) |
 
@@ -191,7 +191,7 @@ Plan agreed with the owner on 2026-10-23, including the mockups `settings-rows.h
 **Owner decisions (2026-10-23):**
 
 1. Dice at the top right beside settings, as in the prototype and §5.
-2. Family mode is broader than the kids category, so it stays: the category shows only kids events; family mode also shows family events from other categories, all-ages and up-to-12 events, and (marked "not confirmed") likely family categories that end by 21:00. It hides 13+ events and anything starting after 21:00. Its tile goes under the price toggles. The chip beside the counter becomes a shortcut the user sets to one filter: family mode, food, music, …
+2. Family mode is broader than the kids category, so it stays: the category shows only kids events; family mode also shows family events from other categories, all-ages and up-to-12 events, and (marked "not confirmed") likely family categories that end by 21:00. It hides 13+ events and anything starting after 21:00. Its tile sits on the same line as the price toggles, as its own track. The chip beside the counter becomes a shortcut the user sets to one filter: family mode, food, music, …
 3. The dice picks from events that are live or start within 60 minutes.
 
 ### Working notes
@@ -375,6 +375,12 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
   - Skipped: no per-event `graceMin` source yet (the column is there for overrides; no source or form field sets it).
   - Open: schema.org `doorTime` equal to the start says nothing, so such events keep the category default; check on live crawls whether the extractor tells concerts from club nights reliably.
 
+- **Built** (slice G, 2026-10-23): family mode on the device.
+  - **Filter.** A family tile in settings and the map shortcut (default: family mode). `familyMatch` runs in `App` before reach and time, so map, list, counter, edge dots and dice see the same events. Remembered on the device; never sent to analytics.
+  - **Hotspot.** The density query does not know the mode, so in family mode the hotspot is counted on the device from the loaded events, in `density.deviceCellM` (650 m) cells.
+  - **Cards and details.** Family events, including the kids category (`family: "yes"`), carry the new family glyph (adult and child) and "Dla dzieci i rodzin"; likely ones without age data show "Niepotwierdzone dla dzieci / Not confirmed for children".
+  - Open: the family glyph on pins (only cards and lists carry it).
+
 ## 5. Layout and controls (portrait)
 
 - **Top-left: live counter `● N`.** It counts live, reachable, non-dashed events. Tapping it toggles live-only; the counter fills while the filter is on.
@@ -441,6 +447,12 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
 - No repeats within a session.
 - Each re-roll down-weights that category locally; opens and arrivals up-weight it. All on the device.
 - Long-press opens a fan of the user's top categories for a narrowed roll.
+- **Built** (slice G, 2026-10-23): a dice button at the top right, after settings (prototype).
+  - **Pool** (`dicePool` in `packages/core/src/dice.ts`): live or starting within `dice.soonMin` (60 min), within `dice.maxDistanceM` (2 km), not late, not reported cancelled or moved; live only with live-only on; family mode applies.
+  - **Roll** (`rollDice`): weighted by category; no repeats until every event in the pool has been shown, then the cycle starts over, skipping the last one. Re-rolling while the result is open lowers its category (× 0.7); opening it (× 1.2) or Going there (× 1.5) raises it; weights stay between 0.2 and 5, in localStorage.
+  - **Result.** Today, now, the map, the card open; a reach too small grows to the first detent at ≥ 1.15 × the distance.
+  - **Hold.** A grid under the top row with up to 5 categories that have events in the pool, by weight (the same grid as the map shortcut, not a fan at the button).
+  - **Empty pool.** A toast: "Teraz nic w pobliżu / Nothing nearby right now".
 
 ## 8. Accounts and premium (design now, build later)
 
@@ -594,3 +606,12 @@ Agreed with the owner on 2026-10-23 after four mockup rounds. Reference: `docs/d
 - **Footer.** Clear = outlined button with the `filter-off` icon in `muted`; show = `ink`-filled button with a check and the event count ("✓ 476"). No words.
 - **No hover styles** anywhere in the sheet (§1). Focus-visible rings stay for keyboards.
 - **Accessibility.** Every icon-only control keeps a translated `aria-label`; the price tiles use `aria-pressed`, the language buttons `role="radio"` with `aria-checked` and their own names ("Polski", "English").
+- **Built** (slice G, 2026-10-23), as `settings-rows.html` and `map-shortcut.html`:
+  - **Tokens.** `sunken`, `raised` and `onRaised` in `config/theme.json`; the contrast test also checks muted on sunken (3.19:1 by day) and onRaised on raised.
+  - **No tints.** Category chips, card icons, the detail hero and the Going-there marker are black and white.
+  - **Sheet** (`SettingsSheet.tsx`): the category chips, then the tickets and a separate family track on one line (88 × 44 tiles), add, language, About and an icon-only footer. The settings title and the "Filters" and "Price" headings are gone. The language fields have a 44 × 36 touch area around the 32 × 22 field.
+  - **Map shortcut.** A 40 px chip beside a 76 px counter (dot and number centred; nothing in the top row shrinks). Tap toggles, hold (500 ms, `vibrate(6)`) opens the grid; a tap outside only closes it. A category shortcut on = only that category; off = the categories from before.
+  - **Touch-first.** No hover styles in the stylesheet (checked by a test).
+  - **Tests.** `packages/core/test/dice.test.ts`, `apps/web/test/slice-g.test.tsx`; design review run (verdict and owner questions in the PR).
+  - Skipped: none of §15.
+  - Open: the chip is 40 px like the other map buttons (mockup: 38 px); the inactive language code (10.5 px, muted on sunken) is below the 11 px and 4.5:1 text floors, as the mockup has it.

@@ -131,3 +131,33 @@ describe('black and white, touch-first (§15, §1)', () => {
     expect(css()).not.toMatch(/:hover/);
   });
 });
+
+describe('family marks on cards (§4.4)', () => {
+  it('kids-category events are family events; the mark is the family glyph, not an emoji', async () => {
+    const { RuleList } = await import('../src/components/EventCard');
+    const { container } = render(
+      <RuleList ev={{ rules: {}, ageMin: null, family: null, categoryIds: ['kids'] }} />,
+      { wrapper },
+    );
+    expect(container.textContent).toContain('For children and families');
+    expect(container.querySelector('svg')).not.toBeNull();
+    expect(container.textContent).not.toMatch(/\p{Extended_Pictographic}/u);
+  });
+
+  it('family mode marks likely events without age data as not confirmed', async () => {
+    const { RuleList } = await import('../src/components/EventCard');
+    const { container } = render(
+      <RuleList
+        ev={{
+          rules: {},
+          ageMin: null,
+          family: null,
+          categoryIds: ['market'],
+          familyUnconfirmed: true,
+        }}
+      />,
+      { wrapper },
+    );
+    expect(container.textContent).toContain('Not confirmed for children');
+  });
+});

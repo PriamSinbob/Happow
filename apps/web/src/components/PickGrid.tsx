@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Glyph } from './Icons';
 
 export interface PickOption {
@@ -26,36 +26,56 @@ export function PickGrid({
 }) {
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const away = (e: PointerEvent) => {
-      if (!box.current?.contains(e.target as Node)) onClose();
-    };
+    // Focus goes back to the button that opened the grid.
+    const opener = document.activeElement as HTMLElement | null;
     const key = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    // Next tick, so the hold that opened the grid does not close it.
-    const id = setTimeout(() => document.addEventListener('pointerdown', away));
     window.addEventListener('keydown', key);
-    box.current?.querySelector<HTMLButtonElement>('[aria-checked="true"], button')?.focus();
+    const el = box.current;
+    (
+      el?.querySelector<HTMLButtonElement>('[aria-checked="true"]') ??
+      el?.querySelector<HTMLButtonElement>('button')
+    )?.focus();
     return () => {
-      clearTimeout(id);
-      document.removeEventListener('pointerdown', away);
       window.removeEventListener('keydown', key);
+      opener?.focus?.();
     };
   }, [onClose]);
 
+  // Arrow keys move through the grid, five to a row.
+  const onKeyDown = (e: ReactKeyboardEvent) => {
+    const step = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 5, ArrowUp: -5 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const opts = [...(box.current?.querySelectorAll<HTMLButtonElement>('button') ?? [])];
+    const i = opts.indexOf(document.activeElement as HTMLButtonElement);
+    opts[Math.max(0, Math.min(opts.length - 1, i + step))]?.focus();
+  };
+
   return (
-    <div ref={box} className="pick-grid" role={current ? 'radiogroup' : 'group'} aria-label={label}>
-      {options.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          role={current ? 'radio' : undefined}
-          aria-checked={current ? o.id === current : undefined}
-          aria-label={o.label}
-          className={`pick-grid__opt${o.id === current ? ' is-current' : ''}`}
-          onClick={() => onPick(o.id)}
-        >
-          <Glyph id={o.glyph} size={22} />
-        </button>
-      ))}
-    </div>
+    <>
+      {/* A tap outside only closes the grid: it picks no pin and toggles nothing. */}
+      <div className="pick-grid-backdrop" onPointerDown={onClose} aria-hidden />
+      <div
+        ref={box}
+        className="pick-grid"
+        role={current ? 'radiogroup' : 'group'}
+        aria-label={label}
+        onKeyDown={onKeyDown}
+      >
+        {options.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            role={current ? 'radio' : undefined}
+            aria-checked={current ? o.id === current : undefined}
+            aria-label={o.label}
+            className={`pick-grid__opt${o.id === current ? ' is-current' : ''}`}
+            onClick={() => onPick(o.id)}
+          >
+            <Glyph id={o.glyph} size={22} />
+          </button>
+        ))}
+      </div>
+    </>
   );
 }

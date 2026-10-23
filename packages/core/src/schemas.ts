@@ -124,6 +124,8 @@ export const appConfigSchema = z.object({
     hotspotMinEvents: z.number().int().positive(),
     /** Off-screen events shown as edge dots at once: the nearest ones (§5). */
     maxEdgeDots: z.number().int().min(0),
+    /** Cell size when hotspots are counted on the device (family mode, slice G). */
+    deviceCellM: z.number().positive(),
   }),
   timeWindows: z.array(timeWindowSchema).min(1),
   /** The time line under the map (§5, §13.3). */

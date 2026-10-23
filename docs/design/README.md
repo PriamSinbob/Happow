@@ -30,7 +30,7 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
 
 - **Category glyphs** (owner's choice, 2026-10-23): one set in `apps/web/src/glyphs.ts` for pins, cards, detail, filter chips and the add form. No emoji.
   - From Tabler Icons: music, theatre (masks), cinema (film), exhibition (photo), festival (confetti), happening (sparkles), sport (runner), market (basket), kids (rocking horse), food (utensils).
-  - Drawn for Happow: garage sale (tag), talk (microphone), religious (candle), café (cup), bar (beer mug), other (dot).
+  - Drawn for Happow: garage sale (tag), talk (microphone), religious (candle), café (cup), bar (beer mug), other (dot), and family mode (an adult and a child; not a category, owner, 2026-10-23).
   - Food picks its glyph per event from words in the title or venue (`glyphRules` in `config/categories.json`): cup for cafés, beer mug for pubs, bars and breweries, utensils otherwise. Never chosen at random: the glyph must say what the place is.
   - Change a glyph only with the owner's OK.
 

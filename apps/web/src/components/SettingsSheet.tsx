@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { priceFromToggles, priceToggles, type Language } from '@happow/core';
 import { config } from '../config';
 import type { FiltersState } from '../hooks/useFilters';
@@ -32,7 +32,11 @@ export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout
   const { t, lang, setLang } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
   // The last price toggle that is on can't go off: it nudges instead.
-  const [nudge, setNudge] = useState<{ key: 'free' | 'paid'; n: number } | null>(null);
+  const nudge = (b: HTMLElement) => {
+    b.classList.remove('is-nudge');
+    void b.offsetWidth; // restart the animation
+    b.classList.add('is-nudge');
+  };
   const price = priceToggles(filters.price);
   const languages = config.app.languages as Language[];
   const half = Math.ceil(languages.length / 2);
@@ -44,11 +48,11 @@ export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const togglePrice = (key: 'free' | 'paid') => {
+  const togglePrice = (key: 'free' | 'paid', button: HTMLElement) => {
     const next = { ...price, [key]: !price[key] };
     const p = priceFromToggles(next.free, next.paid);
     if (p) filters.setPrice(p);
-    else setNudge((n) => ({ key, n: (n?.n ?? 0) + 1 }));
+    else nudge(button);
   };
 
   const langButton = (l: Language) => (
@@ -101,13 +105,12 @@ export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout
           <div className="toggle-track" role="group" aria-label={t('filters.price')}>
             {(['free', 'paid'] as const).map((key) => (
               <button
-                // A new key restarts the nudge animation on every refused tap.
-                key={nudge?.key === key ? `${key}-${nudge.n}` : key}
+                key={key}
                 type="button"
                 aria-pressed={price[key]}
                 aria-label={t(`filters.price.${key}`)}
-                className={`toggle${price[key] ? ' is-on' : ''}${nudge?.key === key ? ' is-nudge' : ''}`}
-                onClick={() => togglePrice(key)}
+                className={`toggle${price[key] ? ' is-on' : ''}`}
+                onClick={(e) => togglePrice(key, e.currentTarget)}
               >
                 <Icon
                   name={key === 'free' ? 'ticketFree' : 'ticketPaid'}

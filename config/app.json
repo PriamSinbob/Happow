@@ -29,7 +29,8 @@
   "density": {
     "searchRadiusM": 5000,
     "hotspotMinEvents": 3,
-    "maxEdgeDots": 24
+    "maxEdgeDots": 24,
+    "deviceCellM": 650
   },
   "refresh": {
     "dataMinutes": 5,

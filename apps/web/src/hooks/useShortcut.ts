@@ -44,6 +44,10 @@ export function useShortcut(filters: FiltersState): Shortcut {
       ? filters.family
       : filters.categories.length === 1 && filters.categories[0] === x;
   const on = isOn(id);
+  // Turned off elsewhere (the sheet, Clear): the saved choice from before no longer applies.
+  useEffect(() => {
+    if (!on && previous !== null) setPrevious(null);
+  }, [on, previous]);
 
   const turnOn = useCallback(
     (x: ShortcutId) => {

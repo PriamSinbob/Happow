@@ -1,6 +1,9 @@
+import type { ReactNode } from 'react';
 import type { NearbyEvent } from '@happow/core';
+import { categoriesById } from '../config';
 import { useI18n, type MessageKey } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
+import { Glyph } from './Icons';
 import { en as RULE_KEYS } from '../i18n/en';
 
 const RULE_ICONS: Record<string, string> = {
@@ -22,15 +25,21 @@ function ruleText(
 }
 
 type RuleFields = Pick<NearbyEvent, 'rules' | 'ageMin' | 'family'> & {
+  categoryIds?: string[];
   /** Family mode let it through without age data (§4.4). */
   familyUnconfirmed?: boolean;
 };
+
+/** Family events: marked so, or in a category that is always for families (kids). */
+const isFamily = (ev: RuleFields) =>
+  !!ev.family ||
+  (ev.family === null && !!ev.categoryIds?.some((c) => categoriesById.get(c)?.family === 'yes'));
 
 /** Age limit, family mark and the source's free-text rules, one line each. */
 function ruleItems(
   ev: RuleFields,
   t: (key: MessageKey, params?: Record<string, string>) => string,
-): { key: string; icon: string; text: string }[] {
+): { key: string; icon: ReactNode; text: string }[] {
   const items = [];
   if (ev.ageMin !== null)
     items.push({
@@ -38,9 +47,10 @@ function ruleItems(
       icon: ev.ageMin >= 18 ? '🔞' : '•',
       text: ev.ageMin === 0 ? t('rule.allAges') : t('rule.ageMin', { value: String(ev.ageMin) }),
     });
-  if (ev.family) items.push({ key: 'family', icon: '👪', text: t('rule.family') });
+  const family = <Glyph id="family" size={15} />;
+  if (isFamily(ev)) items.push({ key: 'family', icon: family, text: t('rule.family') });
   else if (ev.familyUnconfirmed)
-    items.push({ key: 'family', icon: '👪', text: t('family.unconfirmed') });
+    items.push({ key: 'family', icon: family, text: t('family.unconfirmed') });
   for (const [k, v] of Object.entries(ev.rules))
     if (v) items.push({ key: k, icon: RULE_ICONS[k] ?? '•', text: ruleText(t, k, v) });
   return items;
@@ -49,7 +59,7 @@ function ruleItems(
 export function hasRules(ev: RuleFields): boolean {
   return (
     ev.ageMin !== null ||
-    !!ev.family ||
+    isFamily(ev) ||
     !!ev.familyUnconfirmed ||
     Object.values(ev.rules).some(Boolean)
   );
