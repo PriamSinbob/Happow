@@ -30,7 +30,8 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
 
 - The street grid, river, parks and sample events. The app draws the MapLibre basemap and real data.
 - The demo clock (Friday 23 October, 16:10) and the hard-coded walking speed.
-- Category and control glyphs are [Tabler Icons](https://tabler.io/icons) (MIT), inlined as the reference style for the M6 glyph set (§4.3). If the app adopts them, keep the MIT notice.
+- Category glyphs in the prototype are [Tabler Icons](https://tabler.io/icons) (MIT) placeholders. The reference for pins is the app's own set in `apps/web/src/pinSprites.ts` (slice E): simpler shapes that read better at 18 px on a 34 px pin. Change a glyph only with the owner's OK.
+- Control icons in the prototype (dice, filters, locate, list) are also Tabler placeholders; if the app adopts Tabler, keep its MIT notice.
 
 ## Where the owner sees it
 
