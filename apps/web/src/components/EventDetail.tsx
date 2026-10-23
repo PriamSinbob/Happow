@@ -8,7 +8,8 @@ import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
 import { hasRules, RuleList } from './EventCard';
-import { Icon } from './Icons';
+import { Glyph, Icon } from './Icons';
+import { glyphOf } from '../pins';
 import { ReportDialog } from './ReportDialog';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
@@ -153,7 +154,7 @@ function DetailBody({
           <img src={ev.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
         ) : (
           <span className="detail__hero-icon" aria-hidden>
-            {cat?.icon ?? '📍'}
+            <Glyph id={glyphOf(ev)} size={64} />
           </span>
         )}
       </div>

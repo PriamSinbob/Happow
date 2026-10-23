@@ -6,7 +6,7 @@ import { config, region } from '../config';
 import { errorText } from '../errors';
 import { formatDay, formatTime } from '../format';
 import { useI18n } from '../i18n';
-import { Icon } from './Icons';
+import { Glyph, Icon } from './Icons';
 import { PinMap } from './PinMap';
 import { Screen } from './Screen';
 
@@ -384,7 +384,7 @@ export function AddEvent({
                   onClick={() => toggleCategory(c.id)}
                 >
                   <span className="cat-chip__icon" aria-hidden>
-                    {c.icon}
+                    <Glyph id={c.glyph} size={18} />
                   </span>
                   {c.labels[lang]}
                 </button>

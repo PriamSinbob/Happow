@@ -746,7 +746,7 @@ button {
   flex: none;
   border-radius: 12px;
   background: color-mix(in srgb, var(--cat) 14%, var(--paper));
-  font-size: 20px;
+  color: var(--ink);
 }
 
 /* ---------- Filter bar (time window + filters) ---------- */
@@ -901,6 +901,7 @@ button {
   border-radius: 9px;
   background: color-mix(in srgb, var(--cat) 14%, var(--paper));
   font-size: 16px;
+  color: var(--ink);
 }
 .cat-chip.is-on {
   border-color: var(--cat);
@@ -908,6 +909,8 @@ button {
 }
 .cat-chip.is-on .cat-chip__icon {
   background: var(--cat);
+  /* Category colours are saturated mid-tones: a white glyph reads on all of them. */
+  color: #fff;
 }
 .segmented--3 {
   grid-template-columns: repeat(3, 1fr);
@@ -984,8 +987,8 @@ button {
   object-fit: cover;
 }
 .detail__hero-icon {
-  font-size: 64px;
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  display: grid;
+  color: var(--ink);
 }
 .detail__body {
   position: relative;

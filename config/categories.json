@@ -49,7 +49,7 @@
       "graceMin": 0,
       "family": "likely",
       "icon": "🎪",
-      "glyph": "tent",
+      "glyph": "confetti",
       "color": "#c2410c"
     },
     {
@@ -70,7 +70,7 @@
       "graceMin": 15,
       "family": "likely",
       "icon": "⚽",
-      "glyph": "ball",
+      "glyph": "run",
       "color": "#15803d"
     },
     {
@@ -103,7 +103,7 @@
       "graceMin": 5,
       "family": "yes",
       "icon": "🧸",
-      "glyph": "kite",
+      "glyph": "horse",
       "color": "#0284c7"
     },
     {
@@ -114,7 +114,29 @@
       "graceMin": 0,
       "family": "likely",
       "icon": "🍽️",
-      "glyph": "cup",
+      "glyph": "utensils",
+      "glyphRules": [
+        { "glyph": "utensils", "words": ["bar mleczny", "bistro*", "restaurac*"] },
+        {
+          "glyph": "cup",
+          "words": ["kawiarni*", "kawa", "kawy", "cafe", "coffee", "herbaciarni*", "cukierni*"]
+        },
+        {
+          "glyph": "beer",
+          "words": [
+            "pub",
+            "pubie",
+            "bar",
+            "barze",
+            "browar*",
+            "piwiarni*",
+            "piwo",
+            "piwa",
+            "beer",
+            "craft beer"
+          ]
+        }
+      ],
       "color": "#ea580c"
     },
     {

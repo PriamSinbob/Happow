@@ -88,7 +88,10 @@ describe('pin sprites', () => {
   it('every category has a drawn glyph', async () => {
     const { GLYPH_IDS, spriteIds } = await import('../src/pinSprites');
     const { config } = await import('../src/config');
-    for (const c of config.categories) expect(GLYPH_IDS, c.id).toContain(c.glyph);
+    for (const c of config.categories) {
+      expect(GLYPH_IDS, c.id).toContain(c.glyph);
+      for (const r of c.glyphRules ?? []) expect(GLYPH_IDS, `${c.id} rule`).toContain(r.glyph);
+    }
     expect(spriteIds()).toContain('ring-12');
     expect(spriteIds()).toContain('ring-dotted');
   });
