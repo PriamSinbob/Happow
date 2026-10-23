@@ -21,6 +21,8 @@ export interface PinProps {
   outside: boolean;
   selected: boolean;
   count: number;
+  /** A single event that people or its source say may be off (community flag). */
+  flagged: boolean;
   /** "18+" for events with ageMin ≥ 16, '' otherwise. */
   age: string;
   /** symbol-sort-key: higher draws on top (selected > live > soon > later, inside > outside). */
@@ -89,6 +91,7 @@ export function pinFeatures(
           outside: s.outside,
           selected,
           count: g.events.length,
+          flagged: g.kind === 'place' && g.events.length === 1 && !!first.flag,
           age: g.kind === 'place' && age >= AGE_BADGE_MIN ? `${age}+` : '',
           z:
             (selected ? 100 : 0) + (s.outside ? 0 : 10) + (2 - RANK[s.kind]) * 2 + (s.late ? 0 : 1),

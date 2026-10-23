@@ -95,6 +95,19 @@ export function addPinLayers(m: maplibregl.Map) {
     },
     paint: { 'text-opacity': opacity, 'text-halo-width': 2 },
   });
+  // Possibly off (cancelled, moved, closed): a "!" at the lower right, as the card explains.
+  layer({
+    id: 'pin-flag',
+    filter: ['all', notCluster, get('flagged')],
+    layout: {
+      ...common,
+      'text-field': '!',
+      'text-font': FONT,
+      'text-size': 13,
+      'text-offset': [1.3, 1.1],
+    },
+    paint: { 'text-opacity': opacity, 'text-halo-width': 3 },
+  });
   // §4.4: "16+" / "18+" at the upper right. Numerals only, no translation.
   layer({
     id: 'pin-age',
@@ -133,6 +146,8 @@ export function pinPaint(
     ['pin-glyph', 'icon-color', ['match', get('kind'), 'live', onLive, t.ink]],
     ['pin-count', 'text-color', ['case', get('cluster'), t.paper, t.ink]],
     ['pin-count', 'text-halo-color', ['case', get('cluster'), t.ink, t.paper]],
+    ['pin-flag', 'text-color', t.warnInk],
+    ['pin-flag', 'text-halo-color', t.warn],
     ['pin-age', 'text-color', t.ink],
     ['pin-age', 'text-halo-color', t.paper],
   ];

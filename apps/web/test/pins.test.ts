@@ -55,6 +55,11 @@ describe('pin features', () => {
     ]);
     expect(p).toMatchObject({ kind: 'live', glyph: 'mask', count: 2, age: '18+' });
   });
+  it('a flagged single event gets the warning mark', () => {
+    const flag = { reason: 'cancelled' as const, count: 2, at: at(-5) };
+    expect(build([place('a', [ev('a', { flag })])])[0]!.flagged).toBe(true);
+    expect(build([place('a', [ev('a')])])[0]!.flagged).toBe(false);
+  });
   it('age badge only from 16+', () => {
     expect(build([place('a', [ev('a', { ageMin: 12 })])])[0]!.age).toBe('');
     expect(build([place('a', [ev('a', { ageMin: 16 })])])[0]!.age).toBe('16+');
