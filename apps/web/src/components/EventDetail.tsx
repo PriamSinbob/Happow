@@ -154,7 +154,7 @@ function DetailBody({
           <img src={ev.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
         ) : (
           <span className="detail__hero-icon" aria-hidden>
-            <Glyph id={glyphOf(ev)} size={64} />
+            <Glyph id={glyphOf(ev)} size={64} strokeWidth={1.25} />
           </span>
         )}
       </div>

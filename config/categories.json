@@ -116,22 +116,71 @@
       "icon": "🍽️",
       "glyph": "utensils",
       "glyphRules": [
-        { "glyph": "utensils", "words": ["bar mleczny", "bistro*", "restaurac*"] },
+        {
+          "glyph": "utensils",
+          "words": [
+            "bar mleczn*",
+            "barze mleczn*",
+            "barem mleczn*",
+            "milk bar",
+            "bar salatkowy",
+            "salad bar",
+            "sushi",
+            "bistro*",
+            "restaurac*",
+            "restaurant*",
+            "food truck*",
+            "foodtruck*"
+          ]
+        },
         {
           "glyph": "cup",
-          "words": ["kawiarni*", "kawa", "kawy", "cafe", "coffee", "herbaciarni*", "cukierni*"]
+          "words": [
+            "kawiar*",
+            "kawa",
+            "kawe",
+            "kawy",
+            "kawka",
+            "cafe",
+            "caffe",
+            "coffee",
+            "espresso",
+            "bar kawowy",
+            "herbaciarni*",
+            "tea room",
+            "cukierni*"
+          ]
         },
         {
           "glyph": "beer",
           "words": [
             "pub",
+            "pubu",
             "pubie",
+            "pubem",
+            "puby",
+            "pubow",
+            "pubach",
             "bar",
+            "baru",
             "barze",
+            "barem",
+            "bary",
+            "barow",
+            "barach",
             "browar*",
+            "brewery",
+            "brewpub",
+            "taproom",
+            "multitap",
             "piwiarni*",
             "piwo",
             "piwa",
+            "piw",
+            "piwem",
+            "piwny",
+            "piwne",
+            "piwnym",
             "beer",
             "craft beer"
           ]

@@ -97,7 +97,12 @@ export function About({ onClose, onModerate }: { onClose: () => void; onModerate
           )}
         </p>
 
-        <p className="muted small">{t('about.attribution')}</p>
+        <p className="muted small">
+          {t('about.attribution')} ·{' '}
+          <a href="/third-party-licenses.txt" target="_blank" rel="noopener">
+            {t('about.licenses')}
+          </a>
+        </p>
         <p className="muted small">
           {t('about.draft')} · {region.name[lang]}
         </p>

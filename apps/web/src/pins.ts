@@ -50,7 +50,7 @@ export interface PinCollection {
 
 /** The event's glyph: its first category's, or a variant from that category's rules (café, bar). */
 export function glyphOf(ev: Pick<NearbyEvent, 'categoryIds' | 'title' | 'venue'>): string {
-  return eventGlyph(categoriesById.get(ev.categoryIds[0]!), `${ev.title} ${ev.venue?.name ?? ''}`);
+  return eventGlyph(categoriesById.get(ev.categoryIds[0]!), [ev.title, ev.venue?.name ?? '']);
 }
 
 /** Age limits from this one up get the numeral badge (§4.4). */

@@ -206,7 +206,6 @@ button {
   padding: 0;
   border: 0;
   background: none;
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
 }
 .marker__pin {
   display: grid;
@@ -218,15 +217,15 @@ button {
   transform: rotate(-45deg);
   background: var(--paper);
   box-shadow: var(--shadow-sm);
-  font-size: 16px;
-  line-height: 1;
+  color: var(--ink);
   transition: transform 0.15s ease;
 }
 .marker.is-selected .marker__pin {
   transform: rotate(-45deg) scale(1.25);
 }
 .marker__pin > span {
-  display: block;
+  /* Grid, not block: the glyph SVG sits centred instead of on a text baseline. */
+  display: grid;
   transform: rotate(45deg);
 }
 /* A tapped spot: "Search from here" floats above its pin. */
@@ -900,7 +899,6 @@ button {
   height: 30px;
   border-radius: 9px;
   background: color-mix(in srgb, var(--cat) 14%, var(--paper));
-  font-size: 16px;
   color: var(--ink);
 }
 .cat-chip.is-on {
@@ -908,9 +906,9 @@ button {
   background: color-mix(in srgb, var(--cat) 9%, var(--paper));
 }
 .cat-chip.is-on .cat-chip__icon {
-  background: var(--cat);
-  /* Category colours are saturated mid-tones: a white glyph reads on all of them. */
-  color: #fff;
+  /* Selected: ink tile, paper glyph, as the active range icon; readable in both themes. */
+  background: var(--ink);
+  color: var(--paper);
 }
 .segmented--3 {
   grid-template-columns: repeat(3, 1fr);

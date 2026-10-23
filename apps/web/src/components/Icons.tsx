@@ -89,7 +89,16 @@ export function RangeIcon({ rows, size = 22 }: { rows: 0 | 1 | 2; size?: number 
 }
 
 /** A category glyph from the shared set (glyphs.ts). Decorative: callers provide the name. */
-export function Glyph({ id, size = 20 }: { id: string; size?: number }) {
+export function Glyph({
+  id,
+  size = 20,
+  strokeWidth = 2,
+}: {
+  id: string;
+  size?: number;
+  /** In 24-grid units: 2 suits icon sizes; large glyphs need less to keep the line weight. */
+  strokeWidth?: number;
+}) {
   const g: GlyphDef = GLYPHS[isGlyphId(id) ? id : 'dot'];
   return (
     <svg
@@ -99,7 +108,7 @@ export function Glyph({ id, size = 20 }: { id: string; size?: number }) {
       aria-hidden
       fill={g.fill ? 'currentColor' : 'none'}
       stroke={g.fill ? 'none' : 'currentColor'}
-      strokeWidth={2}
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
     >

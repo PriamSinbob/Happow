@@ -20,17 +20,21 @@ function wordPattern(word: string): RegExp {
 }
 
 /**
- * The glyph for one event: the first of its category's `glyphRules` whose words appear in the
- * text (title and venue), else the category's own glyph. Rules are tried in order, so a narrow
- * rule ("bar mleczny" → utensils) goes before a broad one ("bar" → beer).
+ * The glyph for one event: its category's own glyph, unless a `glyphRules` word appears in the
+ * texts. Texts are tried in order (title first, then venue), so what the event is beats where it
+ * is: "Festiwal food trucków" at "Browar Mieszczański" keeps the utensils. Within a text, rules
+ * are tried in order, so a narrow rule ("bar mleczny" → utensils) goes before a broad one
+ * ("bar" → beer).
  */
 export function eventGlyph(
   category: Pick<Category, 'glyph' | 'glyphRules'> | undefined,
-  text: string,
+  texts: readonly string[],
 ): string {
   if (!category) return 'dot';
-  const folded = foldText(text);
-  for (const rule of category.glyphRules ?? [])
-    if (rule.words.some((w) => wordPattern(w).test(folded))) return rule.glyph;
+  for (const text of texts) {
+    const folded = foldText(text);
+    for (const rule of category.glyphRules ?? [])
+      if (rule.words.some((w) => wordPattern(w).test(folded))) return rule.glyph;
+  }
   return category.glyph;
 }
