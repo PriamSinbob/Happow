@@ -83,6 +83,7 @@
     "minLandContrast": 3,
     "minHueDistance": 40,
     "minInkContrast": 4.5,
-    "minMutedContrast": 3
+    "minMutedContrast": 3,
+    "veilOpacity": { "min": 0.5, "max": 0.85 }
   }
 }

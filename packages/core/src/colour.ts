@@ -101,10 +101,17 @@ export function checkTokens(name: ThemeName, t: ThemeTokens, config: ThemeConfig
     ['warnInk', 'warn', t.warn, ink],
     ['errorInk', 'error', t.error, ink],
   ];
-  return pairs.flatMap(([fg, bgName, bg, min]) => {
-    const c = contrast(t[fg as keyof ThemeTokens] as string, bg);
-    return c < min ? [`${name}: ${fg} on ${bgName} ${c.toFixed(2)}:1 < ${min}`] : [];
-  });
+  const veil = config.rules.veilOpacity;
+  const veilErrors =
+    t.veilOpacity < veil.min || t.veilOpacity > veil.max
+      ? [`${name}: veilOpacity ${t.veilOpacity} outside ${veil.min}–${veil.max}`]
+      : [];
+  return pairs
+    .flatMap(([fg, bgName, bg, min]) => {
+      const c = contrast(t[fg as keyof ThemeTokens] as string, bg);
+      return c < min ? [`${name}: ${fg} on ${bgName} ${c.toFixed(2)}:1 < ${min}`] : [];
+    })
+    .concat(veilErrors);
 }
 
 export type ThemeSetting = 'auto' | ThemeName;

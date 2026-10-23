@@ -112,6 +112,28 @@ export const appConfigSchema = z.object({
     /** Categories in the long-press fan. */
     fanSize: z.number().int().positive(),
   }),
+  /** The local atlas and the veil over the map (§6, slice H). Kept on the device only. */
+  atlas: z.object({
+    /** H3 resolution of the recorded cells (9 ≈ 0.1 km²). */
+    resolution: z.number().int().min(0).max(15),
+    /** Location fixes less precise than this are not recorded. */
+    maxAccuracyM: z.number().positive(),
+    /** The app hidden this long starts a new session: a cell counts once per session. */
+    sessionGapMin: z.number().positive(),
+    /** Half the side of the veil canvas, around the area snapshot's centre. */
+    veilRadiusM: z.number().positive(),
+    /** Veil canvas size; low on purpose, the GPU's upscaling softens the edges. */
+    canvasPx: z.number().int().min(64).max(2048),
+    /** The veil is at full opacity from `full` in and gone at `gone` (city scale). */
+    fadeZoom: z.object({ full: z.number(), gone: z.number() }),
+    /** How clear a cell gets: opens are faint, arrivals strong, repeats brighter. */
+    strength: z.object({
+      open: z.number().min(0).max(1),
+      arrival: z.number().min(0).max(1),
+      repeat: z.number().min(0).max(1),
+    }),
+    blobsPerCell: z.number().int().min(1).max(12),
+  }),
   h3: z.object({
     eventResolution: z.number().int().min(0).max(15),
     /** Coarser cells (r8 ≈ 0.7 km²) that events are counted in for hotspots and off-screen hints. */
@@ -330,6 +352,8 @@ export const themeConfigSchema = z.object({
     minHueDistance: z.number().min(0).max(180),
     minInkContrast: z.number().min(1),
     minMutedContrast: z.number().min(1),
+    /** The veil (§6) must dim unlit areas without hiding them. */
+    veilOpacity: z.object({ min: z.number().min(0).max(1), max: z.number().min(0).max(1) }),
   }),
 });
 

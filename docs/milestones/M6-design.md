@@ -196,7 +196,7 @@ Plan agreed with the owner on 2026-10-23, including the mockups `settings-rows.h
 
 ### Slice H: lit map and the local atlas
 
-Plan drafted on 2026-10-23, waiting for the owner's OK. Mockup: `docs/design/atlas.html` (the veil at three zooms, the settings row, the toasts). Branch `m6-lit-map`. Builds §6 on top of slice F.
+Plan agreed with the owner on 2026-10-23, with every recommendation below. Mockup: `docs/design/atlas.html` (the veil at three zooms, the settings row, the toasts). Branch `m6-lit-map`. Builds §6 on top of slice F.
 
 - **The atlas (storage, on the device only).**
   - IndexedDB database `happow`, store `atlas`, one record per H3 resolution 9 cell (about 0.1 km²): `{ cell, opens, arrivals, lastSeen }`. §6 names `count`; splitting it by kind is what lets arrivals be strong and opens faint (open question 1).
@@ -245,14 +245,15 @@ Plan drafted on 2026-10-23, waiting for the owner's OK. Mockup: `docs/design/atl
   5. the atlas row in settings: export, import, clear, toasts
   6. design-review subagent, spec report and PR
 
-**Open questions for the owner (recommendations first):**
+**Owner decisions (2026-10-23):**
 
-1. Record `{ cell, opens, arrivals, lastSeen }` instead of one `count`? Recommended: yes, so arrivals can be strong and opens faint.
-2. A clear (forget) button for the atlas? Recommended: yes, as a 1.5 s hold. It's location history, so people should be able to delete it. No pause switch: nothing leaves the phone.
-3. The veil goes under the basemap labels? Recommended: yes, so street names stay readable outside your lit areas. Pins, the reach circle and the user dot stay above it.
-4. Export and import are free without an account? §8 lists them under "logged in". Recommended: free for everyone now (accounts don't exist yet, and §6 says free); §8 keeps sync and backup as premium.
-5. Import merges by taking the larger count per cell? Recommended: yes, so importing the same file twice changes nothing. Summing would double-count a re-import.
-6. Does the reach centre count as lit when it's a long-press "from here" point? Recommended: yes (the reach is always lit), but it isn't recorded as a visit.
+1. Records are `{ cell, opens, arrivals, lastSeen }`, not one `count`, so arrivals are strong and opens faint.
+2. Clear (forget) is a 1.5 s hold. No pause switch: nothing leaves the phone.
+3. The veil goes under the basemap labels, so street names stay readable. Pins, the reach circle and the user dot stay above it.
+4. Export and import are free without an account (§8 updated); sync and backup stay premium.
+5. Import merges by the larger count per cell, so importing the same file twice changes nothing.
+6. A long-press "from here" reach is lit like any reach, but it isn't recorded as a visit.
+7. The atlas row goes into the settings sheet as in the mockup; its looks get adjusted there later.
 
 ### Working notes
 
@@ -521,7 +522,7 @@ Consistent with the brief's monetization rules: every event is always shown to e
 | Tier             | Gets                                                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Anonymous        | the full app, family mode and age markings, local atlas, Violet and Mono presets                                          |
-| Logged in (free) | settings page, Tally red preset, atlas export and import                                                                  |
+| Logged in (free) | settings page, Tally red preset (atlas export and import are free for everyone: owner, 2026-10-23)                        |
 | Premium          | end-to-end-encrypted atlas sync and backup across devices and phone upgrades, extended hue presets (Magenta, future ones) |
 
 Atlas sync design:
