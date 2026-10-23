@@ -28,7 +28,7 @@
     "sessionGapMin": 30,
     "veilRadiusM": 6000,
     "canvasPx": 512,
-    "fadeZoom": { "full": 12.5, "gone": 10.2 },
+    "fadeZoom": { "full": 12.8, "gone": 10.5 },
     "strength": { "open": 0.35, "arrival": 0.85, "repeat": 0.12 },
     "blobsPerCell": 5
   },

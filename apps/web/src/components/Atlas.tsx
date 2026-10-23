@@ -11,7 +11,13 @@ const RING = 2 * Math.PI * 19;
 type Toast = { ok: true; text?: string; label: string } | { ok: false; label: string };
 
 /** The folded map with a lit spot, drawn for Happow (docs/design/atlas.html). */
-export function AtlasGlyph({ size = 34 }: { size?: number }) {
+export function AtlasGlyph({
+  size = 34,
+  strokeWidth = 1.6,
+}: {
+  size?: number;
+  strokeWidth?: number;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -20,13 +26,19 @@ export function AtlasGlyph({ size = 34 }: { size?: number }) {
       aria-hidden
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.6}
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
       <path d="M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13M9 4v13M15 7v13" />
       <circle cx="12" cy="11.5" r="1.9" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="11.5" r="4.2" strokeWidth={1} strokeDasharray="1.2 1.6" />
+      <circle
+        cx="12"
+        cy="11.5"
+        r="4.2"
+        strokeWidth={strokeWidth * 0.625}
+        strokeDasharray="1.2 1.6"
+      />
     </svg>
   );
 }
@@ -41,7 +53,7 @@ export function AtlasEntry({ count, onOpen }: { count: number; onOpen: () => voi
   return (
     <button
       type="button"
-      className="settings-row"
+      className="settings-row atlas-entry"
       aria-label={t('atlas.label', { count })}
       onClick={onOpen}
     >
@@ -108,7 +120,8 @@ export function AtlasScreen({ atlas, onClose }: { atlas: Atlas; onClose: () => v
           role="img"
           aria-label={t('atlas.label', { count: atlas.count })}
         >
-          <AtlasGlyph size={64} />
+          {/* Thinner at 64 px, so its strokes match the 34 px row glyph. */}
+          <AtlasGlyph size={64} strokeWidth={0.9} />
           <span className="atlas-screen__count">{atlas.count}</span>
         </span>
         <div className="atlas-screen__actions">
@@ -194,8 +207,11 @@ export function AtlasScreen({ atlas, onClose }: { atlas: Atlas; onClose: () => v
           }}
         />
       </div>
+      <div role="status" className="visually-hidden">
+        {toast?.label ?? ''}
+      </div>
       {toast && (
-        <div className="toast toast--icon atlas-row__toast" role="status" aria-label={toast.label}>
+        <div className="toast toast--icon atlas-row__toast" aria-hidden>
           <Icon name={toast.ok ? 'check' : 'none'} size={20} />
           {toast.ok && toast.text && <span className="sheet-btn__count">{toast.text}</span>}
         </div>

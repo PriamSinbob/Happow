@@ -29,8 +29,8 @@ export interface Atlas {
   lit: LitCell[] | null;
   cellRadiusM: number;
   count: number;
-  /** Going there arrived at this point. */
-  arrive: (point: LatLng) => void;
+  /** Going there arrived at this event's place; once per event. */
+  arrive: (eventId: string, point: LatLng) => void;
   /** Saves the atlas as JSON: the share sheet where it takes files, otherwise a download. */
   exportFile: () => Promise<boolean>;
   /** Merges an exported file; the number of new cells, or null when it isn't an atlas file. */
@@ -62,14 +62,34 @@ export function useAtlas(position: LatLng | null, accuracyM: number | null): Atl
   const cellsRef = useRef(cells);
   cellsRef.current = cells;
   const session = useRef(new Set<string>());
+  // A new session re-checks the last fix, which may not change (same cell, kept better fix).
+  const [sessionNo, setSessionNo] = useState(0);
+  const arrived = useRef(new Set<string>());
+  // Export, import and clear wait for the stored atlas, so none of them acts on an empty one.
+  const loaded = useRef<{ promise: Promise<void>; resolve: () => void } | null>(null);
+  if (!loaded.current) {
+    let resolve = () => {};
+    const promise = new Promise<void>((r) => (resolve = r));
+    loaded.current = { promise, resolve };
+  }
 
   useEffect(() => {
     let alive = true;
-    const idle = window.requestIdleCallback ?? ((fn: () => void) => window.setTimeout(fn, 800));
-    idle(() => {
-      void loadH3().then((lib) => alive && setH3(lib));
-      void atlasStore.all().then((all) => alive && setCells(new Map(all.map((c) => [c.cell, c]))));
-    });
+    const idle =
+      window.requestIdleCallback?.bind(window) ?? ((fn: () => void) => window.setTimeout(fn, 800));
+    idle(
+      () => {
+        void loadH3().then((lib) => alive && setH3(lib));
+        void atlasStore.all().then((all) => {
+          if (!alive) return;
+          const map = new Map(all.map((c) => [c.cell, c]));
+          cellsRef.current = map;
+          setCells(map);
+          loaded.current!.resolve();
+        });
+      },
+      { timeout: 2000 },
+    );
     return () => {
       alive = false;
     };
@@ -81,7 +101,10 @@ export function useAtlas(position: LatLng | null, accuracyM: number | null): Atl
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') hiddenAt = Date.now();
       else {
-        if (isNewSession(hiddenAt, Date.now(), atlas.sessionGapMin)) session.current.clear();
+        if (isNewSession(hiddenAt, Date.now(), atlas.sessionGapMin)) {
+          session.current.clear();
+          setSessionNo((n) => n + 1);
+        }
         hiddenAt = null;
       }
     };
@@ -107,16 +130,21 @@ export function useAtlas(position: LatLng | null, accuracyM: number | null): Atl
     visit(cell, 'open');
     // Only a new fix records; the cells changing must not.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [h3, cells !== null, position, accuracyM, visit]);
+  }, [h3, cells !== null, position, accuracyM, sessionNo, visit]);
 
   const arrive = useCallback(
-    (point: LatLng) => {
-      void loadH3().then((lib) => lib && visit(lib.h3Cell(point, atlas.resolution), 'arrival'));
+    (eventId: string, point: LatLng) => {
+      if (arrived.current.has(eventId)) return;
+      arrived.current.add(eventId);
+      void Promise.all([loadH3(), loaded.current!.promise]).then(
+        ([lib]) => lib && visit(lib.h3Cell(point, atlas.resolution), 'arrival'),
+      );
     },
     [visit],
   );
 
   const exportFile = useCallback(async () => {
+    await loaded.current!.promise;
     const day = today();
     const body = JSON.stringify(exportAtlas([...(cellsRef.current?.values() ?? [])], day));
     const name = atlasFileName(day);
@@ -146,6 +174,7 @@ export function useAtlas(position: LatLng | null, accuracyM: number | null): Atl
     } catch {
       return null;
     }
+    await loaded.current!.promise;
     const incoming = parseAtlas(json, atlas.resolution);
     const current = cellsRef.current;
     if (!incoming || !current) return null;
@@ -167,6 +196,7 @@ export function useAtlas(position: LatLng | null, accuracyM: number | null): Atl
   }, []);
 
   const clear = useCallback(async () => {
+    await loaded.current!.promise;
     await atlasStore.clear();
     const map = new Map<string, AtlasCell>();
     cellsRef.current = map;

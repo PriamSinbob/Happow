@@ -33,6 +33,9 @@ const cell = (id: string, opens = 1, arrivals = 0): AtlasCell => ({
   lastSeen: '2026-10-23',
 });
 
+// jsdom has no canvas: the veil falls back to gradients, without logging an error.
+HTMLCanvasElement.prototype.getContext = (() => null) as never;
+
 beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
   resetAtlasStore();
@@ -85,8 +88,10 @@ describe('recording (useAtlas)', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     const h = mount(null, null);
     await waitFor(() => expect(h.result.current.lit).not.toBeNull(), { timeout: 4000 });
-    act(() => h.result.current.arrive(rynek));
+    act(() => h.result.current.arrive('e1', rynek));
     await waitFor(() => expect(h.result.current.count).toBe(1));
+    act(() => h.result.current.arrive('e1', rynek));
+    await new Promise((r) => setTimeout(r, 50));
     const [c] = await atlasStore.all();
     expect(c).toMatchObject({ opens: 0, arrivals: 1 });
     expect(h.result.current.lit![0]!.strength).toBeCloseTo(config.app.atlas.strength.arrival);
@@ -232,7 +237,7 @@ describe('atlas in settings, one level deeper (§6)', () => {
     const file = new File(['{}'], 'happow-atlas-2026-10-23.json', { type: 'application/json' });
     fireEvent.change(input, { target: { files: [file] } });
     expect(a.importFile).toHaveBeenCalledWith(file);
-    expect(await screen.findByRole('status', { name: /added 3 areas/i })).toBeTruthy();
+    expect(await screen.findByText(/added 3 areas/i)).toBeTruthy();
   });
 
   it('clears only after a full hold', () => {

@@ -725,6 +725,9 @@ div.settings-row {
   background: transparent;
   color: var(--ink);
 }
+.settings-row.atlas-entry {
+  min-height: 66px;
+}
 .atlas-row__main {
   display: flex;
   flex-direction: column;
@@ -748,7 +751,9 @@ div.settings-row {
   inset: 0;
   color: var(--ink);
 }
-.atlas-row__toast {
+.toast.atlas-row__toast {
+  height: 40px;
+  padding: 0 16px;
   display: flex;
   gap: 8px;
   align-items: center;
