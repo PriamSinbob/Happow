@@ -1,11 +1,9 @@
-import { useEffect, useRef } from 'react';
-import type { Language, PriceFilter } from '@happow/core';
+import { useEffect, useRef, useState } from 'react';
+import { priceFromToggles, priceToggles, type Language } from '@happow/core';
 import { config } from '../config';
 import type { FiltersState } from '../hooks/useFilters';
 import { useI18n } from '../i18n';
-import { Glyph, Icon, type IconName } from './Icons';
-
-const PRICES: PriceFilter[] = ['any', 'free', 'paid'];
+import { Glyph, Icon } from './Icons';
 
 interface Props {
   filters: FiltersState;
@@ -16,14 +14,28 @@ interface Props {
   onAbout: () => void;
 }
 
+/** Fanned category glyphs beside the add button, shrinking and fading outward (§15). */
+const FAN = [
+  { size: 20, opacity: 0.9 },
+  { size: 16, opacity: 0.6 },
+  { size: 13, opacity: 0.35 },
+];
+const FAN_LEFT = ['note', 'mask', 'frame'];
+const FAN_RIGHT = ['basket', 'beer', 'confetti'];
+
 /**
- * Settings (§5): the filters first (categories, price; they apply live and the count updates
- * behind the sheet), then adding an event, the language and About.
+ * Settings (§5, §15; `docs/design/settings-rows.html`): the category chips, then wordless rows in
+ * black and white: price and family toggles, add event, language, About, and the footer. Filters
+ * apply live and the count updates behind the sheet.
  */
 export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout }: Props) {
   const { t, lang, setLang } = useI18n();
-  const otherLang = config.app.languages.find((l) => l !== lang) as Language | undefined;
   const dialog = useRef<HTMLDivElement>(null);
+  // The last price toggle that is on can't go off: it nudges instead.
+  const [nudge, setNudge] = useState<{ key: 'free' | 'paid'; n: number } | null>(null);
+  const price = priceToggles(filters.price);
+  const languages = config.app.languages as Language[];
+  const half = Math.ceil(languages.length / 2);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -32,6 +44,28 @@ export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  const togglePrice = (key: 'free' | 'paid') => {
+    const next = { ...price, [key]: !price[key] };
+    const p = priceFromToggles(next.free, next.paid);
+    if (p) filters.setPrice(p);
+    else setNudge((n) => ({ key, n: (n?.n ?? 0) + 1 }));
+  };
+
+  const langButton = (l: Language) => (
+    <span key={l} className="lang-field">
+      <button
+        type="button"
+        role="radio"
+        aria-checked={l === lang}
+        aria-label={t(`language.${l}`)}
+        className={`lang-code${l === lang ? ' is-on' : ''}`}
+        onClick={() => setLang(l)}
+      >
+        {l.toUpperCase()}
+      </button>
+    </span>
+  );
+
   return (
     <div className="overlay" onClick={onClose}>
       <div
@@ -39,114 +73,132 @@ export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout
         className="filter-sheet"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="settings-title"
+        aria-label={t('settings.title')}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="filter-sheet__head">
-          <h2 id="settings-title">{t('settings.title')}</h2>
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={onClose}
-            aria-label={t('settings.close')}
-          >
-            <Icon name="close" size={18} />
-          </button>
-        </header>
-
-        <h3 className="settings__group">{t('filters.title')}</h3>
-        <section className="filter-sheet__section">
-          <h3>{t('filters.categories')}</h3>
-          <div className="cat-grid">
-            {config.categories.map((c) => {
-              const on = filters.categories.includes(c.id);
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  aria-pressed={on}
-                  className={`cat-chip${on ? ' is-on' : ''}`}
-                  style={{ ['--cat' as string]: c.color }}
-                  onClick={() => filters.toggleCategory(c.id)}
-                >
-                  <span className="cat-chip__icon" aria-hidden>
-                    <Glyph id={c.glyph} size={18} />
-                  </span>
-                  <span className="cat-chip__label">{c.labels[lang]}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="filter-sheet__section">
-          <h3 id="price-label">{t('filters.price')}</h3>
-          <div className="segmented segmented--3" role="radiogroup" aria-labelledby="price-label">
-            {PRICES.map((p) => (
+        <div className="cat-grid" role="group" aria-label={t('filters.categories')}>
+          {config.categories.map((c) => {
+            const on = filters.categories.includes(c.id);
+            return (
               <button
-                key={p}
+                key={c.id}
                 type="button"
-                role="radio"
-                aria-checked={filters.price === p}
-                className={filters.price === p ? 'is-active' : ''}
-                onClick={() => filters.setPrice(p)}
+                aria-pressed={on}
+                className={`cat-chip${on ? ' is-on' : ''}`}
+                onClick={() => filters.toggleCategory(c.id)}
               >
-                {t(`filters.price.${p}`)}
+                <span className="cat-chip__icon" aria-hidden>
+                  <Glyph id={c.glyph} size={18} />
+                </span>
+                <span className="cat-chip__label">{c.labels[lang]}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="toggle-row">
+          <div className="toggle-track" role="group" aria-label={t('filters.price')}>
+            {(['free', 'paid'] as const).map((key) => (
+              <button
+                // A new key restarts the nudge animation on every refused tap.
+                key={nudge?.key === key ? `${key}-${nudge.n}` : key}
+                type="button"
+                aria-pressed={price[key]}
+                aria-label={t(`filters.price.${key}`)}
+                className={`toggle${price[key] ? ' is-on' : ''}${nudge?.key === key ? ' is-nudge' : ''}`}
+                onClick={() => togglePrice(key)}
+              >
+                <Icon
+                  name={key === 'free' ? 'ticketFree' : 'ticketPaid'}
+                  size={28}
+                  strokeWidth={1.8}
+                />
               </button>
             ))}
           </div>
-        </section>
+          <div className="toggle-track">
+            <button
+              type="button"
+              aria-pressed={filters.family}
+              aria-label={t('family.mode')}
+              className={`toggle${filters.family ? ' is-on' : ''}`}
+              onClick={() => filters.setFamily(!filters.family)}
+            >
+              <Glyph id="family" size={28} strokeWidth={1.8} />
+            </button>
+          </div>
+        </div>
 
-        <ul className="settings__rows">
-          <SettingsRow icon="plus" label={t('header.add')} onClick={onAdd} />
-          {otherLang && (
-            <SettingsRow
-              icon="language"
-              label={t('settings.language')}
-              value={t(`language.${otherLang}`)}
-              onClick={() => setLang(otherLang)}
-            />
-          )}
-          <SettingsRow icon="info" label={t('header.about')} onClick={onAbout} />
-        </ul>
+        <button type="button" className="settings-row" aria-label={t('header.add')} onClick={onAdd}>
+          {[...FAN].reverse().map((f, i) => (
+            <span key={`l${i}`} className="settings-row__motif" style={{ opacity: f.opacity }}>
+              <Glyph id={FAN_LEFT[FAN.length - 1 - i]!} size={f.size} />
+            </span>
+          ))}
+          <span className="settings-row__main">
+            <Icon name="plusCircle" size={38} strokeWidth={1.6} />
+          </span>
+          {FAN.map((f, i) => (
+            <span key={`r${i}`} className="settings-row__motif" style={{ opacity: f.opacity }}>
+              <Glyph id={FAN_RIGHT[i]!} size={f.size} />
+            </span>
+          ))}
+        </button>
 
-        <footer className="filter-sheet__foot">
+        <div className="settings-row" role="radiogroup" aria-label={t('settings.language')}>
+          {languages.slice(0, half).map(langButton)}
+          <span className="settings-row__globe" aria-hidden>
+            <Icon name="world" size={30} strokeWidth={1.6} />
+          </span>
+          {languages.slice(half).map(langButton)}
+        </div>
+
+        <button
+          type="button"
+          className="settings-row"
+          aria-label={t('header.about')}
+          onClick={onAbout}
+        >
+          <span className="settings-row__motif" style={{ opacity: 0.35 }}>
+            <Icon name="dice" size={13} />
+          </span>
+          <span className="settings-row__motif" style={{ opacity: 0.6 }}>
+            <Icon name="gear" size={17} />
+          </span>
+          <span className="settings-row__main">
+            <Icon name="infoCircle" size={34} strokeWidth={1.6} />
+          </span>
+          <span className="settings-row__motif" style={{ opacity: 0.6 }}>
+            <Icon name="shield" size={17} />
+          </span>
+          <span className="settings-row__motif" style={{ opacity: 0.35 }}>
+            <Glyph id="tag" size={13} />
+          </span>
+        </button>
+
+        <footer className="settings-foot">
           <button
             type="button"
-            className="btn"
+            className="sheet-btn"
+            aria-label={t('filters.clear')}
             onClick={filters.clear}
             disabled={filters.activeCount === 0}
           >
-            {t('filters.clear')}
+            <Icon name="filterOff" size={22} />
           </button>
-          <button type="button" className="btn btn--primary" onClick={onClose} aria-busy={loading}>
-            {t('filters.show', { count })}
+          <button
+            type="button"
+            className="sheet-btn sheet-btn--show"
+            aria-label={t('filters.show', { count })}
+            onClick={onClose}
+            aria-busy={loading}
+          >
+            <Icon name="check" size={20} />
+            <span className="sheet-btn__count">{count}</span>
           </button>
         </footer>
       </div>
     </div>
-  );
-}
-
-function SettingsRow({
-  icon,
-  label,
-  value,
-  onClick,
-}: {
-  icon: IconName;
-  label: string;
-  value?: string;
-  onClick: () => void;
-}) {
-  return (
-    <li>
-      <button type="button" className="settings__row" onClick={onClick}>
-        <Icon name={icon} size={20} />
-        <span className="settings__label">{label}</span>
-        {value && <span className="settings__value">{value}</span>}
-      </button>
-    </li>
   );
 }

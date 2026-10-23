@@ -1,15 +1,26 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   dayStarts,
+  densityClusters,
+  diceCategory,
+  dicePool,
+  familyMatch,
   isOnDay,
   isRunning,
   pinState,
+  reachForRoll,
+  reweigh,
+  rollDice,
   snapRadius,
+  topCategories,
+  type DiceSignal,
+  type DiceWeights,
+  type HappowEvent,
   type LatLng,
   type NearbyEvent,
 } from '@happow/core';
 import { trackView } from './analytics';
-import { config, region } from './config';
+import { categoriesById, config, region } from './config';
 import { createRepository } from './data';
 import { withFlag, useMyReports } from './flags';
 import { useEventDetail } from './hooks/useEventDetail';
@@ -21,6 +32,8 @@ import { useMinuteClock } from './hooks/useClock';
 import { useRoute } from './hooks/useHashRoute';
 import { useRadius } from './hooks/useRadius';
 import { useSaved } from './hooks/useSaved';
+import { useLongPress } from './hooks/useLongPress';
+import { useShortcut } from './hooks/useShortcut';
 import { useI18n } from './i18n';
 import { About } from './components/About';
 import { AddEvent } from './components/AddEvent';
@@ -28,10 +41,11 @@ import { EventCard } from './components/EventCard';
 import { EventDetail } from './components/EventDetail';
 import { GoThere } from './components/GoThere';
 import { GuidanceCard } from './components/Guidance';
-import { Icon } from './components/Icons';
+import { Glyph, Icon } from './components/Icons';
 import { ListView } from './components/ListView';
 import { MapView } from './components/MapView';
 import { Moderation } from './components/Moderation';
+import { PickGrid } from './components/PickGrid';
 import { PlaceCard } from './components/PlaceCard';
 import { ReachRail } from './components/ReachRail';
 import { SettingsSheet } from './components/SettingsSheet';
@@ -44,6 +58,22 @@ type View = 'map' | 'list';
 
 const { minM, maxM, defaultM } = config.app.radius;
 const { maxEdgeDots } = config.app.density;
+
+/**
+ * Family mode moves the hotspot to the device (the density query does not know the mode): cells
+ * of about 670 × 620 m in Poland, near the r8 cells the server uses.
+ */
+const familyCell = (e: HappowEvent) =>
+  `${Math.floor(e.point.lat / 0.006)}:${Math.floor(e.point.lng / 0.009)}`;
+
+function savedWeights(): DiceWeights {
+  try {
+    const v: unknown = JSON.parse(storage.get('diceWeights') ?? '{}');
+    return v && typeof v === 'object' ? (v as DiceWeights) : {};
+  } catch {
+    return {};
+  }
+}
 
 export function App() {
   const { t, lang } = useI18n();
@@ -59,6 +89,16 @@ export function App() {
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
   const filters = useFilters();
+  const shortcut = useShortcut(filters);
+  // The grid a hold opens: the shortcut's choices, or the dice's categories.
+  const [grid, setGrid] = useState<'shortcut' | 'dice' | null>(null);
+  const closeGrid = useCallback(() => setGrid(null), []);
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 2200);
+    return () => clearTimeout(id);
+  }, [toast]);
   // The time line (§5, §13.3): a time today (null = now), or a day of the 7 / 14 days.
   const [at, setAt] = useState<Date | null>(null);
   const [day, setDay] = useState<number | null>(null);
@@ -91,6 +131,22 @@ export function App() {
     [myReports],
   );
 
+  // Family mode (§4.4) first, so map, list, counter, hotspot, edge dots and dice agree. Likely
+  // family events without age data stay, marked "not confirmed" on their cards.
+  const familyOnly = useCallback(
+    (list: NearbyEvent[]): NearbyEvent[] => {
+      if (!filters.family) return list;
+      return list.flatMap((e) => {
+        const m = familyMatch(e, config.categories, config.app);
+        if (m === 'hide') return [];
+        return m === 'unconfirmed' ? [{ ...e, familyUnconfirmed: true }] : [e];
+      });
+    },
+    [filters.family],
+  );
+  const familyEvents = useMemo(() => familyOnly(loaded.events), [familyOnly, loaded.events]);
+  const familyAround = useMemo(() => familyOnly(loaded.around), [familyOnly, loaded.around]);
+
   // What the time line selects. Today: what is still on at the time looked at, drawn for that
   // time. 7 / 14 days: everything as dots, or one day's events as glyph pins.
   const days = 'days' in filters.window ? filters.window.days : 0;
@@ -107,12 +163,12 @@ export function App() {
     [liveOnly, days, day, starts, now, pinTime],
   );
   const events = useMemo(
-    () => flagged(loaded.events.filter(visible)),
-    [flagged, loaded.events, visible],
+    () => flagged(familyEvents.filter(visible)),
+    [flagged, familyEvents, visible],
   );
   const around = useMemo(
-    () => flagged(loaded.around.filter(visible)),
-    [flagged, loaded.around, visible],
+    () => flagged(familyAround.filter(visible)),
+    [flagged, familyAround, visible],
   );
   // The map shows the reach plus the nearest events beyond it (faded, or edge dots off screen).
   const mapEvents = useMemo(() => [...events, ...around.slice(0, maxEdgeDots)], [events, around]);
@@ -120,11 +176,11 @@ export function App() {
   // ● N: on now, in reach, worth going to (not dashed). Always now, whatever the line shows.
   const liveCount = useMemo(
     () =>
-      loaded.events.filter((e) => {
+      familyEvents.filter((e) => {
         if (!isRunning(e, now)) return false;
         return !pinState(e, now, e.distanceM, radius, config.categories, config.app).late;
       }).length,
-    [loaded.events, now, radius],
+    [familyEvents, now, radius],
   );
 
   const all = useMemo(() => [...events, ...around], [events, around]);
@@ -132,14 +188,39 @@ export function App() {
   // A pin with several events at one place lists them; ids that left the results drop out.
   const [placeIds, setPlaceIds] = useState<string[] | null>(null);
   const placeEvents = placeIds ? all.filter((e) => placeIds.includes(e.id)) : [];
-  const guidance = useGuidance(clusters, searchCenter, radius);
+  const shownClusters = useMemo(
+    () =>
+      filters.family
+        ? densityClusters([...familyEvents, ...familyAround], radius, familyCell)
+        : clusters,
+    [filters.family, familyEvents, familyAround, radius, clusters],
+  );
+  const guidance = useGuidance(shownClusters, searchCenter, radius);
   const [hotspotOpen, setHotspotOpen] = useState(false);
   const [recenter, setRecenter] = useState(0);
   const filtered = filters.activeCount > 0;
   const [route, go] = useRoute();
   const detailId = route?.name === 'event' ? route.id : null;
   const goId = route?.name === 'go' ? route.id : null;
-  const openDetail = (id: string) => go({ name: 'event', id });
+  // Dice (§7): weights on this device; no repeats this session.
+  const [diceWeights, setDiceWeights] = useState(savedWeights);
+  useEffect(() => storage.set('diceWeights', JSON.stringify(diceWeights)), [diceWeights]);
+  const diceSeen = useRef<string[]>([]);
+  const [rolledId, setRolledId] = useState<string | null>(null);
+  // Opening the rolled event or going there raises its category.
+  const signal = (id: string, s: DiceSignal) => {
+    if (id !== rolledId) return;
+    const e = all.find((x) => x.id === id);
+    if (e) setDiceWeights((w) => reweigh(w, diceCategory(e), s));
+  };
+  const openDetail = (id: string) => {
+    signal(id, 'open');
+    go({ name: 'event', id });
+  };
+  const goThere = (id: string) => {
+    signal(id, 'go');
+    go({ name: 'go', id });
+  };
   const close = useCallback(() => go(null), [go]);
   const detail = useEventDetail(repo, detailId ?? goId, events, searchCenter);
   useEffect(() => trackView(route?.name ?? 'map'), [route?.name]);
@@ -180,6 +261,57 @@ export function App() {
     setRecenter((n) => n + 1);
     location.retry();
   };
+  const roll = (category?: string) => {
+    const pool = dicePool([...familyEvents, ...familyAround], now, {
+      ...config.app.dice,
+      liveOnly,
+      late: (e) => pinState(e, now, e.distanceM, radius, config.categories, config.app).late,
+    });
+    // Rolling again while the last result is open counts as "not this one".
+    let weights = diceWeights;
+    const last = rolledId === selectedId ? pool.find((e) => e.id === rolledId) : undefined;
+    if (last) {
+      weights = reweigh(weights, diceCategory(last), 'reroll');
+      setDiceWeights(weights);
+    }
+    const e = rollDice(pool, { seen: diceSeen.current, weights, category });
+    if (!e) {
+      setToast(t('dice.empty'));
+      return;
+    }
+    diceSeen.current = [...diceSeen.current, e.id];
+    setRolledId(e.id);
+    filters.setWindow('today');
+    setAt(null);
+    setDay(null);
+    setView('map');
+    setRadius(
+      reachForRoll(e.distanceM, radius, config.app.radius.detentsM, config.app.dice.reachMargin),
+    );
+    setPlaceIds(null);
+    setHotspotOpen(false);
+    setSelectedId(e.id);
+  };
+  const dicePress = useLongPress(
+    () => roll(),
+    () => setGrid('dice'),
+  );
+  const shortcutPress = useLongPress(shortcut.toggle, () => setGrid('shortcut'));
+  const shortcutCategory = shortcut.id === 'family' ? null : categoriesById.get(shortcut.id);
+  const shortcutName = shortcutCategory ? shortcutCategory.labels[lang] : t('family.mode');
+  const shortcutOptions = [
+    { id: 'family', glyph: 'family', label: t('family.mode') },
+    ...config.categories.map((c) => ({ id: c.id, glyph: c.glyph, label: c.labels[lang] })),
+  ];
+  const diceOptions = topCategories(
+    config.categories.map((c) => c.id),
+    diceWeights,
+    config.app.dice.fanSize,
+  ).map((id) => {
+    const c = categoriesById.get(id)!;
+    return { id, glyph: c.glyph, label: c.labels[lang] };
+  });
+
   const toggleLive = () => {
     // Live-only is about right now: from a later time or day, it returns to now.
     if (!liveOnly) {
@@ -238,22 +370,65 @@ export function App() {
           <span className={`counter__dot${liveCount ? ' has-live' : ''}`} aria-hidden />
           {loading && loaded.events.length === 0 ? '…' : liveCount}
         </button>
+        <button
+          type="button"
+          className="map-btn"
+          data-on={shortcut.on}
+          aria-pressed={shortcut.on}
+          aria-label={t('shortcut.label', { name: shortcutName })}
+          {...shortcutPress}
+        >
+          <Glyph id={shortcutCategory ? shortcutCategory.glyph : 'family'} size={20} />
+        </button>
         {error && (
           <span className="hud-error" role="status">
             {t('summary.error')}
           </span>
         )}
-        <button
-          type="button"
-          className={`map-btn${filtered ? ' has-active' : ''}`}
-          aria-label={t('settings.open')}
-          aria-haspopup="dialog"
-          onClick={() => setSettingsOpen(true)}
-        >
-          <Icon name="sliders" />
-          {filtered && <span className="map-btn__badge" aria-hidden />}
-        </button>
+        <span className="hud-top__end">
+          <button
+            type="button"
+            className={`map-btn${filtered ? ' has-active' : ''}`}
+            aria-label={t('settings.open')}
+            aria-haspopup="dialog"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <Icon name="sliders" />
+            {filtered && <span className="map-btn__badge" aria-hidden />}
+          </button>
+          <button type="button" className="map-btn" aria-label={t('dice.roll')} {...dicePress}>
+            <Icon name="dice" />
+          </button>
+        </span>
       </div>
+      {grid === 'shortcut' && (
+        <PickGrid
+          label={t('shortcut.pick')}
+          options={shortcutOptions}
+          current={shortcut.id}
+          onPick={(id) => {
+            shortcut.choose(id);
+            setGrid(null);
+          }}
+          onClose={closeGrid}
+        />
+      )}
+      {grid === 'dice' && (
+        <PickGrid
+          label={t('dice.pick')}
+          options={diceOptions}
+          onPick={(id) => {
+            setGrid(null);
+            roll(id);
+          }}
+          onClose={closeGrid}
+        />
+      )}
+      {toast && (
+        <div className="toast" role="status" style={{ bottom: timelineHeight + 12 }}>
+          {toast}
+        </div>
+      )}
 
       {banner && (
         <div className="banner" role="status">
@@ -336,7 +511,7 @@ export function App() {
               now={now}
               onClose={() => setSelectedId(null)}
               onDetails={() => openDetail(selected.id)}
-              onGo={() => go({ name: 'go', id: selected.id })}
+              onGo={() => goThere(selected.id)}
             />
           </div>
         ) : view === 'map' && placeEvents.length > 0 ? (
@@ -432,7 +607,7 @@ export function App() {
           onToggleSave={() => saved.toggle(detailId)}
           onClose={close}
           onReported={addMyReport}
-          onGo={() => go({ name: 'go', id: detailId })}
+          onGo={() => goThere(detailId)}
         />
       )}
       {goId && (

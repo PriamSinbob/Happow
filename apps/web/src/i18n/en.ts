@@ -47,10 +47,8 @@ export const en = {
   'window.today': 'Today',
   'window.hours': '{hours} h',
   'window.days': '{days} days',
-  'filters.title': 'Filters',
   'filters.categories': 'Categories',
   'filters.price': 'Price',
-  'filters.price.any': 'Any',
   'filters.price.free': 'Free',
   'filters.price.paid': 'Paid',
   'filters.clear': 'Clear',
@@ -258,7 +256,6 @@ export const en = {
   offline: 'Offline — showing cached data',
   'settings.open': 'Settings',
   'settings.title': 'Settings',
-  'settings.close': 'Close settings',
   'settings.language': 'Language',
   'language.pl': 'Polski',
   'language.en': 'English',
@@ -269,6 +266,13 @@ export const en = {
   'reach.city': 'city',
   'timeline.label': 'Time',
   'timeline.now': 'Now',
+  'family.mode': 'Family mode',
+  'family.unconfirmed': 'Not confirmed for children',
+  'shortcut.label': '{name}. Hold to change',
+  'shortcut.pick': 'Shortcut',
+  'dice.roll': 'Surprise me',
+  'dice.pick': 'Surprise me from a category',
+  'dice.empty': 'Nothing nearby right now',
 } as const;
 
 export type MessageKey = keyof typeof en;

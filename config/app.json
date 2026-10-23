@@ -16,6 +16,12 @@
   "family": {
     "latestEnd": "21:00"
   },
+  "dice": {
+    "maxDistanceM": 2000,
+    "soonMin": 60,
+    "reachMargin": 1.15,
+    "fanSize": 5
+  },
   "h3": {
     "eventResolution": 9,
     "densityResolution": 8

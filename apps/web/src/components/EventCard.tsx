@@ -21,7 +21,10 @@ function ruleText(
   return value;
 }
 
-type RuleFields = Pick<NearbyEvent, 'rules' | 'ageMin' | 'family'>;
+type RuleFields = Pick<NearbyEvent, 'rules' | 'ageMin' | 'family'> & {
+  /** Family mode let it through without age data (§4.4). */
+  familyUnconfirmed?: boolean;
+};
 
 /** Age limit, family mark and the source's free-text rules, one line each. */
 function ruleItems(
@@ -36,13 +39,20 @@ function ruleItems(
       text: ev.ageMin === 0 ? t('rule.allAges') : t('rule.ageMin', { value: String(ev.ageMin) }),
     });
   if (ev.family) items.push({ key: 'family', icon: '👪', text: t('rule.family') });
+  else if (ev.familyUnconfirmed)
+    items.push({ key: 'family', icon: '👪', text: t('family.unconfirmed') });
   for (const [k, v] of Object.entries(ev.rules))
     if (v) items.push({ key: k, icon: RULE_ICONS[k] ?? '•', text: ruleText(t, k, v) });
   return items;
 }
 
 export function hasRules(ev: RuleFields): boolean {
-  return ev.ageMin !== null || !!ev.family || Object.values(ev.rules).some(Boolean);
+  return (
+    ev.ageMin !== null ||
+    !!ev.family ||
+    !!ev.familyUnconfirmed ||
+    Object.values(ev.rules).some(Boolean)
+  );
 }
 
 export function RuleList({ ev }: { ev: RuleFields }) {

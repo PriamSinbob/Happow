@@ -146,6 +146,15 @@ export const GLYPHS = {
     paths: ['M8.5 10h7v11h-7z', 'M12 10v-2', 'M12 2.5q3.5 3.5 0 5q-3.5 -1.5 0 -5'],
   },
   dot: { fill: true, paths: ['M8.5 12a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0'] },
+  // Family mode (§4.4, slice G), not a category: an adult and a child, so it differs from the horse.
+  family: {
+    paths: [
+      'M5 7a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0',
+      'M3.5 21v-5a4 4 0 0 1 8 0v5',
+      'M15.2 11a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0',
+      'M14 21v-3a3 3 0 0 1 6 0v3',
+    ],
+  },
 } as const satisfies Record<string, Glyph>;
 
 export type GlyphId = keyof typeof GLYPHS;

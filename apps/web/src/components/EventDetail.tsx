@@ -122,7 +122,6 @@ function DetailBody({
   const end = formatTime(ev.endAt, ev.timezone, lang);
   const sameDay = isSameDay(ev.startAt, new Date(new Date(ev.endAt).getTime() - 1), ev.timezone);
   const minutesToStart = Math.round((new Date(ev.startAt).getTime() - now.getTime()) / 60_000);
-  const cat = categories[0];
   const source = (ev.sourceId && sourceNames.get(ev.sourceId)) || t(`event.source.${ev.trust}`);
 
   useEffect(() => {
@@ -146,10 +145,7 @@ function DetailBody({
 
   return (
     <div className="detail__scroll">
-      <div
-        className={`detail__hero${ev.imageUrl ? ' has-image' : ''}`}
-        style={{ ['--cat' as string]: cat?.color ?? 'var(--muted)' }}
-      >
+      <div className={`detail__hero${ev.imageUrl ? ' has-image' : ''}`}>
         {ev.imageUrl ? (
           <img src={ev.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
         ) : (

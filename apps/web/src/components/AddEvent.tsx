@@ -378,7 +378,6 @@ export function AddEvent({
                   key={c.id}
                   type="button"
                   className={`cat-chip${on ? ' is-on' : ''}`}
-                  style={{ ['--cat' as string]: c.color }}
                   aria-pressed={on}
                   disabled={!on && form.categoryIds.length >= MAX_CATEGORIES}
                   onClick={() => toggleCategory(c.id)}
