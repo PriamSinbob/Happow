@@ -2,14 +2,15 @@
 
 Visual source of truth for the M6 and M7 UI. Where the milestone specs describe a screen in words, these files show it. When building UI, match them; any deviation needs the owner's OK first.
 
-| File                    | What                                                                                                                                                                       |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `prototype.html`        | Interactive prototype of the map screen, agreed with the owner on 2026-10-22. It is self-contained: open it in a browser (no build, no network), or read its source.       |
-| `icons/range-today.svg` | Time range icon: Today (calendar with one filled day).                                                                                                                     |
-| `icons/range-week.svg`  | Time range icon: 7 days (one filled row).                                                                                                                                  |
-| `icons/range-later.svg` | Time range icon: 14 days (two filled rows).                                                                                                                                |
-| `settings-rows.html`    | The settings sheet's wordless rows (price, add, language, about, footer), approved by the owner on 2026-10-23. Self-contained; toggle day and night.                       |
-| `map-shortcut.html`     | The chip beside the live counter: a shortcut to one filter (family mode or a category). Tap toggles, hold picks. Fixed-width counter. Approved by the owner on 2026-10-23. |
+| File                    | What                                                                                                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prototype.html`        | Interactive prototype of the map screen, agreed with the owner on 2026-10-22. It is self-contained: open it in a browser (no build, no network), or read its source.        |
+| `icons/range-today.svg` | Time range icon: Today (calendar with one filled day).                                                                                                                      |
+| `icons/range-week.svg`  | Time range icon: 7 days (one filled row).                                                                                                                                   |
+| `icons/range-later.svg` | Time range icon: 14 days (two filled rows).                                                                                                                                 |
+| `settings-rows.html`    | The settings sheet's wordless rows (price, add, language, about, footer), approved by the owner on 2026-10-23. Self-contained; toggle day and night.                        |
+| `map-shortcut.html`     | The chip beside the live counter: a shortcut to one filter (family mode or a category). Tap toggles, hold picks. Fixed-width counter. Approved by the owner on 2026-10-23.  |
+| `atlas.html`            | The lit map's veil (seeded soft holes, opens faint, arrivals strong, zoom fade) and the atlas controls: export, import, hold-to-clear. Approved by the owner on 2026-10-23. |
 
 ## Normative: match exactly
 
@@ -27,6 +28,8 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
   - right edge: reach rail, with locate and list below it
   - list style B: an overlay over the map
 - **Lit map** (§6). A grey veil with soft, cloud-like holes for your reach and the places you've been. It fades out as you zoom out.
+  - The veil algorithm in `atlas.html` is normative: blobs seeded by cell id, opens faint, arrivals strong, repeats brighter, labels above the veil.
+  - The atlas controls live one level deeper (owner, 2026-10-23): a settings row with the atlas glyph and the count opens "Your places", which holds export, import and clear. The inline row in `atlas.html` shows the controls, not where they live; their looks are still to be adjusted.
 
 - **Category glyphs** (owner's choice, 2026-10-23): one set in `apps/web/src/glyphs.ts` for pins, cards, detail, filter chips and the add form. No emoji.
   - From Tabler Icons: music, theatre (masks), cinema (film), exhibition (photo), festival (confetti), happening (sparkles), sport (runner), market (basket), kids (rocking horse), food (utensils).
