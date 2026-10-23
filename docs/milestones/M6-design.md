@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E), §5 and §13.2–§13.5 built (slice F); the rest not built. List style B (§5) is provisional until the owner reviews it on the working app. Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
+**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E), §5 and §13.2–§13.5 built (slice F); the rest not built. List style B (§5) approved by the owner on a phone (2026-10-23). Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
 
 **Visual reference:** `docs/design/` (interactive prototype, exact range icons, README listing what is normative). Slices E to H match it; where this spec's words and the prototype differ, ask the owner.
 
@@ -355,7 +355,8 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
   - **Map.** Long-press (right-click on desktop) = plan from here; a tap picks the nearest pin within 14 px, so 10 px dots are tappable, or closes the card. Edge dots for the 24 nearest events beyond the reach (`density.maxEdgeDots`), live hue when live; tap pans there. The faded outside pins are the same 24. Hotspot stays a DOM marker; outside-radius bubbles and chevrons are gone.
   - **Core** (`packages/core/src/timeline.ts`, unit-tested): rail scale and detents, reach label, time snapping, 30-min and per-day bins (25 Oct DST week), `isOnDay`, edge clamping.
   - Skipped: dice and the family chip (slice G); the first-launch rail nudge (§1); iOS has no haptics (Vibration API).
-  - Open: list style B still needs the owner's review on a phone. Not yet tried on a real phone: rail drag at 60 fps with 500 events, pinch to city mode, long-press on touch. Edge dots and map pins are not keyboard-focusable; the list is the keyboard and screen-reader path. Many events sat on one city-centre point because of a geocoder fallback, fixed separately (`fix-geocode-city-centre`).
+  - Checked by the owner on a phone (2026-10-23, preview build): rail drag, pinch to city mode, long-press, list style B. "Much better than the live app."
+  - Open: the 60 fps target with 500 events is not measured. Edge dots and map pins are not keyboard-focusable; the list is the keyboard and screen-reader path. Many events sat on one city-centre point because of a geocoder fallback, fixed separately (`fix-geocode-city-centre`).
 
 ## 6. Lit map (explored areas)
 
@@ -441,7 +442,6 @@ Atlas sync design:
 
 ## 12. Open
 
-- List style B: owner review on the working app.
 - Premium pricing and payment provider.
 - Co-presence timing (after the core).
 - Later window length (14 days) to confirm in use.
