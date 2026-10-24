@@ -220,12 +220,13 @@ describe('the atlas bar in About (§6)', () => {
       { wrapper },
     );
     expect(screen.getByRole('img', { name: /37 areas/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /save my places/i })).toBeTruthy();
+    // Signed out: export and import need an account (M8 §6); forgetting never does.
+    expect(screen.queryByRole('button', { name: /save my places/i })).toBeNull();
     expect(screen.getByRole('button', { name: /forget my places/i })).toBeTruthy();
   });
 
   it('is wordless, with translated names on every button', () => {
-    render(<AtlasBar atlas={stub()} />, { wrapper });
+    render(<AtlasBar atlas={stub()} transfer />, { wrapper });
     expect(screen.getByRole('img', { name: /37 areas/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /save my places/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /add places/i })).toBeTruthy();
@@ -234,7 +235,7 @@ describe('the atlas bar in About (§6)', () => {
 
   it('exports, and imports a picked file with a +N toast', async () => {
     const a = stub();
-    render(<AtlasBar atlas={a} />, { wrapper });
+    render(<AtlasBar atlas={a} transfer />, { wrapper });
     fireEvent.click(screen.getByRole('button', { name: /save my places/i }));
     expect(a.exportFile).toHaveBeenCalled();
     const input = screen.getByTestId('atlas-file') as HTMLInputElement;
@@ -247,7 +248,7 @@ describe('the atlas bar in About (§6)', () => {
   it('clears only after a full hold', () => {
     vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
     const a = stub();
-    render(<AtlasBar atlas={a} />, { wrapper });
+    render(<AtlasBar atlas={a} transfer />, { wrapper });
     const bin = screen.getByRole('button', { name: /forget my places/i });
     fireEvent.pointerDown(bin);
     act(() => vi.advanceTimersByTime(CLEAR_HOLD_MS / 2));

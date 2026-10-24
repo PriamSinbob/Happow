@@ -4,7 +4,7 @@ Oct 24, 2026
 
 Spec from the brief's M8 entry (owner, 2026-10-24), M6 §8 and the brief's "Automation add-on (paid): URL autofill", with the owner's answers of 2026-10-24 (§9). M8 comes next after M6; M7 is built after M12 and then uses these accounts (M7 slice G). Build it in the usual way: plan per slice, show the plan, build, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed 2026-10-24; slices A (accounts on the server), B (plans, the promotion through 30 Nov 2026, grants, the premium provider interface), C (monthly quotas for events and autofills) and D (the reach circle off the vector map) built, E–G planned. Only the payment provider is open, and it is not needed in M8.
+**Status:** in progress. Spec agreed 2026-10-24; slices A (accounts on the server), B (plans, the promotion through 30 Nov 2026, grants, the premium provider interface), C (monthly quotas for events and autofills), D (the reach circle off the vector map) and E (sign-in, the account card, presets and atlas by plan, the premium sheet) built, F–G planned. Only the payment provider is open, and it is not needed in M8.
 
 The PWA is built feature-complete before the native rewrite (brief, 2026-10-24), so every slice is built in full, UI included. The server side (tables, SQL functions, `/api/me`, the premium provider interface) is shaped so a native client uses it unchanged. No speed testing on the web build.
 
@@ -20,7 +20,7 @@ One branch and one PR to `main` per slice, as in M6. The data and API slices com
 | B     | §3, §4   | Plans and entitlements in config, the early-access promotion, grants, `PremiumProvider` with `none`    | A     | built   |
 | C     | §5 API   | Monthly quotas per account: events added and autofills                                                 | B     | built   |
 | D     | §1       | Reach circle off the vector map; the raster fallback keeps it                                          | —     | built   |
-| E     | §2–§4 UI | Mockup first. Sign-in sheet, account row in About, plan mark, premium sheet, presets and atlas by tier | A, B  | planned |
+| E     | §2–§4 UI | Mockup first. Sign-in sheet, account row in About, plan mark, premium sheet, presets and atlas by tier | A, B  | built   |
 | F     | §2 admin | Admin: sign-in code requests with a ready email to send by hand                                        | A, E  | planned |
 | G     | §5 UI    | The add form with sign-in, quotas and autofill usage                                                   | C, E  | planned |
 
@@ -147,6 +147,16 @@ Owner, 2026-10-23: the app is partly paid. Paid never buys visibility: every pub
   - **Tests:** `packages/core/test/plans.test.ts` (11: the `until` boundary, the DST change, overlapping, open-ended, ended and future grants, config checks, presets by tier); `packages/api/test/accounts.test.ts` (+10: plans on `/api/me`, admin grants, premium with no provider and with a fake one through checkout, webhook paid/cancelled/refunded, a bad signature, verify); `scripts/m8.db.test.ts` (+3, CI database).
   - Skipped: nothing planned for slice B. `manageUrl` has no endpoint yet; the first provider slice adds it with its button.
   - Open: no way to buy premium yet (Q10). The promotion must be extended before 30 November 2026 unless a provider exists by then (§4 recommendation).
+- **Built** (slice E, 2026-10-24): the screens for §2–§4, as in `docs/design/account.html` (approved by the owner on 2026-10-24 with the sparkles mark; the interim terms "go live as drafted, improve later").
+  - **Sign-in** (`apps/web/src/auth.ts`): sessions in `localStorage` (a session left in `sessionStorage` from before is picked up once); the 6-digit email code through `POST /api/auth/code-request` with manual delivery, or Supabase's `/otp` with `"supabase"`; Google with PKCE (the verifier in `sessionStorage` across the redirect). Both the link in a code email and the Google return land on About. Refreshes run one at a time, because refresh tokens rotate; only a refused refresh token signs out, not being offline.
+  - **Account** (`apps/web/src/account.tsx`): `/api/me` once per session and after sign-in, cached on the device so a premium colour doesn't flash off at start-up. Export downloads `/api/me/export`; delete asks first, then signs out.
+  - **About:** the account card on top (signed out: what a free account gives and **Sign in**; signed in: email, plan and its last day with the sparkles mark, **Get my data**, **Sign out**, **Delete account**). Colours: Violet and Mono signed out; all four signed in, Magenta with the mark, and tapping a locked one opens the premium sheet. The atlas bar shows export and import only with `atlas.export`. The **Moderation** link shows only for the moderator and admin roles; the moderator sign-in form is gone.
+  - **Terms:** a sheet after sign-in whenever the account hasn't accepted `legal.termsVersion` (new accounts, or after the terms change): the interim terms, one checkbox, then `PUT /api/me`. Its numbers and date come from `config/plans.json`.
+  - **Premium sheet:** what premium unlocks; "not on sale yet" while `premium.providers` is empty, or the early-access end date.
+  - **Config:** `auth.providers` (`[]` until Google is set up, then `["google"]`; the button shows only then). `docs/SETUP.md` has the Google steps.
+  - **Tests:** `apps/web/test/m8-account.test.tsx` (11: code request and sign-in, PKCE there and back, the email link, one refresh for parallel callers and sign-out only on a refused token, About signed out, early-access premium, free account with the premium sheet, staff-only Moderation, delete, terms once per version); slice H and M6 tests updated for the gating.
+  - Skipped: the "adding events needs an account" sheet moves to slice G with the add form (owner, 2026-10-24).
+  - Open: Google sign-in waits for the owner's setup (`docs/SETUP.md`, section 1 step 5). The interim terms will be revised later (owner).
 
 ## 5. Events and autofill per account
 

@@ -24,12 +24,25 @@ Never paste a secret into an issue, a commit, a chat or a file in the repo. Secr
    - the **publishable** key (`sb_publishable_…`), or the legacy **anon** key. This is **`VITE_SUPABASE_ANON_KEY`**. It is public by design: it ships inside the app and can only call what the database allows anonymous users to call.
    - the **secret** key (`sb_secret_…`), or the legacy **service_role** key. This is **`SUPABASE_SERVICE_ROLE_KEY`**. It bypasses all security rules: keep it server-side only and never put it in a variable whose name starts with `VITE_`.
 4. **Sign-in settings.** Open **Authentication → Sign In / Providers**:
-   - Keep **Allow new users to sign up** off until Google sign-in arrives (M8 slice E). Accounts are created by the admin panel when you send someone a code (section 4), which works with sign-ups off.
+   - Keep **Allow new users to sign up** off while sign-in is by email code only. Accounts are created by the admin panel when you send someone a code (section 4), which works with sign-ups off. Turn it on when you add Google (step 5): a first Google sign-in creates the account.
    - Click **Email** in the provider list. Set **Email OTP Expiration** to `86400` (24 hours, the maximum), so a code you send by hand later the same day still works, and check that **Email OTP Length** is `6`. Save.
 
    Then open **Authentication → URL Configuration**:
    - Set **Site URL** to the deployed app, for example `https://happow.<your-subdomain>.workers.dev` (later your own domain).
-   - Add the same URL and `http://localhost:5173` to **Redirect URLs**. The sign-in link in a code email returns to the address you generated it from, so it must be on this list.
+   - Add the same URL and `http://localhost:5173` to **Redirect URLs**. The sign-in link in a code email returns to the address you generated it from, so it must be on this list. Google sign-in returns there too.
+
+5. **Google sign-in (optional, M8 slice E).** The app shows "Continue with Google" only once `auth.providers` in `config/app.json` lists `"google"`, so do these steps first:
+   1. Open console.cloud.google.com and pick or create a project (for example `happow`).
+   2. **APIs & Services → OAuth consent screen** (in newer consoles: **Google Auth Platform → Branding**). User type **External**; app name `Happow`; your email as support and developer contact. Under **Audience**, publish the app (**Publish app**), or only test users can sign in.
+   3. **APIs & Services → Credentials → Create credentials → OAuth client ID** (newer consoles: **Google Auth Platform → Clients → Create client**). Application type **Web application**, name `Happow web`.
+      - **Authorized JavaScript origins:** the app's URL from step 4 (no path).
+      - **Authorized redirect URIs:** `https://<ref>.supabase.co/auth/v1/callback`, with your Project URL from step 3.
+      - Click **Create** and copy the **Client ID** and **Client secret**.
+   4. In Supabase, **Authentication → Sign In / Providers → Google**: switch it on, paste the Client ID (**Client IDs**) and the **Client Secret**, and **Save**.
+   5. On the same page, turn **Allow new users to sign up** on.
+   6. In `config/app.json`, set `"auth": { "providers": ["google"], … }` and deploy.
+
+   If a label differs in your console, the field names to look for are the same: consent screen, OAuth client of type Web application, authorized redirect URI.
 
 ## 2. Anthropic: Claude API key
 
@@ -69,7 +82,7 @@ For each moderator:
 1. In Supabase, open **Authentication → Users → Add user → Send invitation** and enter their email.
 2. Open the **SQL Editor** and run `insert into moderators (email) values ('name@example.org');`, with the email in lower case.
 
-They then sign in from the app: **About → Moderator sign-in**, or `/#/moderate`.
+They then sign in like everyone else, in **About → Sign in** (an email code, or Google once set up). The **Moderation** link appears in About for staff only, or open `/#/moderate`.
 
 **Sign-in codes by hand** (`auth.emailDelivery: "manual"` in `config/app.json`, until the app has its own domain and an email sender). When someone asks for a code in the app, the request waits for you. From M8 slice F the admin panel lists the requests; **Generate** creates the account if needed and shows a ready email (code and link, in their language) with a button that opens it in your mail app. Send it from your own address. Until slice F, the same works through the API: `GET /api/admin/code-requests` and `POST /api/admin/code-requests/<id>/generate`, signed in as the admin.
 

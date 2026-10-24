@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useAccount } from './account';
 import {
   dayStarts,
   densityClusters,
@@ -46,6 +47,7 @@ import { Glyph, Icon } from './components/Icons';
 import { ListView } from './components/ListView';
 import { MapView } from './components/MapView';
 import { Moderation } from './components/Moderation';
+import { TermsSheet } from './components/SignIn';
 import { PickGrid } from './components/PickGrid';
 import { PlaceCard } from './components/PlaceCard';
 import { ReachRail } from './components/ReachRail';
@@ -206,6 +208,7 @@ export function App() {
   const [recenter, setRecenter] = useState(0);
   const filtered = filters.activeCount > 0;
   const [route, go] = useRoute();
+  const { needsTerms } = useAccount();
   const detailId = route?.name === 'event' ? route.id : null;
   const goId = route?.name === 'go' ? route.id : null;
   // Dice (§7): weights on this device; no repeats this session.
@@ -653,6 +656,7 @@ export function App() {
       {route?.name === 'about' && (
         <About atlas={atlas} onClose={close} onModerate={() => go({ name: 'moderate' }, true)} />
       )}
+      {needsTerms && <TermsSheet />}
     </div>
   );
 }

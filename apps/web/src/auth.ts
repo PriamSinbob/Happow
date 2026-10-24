@@ -1,8 +1,14 @@
 /**
- * Moderator sign-in with Supabase Auth magic links, over plain fetch (no SDK in the bundle).
- * Sessions live in sessionStorage: closing the browser signs the moderator out.
+ * Sign-in with Supabase Auth over plain fetch (no SDK in the bundle), M8 §2: a 6-digit email
+ * code or Google (PKCE). Sessions live in localStorage with refresh-token rotation, so an
+ * installed app stays signed in.
  */
+import { api } from './api';
+import { config } from './config';
+
 const KEY = 'happow:session';
+/** The PKCE verifier waits here across the Google redirect (this tab only). */
+const VERIFIER = 'happow:pkce';
 
 export interface Session {
   accessToken: string;
@@ -18,18 +24,30 @@ const env = () => {
 
 export const authAvailable = () => env() !== null;
 
+const listeners = new Set<() => void>();
+/** Called whenever the session starts, ends or is replaced by another tab. */
+export function onSessionChange(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+if (typeof window !== 'undefined')
+  window.addEventListener('storage', (e) => e.key === KEY && listeners.forEach((fn) => fn()));
+
 function save(s: Session | null) {
   try {
-    if (s) sessionStorage.setItem(KEY, JSON.stringify(s));
-    else sessionStorage.removeItem(KEY);
+    if (s) localStorage.setItem(KEY, JSON.stringify(s));
+    else localStorage.removeItem(KEY);
+    // Sessions before M8 lived in sessionStorage.
+    sessionStorage.removeItem(KEY);
   } catch {
     /* storage blocked */
   }
+  listeners.forEach((fn) => fn());
 }
 
 export function loadSession(): Session | null {
   try {
-    const raw = sessionStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY) ?? sessionStorage.getItem(KEY);
     return raw ? (JSON.parse(raw) as Session) : null;
   } catch {
     return null;
@@ -45,72 +63,155 @@ function emailFromJwt(token: string): string | null {
   }
 }
 
-/**
- * Supabase returns to `<app>/#access_token=…&refresh_token=…` after the magic link. Take the
- * tokens out of the URL before anything else reads the hash, and land on the moderation screen.
- */
-export function captureAuthRedirect(): void {
-  const h = window.location.hash;
-  if (!h.includes('access_token=')) return;
-  const p = new URLSearchParams(h.slice(1));
-  const accessToken = p.get('access_token');
-  const refreshToken = p.get('refresh_token');
-  if (accessToken && refreshToken) {
-    save({
-      accessToken,
-      refreshToken,
-      expiresAt: Date.now() + Number(p.get('expires_in') ?? 3600) * 1000,
-      email: emailFromJwt(accessToken),
-    });
-  }
-  window.history.replaceState(
-    null,
-    '',
-    `${window.location.pathname}${window.location.search}#/moderate`,
-  );
+interface TokenResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
 }
 
-export async function sendMagicLink(email: string): Promise<boolean> {
-  const e = env();
-  if (!e) return false;
-  const redirect = `${window.location.origin}${window.location.pathname}`;
-  const res = await fetch(`${e.url}/auth/v1/otp?redirect_to=${encodeURIComponent(redirect)}`, {
-    method: 'POST',
-    headers: { apikey: e.key, 'content-type': 'application/json' },
-    // Only existing users: moderators are invited in Supabase, nobody signs up here.
-    body: JSON.stringify({ email, create_user: false }),
-  });
-  return res.ok;
-}
-
-/** A valid access token, refreshed when it is about to expire; null when signed out. */
-export async function accessToken(): Promise<string | null> {
-  const s = loadSession();
-  if (!s) return null;
-  if (s.expiresAt - Date.now() > 60_000) return s.accessToken;
-  const e = env();
-  if (!e) return null;
-  const res = await fetch(`${e.url}/auth/v1/token?grant_type=refresh_token`, {
-    method: 'POST',
-    headers: { apikey: e.key, 'content-type': 'application/json' },
-    body: JSON.stringify({ refresh_token: s.refreshToken }),
-  });
-  if (!res.ok) {
-    save(null);
-    return null;
-  }
-  const t = (await res.json()) as {
-    access_token: string;
-    refresh_token: string;
-    expires_in: number;
-  };
+function saveTokens(t: TokenResponse) {
   save({
     accessToken: t.access_token,
     refreshToken: t.refresh_token,
     expiresAt: Date.now() + t.expires_in * 1000,
     email: emailFromJwt(t.access_token),
   });
-  return t.access_token;
+}
+
+async function gotrue(path: string, body: unknown): Promise<Response> {
+  const e = env();
+  if (!e) throw new Error('auth not configured');
+  return fetch(`${e.url}/auth/v1/${path}`, {
+    method: 'POST',
+    headers: { apikey: e.key, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+const appUrl = () => `${window.location.origin}${window.location.pathname}`;
+
+/**
+ * Asks for a sign-in code. With manual delivery (until the app has an email sender) the Worker
+ * files the request and the owner emails the code by hand; otherwise Supabase sends it.
+ */
+export async function requestCode(email: string, locale: string): Promise<void> {
+  if (config.app.auth.emailDelivery === 'manual') {
+    await api('auth/code-request', { body: { email, locale } });
+    return;
+  }
+  const res = await gotrue(`otp?redirect_to=${encodeURIComponent(appUrl())}`, {
+    email,
+    create_user: true,
+  });
+  if (!res.ok) throw new Error(`otp ${res.status}`);
+}
+
+/** Signs in with the 6-digit code; false when the code is wrong or has expired. */
+export async function verifyCode(email: string, code: string): Promise<boolean> {
+  const res = await gotrue('verify', { type: 'email', email, token: code });
+  if (!res.ok) return false;
+  saveTokens((await res.json()) as TokenResponse);
+  return true;
+}
+
+const base64url = (bytes: Uint8Array) =>
+  btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+/** Starts Google sign-in: PKCE, so the code that comes back is useless without this tab. */
+export async function signInWithGoogle(): Promise<void> {
+  const e = env();
+  if (!e) return;
+  const verifier = base64url(crypto.getRandomValues(new Uint8Array(48)));
+  const challenge = base64url(
+    new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))),
+  );
+  sessionStorage.setItem(VERIFIER, verifier);
+  const q = new URLSearchParams({
+    provider: 'google',
+    redirect_to: appUrl(),
+    code_challenge: challenge,
+    code_challenge_method: 's256',
+  });
+  window.location.assign(`${e.url}/auth/v1/authorize?${q}`);
+}
+
+/**
+ * Takes a sign-in out of the URL before anything else reads it, and lands on About:
+ * `#access_token=…` from the link in a code email, or `?code=…` back from Google. Resolves once
+ * the Google code has been exchanged (true when a sign-in happened).
+ */
+export function captureAuthRedirect(): Promise<boolean> {
+  const url = new URL(window.location.href);
+  const land = (search: string) =>
+    window.history.replaceState(null, '', `${url.pathname}${search}#/about`);
+
+  if (url.hash.includes('access_token=')) {
+    const p = new URLSearchParams(url.hash.slice(1));
+    const accessToken = p.get('access_token');
+    const refreshToken = p.get('refresh_token');
+    if (accessToken && refreshToken)
+      saveTokens({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_in: Number(p.get('expires_in') ?? 3600),
+      });
+    land(url.search);
+    return Promise.resolve(Boolean(accessToken));
+  }
+
+  const code = url.searchParams.get('code');
+  const failed = url.searchParams.has('error');
+  if (!code && !failed) return Promise.resolve(false);
+  for (const k of ['code', 'error', 'error_code', 'error_description']) url.searchParams.delete(k);
+  land(url.search);
+  let verifier: string | null = null;
+  try {
+    verifier = sessionStorage.getItem(VERIFIER);
+    sessionStorage.removeItem(VERIFIER);
+  } catch {
+    /* storage blocked */
+  }
+  if (!code || !verifier) return Promise.resolve(false);
+  return gotrue('token?grant_type=pkce', { auth_code: code, code_verifier: verifier })
+    .then(async (res) => {
+      if (!res.ok) return false;
+      saveTokens((await res.json()) as TokenResponse);
+      return true;
+    })
+    .catch(() => false);
+}
+
+let refreshing: Promise<string | null> | null = null;
+
+/** A valid access token, refreshed when it is about to expire; null when signed out. */
+export async function accessToken(): Promise<string | null> {
+  const s = loadSession();
+  if (!s) return null;
+  if (s.expiresAt - Date.now() > 60_000) return s.accessToken;
+  // One refresh at a time: refresh tokens rotate, so a second parallel refresh would fail.
+  refreshing ??= (async () => {
+    try {
+      const res = await gotrue('token?grant_type=refresh_token', {
+        refresh_token: s.refreshToken,
+      });
+      if (res.status >= 400 && res.status < 500) {
+        save(null);
+        return null;
+      }
+      if (!res.ok) return null; // offline or a server error: try again next time
+      const t = (await res.json()) as TokenResponse;
+      saveTokens(t);
+      return t.access_token;
+    } catch {
+      return null;
+    } finally {
+      refreshing = null;
+    }
+  })();
+  return refreshing;
 }
 
 export function signOut(): void {
