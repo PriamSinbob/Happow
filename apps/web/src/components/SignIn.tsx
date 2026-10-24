@@ -11,6 +11,8 @@ import { Sheet } from './Sheet';
 
 const { auth } = config.app;
 const google = auth.providers.includes('google');
+const account = entitlementsFor(config.plans, 'account');
+const premium = entitlementsFor(config.plans, 'premium');
 
 /** Google's "G", as its sign-in branding asks for. */
 function GoogleG() {
@@ -38,9 +40,19 @@ function GoogleG() {
 
 /**
  * Sign-in (M8 §2, `docs/design/account.html`): Google, or a 6-digit code by email. With manual
- * delivery the sheet says plainly that a person sends the code.
+ * delivery the sheet says plainly that a person sends the code. `forAdd` is the variant the add
+ * form opens signed out (`docs/design/add.html`): its own title and lead, "Not now", and the
+ * add form after sign-in.
  */
-export function SignInSheet({ onClose }: { onClose: () => void }) {
+export function SignInSheet({
+  onClose,
+  forAdd = false,
+  onSignedIn = onClose,
+}: {
+  onClose: () => void;
+  forAdd?: boolean;
+  onSignedIn?: () => void;
+}) {
   const { t, lang } = useI18n();
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState('');
@@ -69,7 +81,7 @@ export function SignInSheet({ onClose }: { onClose: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      if (await verifyCode(email.trim(), code)) onClose();
+      if (await verifyCode(email.trim(), code)) onSignedIn();
       else setError(t('signIn.wrongCode'));
     } catch {
       setError(t('error.network'));
@@ -132,15 +144,22 @@ export function SignInSheet({ onClose }: { onClose: () => void }) {
     );
 
   return (
-    <Sheet title={t('signIn.title')} onClose={onClose}>
+    <Sheet title={t(forAdd ? 'addGate.title' : 'signIn.title')} onClose={onClose}>
       <form onSubmit={send}>
-        <p className="account-sheet__lead">{t(google ? 'signIn.lead' : 'signIn.leadCode')}</p>
+        <p className="account-sheet__lead">
+          {forAdd
+            ? t('addGate.lead', {
+                events: quota(account, 'events.perMonth'),
+                autofill: quota(account, 'autofill.perMonth'),
+              })
+            : t(google ? 'signIn.lead' : 'signIn.leadCode')}
+        </p>
         {google && (
           <>
             <button
               type="button"
               className="btn btn--google btn--block"
-              onClick={() => void signInWithGoogle()}
+              onClick={() => void signInWithGoogle(forAdd ? 'add' : 'about')}
             >
               <GoogleG />
               {t('signIn.google')}
@@ -172,13 +191,17 @@ export function SignInSheet({ onClose }: { onClose: () => void }) {
           <Icon name="mail" size={18} />
           {t('signIn.send')}
         </button>
+        {forAdd && (
+          <p className="account-sheet__aside">
+            <button type="button" className="inline-link" onClick={onClose}>
+              {t('addGate.later')}
+            </button>
+          </p>
+        )}
       </form>
     </Sheet>
   );
 }
-
-const account = entitlementsFor(config.plans, 'account');
-const premium = entitlementsFor(config.plans, 'premium');
 
 /** Once per terms version, right after sign-in: the interim account terms (M8 §2, consent). */
 export function TermsSheet() {

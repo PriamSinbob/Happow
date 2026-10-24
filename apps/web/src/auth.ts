@@ -9,6 +9,8 @@ import { config } from './config';
 const KEY = 'happow:session';
 /** The PKCE verifier waits here across the Google redirect (this tab only). */
 const VERIFIER = 'happow:pkce';
+/** The screen to land on after the Google round trip. */
+const LAND = 'happow:land';
 
 export interface Session {
   accessToken: string;
@@ -120,8 +122,11 @@ const base64url = (bytes: Uint8Array) =>
     .replace(/\//g, '_')
     .replace(/=+$/, '');
 
-/** Starts Google sign-in: PKCE, so the code that comes back is useless without this tab. */
-export async function signInWithGoogle(): Promise<void> {
+/**
+ * Starts Google sign-in: PKCE, so the code that comes back is useless without this tab. `landOn`
+ * is the screen to come back to (the add form when sign-in started there).
+ */
+export async function signInWithGoogle(landOn: 'about' | 'add' = 'about'): Promise<void> {
   const e = env();
   if (!e) return;
   const verifier = base64url(crypto.getRandomValues(new Uint8Array(48)));
@@ -129,6 +134,7 @@ export async function signInWithGoogle(): Promise<void> {
     new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))),
   );
   sessionStorage.setItem(VERIFIER, verifier);
+  sessionStorage.setItem(LAND, landOn);
   const q = new URLSearchParams({
     provider: 'google',
     redirect_to: appUrl(),
@@ -145,8 +151,8 @@ export async function signInWithGoogle(): Promise<void> {
  */
 export function captureAuthRedirect(): Promise<boolean> {
   const url = new URL(window.location.href);
-  const land = (search: string) =>
-    window.history.replaceState(null, '', `${url.pathname}${search}#/about`);
+  const land = (search: string, to = 'about') =>
+    window.history.replaceState(null, '', `${url.pathname}${search}#/${to}`);
 
   if (url.hash.includes('access_token=')) {
     const p = new URLSearchParams(url.hash.slice(1));
@@ -166,23 +172,34 @@ export function captureAuthRedirect(): Promise<boolean> {
   const failed = url.searchParams.has('error');
   if (!code && !failed) return Promise.resolve(false);
   for (const k of ['code', 'error', 'error_code', 'error_description']) url.searchParams.delete(k);
-  land(url.search);
   let verifier: string | null = null;
+  let to = 'about';
   try {
     verifier = sessionStorage.getItem(VERIFIER);
+    to = sessionStorage.getItem(LAND) === 'add' ? 'add' : 'about';
     sessionStorage.removeItem(VERIFIER);
+    sessionStorage.removeItem(LAND);
   } catch {
     /* storage blocked */
   }
+  land(url.search, to);
   if (!code || !verifier) return Promise.resolve(false);
+  exchanging = true;
   return gotrue('token?grant_type=pkce', { auth_code: code, code_verifier: verifier })
     .then(async (res) => {
       if (!res.ok) return false;
       saveTokens((await res.json()) as TokenResponse);
       return true;
     })
-    .catch(() => false);
+    .catch(() => false)
+    .finally(() => {
+      exchanging = false;
+    });
 }
+
+let exchanging = false;
+/** True while a Google code is being exchanged, so the app doesn't show itself signed out. */
+export const signInPending = () => exchanging;
 
 let refreshing: Promise<string | null> | null = null;
 

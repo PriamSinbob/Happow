@@ -137,6 +137,7 @@ export const en = {
   'error.outside_region': 'The place is outside {region}.',
   'error.invalid_input': 'Check the form and try again.',
   'error.unknown_event': 'This event no longer exists.',
+  'error.account_required': 'Sign in to add events.',
   'add.title': 'Add an event',
   'add.linkLabel': 'Link to the event',
   'add.linkHint':
@@ -179,6 +180,21 @@ export const en = {
   'add.view': 'Show event',
   'add.another': 'Add another',
   'add.required': 'Required',
+  'add.autofillOut':
+    "Autofill is used up for this month. It's back on {date}; the form below works as usual.",
+  'add.eventsOut':
+    "You've added {count} events this month; a free account adds {limit}. You can add more from {date}.",
+  'add.eventsOutPremium': "You've added {count} events this month. You can add more from {date}.",
+  'add.ranOut': 'The events limit for this month just ran out. You can add more from {date}.',
+  'add.more': 'More with premium',
+  'add.close': 'Close',
+  'usage.events': 'Events',
+  'usage.autofill': 'Autofill',
+  'usage.resets': 'from {date}',
+  'addGate.title': 'Adding events needs an account',
+  'addGate.lead':
+    "The account is free. It adds up to {events} events a month, and we'll fill in {autofill} of them for you from a link.",
+  'addGate.later': 'Not now',
   'mod.title': 'Moderation',
   'mod.notAvailable': 'Moderation needs the hosted backend (Supabase).',
   'mod.forbidden': 'This account is not a moderator.',

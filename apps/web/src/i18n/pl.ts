@@ -145,6 +145,7 @@ export const pl: Record<MessageKey, string> = {
   'error.outside_region': 'Miejsce jest poza obszarem: {region}.',
   'error.invalid_input': 'Sprawdź formularz i spróbuj ponownie.',
   'error.unknown_event': 'To wydarzenie już nie istnieje.',
+  'error.account_required': 'Zaloguj się, aby dodawać wydarzenia.',
   'add.title': 'Dodaj wydarzenie',
   'add.linkLabel': 'Link do wydarzenia',
   'add.linkHint':
@@ -188,6 +189,23 @@ export const pl: Record<MessageKey, string> = {
   'add.view': 'Pokaż wydarzenie',
   'add.another': 'Dodaj kolejne',
   'add.required': 'Wymagane',
+  'add.autofillOut':
+    'Autouzupełnianie na ten miesiąc wykorzystane. Wróci {date}; formularz poniżej działa jak zwykle.',
+  'add.eventsOut':
+    'W tym miesiącu dodano już {count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}}; darmowe konto dodaje {limit}. Kolejne dodasz od {date}.',
+  'add.eventsOutPremium':
+    'W tym miesiącu dodano już {count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}}. Kolejne dodasz od {date}.',
+  'add.ranOut': 'Limit wydarzeń na ten miesiąc właśnie się skończył. Kolejne dodasz od {date}.',
+  'add.more': 'Więcej z Premium',
+  'add.close': 'Zamknij',
+  'usage.events': 'Wydarzenia',
+  // Short, so the premium mark fits beside it at 380 px (owner, 2026-10-24).
+  'usage.autofill': 'Z linku',
+  'usage.resets': 'od {date}',
+  'addGate.title': 'Dodawanie wymaga konta',
+  'addGate.lead':
+    'Konto jest darmowe. Dodasz nim do {events} wydarzeń miesięcznie, a {autofill} z nich wypełnimy za ciebie z linku.',
+  'addGate.later': 'Nie teraz',
   'mod.title': 'Moderacja',
   'mod.notAvailable': 'Moderacja wymaga backendu (Supabase).',
   'mod.forbidden': 'To konto nie ma uprawnień moderatora.',

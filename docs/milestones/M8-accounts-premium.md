@@ -4,7 +4,7 @@ Oct 24, 2026
 
 Spec from the brief's M8 entry (owner, 2026-10-24), M6 §8 and the brief's "Automation add-on (paid): URL autofill", with the owner's answers of 2026-10-24 (§9). M8 comes next after M6; M7 is built after M12 and then uses these accounts (M7 slice G). Build it in the usual way: plan per slice, show the plan, build, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed 2026-10-24; slices A (accounts on the server), B (plans, the promotion through 30 Nov 2026, grants, the premium provider interface), C (monthly quotas for events and autofills), D (the reach circle off the vector map), E (sign-in, the account card, presets and atlas by plan, the premium sheet) and F (the admin panel: sign-in code requests and grants) built: A–F built, G planned. Only the payment provider is open, and it is not needed in M8.
+**Status:** built (2026-10-24). Slices A (accounts on the server), B (plans, the promotion through 30 Nov 2026, grants, the premium provider interface), C (monthly quotas for events and autofills), D (the reach circle off the vector map), E (sign-in, the account card, presets and atlas by plan, the premium sheet), F (the admin panel: sign-in code requests and grants) and G (the add form with sign-in, usage meters and autofill) are built. Open: the payment provider (not needed in M8), Google sign-in (waits for the owner's setup), and the first live `generate_link` and sign-in on the real Supabase (§8 acceptance on a phone).
 
 The PWA is built feature-complete before the native rewrite (brief, 2026-10-24), so every slice is built in full, UI included. The server side (tables, SQL functions, `/api/me`, the premium provider interface) is shaped so a native client uses it unchanged. No speed testing on the web build.
 
@@ -14,15 +14,15 @@ An earlier draft (branch `m8-spec`, 2026-10-23, never merged) covered accounts t
 
 One branch and one PR to `main` per slice, as in M6. The data and API slices come first, so the live app keeps working between PRs; the UI slices build on them. Each slice PR updates its row below and the Status line, and adds a short "Built (slice X)" note under its spec section (built, skipped, open).
 
-| Slice | Spec     | What                                                                                                   | Needs | Status  |
-| ----- | -------- | ------------------------------------------------------------------------------------------------------ | ----- | ------- |
-| A     | §2       | Accounts on the server: sign-up, profiles, roles, manual code delivery, `/api/me`, export, delete      | —     | built   |
-| B     | §3, §4   | Plans and entitlements in config, the early-access promotion, grants, `PremiumProvider` with `none`    | A     | built   |
-| C     | §5 API   | Monthly quotas per account: events added and autofills                                                 | B     | built   |
-| D     | §1       | Reach circle off the vector map; the raster fallback keeps it                                          | —     | built   |
-| E     | §2–§4 UI | Mockup first. Sign-in sheet, account row in About, plan mark, premium sheet, presets and atlas by tier | A, B  | built   |
-| F     | §2 admin | Admin: sign-in code requests with a ready email to send by hand                                        | A, E  | built   |
-| G     | §5 UI    | The add form with sign-in, quotas and autofill usage                                                   | C, E  | planned |
+| Slice | Spec     | What                                                                                                   | Needs | Status |
+| ----- | -------- | ------------------------------------------------------------------------------------------------------ | ----- | ------ |
+| A     | §2       | Accounts on the server: sign-up, profiles, roles, manual code delivery, `/api/me`, export, delete      | —     | built  |
+| B     | §3, §4   | Plans and entitlements in config, the early-access promotion, grants, `PremiumProvider` with `none`    | A     | built  |
+| C     | §5 API   | Monthly quotas per account: events added and autofills                                                 | B     | built  |
+| D     | §1       | Reach circle off the vector map; the raster fallback keeps it                                          | —     | built  |
+| E     | §2–§4 UI | Mockup first. Sign-in sheet, account row in About, plan mark, premium sheet, presets and atlas by tier | A, B  | built  |
+| F     | §2 admin | Admin: sign-in code requests with a ready email to send by hand                                        | A, E  | built  |
+| G     | §5 UI    | The add form with sign-in, quotas and autofill usage                                                   | C, E  | built  |
 
 D is independent and small; it can ship at any point. A payment provider (§4) is a slice of its own once the owner picks one; it is not in M8 unless added here.
 
@@ -179,7 +179,7 @@ Owner, 2026-10-24: adding events stays free. A free account adds up to 15 events
 - **Checked where it is counted.** An SQL function increments and checks in one statement, so two parallel requests can't pass the limit.
 - **Endpoints.** `POST /api/submissions` and `POST /api/autofill` take the bearer token; `submissions.autofill` becomes `false | "account"`. Without autofill left, the form still works by hand.
 - **Global guards stay.** `extraction.autofillLlmPerDay` remains a ceiling on LLM calls across all accounts; `submissions.autofillPerHour` (was `autofillPerHourPerClient`) is per account, against loops.
-- **Usage** is in `/api/me` and on the add form: "Wydarzenia 3 / 15 · Autouzupełnienie 1 / 5" as two small meters, with the reset date when one runs out (slice G mockup).
+- **Usage** is in `/api/me` and on the add form: "Wydarzenia 3 / 15 · Z linku 1 / 5" (the Polish autofill label is short so the premium mark fits at 380 px; owner, 2026-10-24) as two small meters, with the reset date when one runs out (slice G mockup).
 - **Brief.** Slice C rewrites "Automation add-on (paid): URL autofill" to point here and updates `docs/ADVANTAGES.md`.
 - **Tests.** Limits at the edge, only successful fills count, parallel requests at the limit, month rollover in Europe/Warsaw, premium limits, 401 where an account is required; LLM extraction stays faked.
 - **Built** (slice C, 2026-10-24): §5 on the server. The app looks and works as before: adding events without an account still works, and autofill stays off until the add form signs people in (slice G).
@@ -190,6 +190,16 @@ Owner, 2026-10-24: adding events stays free. A free account adds up to 15 events
   - **Brief:** the "Automation add-on (paid): URL autofill" section is now "URL autofill: part of accounts" and points here, and the M8 entry links to it. `docs/ADVANTAGES.md` doesn't mention autofill, so it is unchanged.
   - Skipped: nothing planned for slice C.
   - Open: none.
+- **Built** (slice G, 2026-10-24): the add form with accounts, as in `docs/design/add.html` (approved by the owner on 2026-10-24: straight on to the form after sign-in, both meters for everyone signed in, one "More with premium" link only once a free account runs out).
+  - **Config:** `submissions.account: "required"` and `submissions.autofill: "account"`. Adding events now needs a free account; autofill is on for accounts.
+  - **Signed out:** Add in Settings opens a sign-in sheet over the map ("Adding events needs an account", with the free numbers from `config/plans.json` and "Not now"). Opening `#/add` directly shows the same sheet over an empty add screen. After sign-in (and the terms, for a new account) the add form opens. Google started there comes back to `#/add` (`signInWithGoogle('add')`).
+  - **Meters:** this month's events and autofills on top of the form and on the done screen, from `/api/me`. Ink on the line colour; a used-up meter turns to the warn tokens with "od 1 listopada / from 1 November". Premium shows the sparkles mark beside the labels.
+  - **Used up:** autofill used up turns the link field off with a notice, and the form still works by hand. Events used up replaces the form with a notice and Close. A free account gets "More with premium" in either notice, which opens the premium sheet; premium gets none.
+  - **On the server's word:** both calls send the bearer token. After a fill with prefills, an added event, a 429 `quota_exceeded` or a 401, the form reloads `/api/me`. A quota that ran out while the form was open keeps what was typed, says so, and turns the button off.
+  - **Tests:** `apps/web/test/m8-add.test.tsx` (8: config, the signed-out sheet, meters and autofill with the token, autofill used up with the premium sheet, events used up, premium with no link, a 429 on submit, Google back to the form). The API tests keep covering the anonymous mode with an explicit `"optional"` config, and one checks that the live config refuses anonymous events.
+  - **Docs:** `docs/ADVANTAGES.md` "Free and paid" gets the two rows of §7; adding moved out of the "everyone" row.
+  - Skipped: nothing planned for slice G.
+  - Open: none beyond the milestone's (Status line).
 
 ## 6. The lit map and accounts
 

@@ -9,7 +9,13 @@ import {
 } from 'react';
 import { entitlementsFor, type Entitlements, type PlanId, type PlanSource } from '@happow/core';
 import { api, ApiError } from './api';
-import { accessToken, loadSession, onSessionChange, signOut as endSession } from './auth';
+import {
+  accessToken,
+  loadSession,
+  onSessionChange,
+  signInPending,
+  signOut as endSession,
+} from './auth';
 import { config } from './config';
 import { storage } from './storage';
 
@@ -87,7 +93,7 @@ export function AccountProvider({
 }) {
   const [me, setMe] = useState<Me | null>(cachedMe);
   const [status, setStatus] = useState<Account['status']>(() =>
-    loadSession() ? 'loading' : 'signedOut',
+    loadSession() || signInPending() ? 'loading' : 'signedOut',
   );
 
   const store = (m: Me | null) => {
@@ -124,7 +130,12 @@ export function AccountProvider({
       if (!loadSession()) {
         store(null);
         setStatus('signedOut');
-      } else void refresh();
+      } else {
+        // A new sign-in is "loading" at once, so a signed-out screen doesn't come back while
+        // /api/me answers; a token refresh keeps the account as it is.
+        setStatus((s) => (s === 'signedOut' ? 'loading' : s));
+        void refresh();
+      }
     });
     return () => {
       live = false;

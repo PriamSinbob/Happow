@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Happow add form</title>
+    <style>
+      /* Design reference for M8 slice G (the add form with sign-in, quotas and autofill usage).
+   Draft for the owner's OK, 2026-10-24. Tokens are config/theme.json; layout and type follow
+   apps/web/src/styles.css (Screen, field, divider, notice, btn) and account.html (sheets, mark).
+   Only what slice G changes is drawn: the rest of the form (categories, times, place, price, …)
+   is as built in M4 and M6. Touch-first: no hover styles. */
+      :root {
+        --paper: #fbfaf7;
+        --paper-2: #eeeae2;
+        --ink: #17171a;
+        --muted: #86807a;
+        --quiet: #5c5852;
+        --line: #dfd8cc;
+        --scrim: rgba(23, 23, 26, 0.42);
+        --error: #fbe3e1;
+        --error-ink: #9b1c1c;
+        --warn: #fbefd3;
+        --warn-ink: #7a4b0c;
+      }
+      .night {
+        --paper: #1a1d23;
+        --paper-2: #242832;
+        --ink: #ece9e3;
+        --muted: #80838b;
+        --quiet: #a9acb3;
+        --line: #323846;
+        --scrim: rgba(0, 0, 0, 0.6);
+        --error: #3d1a1c;
+        --error-ink: #ffb4b4;
+        --warn: #3a2e14;
+        --warn-ink: #f2c879;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 20px 16px 40px;
+        background: #f4f3ef;
+        font:
+          15px/1.45 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        color: #17171a;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: center;
+        margin: 0 auto 10px;
+        max-width: 760px;
+      }
+      .controls button {
+        font: inherit;
+        font-size: 13px;
+        padding: 6px 10px;
+        border: 1px solid #c9c6bf;
+        border-radius: 8px;
+        background: #fff;
+        color: #17171a;
+      }
+      .controls button[aria-pressed='true'] {
+        background: #17171a;
+        color: #fff;
+        border-color: #17171a;
+      }
+      .controls .sep {
+        width: 100%;
+        height: 0;
+      }
+      .cap {
+        max-width: 380px;
+        margin: 10px auto 0;
+        font-size: 12.5px;
+        color: #6b6b66;
+        text-align: center;
+      }
+
+      /* The phone */
+      .ph {
+        position: relative;
+        width: 380px;
+        max-width: 100%;
+        height: 760px;
+        margin: 0 auto;
+        border: 6px solid #8a8a86;
+        border-radius: 26px;
+        overflow: hidden;
+        background: var(--paper-2);
+        color: var(--ink);
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        background: var(--paper);
+        border-bottom: 1px solid var(--line);
+      }
+      .bar h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.01em;
+      }
+      .icon-btn {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 12px;
+        background: transparent;
+        color: var(--ink);
+        padding: 0;
+      }
+      .scroll {
+        position: absolute;
+        top: 61px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        overflow-y: auto;
+      }
+      .body {
+        padding: 16px 16px 32px;
+      }
+      svg {
+        display: block;
+      }
+
+      /* Usage meters (new in slice G): one quiet strip at the top of the form */
+      .usage {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin: 0 0 18px;
+        padding: 10px 12px 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--paper);
+      }
+      .meter__top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 6px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--quiet);
+      }
+      .meter__label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .meter__num {
+        flex: none;
+        font-variant-numeric: tabular-nums;
+        color: var(--ink);
+      }
+      .meter__track {
+        height: 4px;
+        margin-top: 6px;
+        border-radius: 2px;
+        background: var(--line);
+        overflow: hidden;
+      }
+      .meter__fill {
+        height: 100%;
+        border-radius: 2px;
+        background: var(--ink);
+      }
+      .meter--out .meter__num,
+      .meter--out .meter__label {
+        color: var(--warn-ink);
+      }
+      .meter--out .meter__fill {
+        background: var(--warn-ink);
+      }
+      .meter__reset {
+        margin-top: 4px;
+        font-size: 11.5px;
+        color: var(--warn-ink);
+      }
+
+      /* The form, as built (styles.css) */
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 0 0 14px;
+      }
+      .field__label {
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .field__hint {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .field__row {
+        display: flex;
+        gap: 8px;
+      }
+      .field__row input {
+        flex: 1;
+        min-width: 0;
+      }
+      .field input {
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--paper);
+        font: inherit;
+        font-size: 16px;
+        color: var(--ink);
+      }
+      .field input:disabled {
+        opacity: 0.5;
+      }
+      .code {
+        letter-spacing: 0.5em;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 44px;
+        padding: 0 14px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        color: var(--ink);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        flex: none;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+      }
+      .btn--primary {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--paper);
+      }
+      .btn--block {
+        width: 100%;
+      }
+      .btn--google {
+        background: #fff;
+        border-color: #dadce0;
+        color: #1f1f1f;
+      }
+      .night .btn--google {
+        background: #131314;
+        border-color: #8e918f;
+        color: #e3e3e3;
+      }
+      .link {
+        border: 0;
+        background: none;
+        padding: 0;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--quiet);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .link--mark {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 4px 0 18px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+      .divider::before,
+      .divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--line);
+      }
+      .notice {
+        margin: 0 0 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: var(--warn);
+        color: var(--warn-ink);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .notice p {
+        margin: 0;
+      }
+      .notice .link {
+        margin-top: 8px;
+        color: var(--warn-ink);
+      }
+      .form-error {
+        margin: 0 0 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: var(--error);
+        color: var(--error-ink);
+        font-size: 13px;
+      }
+      .rest {
+        display: grid;
+        place-items: center;
+        height: 150px;
+        margin: 0 0 14px;
+        border: 1.5px dashed var(--line);
+        border-radius: 12px;
+        font-size: 12.5px;
+        color: var(--muted);
+        text-align: center;
+        padding: 0 20px;
+      }
+      .foot {
+        display: flex;
+        justify-content: flex-end;
+      }
+      .or {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 14px 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .or::before,
+      .or::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--line);
+      }
+
+      /* Done (as built) */
+      .done {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 30px 0 10px;
+        text-align: center;
+      }
+      .done__icon {
+        display: grid;
+        place-items: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: var(--paper);
+        border: 1px solid var(--line);
+      }
+      .done p {
+        margin: 0;
+        font-weight: 600;
+      }
+      .done .row {
+        display: flex;
+        gap: 8px;
+      }
+      .done + .usage {
+        margin-top: 22px;
+      }
+
+      /* Bottom sheet */
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: var(--scrim);
+      }
+      .sheet {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-height: 88%;
+        overflow-y: auto;
+        padding: 8px 18px 22px;
+        border-radius: 22px 22px 0 0;
+        background: var(--paper);
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2);
+      }
+      .grab {
+        width: 36px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--line);
+        margin: 0 auto 12px;
+      }
+      .sheet h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 6px;
+        font-size: 19px;
+        letter-spacing: -0.01em;
+      }
+      .sheet p {
+        margin: 0 0 14px;
+        color: var(--quiet);
+      }
+      .perks {
+        list-style: none;
+        margin: 0 0 16px;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .perks li {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .perks svg {
+        flex: none;
+        margin-top: 2px;
+      }
+      .note {
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: var(--paper-2);
+        font-size: 13.5px;
+        color: var(--ink);
+        margin: 0 0 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls" id="ctl"></div>
+    <div class="ph" id="ph"></div>
+    <p class="cap" id="cap"></p>
+
+    <script>
+      /* ---------- Icons: the app's set (Icons.tsx, Tabler) and the premium mark (account.html, mark A) ---------- */
+      const I = {
+        back: 'M15 5l-7 7 7 7',
+        link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+        check: 'M5 12l5 5L20 7',
+        mail: 'M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2zM3 7l9 6l9 -6',
+      };
+      const SPARKLES =
+        'M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z';
+      const svg = (d, s = 20, sw = 1.8) =>
+        `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+      const mark = (s = 14) =>
+        `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" role="img" aria-label="${T('premium')}"><path d="${SPARKLES}"/></svg>`;
+      const google = `<svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>`;
+
+      /* ---------- Strings (Polish and English). Existing add.* strings are quoted as built. ---------- */
+      const S = {
+        pl: {
+          title: 'Dodaj wydarzenie',
+          premium: 'Premium',
+          // Gate sheet (signed out)
+          gTitle: 'Dodawanie wymaga konta',
+          gLead:
+            'Konto jest darmowe. Dodasz nim do 15 wydarzeń miesięcznie, a 5 z nich wypełnimy za ciebie z linku.',
+          google: 'Kontynuuj z Google',
+          or: 'lub',
+          email: 'E-mail',
+          sendCode: 'Wyślij mi kod',
+          later: 'Nie teraz',
+          codeTitle: 'Wpisz kod',
+          codeLead:
+            'Kod przyjdzie e-mailem od zespołu Happow na adres ala@example.org. Wysyłamy go ręcznie, więc może to potrwać kilka godzin. Kod działa przez 24 godziny.',
+          code: 'Kod z e-maila',
+          codeHint: '6 cyfr',
+          signInBtn: 'Zaloguj',
+          changeEmail: 'Zmień e-mail',
+          // Meters
+          mEvents: 'Wydarzenia',
+          mAutofill: 'Z linku',
+          resets: 'od 1 listopada',
+          // Form (as built)
+          linkLabel: 'Link do wydarzenia',
+          linkHint:
+            'Wklej link ze strony miejsca, serwisu z biletami lub z posta, a wypełnimy formularz.',
+          fill: 'Wypełnij z linku',
+          manual: 'Wpisz ręcznie',
+          fTitle: 'Tytuł',
+          rest: 'Reszta formularza bez zmian: kategoria, czas, miejsce, pinezka, cena, wejście, wiek, link, opis, regulamin.',
+          submit: 'Dodaj wydarzenie',
+          // Used up
+          afOut:
+            'Autouzupełnianie na ten miesiąc wykorzystane. Wróci 1 listopada; formularz poniżej działa jak zwykle.',
+          evOut:
+            'W tym miesiącu dodano już 15 wydarzeń, tyle ile daje darmowe konto. Kolejne dodasz od 1 listopada.',
+          more: 'Więcej z Premium',
+          close: 'Zamknij',
+          raceErr:
+            'Limit wydarzeń na ten miesiąc właśnie się skończył. Kolejne dodasz od 1 listopada.',
+          // Done (as built)
+          donePub: 'Dzięki! Wydarzenie jest już na mapie.',
+          view: 'Pokaż wydarzenie',
+          another: 'Dodaj kolejne',
+          // Premium sheet (account.html)
+          pLead: 'Odblokowuje:',
+          p1: '300 wydarzeń miesięcznie, wszystkie z autouzupełnianiem z linku',
+          p2: 'Magenta i przyszłe kolory',
+          pNone: 'Premium nie jest jeszcze w sprzedaży. Dodawanie wydarzeń zostaje darmowe.',
+          ok: 'OK',
+        },
+        en: {
+          title: 'Add an event',
+          premium: 'Premium',
+          gTitle: 'Adding events needs an account',
+          gLead:
+            "The account is free. It adds up to 15 events a month, and we'll fill in 5 of them for you from a link.",
+          google: 'Continue with Google',
+          or: 'or',
+          email: 'Email',
+          sendCode: 'Send me a code',
+          later: 'Not now',
+          codeTitle: 'Enter your code',
+          codeLead:
+            'The Happow team will email your code to ala@example.org. We send codes by hand for now, so it can take a few hours. The code works for 24 hours.',
+          code: 'Code from the email',
+          codeHint: '6 digits',
+          signInBtn: 'Sign in',
+          changeEmail: 'Change email',
+          mEvents: 'Events',
+          mAutofill: 'Autofill',
+          resets: 'from 1 November',
+          linkLabel: 'Link to the event',
+          linkHint:
+            "Paste a link from a venue, ticket site or social post, and we'll fill in the form.",
+          fill: 'Fill from link',
+          manual: 'Enter manually',
+          fTitle: 'Title',
+          rest: 'The rest of the form is unchanged: category, times, place, pin, price, entry, age, link, description, terms.',
+          submit: 'Add event',
+          afOut:
+            "Autofill is used up for this month. It's back on 1 November; the form below works as usual.",
+          evOut:
+            "You've added 15 events this month, which is what a free account gives. You can add more from 1 November.",
+          more: 'More with premium',
+          close: 'Close',
+          raceErr:
+            'The events limit for this month just ran out. You can add more from 1 November.',
+          donePub: 'Thanks! Your event is on the map.',
+          view: 'View event',
+          another: 'Add another',
+          pLead: 'Unlocks:',
+          p1: '300 events a month, all with autofill from a link',
+          p2: 'Magenta and future colours',
+          pNone: 'Premium is not on sale yet. Adding events stays free.',
+          ok: 'OK',
+        },
+      };
+      const T = (k) => S[st.lang][k];
+
+      /* ---------- State ---------- */
+      const SCREENS = [
+        ['gate', 'Signed out: account sheet'],
+        ['gateCode', 'Signed out: code'],
+        ['free', 'Free account: meters'],
+        ['premium', 'Premium: meters'],
+        ['afOut', 'Autofill used up'],
+        ['evOut', 'Events used up'],
+        ['race', 'Ran out while filling'],
+        ['done', 'Added'],
+        ['upsell', 'More with premium'],
+      ];
+      const st = { dark: false, lang: 'pl', screen: 'free' };
+
+      /* usage per screen: [events used, events limit, autofill used, autofill limit, premium?] */
+      const USAGE = {
+        free: [3, 15, 1, 5],
+        premium: [3, 300, 1, 300, true],
+        afOut: [6, 15, 5, 5],
+        evOut: [15, 15, 5, 5],
+        race: [15, 15, 4, 5],
+        done: [4, 15, 2, 5],
+        upsell: [6, 15, 5, 5],
+      };
+
+      function meter(label, used, max, prem) {
+        const out = used >= max;
+        const pct = Math.min(100, Math.max(used ? 3 : 0, (used / max) * 100));
+        return `<div class="meter${out ? ' meter--out' : ''}">
+      <div class="meter__top"><span class="meter__label">${label}${prem ? mark(11) : ''}</span><span class="meter__num">${used} / ${max}</span></div>
+      <div class="meter__track" role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="${used}"><div class="meter__fill" style="width:${pct}%"></div></div>
+      ${out ? `<div class="meter__reset">${T('resets')}</div>` : ''}
+    </div>`;
+      }
+      function usage() {
+        const u = USAGE[st.screen];
+        if (!u) return '';
+        return `<div class="usage">${meter(T('mEvents'), u[0], u[1], u[4])}${meter(T('mAutofill'), u[2], u[3], u[4])}</div>`;
+      }
+
+      /* ---------- The add screen ---------- */
+      function screen() {
+        const s = st.screen;
+        const signedOut = s === 'gate' || s === 'gateCode';
+        const afOut = s === 'afOut' || s === 'upsell';
+        let body;
+        if (s === 'done') {
+          body = `<div class="done"><span class="done__icon">${svg(I.check, 32)}</span><p role="status">${T('donePub')}</p>
+        <div class="row"><button class="btn btn--primary" type="button">${T('view')}</button><button class="btn" type="button">${T('another')}</button></div></div>${usage()}`;
+        } else if (s === 'evOut') {
+          body = `${usage()}<div class="notice" role="status"><p>${T('evOut')}</p><button class="link link--mark" type="button" data-upsell>${mark(13)}${T('more')}</button></div>
+        <button class="btn btn--block" type="button">${T('close')}</button>`;
+        } else {
+          body = `${usage()}
+      <div class="field"><span class="field__label">${T('linkLabel')}</span>
+        <span class="field__row"><input type="url" placeholder="https://" ${afOut ? 'disabled' : ''}><button class="btn btn--primary" type="button" disabled>${svg(I.link, 16)}${T('fill')}</button></span>
+        ${afOut ? '' : `<span class="field__hint">${T('linkHint')}</span>`}</div>
+      ${afOut ? `<div class="notice" role="status"><p>${T('afOut')}</p><button class="link link--mark" type="button" data-upsell>${mark(13)}${T('more')}</button></div>` : ''}
+      <div class="divider"><span>${T('manual')}</span></div>
+      <div class="field"><span class="field__label">${T('fTitle')}</span><input value="${s === 'race' ? 'Wyprzedaż garażowa' : ''}"></div>
+      <div class="rest">${T('rest')}</div>
+      ${s === 'race' ? `<p class="form-error" role="alert">${T('raceErr')}</p>` : ''}
+      <div class="foot"><button class="btn btn--primary" type="button" ${s === 'race' ? 'disabled' : ''}>${T('submit')}</button></div>`;
+        }
+        return `
+  <header class="bar"><button class="icon-btn" type="button" aria-label="Back">${svg(I.back, 22, 2)}</button><h1>${T('title')}</h1></header>
+  <div class="scroll"><div class="body">${signedOut ? '' : body}</div></div>`;
+      }
+
+      /* ---------- Sheets ---------- */
+      function sheet() {
+        switch (st.screen) {
+          case 'gate':
+            return `<div class="sheet" role="dialog" aria-label="${T('gTitle')}"><div class="grab"></div>
+    <h3>${T('gTitle')}</h3><p>${T('gLead')}</p>
+    <button class="btn btn--google btn--block" type="button">${google}${T('google')}</button>
+    <div class="or">${T('or')}</div>
+    <div class="field"><label class="field__label" for="em">${T('email')}</label><input id="em" type="email" inputmode="email" autocomplete="email" value="ala@example.org"></div>
+    <button class="btn btn--primary btn--block" type="button">${svg(I.mail, 18)}${T('sendCode')}</button>
+    <p style="margin:12px 0 0;text-align:center"><button class="link" type="button">${T('later')}</button></p></div>`;
+          case 'gateCode':
+            return `<div class="sheet" role="dialog" aria-label="${T('codeTitle')}"><div class="grab"></div>
+    <h3>${T('codeTitle')}</h3><p>${T('codeLead')}</p>
+    <div class="field"><label class="field__label" for="cd">${T('code')}</label><input id="cd" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="4821"><span class="field__hint">${T('codeHint')}</span></div>
+    <button class="btn btn--primary btn--block" type="button" disabled>${T('signInBtn')}</button>
+    <p style="margin:12px 0 0;text-align:center"><button class="link" type="button">${T('changeEmail')}</button></p></div>`;
+          case 'upsell':
+            return `<div class="sheet" role="dialog" aria-label="${T('premium')}"><div class="grab"></div>
+    <h3>${mark(18)}${T('premium')}</h3><p style="margin-bottom:10px">${T('pLead')}</p>
+    <ul class="perks"><li>${svg(I.check, 18, 2)}<span>${T('p1')}</span></li><li>${svg(I.check, 18, 2)}<span>${T('p2')}</span></li></ul>
+    <div class="note">${T('pNone')}</div>
+    <button class="btn btn--block" type="button">${T('ok')}</button></div>`;
+          default:
+            return '';
+        }
+      }
+
+      const CAPTIONS = {
+        gate: 'Tapping Add in Settings signed out opens this sheet over the map (M8 §2). Opening #/add directly shows it over an empty add screen; "Not now" or closing it closes the screen. Google shows only once auth.providers lists it. After sign-in (and the terms, for a new account) the add form opens.',
+        gateCode:
+          'The same code step as the About sign-in (account.html). Signing in here goes straight on to the add form, not back to the map.',
+        free: 'Free account: one quiet strip on top, two meters in ink on the line colour (never the live colour). No reset date, no premium link while something is left: pull, not push.',
+        premium:
+          'Premium (early access or a grant): the same strip with the sparkles mark beside the labels, 300 / 300.',
+        afOut:
+          'Autofill used up: its meter and the reset date turn warm (the warn tokens), the link field is off, and a notice says the form still works by hand. The one premium link appears only now.',
+        evOut:
+          'Events used up: the form gives way to a notice with the reset date, the premium link and Close. Nothing can be typed that could not be sent.',
+        race: 'The quota ran out on the server meanwhile (another device, or 429 quota_exceeded on submit). The meters reload from /api/me; what was typed stays on screen, the button is off.',
+        done: 'After adding: the done screen as built, with the meters updated below it (4 / 15).',
+        upsell:
+          '"More with premium" opens the premium sheet from slice E unchanged: what premium unlocks and "not on sale yet" while no payment provider exists.',
+      };
+
+      function render() {
+        document.documentElement.lang = st.lang;
+        const ph = document.getElementById('ph');
+        ph.className = 'ph' + (st.dark ? ' night' : '');
+        const over = ['gate', 'gateCode', 'upsell'].includes(st.screen);
+        ph.innerHTML = screen() + (over ? `<div class="scrim"></div>${sheet()}` : '');
+        document.getElementById('cap').textContent = CAPTIONS[st.screen];
+        const c = document.getElementById('ctl');
+        const b = (label, on, fn) => {
+          const x = document.createElement('button');
+          x.type = 'button';
+          x.textContent = label;
+          x.setAttribute('aria-pressed', String(on));
+          x.onclick = () => {
+            fn();
+            render();
+          };
+          return x;
+        };
+        c.innerHTML = '';
+        SCREENS.forEach(([id, label]) =>
+          c.append(b(label, st.screen === id, () => (st.screen = id))),
+        );
+        c.append(Object.assign(document.createElement('span'), { className: 'sep' }));
+        c.append(
+          b('Day', !st.dark, () => (st.dark = false)),
+          b('Night', st.dark, () => (st.dark = true)),
+          b('PL', st.lang === 'pl', () => (st.lang = 'pl')),
+          b('EN', st.lang === 'en', () => (st.lang = 'en')),
+        );
+        ph.querySelectorAll('[data-upsell]').forEach(
+          (x) =>
+            (x.onclick = () => {
+              st.screen = 'upsell';
+              render();
+            }),
+        );
+      }
+      render();
+    </script>
+  </body>
+</html>

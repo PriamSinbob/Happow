@@ -47,7 +47,7 @@ import { Glyph, Icon } from './components/Icons';
 import { ListView } from './components/ListView';
 import { MapView } from './components/MapView';
 import { Moderation } from './components/Moderation';
-import { TermsSheet } from './components/SignIn';
+import { SignInSheet, TermsSheet } from './components/SignIn';
 import { PickGrid } from './components/PickGrid';
 import { PlaceCard } from './components/PlaceCard';
 import { ReachRail } from './components/ReachRail';
@@ -208,7 +208,9 @@ export function App() {
   const [recenter, setRecenter] = useState(0);
   const filtered = filters.activeCount > 0;
   const [route, go] = useRoute();
-  const { needsTerms } = useAccount();
+  const { needsTerms, status: accountStatus } = useAccount();
+  // Adding needs an account (M8 §2): signed out, Add opens a sign-in sheet over the map.
+  const [addGate, setAddGate] = useState(false);
   const detailId = route?.name === 'event' ? route.id : null;
   const goId = route?.name === 'go' ? route.id : null;
   // Dice (§7): weights on this device; no repeats this session.
@@ -619,7 +621,9 @@ export function App() {
           onClose={() => setSettingsOpen(false)}
           onAdd={() => {
             setSettingsOpen(false);
-            go({ name: 'add' });
+            if (accountStatus === 'signedOut' && config.app.submissions.account === 'required')
+              setAddGate(true);
+            else go({ name: 'add' });
           }}
           onAbout={() => {
             setSettingsOpen(false);
@@ -655,6 +659,16 @@ export function App() {
       {route?.name === 'moderate' && <Moderation onClose={close} />}
       {route?.name === 'about' && (
         <About atlas={atlas} onClose={close} onModerate={() => go({ name: 'moderate' }, true)} />
+      )}
+      {addGate && (
+        <SignInSheet
+          forAdd
+          onClose={() => setAddGate(false)}
+          onSignedIn={() => {
+            setAddGate(false);
+            go({ name: 'add' });
+          }}
+        />
       )}
       {needsTerms && <TermsSheet />}
     </div>
