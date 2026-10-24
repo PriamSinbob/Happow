@@ -2329,3 +2329,210 @@ button.account-card__plan {
 .account-terms li {
   margin: 0 0 6px;
 }
+
+/* ---------- Admin (M8 slice F, docs/design/admin.html) ---------- */
+.admin-tabs {
+  gap: 3px;
+  margin: 0 0 12px;
+}
+.admin-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+}
+.count-pill {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.admin-card__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.mod-card h3.admin-card__email {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 15.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-lang {
+  flex: none;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--quiet);
+}
+.admin-made {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.admin-plan {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: var(--quiet);
+}
+.admin-row-error {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+.admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.admin-actions .btn {
+  flex: 0 1 auto;
+  min-width: 150px;
+}
+.admin-actions .danger-link {
+  justify-content: center;
+  min-width: 44px;
+  margin-left: auto;
+  padding: 0 6px;
+  text-underline-offset: 3px;
+}
+.admin-actions--grant {
+  margin-top: 6px;
+}
+.admin-actions--grant .mod-card__meta {
+  flex: 1;
+  min-width: 0;
+}
+.mod-card--ended {
+  opacity: 0.55;
+}
+.admin-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 40px 0;
+  text-align: center;
+  color: var(--muted);
+}
+.admin-empty strong {
+  color: var(--ink);
+}
+.admin-give {
+  margin: 2px 0 4px;
+}
+.admin-sheet__who {
+  margin-bottom: 4px;
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.admin-code {
+  margin: 4px 0 14px;
+  padding: 12px 10px 10px;
+  border-radius: 14px;
+  background: var(--paper-2);
+  text-align: center;
+}
+.admin-code__num {
+  user-select: all;
+  -webkit-user-select: all;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
+.admin-code__gap {
+  display: inline-block;
+  width: 0.35em;
+}
+.admin-code__for {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.admin-ro {
+  margin: 0 0 12px;
+}
+.admin-ro__label {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.admin-ro__line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-ro__value {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-2);
+  font: inherit;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.admin-ro__body {
+  max-height: 150px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.copy-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+}
+/* Selected for copying by hand after the clipboard refused; stays tinted after the next tap. */
+.admin-ro__value.is-selected {
+  background: color-mix(in srgb, var(--ink) 14%, var(--paper-2));
+}
+.admin-field-error {
+  font-size: 12.5px;
+}
+.admin-hint {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.admin-note {
+  margin: 12px 0;
+  font-size: 13px;
+}

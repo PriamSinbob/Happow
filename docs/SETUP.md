@@ -84,12 +84,25 @@ For each moderator:
 
 They then sign in like everyone else, in **About → Sign in** (an email code, or Google once set up). The **Moderation** link appears in About for staff only, or open `/#/moderate`.
 
-**Sign-in codes by hand** (`auth.emailDelivery: "manual"` in `config/app.json`, until the app has its own domain and an email sender). When someone asks for a code in the app, the request waits for you. From M8 slice F the admin panel lists the requests; **Generate** creates the account if needed and shows a ready email (code and link, in their language) with a button that opens it in your mail app. Send it from your own address. Until slice F, the same works through the API: `GET /api/admin/code-requests` and `POST /api/admin/code-requests/<id>/generate`, signed in as the admin.
+**Check that you are the admin.** In the app, open settings → ⓘ (**About Happow**) and sign in with the email you put in the SQL above. At the end of About, the shield row **Moderation** appears. Tap it: the screen is titled **Admin** and has three tabs at the top, **Queue · Codes · Grants**. If the title is **Moderation** and there are no tabs, your row in `moderators` has the role `moderator`: run the SQL above again. If the shield row is missing, the email in `moderators` doesn't match the one you signed in with (it must be lower case).
 
-**Premium by hand (plan grants).** Every account has premium during the early-access promotion: `earlyAccess.until` in `config/plans.json` (the last day included, Warsaw time). To extend it, change that date and deploy; it applies to everyone at once. To give one person premium beyond that (a tester, a partner organiser), add a grant. From M8 slice F the admin panel does it; until then, signed in as the admin:
+**Sign-in codes by hand** (`auth.emailDelivery: "manual"` in `config/app.json`, until the app has its own domain and an email sender). When someone asks for a code in the app, the request waits for you:
 
-- `POST /api/admin/grants` with `{"email": "name@example.org", "endsAt": null, "note": "organiser"}` gives premium with no end. For an end, send `"endsAt": "2027-01-31T23:00:00Z"` (UTC; that is midnight in Warsaw in winter). The account is created if the person has never signed in.
-- `GET /api/admin/grants` lists every grant; `DELETE /api/admin/grants/<id>` ends one now.
+1. Open **About Happow → Moderation → Codes**. The number on the tab is how many requests are open. Each row shows the email, the language (PL or EN), how long ago it was asked, and whether the person already has an account.
+2. Tap **Generate code**. This creates the account if needed and opens **Ready email**: the 6-digit code in large type (to read out over the phone), and the To, Subject and Body in the person's language.
+3. Tap **Open in mail app**: your mail app opens with the email filled in. Send it from your own address. If no mail app opens, tap **Copy email** and paste it into a new email; the small copy button next to To copies the address. On a phone that blocks copying, the text is selected for you: press and hold it, then **Copy**.
+4. Tap **Done**. The row now says **code made at 14:05**. The code works for 24 hours. **Generate again** makes a new code, and the old one stops working.
+
+Requests leave the list once the person has signed in after their code was made, or after 7 days. **Delete** removes one by hand (it asks first); a code that already went out still works.
+
+**Premium by hand (plan grants).** Every account has premium during the early-access promotion: `earlyAccess.until` in `config/plans.json` (the last day included, Warsaw time). To extend it, change that date and deploy; it applies to everyone at once. To give one person premium beyond that (a tester, a partner organiser), add a grant:
+
+1. Open **About Happow → Moderation → Grants** and tap **Give premium**.
+2. Type the **Email**. If the person has never signed in, their account is made for the grant.
+3. Under **End**, leave **No end date**, or tap **Last day** and pick the last day premium should work. It works through the whole of that day, Warsaw time.
+4. Optionally add a **Note** (only you see it, in the list), then tap **Give premium**.
+
+The list shows active grants first, then ended ones, dimmed. To stop a manual grant now, tap **End** on it and confirm with **End premium**. Trial and purchase grants have no **End** button.
 
 Or in the **SQL Editor** (the person must have an account):
 

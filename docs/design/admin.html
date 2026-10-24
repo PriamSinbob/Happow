@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Happow admin screens</title>
+    <style>
+      /* Design reference for M8 slice F (the admin panel: sign-in code requests and premium grants).
+   Draft for the owner's OK, 2026-10-24. Tokens are config/theme.json; layout and type follow
+   apps/web/src/styles.css (Screen, mod-card, segmented, btn, field) and docs/design/account.html.
+   Touch-first: no hover styles. */
+      :root {
+        --paper: #fbfaf7;
+        --paper-2: #eeeae2;
+        --ink: #17171a;
+        --muted: #86807a;
+        --quiet: #5c5852;
+        --line: #dfd8cc;
+        --scrim: rgba(23, 23, 26, 0.42);
+        --error: #fbe3e1;
+        --error-ink: #9b1c1c;
+      }
+      .night {
+        --paper: #1a1d23;
+        --paper-2: #242832;
+        --ink: #ece9e3;
+        --muted: #80838b;
+        --quiet: #a9acb3;
+        --line: #323846;
+        --scrim: rgba(0, 0, 0, 0.6);
+        --error: #3d1a1c;
+        --error-ink: #ffb4b4;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 20px 16px 40px;
+        background: #f4f3ef;
+        font:
+          15px/1.45 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        color: #17171a;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: center;
+        margin: 0 auto 10px;
+        max-width: 760px;
+      }
+      .controls button {
+        font: inherit;
+        font-size: 13px;
+        padding: 6px 10px;
+        border: 1px solid #c9c6bf;
+        border-radius: 8px;
+        background: #fff;
+        color: #17171a;
+      }
+      .controls button[aria-pressed='true'] {
+        background: #17171a;
+        color: #fff;
+        border-color: #17171a;
+      }
+      .controls .sep {
+        width: 100%;
+        height: 0;
+      }
+      .cap {
+        max-width: 380px;
+        margin: 10px auto 0;
+        font-size: 12.5px;
+        color: #6b6b66;
+        text-align: center;
+      }
+
+      /* The phone */
+      .ph {
+        position: relative;
+        width: 380px;
+        max-width: 100%;
+        height: 760px;
+        margin: 0 auto;
+        border: 6px solid #8a8a86;
+        border-radius: 26px;
+        overflow: hidden;
+        background: var(--paper-2);
+        color: var(--ink);
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        background: var(--paper);
+        border-bottom: 1px solid var(--line);
+      }
+      .bar h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.01em;
+      }
+      .icon-btn {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 12px;
+        background: transparent;
+        color: var(--ink);
+        padding: 0;
+      }
+      .scroll {
+        position: absolute;
+        top: 61px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        overflow-y: auto;
+      }
+      .body {
+        padding: 14px 16px 32px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      svg {
+        display: block;
+      }
+
+      /* Tabs: the app's segmented control, three across */
+      .seg {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 3px;
+        padding: 3px;
+        margin: 0 0 12px;
+        background: var(--line);
+        border-radius: 12px;
+      }
+      .seg button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 38px;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .seg button.on {
+        background: var(--paper);
+        color: var(--ink);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      }
+      .seg2 {
+        grid-template-columns: 1fr 1fr;
+        margin: 0;
+      }
+      .count {
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 9px;
+        background: var(--ink);
+        color: var(--paper);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 18px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* The bar under the tabs (the app's mod-bar) */
+      .mod-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .mod-bar .who {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      h2 {
+        margin: 18px 0 10px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+
+      /* Cards (the app's mod-card) */
+      .card {
+        margin-bottom: 10px;
+        padding: 12px 14px 12px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--paper);
+      }
+      .card--ended {
+        opacity: 0.55;
+      }
+      .card__top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+      .card__email {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        font-size: 15.5px;
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .lang {
+        flex: none;
+        padding: 1px 7px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--quiet);
+      }
+      .meta {
+        margin: 3px 0 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .made {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin: 4px 0 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .plan {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 3px 0 0;
+        font-size: 13px;
+        color: var(--quiet);
+      }
+      .quote {
+        margin: 8px 0 0;
+        padding: 4px 10px;
+        border-left: 3px solid var(--line);
+        font-size: 13px;
+        color: var(--ink);
+      }
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .actions .btn {
+        flex: 0 1 auto;
+        min-width: 150px;
+      }
+      .spacer {
+        flex: 1;
+      }
+
+      .btn {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 42px;
+        padding: 0 14px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        color: var(--ink);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .btn--primary {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--paper);
+      }
+      .btn--inline {
+        flex: none;
+        height: 36px;
+        padding: 0 12px;
+        font-size: 13px;
+      }
+      .btn--block {
+        width: 100%;
+      }
+      .btn--danger {
+        background: var(--error);
+        border-color: var(--error);
+        color: var(--error-ink);
+      }
+      /* The quiet action: a text button with a 36 px touch area */
+      .quiet {
+        min-height: 36px;
+        padding: 0 6px;
+        border: 0;
+        background: none;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--quiet);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .quiet--danger {
+        color: var(--error-ink);
+      }
+      .copy-btn {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--paper);
+        color: var(--ink);
+        padding: 0;
+      }
+      .form-error {
+        margin: 8px 0 0;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: var(--error);
+        color: var(--error-ink);
+        font-size: 13px;
+      }
+      .empty {
+        margin: 40px 0;
+        text-align: center;
+        color: var(--muted);
+      }
+      .empty svg {
+        margin: 0 auto 8px;
+      }
+
+      /* Sheets */
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: var(--scrim);
+      }
+      .sheet {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-height: 92%;
+        overflow-y: auto;
+        padding: 8px 18px 22px;
+        border-radius: 22px 22px 0 0;
+        background: var(--paper);
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2);
+      }
+      .grab {
+        width: 36px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--line);
+        margin: 0 auto 12px;
+      }
+      .sheet h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 6px;
+        font-size: 19px;
+        letter-spacing: -0.01em;
+      }
+      .sheet p {
+        margin: 0 0 14px;
+        color: var(--quiet);
+      }
+      .bigcode {
+        margin: 4px 0 14px;
+        padding: 12px 10px 10px;
+        border-radius: 14px;
+        background: var(--paper-2);
+        text-align: center;
+      }
+      .bigcode__num {
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: 0.12em;
+        font-variant-numeric: tabular-nums;
+        user-select: all;
+      }
+      .bigcode__num span {
+        display: inline-block;
+        width: 0.35em;
+      }
+      .bigcode__for {
+        margin-top: 2px;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+      .ro {
+        margin: 0 0 12px;
+      }
+      .ro__label {
+        display: block;
+        margin: 0 0 4px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .ro__line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ro__value {
+        flex: 1;
+        min-width: 0;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--paper-2);
+        font-size: 14px;
+        overflow-wrap: anywhere;
+      }
+      .ro__body {
+        max-height: 150px;
+        overflow-y: auto;
+        margin: 0;
+        white-space: pre-wrap;
+        font: inherit;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+      .ro__body.selected {
+        background: color-mix(in srgb, var(--ink) 14%, var(--paper-2));
+      }
+      .hint {
+        margin: 6px 0 0;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      .note {
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: var(--paper-2);
+        font-size: 13px;
+        color: var(--ink);
+        margin: 12px 0 12px;
+      }
+
+      /* Fields */
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 0 0 14px;
+      }
+      .field__label {
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .field__hint {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .field__error {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--error-ink);
+      }
+      .field input {
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--paper);
+        font: inherit;
+        font-size: 16px;
+        color: var(--ink);
+      }
+      .field input.bad {
+        border-color: var(--error-ink);
+      }
+      .night input[type='date'] {
+        color-scheme: dark;
+      }
+
+      /* The mock moderation queue, as the app draws it today */
+      .badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: var(--paper-2);
+      }
+      .cats {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .card h4 {
+        margin: 4px 0;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls" id="ctl"></div>
+    <div class="ph" id="ph"></div>
+    <p class="cap" id="cap"></p>
+
+    <script>
+      /* ---------- Icons: the app's set (Icons.tsx, Tabler) plus Tabler "copy" (new, for the OK) ---------- */
+      const I = {
+        back: 'M15 5l-7 7 7 7',
+        check: 'M5 12l5 5L20 7',
+        mail: 'M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2zM3 7l9 6l9 -6',
+        plus: 'M12 5v14M5 12h14',
+        // Tabler "copy" (outline, v1.0, unicode ea7a), both paths exactly as in tabler-icons.
+        copy: 'M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667l0 -8.666M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1',
+      };
+      // The premium mark (Tabler sparkles, filled), as approved in account.html.
+      const SPARKLES =
+        'M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z';
+      const svg = (d, s = 20, sw = 2) =>
+        `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+      const mark = (s = 13) =>
+        `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" role="img" aria-label="Premium"><path d="${SPARKLES}"/></svg>`;
+
+      /* ---------- Strings (Polish and English) ---------- */
+      const S = {
+        pl: {
+          titleMod: 'Moderacja',
+          titleAdmin: 'Admin',
+          queue: 'Kolejka',
+          codes: 'Kody',
+          grants: 'Premium',
+          refresh: 'Odśwież',
+          signOut: 'Wyloguj',
+          // Queue (unchanged, abridged)
+          submissions: 'Zgłoszone (1)',
+          reports: 'Raporty (0)',
+          nothing: 'Nic nie czeka.',
+          user: 'Użytkownik',
+          approve: 'Zatwierdź',
+          reject: 'Odrzuć',
+          // Code requests
+          openReq: 'Prośby o kod (3)',
+          newAccount: 'nowe konto',
+          hasAccount: 'ma konto',
+          ago12m: '12 min temu',
+          ago3h: '3 godz. temu',
+          agoYesterday: 'wczoraj',
+          madeAt: 'kod utworzony o 14:05',
+          madeOn: 'kod utworzony 23.10, 18:40',
+          generate: 'Generuj kod',
+          again: 'Generuj ponownie',
+          del: 'Usuń',
+          noReq: 'Brak otwartych próśb',
+          noReqLead: 'Gdy ktoś poprosi o kod logowania, pojawi się tutaj.',
+          // Ready email
+          readyTitle: 'Gotowy e-mail',
+          codeFor: 'kod dla ala@example.org · do przeczytania przez telefon',
+          to: 'Do',
+          subject: 'Temat',
+          body: 'Treść',
+          copyAddr: 'Kopiuj adres',
+          copyMail: 'Kopiuj e-mail',
+          copied: 'Skopiowano',
+          openMail: 'Otwórz w poczcie',
+          holdToCopy: 'Przytrzymaj, aby skopiować',
+          againNote: 'Ponowne generowanie tworzy nowy kod; ten przestaje wtedy działać.',
+          done: 'Gotowe',
+          mailSubject: 'Twój kod do Happow: 482913',
+          mailBody:
+            'Cześć!\n\nTwój kod logowania do Happow: 482913\n\nWpisz go w aplikacji albo otwórz ten link na telefonie, na którym używasz Happow:\nhttps://xyz.supabase.co/auth/v1/verify?token=5f0e…&type=magiclink&redirect_to=https://happow.example/\n\nKod i link działają przez 24 godz. Jeśli to nie Ty prosisz o kod, zignoruj tę wiadomość.\n\nHappow',
+          // Delete request
+          delTitle: 'Usunąć prośbę?',
+          delLead:
+            'Prośba znika z listy i nic nie jest wysyłane. Kod, który już wyszedł, nadal działa. Osoba może poprosić ponownie.',
+          cancel: 'Anuluj',
+          // Errors
+          errGen:
+            'Nie udało się wygenerować kodu: Supabase odmówił (auth_failed). Spróbuj ponownie za chwilę.',
+          errOffline: 'Brak połączenia z internetem. Sprawdź sieć i odśwież.',
+          // Grants
+          give: 'Daj Premium',
+          active: 'Aktywne (2)',
+          ended: 'Zakończone (1)',
+          manual: 'ręcznie',
+          trial: 'okres próbny',
+          purchase: 'zakup',
+          until: 'do 31.12.2026',
+          noEnd: 'bez końca',
+          endedOn: 'zakończone 20.10.2026',
+          by: 'przyznane przez',
+          end: 'Zakończ',
+          note1: 'Testy: wieczory z muzyką',
+          note2: 'Organizator: klub jazzowy',
+          // Give premium
+          giveLead: 'Jeśli konto jeszcze nie istnieje, zostanie utworzone.',
+          email: 'E-mail',
+          endLabel: 'Koniec',
+          noEndBtn: 'Bez końca',
+          lastDayBtn: 'Ostatni dzień',
+          lastDay: 'Ostatni dzień Premium',
+          lastDayHint: 'Działa do końca tego dnia (północ, czas regionu).',
+          pastErr: 'Ten dzień już minął. Wybierz dzisiejszy albo późniejszy.',
+          noteLabel: 'Notatka (opcjonalnie)',
+          noteHint: 'Widzisz ją tylko ty, na liście.',
+          // End grant
+          endTitle: 'Zakończyć Premium?',
+          endLead:
+            'Premium dla ala@example.org kończy się teraz. Nic nie znika: konto i dodane wydarzenia zostają, a limity wracają do darmowych (albo do wczesnego dostępu, póki trwa).',
+          endYes: 'Zakończ Premium',
+        },
+        en: {
+          titleMod: 'Moderation',
+          titleAdmin: 'Admin',
+          queue: 'Queue',
+          codes: 'Codes',
+          grants: 'Grants',
+          refresh: 'Refresh',
+          signOut: 'Sign out',
+          submissions: 'Submissions (1)',
+          reports: 'Reports (0)',
+          nothing: 'Nothing waiting.',
+          user: 'User',
+          approve: 'Approve',
+          reject: 'Reject',
+          openReq: 'Code requests (3)',
+          newAccount: 'new account',
+          hasAccount: 'has an account',
+          ago12m: '12 min ago',
+          ago3h: '3 hours ago',
+          agoYesterday: 'yesterday',
+          madeAt: 'code made at 14:05',
+          madeOn: 'code made 23 Oct, 18:40',
+          generate: 'Generate code',
+          again: 'Generate again',
+          del: 'Delete',
+          noReq: 'No open requests',
+          noReqLead: 'When someone asks for a sign-in code, it shows up here.',
+          readyTitle: 'Ready email',
+          codeFor: 'code for ala@example.org · to read out over the phone',
+          to: 'To',
+          subject: 'Subject',
+          body: 'Body',
+          copyAddr: 'Copy address',
+          copyMail: 'Copy email',
+          copied: 'Copied',
+          openMail: 'Open in mail app',
+          holdToCopy: 'Press and hold to copy',
+          againNote: 'Generating again makes a new code, and this one stops working.',
+          done: 'Done',
+          mailSubject: 'Your Happow code: 482913',
+          mailBody:
+            "Hi!\n\nYour Happow sign-in code: 482913\n\nType it into the app, or open this link on the phone where you use Happow:\nhttps://xyz.supabase.co/auth/v1/verify?token=5f0e…&type=magiclink&redirect_to=https://happow.example/\n\nThe code and the link work for 24 hours. If you didn't ask for a code, ignore this email.\n\nHappow",
+          delTitle: 'Delete this request?',
+          delLead:
+            'The request leaves the list and nothing is sent. A code that already went out still works. The person can ask again.',
+          cancel: 'Cancel',
+          errGen:
+            "Couldn't generate the code: Supabase refused (auth_failed). Try again in a moment.",
+          errOffline: "You're offline. Check the connection and refresh.",
+          give: 'Give premium',
+          active: 'Active (2)',
+          ended: 'Ended (1)',
+          manual: 'manual',
+          trial: 'trial',
+          purchase: 'purchase',
+          until: 'until 31 Dec 2026',
+          noEnd: 'no end date',
+          endedOn: 'ended 20 Oct 2026',
+          by: 'given by',
+          end: 'End',
+          note1: 'Tester, evening music events',
+          note2: 'Organiser: jazz club',
+          giveLead: "If there's no account for this email yet, one is made.",
+          email: 'Email',
+          endLabel: 'End',
+          noEndBtn: 'No end date',
+          lastDayBtn: 'Last day',
+          lastDay: 'Last day of premium',
+          lastDayHint: 'Works to the end of that day (midnight, region time).',
+          pastErr: 'That day has passed. Pick today or later.',
+          noteLabel: 'Note (optional)',
+          noteHint: 'Only you see it, in the list.',
+          endTitle: 'End premium?',
+          endLead:
+            'Premium for ala@example.org ends now. Nothing is taken away: the account and its events stay, and the limits go back to the free ones (or to early access while it runs).',
+          endYes: 'End premium',
+        },
+      };
+      const T = (k) => S[st.lang][k];
+
+      /* ---------- State ---------- */
+      const SCREENS = [
+        ['moderator', 'Moderator (no tabs)'],
+        ['queue', 'Admin: Queue'],
+        ['codes', 'Codes'],
+        ['empty', 'Codes: empty'],
+        ['ready', 'Ready email'],
+        ['copied', 'Ready: copied'],
+        ['copyFail', 'Ready: copy failed'],
+        ['delReq', 'Delete request'],
+        ['errGen', 'Error: generate 502'],
+        ['errOffline', 'Error: offline'],
+        ['grants', 'Grants'],
+        ['give', 'Give premium'],
+        ['giveDate', 'Give: last day'],
+        ['givePast', 'Give: past date'],
+        ['endGrant', 'End grant'],
+      ];
+      const st = { dark: false, lang: 'pl', screen: 'codes' };
+
+      const ADMIN = 'priam@example.org';
+      const tab = () =>
+        st.screen === 'queue'
+          ? 'queue'
+          : ['grants', 'give', 'giveDate', 'givePast', 'endGrant'].includes(st.screen)
+            ? 'grants'
+            : 'codes';
+
+      /* ---------- The screen ---------- */
+      function header(admin) {
+        return `<header class="bar"><button class="icon-btn" type="button" aria-label="Back">${svg(I.back, 22)}</button><h1>${admin ? T('titleAdmin') : T('titleMod')}</h1></header>`;
+      }
+      function tabs() {
+        const n = st.screen === 'empty' ? 0 : 3;
+        const b = (id, label, extra = '') =>
+          `<button type="button" role="tab" aria-selected="${tab() === id}" class="${tab() === id ? 'on' : ''}">${label}${extra}</button>`;
+        return `<div class="seg" role="tablist">${b('queue', T('queue'))}${b('codes', T('codes'), n ? `<span class="count" aria-label="${n}">${n}</span>` : '')}${b('grants', T('grants'))}</div>`;
+      }
+      const modBar = () =>
+        `<div class="mod-bar"><span class="who">${ADMIN}</span><button class="btn btn--inline" type="button">${T('refresh')}</button><button class="btn btn--inline" type="button">${T('signOut')}</button></div>`;
+
+      function queue() {
+        return `<h2>${T('submissions')}</h2>
+    <article class="card"><div class="cats">${T('user')}</div><h4>Pchli targ na podwórku</h4>
+      <p class="meta">sob., 25.10 · 10:00 · Podwórko przy ul. Przykładowej 5</p>
+      <div class="actions"><button class="btn btn--primary" type="button" style="flex:1;min-width:0">${T('approve')}</button><button class="btn" type="button" style="flex:1;min-width:0">${T('reject')}</button></div></article>
+    <h2>${T('reports')}</h2><p class="muted">${T('nothing')}</p>`;
+      }
+
+      function codes() {
+        if (st.screen === 'empty')
+          return `<div class="empty">${svg(I.mail, 32, 1.6)}<strong style="color:var(--ink)">${T('noReq')}</strong><br>${T('noReqLead')}</div>`;
+        const row = (email, lang, ago, existing, made, err) => `
+    <article class="card">
+      <div class="card__top"><h3 class="card__email">${email}</h3><span class="lang" aria-label="${lang === 'PL' ? 'polski' : 'English'}">${lang}</span></div>
+      <p class="meta">${ago} · ${existing ? T('hasAccount') : T('newAccount')}</p>
+      ${made ? `<p class="made">${svg(I.check, 15, 2.4)}${made}</p>` : ''}
+      ${err ? `<p class="form-error" role="alert">${err}</p>` : ''}
+      <div class="actions">
+        <button class="btn ${made ? '' : 'btn--primary'}" type="button">${made ? T('again') : T('generate')}</button>
+        <span class="spacer"></span>
+        <button class="quiet quiet--danger" type="button">${T('del')}</button>
+      </div>
+    </article>`;
+        const offline =
+          st.screen === 'errOffline'
+            ? `<p class="form-error" role="alert" style="margin:0 0 10px">${T('errOffline')}</p>`
+            : '';
+        return `${offline}<h2>${T('openReq')}</h2>
+    ${row('marek.k@example.org', 'PL', T('agoYesterday'), false, T('madeOn'))}
+    ${row('ala@example.org', 'PL', T('ago3h'), false, '', st.screen === 'errGen' ? T('errGen') : '')}
+    ${row('sam.taylor@example.com', 'EN', T('ago12m'), true, '')}`;
+      }
+
+      function grants() {
+        const row = (email, src, end, note, by, opts = {}) => `
+    <article class="card ${opts.ended ? 'card--ended' : ''}">
+      <div class="card__top"><h3 class="card__email">${email}</h3></div>
+      <p class="plan">${mark(13)}<span>Premium · ${src} · ${end}</span></p>
+      ${note ? `<p class="quote">${note}</p>` : ''}
+      <div class="actions" style="margin-top:6px">
+        <span class="meta" style="flex:1;margin:0">${by ? `${T('by')} ${by}` : ''}</span>
+        ${opts.endable ? `<button class="quiet quiet--danger" type="button">${T('end')}</button>` : ''}
+      </div>
+    </article>`;
+        return `<button class="btn btn--primary btn--block" type="button" style="margin:2px 0 4px">${mark(16)}${T('give')}</button>
+    <h2>${T('active')}</h2>
+    ${row('ala@example.org', T('manual'), T('until'), T('note1'), ADMIN, { endable: true })}
+    ${row('jazz@example.com', T('manual'), T('noEnd'), T('note2'), ADMIN, { endable: true })}
+    <h2>${T('ended')}</h2>
+    ${row('olek@example.org', T('trial'), T('endedOn'), '', '', { ended: true })}`;
+      }
+
+      function screen() {
+        const admin = st.screen !== 'moderator';
+        const content =
+          !admin || tab() === 'queue' ? queue() : tab() === 'codes' ? codes() : grants();
+        return `${header(admin)}<div class="scroll"><div class="body">${admin ? tabs() : ''}${modBar()}${content}</div></div>`;
+      }
+
+      /* ---------- Sheets ---------- */
+      function mailto() {
+        const crlf = (s) => encodeURIComponent(s.replace(/\n/g, '\r\n'));
+        return `mailto:${encodeURIComponent('ala@example.org')}?subject=${crlf(T('mailSubject'))}&body=${crlf(T('mailBody'))}`;
+      }
+      function sheet() {
+        switch (st.screen) {
+          case 'ready':
+          case 'copied':
+          case 'copyFail': {
+            const copied = st.screen === 'copied';
+            const failed = st.screen === 'copyFail';
+            return `<div class="sheet" role="dialog" aria-label="${T('readyTitle')}"><div class="grab"></div>
+    <h3>${T('readyTitle')}</h3>
+    <div class="bigcode"><div class="bigcode__num" aria-label="4 8 2 9 1 3">482<span></span>913</div><div class="bigcode__for">${T('codeFor')}</div></div>
+    <div class="ro"><span class="ro__label">${T('to')}</span>
+      <div class="ro__line"><div class="ro__value">ala@example.org</div><button class="copy-btn" type="button" aria-label="${T('copyAddr')}">${svg(I.copy, 18)}</button></div></div>
+    <div class="ro"><span class="ro__label">${T('subject')}</span><div class="ro__value">${T('mailSubject')}</div></div>
+    <div class="ro"><span class="ro__label">${T('body')}</span><pre class="ro__value ro__body ${failed ? 'selected' : ''}">${T('mailBody')}</pre>
+      ${failed ? `<p class="hint" role="status">${T('holdToCopy')}</p>` : ''}</div>
+    <div class="row">
+      <button class="btn" type="button">${copied ? `${svg(I.check, 18, 2.4)}${T('copied')}` : `${svg(I.copy, 18)}${T('copyMail')}`}</button>
+      <a class="btn btn--primary" href="${mailto()}">${svg(I.mail, 18)}${T('openMail')}</a>
+    </div>
+    <div class="note">${T('againNote')}</div>
+    <button class="btn btn--block" type="button">${T('done')}</button></div>`;
+          }
+          case 'delReq':
+            return `<div class="sheet" role="alertdialog" aria-label="${T('delTitle')}"><div class="grab"></div>
+    <h3>${T('delTitle')}</h3><p>ala@example.org</p><p>${T('delLead')}</p>
+    <div class="row"><button class="btn" type="button">${T('cancel')}</button><button class="btn btn--danger" type="button">${T('del')}</button></div></div>`;
+          case 'give':
+          case 'giveDate':
+          case 'givePast': {
+            const dated = st.screen !== 'give';
+            const past = st.screen === 'givePast';
+            return `<div class="sheet" role="dialog" aria-label="${T('give')}"><div class="grab"></div>
+    <h3>${mark(18)}${T('give')}</h3><p>${T('giveLead')}</p>
+    <div class="field"><label class="field__label" for="ge">${T('email')}</label><input id="ge" type="email" inputmode="email" autocomplete="off" value="ala@example.org"></div>
+    <div class="field"><span class="field__label">${T('endLabel')}</span>
+      <div class="seg seg2" role="radiogroup"><button type="button" role="radio" aria-checked="${!dated}" class="${dated ? '' : 'on'}">${T('noEndBtn')}</button><button type="button" role="radio" aria-checked="${dated}" class="${dated ? 'on' : ''}">${T('lastDayBtn')}</button></div></div>
+    ${
+      dated
+        ? `<div class="field"><label class="field__label" for="gd">${T('lastDay')}</label><input id="gd" type="date" class="${past ? 'bad' : ''}" value="${past ? '2026-10-20' : '2026-12-31'}" aria-invalid="${past}">
+      ${past ? `<span class="field__error" role="alert">${T('pastErr')}</span>` : `<span class="field__hint">${T('lastDayHint')}</span>`}</div>`
+        : ''
+    }
+    <div class="field"><label class="field__label" for="gn">${T('noteLabel')}</label><input id="gn" type="text" maxlength="500" value="${T('note1')}"><span class="field__hint">${T('noteHint')}</span></div>
+    <button class="btn btn--primary btn--block" type="button" ${past ? 'disabled style="opacity:.45"' : ''}>${T('give')}</button></div>`;
+          }
+          case 'endGrant':
+            return `<div class="sheet" role="alertdialog" aria-label="${T('endTitle')}"><div class="grab"></div>
+    <h3>${T('endTitle')}</h3><p>${T('endLead')}</p>
+    <div class="row"><button class="btn" type="button">${T('cancel')}</button><button class="btn btn--danger" type="button">${T('endYes')}</button></div></div>`;
+          default:
+            return '';
+        }
+      }
+
+      const CAPTIONS = {
+        moderator:
+          'A moderator sees no tabs: the queue exactly as today, under the same title (Moderation).',
+        queue:
+          'The admin gets three tabs on top: Queue · Codes (with the count of open requests) · Grants. The queue itself is unchanged. The bar (email, Refresh, Sign out) refreshes the open tab.',
+        codes:
+          'Oldest first. Each row: email, language (PL / EN), how long ago, new account or has one, and once a code exists "code made at 14:05" (with the date when not today). Generate is primary; after a code exists it becomes the plain "Generate again". Delete is quiet and asks first.',
+        empty: 'No open requests: the Codes tab shows no count, and the list says so.',
+        ready:
+          'After Generate. The code is large in two groups of three, to read out over the phone. To, Subject and Body are read-only; the small button copies the address. "Open in mail app" is the mailto link (try it). The list behind refreshes, so the row shows "code made".',
+        copied:
+          'Copy email puts the subject and body on the clipboard; the button says Copied for 2 s.',
+        copyFail:
+          "If the clipboard isn't allowed, the body text is selected and a line says to press and hold.",
+        delReq:
+          'Delete asks first. Deleting never revokes a code that went out; the request is also removed by itself after 7 days or once the person signs in.',
+        errGen:
+          'Generate failed (502 auth_failed: Supabase refused). The error shows inside that row; the button stays to try again.',
+        errOffline: 'Offline: one line above the list, using the error tokens; Refresh retries.',
+        grants:
+          'Give premium on top. Active grants first, then ended ones, dimmed. Each: email, the sparkles mark with the plan, its source (manual, trial or purchase), the end ("until …" or "no end date"), the note, and who gave it. End only on active manual grants.',
+        give: 'No plan picker: the only plan is premium. End: no end date by default.',
+        giveDate:
+          "Last day: a date picker. It is sent as midnight after that day in the region's time zone, so premium works through the whole day (as early access does).",
+        givePast:
+          'A last day before today: the field says so and the button stays off. (The server refuses it too.)',
+        endGrant:
+          'End asks first, then ends the grant now (DELETE). The list refreshes and the grant moves to Ended.',
+      };
+
+      function render() {
+        document.documentElement.lang = st.lang;
+        const ph = document.getElementById('ph');
+        ph.className = 'ph' + (st.dark ? ' night' : '');
+        const over = [
+          'ready',
+          'copied',
+          'copyFail',
+          'delReq',
+          'give',
+          'giveDate',
+          'givePast',
+          'endGrant',
+        ].includes(st.screen);
+        ph.innerHTML = screen() + (over ? `<div class="scrim"></div>${sheet()}` : '');
+        document.getElementById('cap').textContent = CAPTIONS[st.screen];
+        const c = document.getElementById('ctl');
+        const b = (label, on, fn) => {
+          const x = document.createElement('button');
+          x.type = 'button';
+          x.textContent = label;
+          x.setAttribute('aria-pressed', String(on));
+          x.onclick = () => {
+            fn();
+            render();
+          };
+          return x;
+        };
+        c.innerHTML = '';
+        SCREENS.forEach(([id, label]) =>
+          c.append(b(label, st.screen === id, () => (st.screen = id))),
+        );
+        c.append(Object.assign(document.createElement('span'), { className: 'sep' }));
+        c.append(
+          b('Day', !st.dark, () => (st.dark = false)),
+          b('Night', st.dark, () => (st.dark = true)),
+          b('PL', st.lang === 'pl', () => (st.lang = 'pl')),
+          b('EN', st.lang === 'en', () => (st.lang = 'en')),
+        );
+      }
+      render();
+    </script>
+  </body>
+</html>
