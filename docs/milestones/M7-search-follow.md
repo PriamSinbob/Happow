@@ -2,7 +2,7 @@
 
 Oct 22, 2026
 
-Spec agreed with the owner on 2026-10-22, to be built after M6 (it uses M6's list overlay, icon set and pin badges). Build it in the usual way: plan, show the plan, build, then replace the "Status" line with the report.
+Spec agreed with the owner on 2026-10-22, to be built after M6 (it uses M6's list overlay, icon set and pin badges). Moved by the owner on 2026-10-24: built after M12, just before M13, as the hyper-local milestones 8–12 matter more. It then builds on M8's accounts. Build it in the usual way: plan, show the plan, build, then replace the "Status" line with the report.
 
 **Status:** spec, not built. Build plan below (2026-10-24); each slice's detailed plan goes to the owner before building.
 
@@ -20,7 +20,8 @@ The PWA is built feature-complete before the native rewrite, the last milestone 
 | D     | §4             | Follows on the device, `POST /api/follows/match`, ★ on pins and cards   | B, C  | planned |
 | E     | §4 nationwide  | Ticketmaster nationwide lookups, `follow_lookups` cache, city in list   | D     | planned |
 | F     | §7             | Meetup public pages through the crawler (config + fixtures)             | —     | planned |
-| —     | §5, §6         | Alerts and synced follows move to M8; Last.fm import dropped            | —     | moved   |
+| G     | §5             | Follows synced per account; new-date alerts (web push, email)           | D, M8 | planned |
+| —     | §6             | Last.fm import dropped                                                  | —     | dropped |
 
 ### Slice A: performers and horizon
 
@@ -69,15 +70,15 @@ The PWA is built feature-complete before the native rewrite, the last milestone 
 - Check on the first run that JSON-LD is present, then record a fixture for the contract test.
 - Independent of A–E, so it can go at any point.
 
-### Moved and dropped
+### Alerts and dropped
 
-- **§5 alerts and synced follows → M8**, with accounts and premium (M6 §8). M8 builds web push; the native milestone replaces it with native push.
+- **§5 alerts and synced follows: slice G**, on the accounts and premium tier built in M8. Web push and email; the native milestone replaces web push with native push. Its detailed plan is written when M7 starts.
 - **§6 Last.fm import: dropped.** Its terms allow non-commercial use only, and Spotify is closed. Follows come from cards, search and bulk paste (the spec's default path).
 
 ### Decisions (owner, 2026-10-24)
 
 1. Every slice is built in full, UI included: the PWA is finished before the native rewrite.
-2. Alerts and synced follows go to M8. The native rewrite is in the brief's Decisions table and milestones list.
+2. M7 is built after M12 (2026-10-24). Alerts and synced follows stay in M7 as slice G, on M8's accounts. The native rewrite is in the brief's Decisions table and milestones list.
 3. Recommended, override if needed: the Last.fm import is dropped (above). Meetup public pages (slice F) are built for private testing and switched off before monetising, as §7 says.
 
 ### Working notes
@@ -146,7 +147,7 @@ Today no performer is stored: the Ticketmaster adapter ignores `_embedded.attrac
 
 ## 5. Alerts (premium, logged in)
 
-Built in M8 (2026-10-24).
+Slice G, on M8's accounts (2026-10-24).
 
 - **"Tell me when a new date is announced."** Follows are stored server-side per user (row-level security) and matched after each ingest run.
 - **Delivery.** By web push, which needs the installed PWA (on iOS, Home Screen web apps from 16.4), or by email.

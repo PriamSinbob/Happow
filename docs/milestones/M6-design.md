@@ -22,6 +22,7 @@ Spec agreed with the owner in the design session of 2026-10-22 (interactive prot
   - The atlas bar's looks, to be adjusted with the owner.
   - Veil redraw time on a mid-range phone.
   - Pins on the map are not focusable; screen-reader users go through the list.
+  - The dashed reach circle (outline and fill) stays for now. The owner wants it removed, as the lit veil shows the reach; that goes in M8 (2026-10-24).
 
 **Visual reference:** `docs/design/` (interactive prototype, exact range icons, README listing what is normative). Slices E to H match it; where this spec's words and the prototype differ, ask the owner.
 
