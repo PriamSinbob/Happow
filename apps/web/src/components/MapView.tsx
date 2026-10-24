@@ -4,7 +4,6 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   areaKey,
   circleBounds,
-  circleRing,
   clampToEdge,
   distanceM,
   isRunning,
@@ -16,9 +15,10 @@ import { addVeil, drawVeil, moveVeil, paintVeil, uploadVeil, type LitCell } from
 import { config, region } from '../config';
 import type { Guidance } from '../hooks/useGuidance';
 import { useI18n } from '../i18n';
-import { useMapTheme, type OwnLayerPaint } from '../mapTheme';
+import { useMapTheme } from '../mapTheme';
 import { addPinLayers, applyPinPaint, PIN_HIT_LAYERS, PIN_SOURCE, pinPaint } from '../pinLayers';
 import { pinFeatures, type PinMode } from '../pins';
+import { addReachCircle, RADIUS_SOURCE, radiusFeature } from '../reachCircle';
 import { useTheme } from '../theme';
 
 interface Props {
@@ -35,7 +35,7 @@ interface Props {
   onSelectPlace: (ids: string[]) => void;
   /** Pixels covered at the bottom (time line, cards), kept clear when fitting and for edge dots. */
   bottomInset: number;
-  /** Incremented by the locate button: fit the view to the circle again even after panning. */
+  /** Incremented by the locate button: fit the view to the reach again even after panning. */
   recenter: number;
   hidden?: boolean;
   hotspot: Guidance['hotspot'];
@@ -44,7 +44,7 @@ interface Props {
   previewRadiusM: number | null;
   /** Pinched out well past the rail's last stop: city mode (§5). */
   onCity: () => void;
-  /** The circle is pinned to a point on the map ("plan from here"), not following the user. */
+  /** The reach is pinned to a point on the map ("plan from here"), not following the user. */
   pinned: boolean;
   /** Long-press on the map: plan from that spot. */
   onSetPoint: (point: LatLng) => void;
@@ -76,7 +76,6 @@ const CITY_FACTOR = 1.6;
 /** Without panning, re-fit only once the user has walked this far (GPS jitter is smaller). */
 const REFIT_AFTER_M = 30;
 
-const RADIUS_SOURCE = 'radius';
 const { atlas, refresh } = config.app;
 
 /** The veil's canvas covers this box around the area snapshot's grid point. */
@@ -84,10 +83,6 @@ function boxAround(center: LatLng) {
   const k = areaKey(center, config.app.density.searchRadiusM, refresh);
   return veilBox({ lat: k.lat, lng: k.lng }, atlas.veilRadiusM);
 }
-const RADIUS_PAINT: OwnLayerPaint = [
-  ['radius-fill', 'fill-color', 'ink'],
-  ['radius-line', 'line-color', 'ink'],
-];
 
 export interface MarkerItem {
   key: string;
@@ -163,14 +158,6 @@ export function rasterStyle(): StyleSpecification {
       },
     },
     layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
-  };
-}
-
-function radiusFeature(center: LatLng, radiusM: number) {
-  return {
-    type: 'Feature' as const,
-    properties: {},
-    geometry: { type: 'Polygon' as const, coordinates: [circleRing(center, radiusM)] },
   };
 }
 
@@ -284,24 +271,10 @@ export function MapView(props: Props) {
     });
     m.on('style.load', () => {
       const p = latest.current;
-      // Under the basemap labels and below our own layers (radius, pins).
+      // Under the basemap labels and below the pins. Its lit disc shows the reach (M8 §1).
       addVeil(m, veilCanvas.current!, boxRef.current);
       paintVeil(m, themeRef.current.tokens);
-      if (!m.getSource(RADIUS_SOURCE)) {
-        m.addSource(RADIUS_SOURCE, { type: 'geojson', data: radiusFeature(p.center, p.radiusM) });
-        m.addLayer({
-          id: 'radius-fill',
-          type: 'fill',
-          source: RADIUS_SOURCE,
-          paint: { 'fill-opacity': 0.07 },
-        });
-        m.addLayer({
-          id: 'radius-line',
-          type: 'line',
-          source: RADIUS_SOURCE,
-          paint: { 'line-width': 2, 'line-dasharray': [2, 1.5] },
-        });
-      }
+      addReachCircle(m, p.center, p.radiusM);
       addPinLayers(m);
       const th = themeRef.current;
       applyPinPaint(m, pinPaint(th.tokens, th.preset, th.name));
@@ -422,10 +395,10 @@ export function MapView(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useMapTheme(map, RADIUS_PAINT);
+  useMapTheme(map);
 
-  // Rail drag: the circle follows the finger and the map zooms with it, so the reach keeps its
-  // size on screen (§5). No animation: this runs every frame of the drag.
+  // Rail drag: the map zooms with the finger (§5), and on the raster fallback the circle follows
+  // it too. No animation: this runs every frame of the drag.
   useEffect(() => {
     const m = map.current;
     const r = props.previewRadiusM;
@@ -444,9 +417,9 @@ export function MapView(props: Props) {
     if (cam) m.jumpTo(cam);
   }, [props.previewRadiusM, props.center, props.bottomInset]);
 
-  // The radius circle always follows the user; the view fits to it only when that won't fight the
-  // user: on a new radius or layout, on "locate", or when the user has walked on while the map
-  // still shows the circle. GPS updates alone never yank back a map the user has panned or zoomed.
+  // The reach always follows the user; the view fits to it only when that won't fight the user:
+  // on a new radius or layout, on "locate", or when the user has walked on while the map still
+  // shows the reach. GPS updates alone never yank back a map the user has panned or zoomed.
   useEffect(() => {
     const m = map.current;
     if (!m || props.previewRadiusM !== null) return;
