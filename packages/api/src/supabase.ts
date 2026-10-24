@@ -10,6 +10,17 @@ export class SupabaseError extends Error {
   }
 }
 
+export interface AuthUser {
+  id: string;
+  /** Lowercased. */
+  email: string;
+}
+
+interface GeneratedLink {
+  email_otp?: string;
+  action_link?: string;
+}
+
 /** The few Supabase calls the API needs, over plain fetch (PostgREST + GoTrue), with the service key. */
 export class Supabase {
   private readonly base: string;
@@ -59,14 +70,53 @@ export class Supabase {
     return (await (await this.check(res)).json()) as T;
   }
 
-  /** Email of the signed-in user behind an access token, or null when the token is not valid. */
-  async userEmail(accessToken: string): Promise<string | null> {
+  /** The signed-in user behind an access token, or null when the token is not valid. */
+  async user(accessToken: string): Promise<AuthUser | null> {
     const res = await this.doFetch(`${this.base}/auth/v1/user`, {
       headers: { apikey: this.serviceKey, Authorization: `Bearer ${accessToken}` },
     });
     if (res.status === 401 || res.status === 403) return null;
-    const user = (await (await this.check(res)).json()) as { email?: string };
-    return user.email?.toLowerCase() ?? null;
+    const user = (await (await this.check(res)).json()) as { id?: string; email?: string };
+    return user.id && user.email ? { id: user.id, email: user.email.toLowerCase() } : null;
+  }
+
+  /** Creates a confirmed user for an email; an existing user is left as it is. */
+  async ensureUser(email: string): Promise<void> {
+    const res = await this.doFetch(`${this.base}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ email, email_confirm: true }),
+    });
+    if (res.status === 422) return; // email_exists
+    await this.check(res);
+  }
+
+  /**
+   * A sign-in code and link for an existing user, without Supabase sending any email
+   * (admin generate_link). The code works with /auth/v1/verify (type "email").
+   */
+  async signInCode(email: string, redirectTo: string): Promise<{ code: string; link: string }> {
+    const res = await this.doFetch(`${this.base}/auth/v1/admin/generate_link`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ type: 'magiclink', email, redirect_to: redirectTo }),
+    });
+    const body = (await (await this.check(res)).json()) as GeneratedLink & {
+      properties?: GeneratedLink;
+    };
+    // GoTrue answers with the fields at the top level; some versions nest them in "properties".
+    const p = body.properties ?? body;
+    if (!p.email_otp || !p.action_link) throw new SupabaseError(502, undefined, 'no code returned');
+    return { code: p.email_otp, link: p.action_link };
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const res = await this.doFetch(`${this.base}/auth/v1/admin/users/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: this.headers(),
+    });
+    if (res.status === 404) return;
+    await this.check(res);
   }
 
   /** The geocode_cache table as a cache (shared with the crawler). */

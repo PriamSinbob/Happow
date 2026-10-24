@@ -164,6 +164,25 @@
     "scriptUrl": "https://plausible.io/js/script.manual.js"
   },
   "legal": {
-    "contactEmail": "krasnoroda@gmail.com"
+    "contactEmail": "krasnoroda@gmail.com",
+    "termsVersion": "2026-10-24-interim"
+  },
+  "auth": {
+    "emailDelivery": "manual",
+    "codeRequestsPerHourPerClient": 5,
+    "codeRequestsPerDayPerEmail": 3,
+    "codeRequestRetentionDays": 7,
+    "codeValidHours": 24,
+    "userCacheSec": 300,
+    "codeEmail": {
+      "pl": {
+        "subject": "Twój kod do Happow: {code}",
+        "body": "Cześć!\n\nTwój kod logowania do Happow: {code}\n\nWpisz go w aplikacji albo otwórz ten link na telefonie, na którym używasz Happow:\n{link}\n\nKod i link działają przez {hours} godz. Jeśli to nie Ty prosisz o kod, zignoruj tę wiadomość.\n\nHappow"
+      },
+      "en": {
+        "subject": "Your Happow code: {code}",
+        "body": "Hi!\n\nYour Happow sign-in code: {code}\n\nType it into the app, or open this link on the phone where you use Happow:\n{link}\n\nThe code and the link work for {hours} hours. If you didn't ask for a code, ignore this email.\n\nHappow"
+      }
+    }
   }
 }

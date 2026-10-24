@@ -36,7 +36,7 @@ function backend(b: Backend) {
       const token = headers.get('authorization')?.replace('Bearer ', '') ?? '';
       const email = b.users?.[token];
       return email
-        ? new Response(JSON.stringify({ email }), { status: 200 })
+        ? new Response(JSON.stringify({ id: `id-${token}`, email }), { status: 200 })
         : new Response('{"msg":"invalid"}', { status: 401 });
     }
     const html = b.pages?.[url];
@@ -332,7 +332,9 @@ describe('POST /api/reports', () => {
 describe('/api/moderation', () => {
   const rpc = {
     ...allow,
-    is_moderator: (a: Record<string, unknown>) => ({ body: a.p_email === 'mod@example.org' }),
+    staff_role: (a: Record<string, unknown>) => ({
+      body: a.p_email === 'mod@example.org' ? 'moderator' : null,
+    }),
     moderation_queue: () => ({ body: { submissions: [], reports: [] } }),
     moderate_submission: (a: Record<string, unknown>) =>
       a.p_id === 'done'

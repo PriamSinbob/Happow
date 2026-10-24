@@ -4,7 +4,7 @@ Oct 24, 2026
 
 Spec from the brief's M8 entry (owner, 2026-10-24), M6 §8 and the brief's "Automation add-on (paid): URL autofill", with the owner's answers of 2026-10-24 (§9). M8 comes next after M6; M7 is built after M12 and then uses these accounts (M7 slice G). Build it in the usual way: plan per slice, show the plan, build, then replace the "Status" line with the report.
 
-**Status:** spec, not built. Owner's answers of 2026-10-24 are in; waiting for the OK on this revision; only the payment provider is open, and it is not needed in M8.
+**Status:** in progress. Spec agreed 2026-10-24; slice A (accounts on the server) built, B–G planned. Only the payment provider is open, and it is not needed in M8.
 
 The PWA is built feature-complete before the native rewrite (brief, 2026-10-24), so every slice is built in full, UI included. The server side (tables, SQL functions, `/api/me`, the premium provider interface) is shaped so a native client uses it unchanged. No speed testing on the web build.
 
@@ -16,7 +16,7 @@ One branch and one PR to `main` per slice, as in M6. The data and API slices com
 
 | Slice | Spec     | What                                                                                                   | Needs | Status  |
 | ----- | -------- | ------------------------------------------------------------------------------------------------------ | ----- | ------- |
-| A     | §2       | Accounts on the server: sign-up, profiles, roles, manual code delivery, `/api/me`, export, delete      | —     | planned |
+| A     | §2       | Accounts on the server: sign-up, profiles, roles, manual code delivery, `/api/me`, export, delete      | —     | built   |
 | B     | §3, §4   | Plans and entitlements in config, the early-access promotion, grants, `PremiumProvider` with `none`    | A     | planned |
 | C     | §5 API   | Monthly quotas per account: events added and autofills                                                 | B     | planned |
 | D     | §1       | Reach circle off the vector map; the raster fallback keeps it                                          | —     | planned |
@@ -59,7 +59,7 @@ Browsing, filters, the atlas on the device and reporting stay anonymous (brief, 
   - **`"supabase"` (later).** Custom SMTP on the app's own domain (Resend recommended: 3,000 a month free), and the app calls `/otp` directly. Switching is the config value plus the SMTP settings in Supabase.
   - Google sign-in works in both modes and needs no email.
 - **Sessions** in `localStorage` with refresh-token rotation, so an installed app stays signed in; moderators too (owner, 2026-10-24).
-- **Roles.** `app_metadata.role`: `moderator` (the moderation queue, as today through `is_moderator`) and `admin` (the owner: moderation plus the code requests and manual grants). The moderator sign-in screen goes; the shield row in About shows only for those roles.
+- **Roles.** A `role` column on the existing `moderators` table (slice A plan, owner's OK 2026-10-24; first written here as `app_metadata.role`, which only Supabase's admin API can change): `moderator` (the moderation queue) and `admin` (the owner: moderation plus the code requests and manual grants). One SQL line adds a role (`docs/SETUP.md`). The moderator sign-in screen goes; the shield row in About shows only for those roles.
 - **The Worker checks the user.** One `requireUser(req)` helper: bearer token → `GET /auth/v1/user`, the result cached in memory for at most 5 minutes. Every account endpoint answers `cache-control: private, no-store`.
 - **Profile.** `profiles (user_id primary key references auth.users on delete cascade, display_name null, locale, terms_version, terms_accepted_at, created_at)`, created by a trigger on `auth.users`. The display name is optional and unused in M8 (M11 shows it to invitees).
 - **`GET /api/me`** returns `{ email, plan, planEndsAt, entitlements, usage: { events, autofill }, role }`, each usage as `{ used, limit, resetsAt }`. The client caches it for the session and refetches after sign-in, an added event or a plan change.
@@ -70,6 +70,14 @@ Browsing, filters, the atlas on the device and reporting stay anonymous (brief, 
   - `DELETE /api/me`: deletes the auth user, which cascades to every M8 table. Events the user added stay published but lose the link to the account.
 - **Row-level security** on every new table: a user reads and writes only their own rows. The Worker uses the service key, so each SQL function also takes `p_user` and filters by it; the RLS is the backstop for direct PostgREST access.
 - **Tests.** Database: the profile trigger, RLS on each table (another user sees nothing), cascade on delete. Worker: 401 without a token, `no-store` on every account endpoint, `/api/me` shape, export, delete, the code-request flow with a faked `generate_link`, admin-only access to requests. Web: the OTP and PKCE flows against a faked GoTrue.
+- **Built** (slice A, 2026-10-24): the server side of §2. The app looks and works as before; its screens come in slices E and F.
+  - **Migration** `20261024000009_accounts.sql`. On plain Postgres (local, CI) it creates a minimal `auth.users` and `auth.uid()`, as Supabase has them, so the trigger and policies are tested the same way. `profiles` with a trigger on new users and an own-row policy; `moderators.role` (`moderator` / `admin`) and `staff_role()`; `code_requests` with one open request per email, purged after `auth.codeRequestRetentionDays` or once the person signed in after their code was made. Service-role functions: `profile_get`, `profile_update`, `account_export`, `account_forget`, `request_code`, `code_requests_list`, `code_request_get`, `code_request_mark`, `code_request_delete`.
+  - **API** (`packages/api/src/accounts.ts`): `requireUser` (token checked with GoTrue, cached up to `auth.userCacheSec`), `GET`/`PUT`/`DELETE /api/me`, `GET /api/me/export` (a `happow-account-YYYY-MM-DD.json` attachment), `POST /api/auth/code-request` (rate-limited per client and per email; the same answer whether or not an account exists), and for the admin `GET /api/admin/code-requests`, `POST …/:id/generate` (creates the user if needed, then admin `generate_link`; returns the code, link, filled email and a `mailto:`) and `DELETE …/:id`. Moderation now goes through `requireUser` and the role.
+  - **Config:** `auth` (delivery mode, limits, retention, code validity, cache, the email text in Polish and English) and `legal.termsVersion` (`2026-10-24-interim` until slice E's consent text).
+  - **Tests:** `packages/api/test/accounts.test.ts` (13, faked Supabase); `scripts/m8.db.test.ts` (7, runs only on a local or CI database because it writes to `auth.users`).
+  - **Setup** (`docs/SETUP.md`): sign-ups stay off until slice E; Email OTP Expiration 86400 s; the admin role in SQL.
+  - Skipped: nothing planned for slice A. The web client still keeps sessions in `sessionStorage`; moving to `localStorage` is slice E.
+  - Open: the generate flow is checked against a faked GoTrue only. Supabase's live response to `generate_link` is the first thing to try once deployed: open a code request and generate it as the admin.
 
 ## 3. Plans and entitlements
 
