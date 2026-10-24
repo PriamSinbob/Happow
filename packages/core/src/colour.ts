@@ -99,6 +99,8 @@ export function checkTokens(name: ThemeName, t: ThemeTokens, config: ThemeConfig
     ['quiet', 'sunken', t.sunken, ink],
     ['quiet', 'paper', t.paper, ink],
     ['warnInk', 'warn', t.warn, ink],
+    // A used-up meter on the add form (M8 slice G).
+    ['warnInk', 'paper', t.paper, ink],
     ['errorInk', 'error', t.error, ink],
   ];
   const veil = config.rules.veilOpacity;

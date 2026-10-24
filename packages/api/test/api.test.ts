@@ -58,12 +58,23 @@ function backend(b: Backend) {
 const geocoder: Geocoder = {
   geocode: async () => ({ point: { lat: 51.1079, lng: 17.0385 }, precision: 'venue', label: 'x' }),
 };
-// URL autofill is off until the add form signs people in (M8 slice G); these tests switch it on.
+// Since M8 slice G the live config requires an account and turns autofill on with it. Most tests
+// here cover the anonymous mode, which config still offers: accounts optional, autofill off.
 const base = loadConfig();
-const config = base;
-const autofillOn = {
+const config = {
   ...base,
-  app: { ...base.app, submissions: { ...base.app.submissions, autofill: 'account' as const } },
+  app: {
+    ...base.app,
+    submissions: {
+      ...base.app.submissions,
+      account: 'optional' as const,
+      autofill: false as const,
+    },
+  },
+};
+const autofillOn = {
+  ...config,
+  app: { ...config.app, submissions: { ...config.app.submissions, autofill: 'account' as const } },
 };
 const withAutofill = (...[env, deps]: Parameters<typeof createApi>) =>
   createApi(env, { config: autofillOn, ...deps });
@@ -316,7 +327,7 @@ describe('POST /api/submissions', () => {
 
   it('normalizes, hashes the device and publishes as unverified', async () => {
     const web = backend({ rpc: { ...allow, submit_event: () => ({ body: 'uuid' }) } });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
     const res = await api(post('submissions', valid));
     expect(res.status).toBe(201);
     const out = await res.json();
@@ -349,7 +360,7 @@ describe('POST /api/submissions', () => {
 
   it('passes the age choice, family toggle and entry type to the event', async () => {
     const web = backend({ rpc: { ...allow, submit_event: () => ({ body: 'uuid' }) } });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
     const event = { ...valid.event, ageMin: 0, family: true, entry: 'fixed' };
     const res = await api(post('submissions', { ...valid, event }));
     expect(res.status).toBe(201);
@@ -369,7 +380,7 @@ describe('POST /api/submissions', () => {
     ['with an unknown entry type', { entry: 'maybe' }, 'invalid_input'],
   ])('rejects an event %s', async (_name, change, error) => {
     const web = backend({ rpc: { ...allow, submit_event: () => ({ body: 'uuid' }) } });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
     const res = await api(post('submissions', { ...valid, event: { ...valid.event, ...change } }));
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe(error);
@@ -378,7 +389,7 @@ describe('POST /api/submissions', () => {
 
   it('counts an account submission against its quota, with an hourly guard instead of daily caps', async () => {
     const web = backend({ rpc: { ...allow, submit_event: () => ({ body: 'uuid' }) } });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
     expect((await api(post('submissions', valid, auth))).status).toBe(201);
     const call = web.calls.find((c) => c.name === 'submit_event')!;
     expect(call.args).toMatchObject({
@@ -399,7 +410,7 @@ describe('POST /api/submissions', () => {
 
   it('counts nothing without an account, and keeps the device and IP caps', async () => {
     const web = backend({ rpc: { ...allow, submit_event: () => ({ body: 'uuid' }) } });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
     expect((await api(post('submissions', valid))).status).toBe(201);
     const call = web.calls.find((c) => c.name === 'submit_event')!;
     expect(call.args).toMatchObject({ p_user: null, p_month: null, p_max: 0 });
@@ -419,7 +430,7 @@ describe('POST /api/submissions', () => {
         }),
       },
     });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
     const res = await api(post('submissions', valid, auth));
     expect(res.status).toBe(429);
     expect(await res.json()).toMatchObject({
@@ -430,21 +441,19 @@ describe('POST /api/submissions', () => {
     });
   });
 
-  it('refuses a bad token, and anonymous events once accounts are required', async () => {
+  it('refuses a bad token, and anonymous events with the live config (accounts required)', async () => {
     const web = backend({ rpc: { ...allow, submit_event: () => ({ body: 'uuid' }) } });
-    const forged = await createApi(env, { fetch: web.fetch, now, geocoder, extractor: null })(
-      post('submissions', valid, { authorization: 'Bearer forged' }),
-    );
+    const forged = await createApi(env, {
+      config,
+      fetch: web.fetch,
+      now,
+      geocoder,
+      extractor: null,
+    })(post('submissions', valid, { authorization: 'Bearer forged' }));
     expect(forged.status).toBe(401);
-    const required = {
-      ...config,
-      app: {
-        ...config.app,
-        submissions: { ...config.app.submissions, account: 'required' as const },
-      },
-    };
+    expect(base.app.submissions.account).toBe('required');
     const api = createApi(env, {
-      config: required,
+      config: base,
       fetch: web.fetch,
       now,
       geocoder,
@@ -460,7 +469,7 @@ describe('POST /api/submissions', () => {
 describe('POST /api/reports', () => {
   it('accepts the status reasons that flag an event for everyone', async () => {
     const web = backend({ rpc: { ...allow, report_event: () => ({ body: true }) } });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
     for (const reason of ['venue_closed', 'weather', 'moved']) {
       const res = await api(
         post('reports', { deviceId: 'device-0123456789', eventId: 'seed:1', reason }),
@@ -484,7 +493,7 @@ describe('POST /api/reports', () => {
             : { body: true },
       },
     });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
     const ok = await api(
       post('reports', {
         deviceId: 'device-0123456789',
@@ -525,7 +534,7 @@ describe('/api/moderation', () => {
 
   it('requires a signed-in moderator', async () => {
     const web = backend({ rpc, users });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
     expect((await api(get())).status).toBe(401);
     expect((await api(get('forged'))).status).toBe(401);
     expect((await api(get('user-token'))).status).toBe(403);
@@ -536,7 +545,7 @@ describe('/api/moderation', () => {
 
   it('approves submissions and resolves reports as the moderator', async () => {
     const web = backend({ rpc, users });
-    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
     const auth = { authorization: 'Bearer good-token' };
     const approve = await api(post('moderation/submissions/s1', { action: 'approve' }, auth));
     expect(await approve.json()).toMatchObject({ action: 'approve' });
@@ -563,7 +572,7 @@ describe('/api/moderation', () => {
 
 it('answers 404 for autofill while the add-on is off', async () => {
   const web = backend({ rpc: allow });
-  const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+  const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
   expect((await api(post('autofill', { url: 'https://x.example' }))).status).toBe(404);
   expect(web.calls).toEqual([]);
 });
@@ -587,7 +596,7 @@ describe('GET /api/area', () => {
 
   it('serves one public snapshot per grid square, radius and 5-minute step', async () => {
     const web = backend({ rpc: { events_area: () => ({ body: rows }) } });
-    const api = createApi(env, { fetch: web.fetch, now: at });
+    const api = createApi(env, { config, fetch: web.fetch, now: at });
     const res = await api(get('lat=51.1&lng=17.05&r=5000'));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
@@ -617,7 +626,7 @@ describe('GET /api/area', () => {
 
   it('refuses keys off the grid, unknown radii and places outside every region', async () => {
     const web = backend({ rpc: { events_area: () => ({ body: [] }) } });
-    const api = createApi(env, { fetch: web.fetch, now: at });
+    const api = createApi(env, { config, fetch: web.fetch, now: at });
     for (const q of [
       'lat=51.11&lng=17.05&r=5000', // off the grid
       'lat=51.1&lng=17.05&r=7000', // not a snapshot radius
@@ -631,7 +640,7 @@ describe('GET /api/area', () => {
 
   it('serves the Week and Later ranges to local midnight across the DST change, for 30 minutes', async () => {
     const web = backend({ rpc: { events_area: () => ({ body: rows }) } });
-    const api = createApi(env, { fetch: web.fetch, now: at });
+    const api = createApi(env, { config, fetch: web.fetch, now: at });
     // 22:03 on Tue 20 Oct in Wrocław (CEST); summer time ends on Sun 25 Oct.
     const week = await api(get('lat=51.1&lng=17.05&r=5000&range=week'));
     expect(week.status).toBe(200);
@@ -651,7 +660,7 @@ describe('GET /api/area', () => {
 
   it('refuses ranges that are not multi-day time windows', async () => {
     const web = backend({ rpc: { events_area: () => ({ body: [] }) } });
-    const api = createApi(env, { fetch: web.fetch, now: at });
+    const api = createApi(env, { config, fetch: web.fetch, now: at });
     for (const range of ['today', '2h', 'month', ''])
       expect((await api(get(`lat=51.1&lng=17.05&r=5000&range=${range}`))).status).toBe(400);
     expect(web.calls).toEqual([]);

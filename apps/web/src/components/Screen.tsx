@@ -20,7 +20,8 @@ export function Screen({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
-    dialog.current?.focus();
+    // A sheet opened inside the screen (sign-in on the add form) keeps the focus it took.
+    if (!dialog.current?.contains(document.activeElement)) dialog.current?.focus();
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 

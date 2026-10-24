@@ -133,7 +133,9 @@ Map, events, filters, details and navigation are free for everyone, always. Paid
 
 | Feature                                                             | No account | Free account | Premium |
 | ------------------------------------------------------------------- | ---------- | ------------ | ------- |
-| All events, map, list, filters, details, navigation, add and report | ✓          | ✓            | ✓       |
+| All events, map, list, filters, details, navigation and report      | ✓          | ✓            | ✓       |
+| Events added a month                                                |            | 15           | 300     |
+| …of them with autofill from a link                                  |            | 5            | all     |
 | Live counter, time line, dice, plan from anywhere                   | ✓          | ✓            | ✓       |
 | Personal lit map on the device                                      | ✓          | ✓            | ✓       |
 | Family mode and age markings                                        | ✓          | ✓            | ✓       |

@@ -148,8 +148,8 @@
   "submissions": {
     "publishBeforeModeration": true,
     "flagThreshold": 1,
-    "autofill": false,
-    "account": "optional",
+    "autofill": "account",
+    "account": "required",
     "maxPerDevicePerDay": 10,
     "perHourPerAccount": 30,
     "autofillPerHour": 30,

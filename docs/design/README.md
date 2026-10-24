@@ -12,7 +12,7 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
 | `map-shortcut.html`     | The chip beside the live counter: a shortcut to one filter (family mode or a category). Tap toggles, hold picks. Fixed-width counter. Approved by the owner on 2026-10-23.                                                             |
 | `account.html`          | M8 slice E: the account card in About, sign-in (Google and email code, with manual delivery), the terms after sign-in, presets by plan, the premium sheet and delete. Approved by the owner on 2026-10-24 with mark A (sparkles).      |
 | `admin.html`            | M8 slice F: the admin panel. Staff tabs (Queue · Codes · Grants; a moderator sees only the queue), sign-in code requests, the ready-email sheet with Tabler's copy icon, grants and Give premium. Approved by the owner on 2026-10-24. |
-| `add.html`              | M8 slice G: the add form with accounts. The "adding needs an account" sheet with sign-in, the usage meters, autofill and events used up, a quota running out on submit, and "More with premium". Draft for the owner's OK, 2026-10-24. |
+| `add.html`              | M8 slice G: the add form with accounts. The "adding needs an account" sheet with sign-in, the usage meters, autofill and events used up, a quota running out on submit, and "More with premium". Approved by the owner on 2026-10-24.  |
 | `atlas.html`            | The lit map's veil (seeded soft holes, opens faint, arrivals strong, zoom fade) and the atlas controls: export, import, hold-to-clear. Approved by the owner on 2026-10-23.                                                            |
 
 ## Normative: match exactly

@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { entryOf, type EntryType, type Language, type LatLng } from '@happow/core';
+import { useAccount, type Me } from '../account';
 import { track } from '../analytics';
-import { api, deviceId } from '../api';
+import { api, ApiError, deviceId } from '../api';
+import { accessToken } from '../auth';
 import { config, region } from '../config';
 import { errorText } from '../errors';
 import { formatDay, formatTime } from '../format';
 import { useI18n } from '../i18n';
 import { Glyph, Icon } from './Icons';
 import { PinMap } from './PinMap';
+import { PremiumMark, PremiumSheet } from './Premium';
 import { Screen } from './Screen';
+import { SignInSheet } from './SignIn';
 
 /** What /api/autofill returns per event found on the page (mirrors packages/api `Prefill`). */
 interface Prefill {
@@ -103,7 +107,78 @@ function localLabel(value: string, lang: Language): string {
   return `${formatDay(iso, 'UTC', lang)} · ${formatTime(iso, 'UTC', lang)}`;
 }
 
-/** "Add an event": paste a link to prefill, check the fields, place the pin, submit. */
+/** The day a monthly quota comes back: "1 listopada" / "1 November". */
+function resetDay(resetsAt: string, lang: Language): string {
+  return new Intl.DateTimeFormat(lang === 'pl' ? 'pl-PL' : 'en-GB', {
+    day: 'numeric',
+    month: 'long',
+    timeZone: region.timezone,
+  })
+    .format(new Date(resetsAt))
+    .replace(/ /g, '\u00a0'); // "1 listopada" never splits across lines
+}
+
+/** One meter of the usage strip; it turns warm with the reset date once used up. */
+function Meter({
+  label,
+  used,
+  limit,
+  premium,
+  resets,
+}: {
+  label: string;
+  used: number;
+  limit: number;
+  premium: boolean;
+  resets: string;
+}) {
+  const out = used >= limit;
+  // A sliver once anything is used, so 1 / 300 doesn't read as nothing.
+  const pct = limit ? Math.min(100, Math.max(used ? 3 : 0, (used / limit) * 100)) : 100;
+  return (
+    <div className={`meter${out ? ' meter--out' : ''}`}>
+      <div className="meter__top">
+        <span className="meter__label">
+          {label}
+          {premium && <PremiumMark size={11} />}
+        </span>
+        <span className="meter__num">
+          {used} / {limit}
+        </span>
+      </div>
+      <div
+        className="meter__track"
+        role="meter"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={limit}
+        aria-valuenow={Math.min(used, limit)}
+        aria-valuetext={out ? `${used} / ${limit}, ${resets}` : `${used} / ${limit}`}
+      >
+        <div className="meter__fill" style={{ width: `${pct}%` }} />
+      </div>
+      {out && <div className="meter__reset">{resets}</div>}
+    </div>
+  );
+}
+
+/** This month's events and autofills (M8 §5, `docs/design/add.html`). */
+function Usage({ me }: { me: Me }) {
+  const { t, lang } = useI18n();
+  const resets = t('usage.resets', { date: resetDay(me.usage.resetsAt, lang) });
+  const premium = me.plan === 'premium';
+  return (
+    <div className="usage">
+      <Meter label={t('usage.events')} {...me.usage.events} premium={premium} resets={resets} />
+      <Meter label={t('usage.autofill')} {...me.usage.autofill} premium={premium} resets={resets} />
+    </div>
+  );
+}
+
+/**
+ * "Add an event": paste a link to prefill, check the fields, place the pin, submit. Signed out it
+ * offers sign-in first (adding needs an account, M8 §2); signed in it shows this month's usage.
+ */
 export function AddEvent({
   onClose,
   onOpenEvent,
@@ -122,6 +197,35 @@ export function AddEvent({
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Done | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
+  // The events quota ran out on the server while this form was open (another device, a race).
+  const [ranOut, setRanOut] = useState(false);
+  const [premiumOpen, setPremiumOpen] = useState(false);
+  // The submit button turns off under the finger, so the message takes the focus.
+  const ranOutAlert = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (ranOut) ranOutAlert.current?.focus();
+  }, [ranOut]);
+
+  const account = useAccount();
+  const { me } = account;
+  const gated = account.status === 'signedOut' && submissions.account === 'required';
+  const autofillOn = submissions.autofill === 'account' && account.status !== 'signedOut';
+  const autofillOut = me ? me.usage.autofill.used >= me.usage.autofill.limit : false;
+  // Once a submit is refused for the quota, a fill would spend an autofill on nothing (owner).
+  const linkOff = autofillOut || ranOut;
+  const eventsOut = me ? me.usage.events.used >= me.usage.events.limit : false;
+  const resets = me ? resetDay(me.usage.resetsAt, lang) : '';
+  // The one premium link, for a free account that has run out of something (pull, not push).
+  const more = me && me.plan !== 'premium' && (
+    <button
+      type="button"
+      className="inline-link inline-link--mark"
+      onClick={() => setPremiumOpen(true)}
+    >
+      <PremiumMark size={13} />
+      {t('add.more')}
+    </button>
+  );
 
   const set = <K extends keyof Form>(key: K, value: Form[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -144,13 +248,20 @@ export function AddEvent({
     setAutofill({ state: 'loading' });
     try {
       const res = await api<{ events: Prefill[] }>('autofill', {
+        token: await accessToken(),
         body: { url: link.trim(), regionId: region.id },
       });
       setAutofill({ state: 'found', events: res.events });
       if (res.events.length === 1) apply(res.events[0]!, 0);
       if (!res.events.length) set('url', link.trim());
+      // Only a fill that found something counts (M8 §5).
+      else void account.refresh();
     } catch (err) {
-      setAutofill({ state: 'error', message: errorText(t, err, lang) });
+      if (err instanceof ApiError && (err.code === 'quota_exceeded' || err.status === 401)) {
+        // Used up meanwhile, or the session ended: /api/me tells the form which.
+        setAutofill({ state: 'idle' });
+        void account.refresh();
+      } else setAutofill({ state: 'error', message: errorText(t, err, lang) });
     }
   }
 
@@ -215,6 +326,7 @@ export function AddEvent({
     const entry = form.entry && form.entry !== defaultEntry ? form.entry : null;
     try {
       const res = await api<Done>('submissions', {
+        token: await accessToken(),
         body: {
           deviceId: deviceId(),
           regionId: region.id,
@@ -239,11 +351,53 @@ export function AddEvent({
       });
       setDone(res);
       track('Event added');
+      void account.refresh();
     } catch (err) {
-      setError(errorText(t, err, lang));
+      if (err instanceof ApiError && err.code === 'quota_exceeded') {
+        // What was typed stays on screen; the meters catch up.
+        setRanOut(true);
+        void account.refresh();
+      } else {
+        if (err instanceof ApiError && err.status === 401) void account.refresh();
+        setError(errorText(t, err, lang));
+      }
     } finally {
       setSending(false);
     }
+  }
+
+  if (gated) {
+    // Over an empty screen: "Not now" closes both; signing in shows the form underneath.
+    return (
+      <Screen title={t('add.title')} onClose={onClose}>
+        <SignInSheet forAdd onClose={onClose} onSignedIn={() => {}} />
+      </Screen>
+    );
+  }
+
+  const premiumSheet = premiumOpen && <PremiumSheet onClose={() => setPremiumOpen(false)} />;
+
+  if (eventsOut && !done && !ranOut) {
+    return (
+      <Screen title={t('add.title')} onClose={onClose}>
+        <Usage me={me!} />
+        <div className="notice notice--quota" role="status">
+          <p>
+            {t(me!.plan === 'premium' ? 'add.eventsOutPremium' : 'add.eventsOut', {
+              // The real count: it can pass the limit when premium ends mid-month (owner).
+              count: me!.usage.events.used,
+              limit: me!.usage.events.limit,
+              date: resets,
+            })}
+          </p>
+          {more}
+        </div>
+        <button type="button" className="btn btn--block" onClick={onClose}>
+          {t('add.close')}
+        </button>
+        {premiumSheet}
+      </Screen>
+    );
   }
 
   if (done) {
@@ -282,6 +436,7 @@ export function AddEvent({
             </button>
           </div>
         </div>
+        {me && <Usage me={me} />}
       </Screen>
     );
   }
@@ -290,7 +445,8 @@ export function AddEvent({
 
   return (
     <Screen title={t('add.title')} onClose={onClose}>
-      {submissions.autofill && (
+      {me && <Usage me={me} />}
+      {autofillOn && (
         <>
           <form className="autofill" onSubmit={fill}>
             <label className="field">
@@ -301,19 +457,26 @@ export function AddEvent({
                   inputMode="url"
                   placeholder="https://"
                   value={link}
+                  disabled={linkOff}
                   onChange={(e) => setLink(e.target.value)}
                 />
                 <button
                   type="submit"
                   className="btn btn--primary btn--inline"
-                  disabled={!link.trim() || autofill.state === 'loading'}
+                  disabled={!link.trim() || autofill.state === 'loading' || linkOff}
                 >
                   <Icon name="link" size={16} />
                   {autofill.state === 'loading' ? t('add.filling') : t('add.fill')}
                 </button>
               </span>
-              <span className="field__hint">{t('add.linkHint')}</span>
+              {!autofillOut && <span className="field__hint">{t('add.linkHint')}</span>}
             </label>
+            {autofillOut && (
+              <div className="notice notice--quota" role="status">
+                <p>{t('add.autofillOut', { date: resets })}</p>
+                {more}
+              </div>
+            )}
             {autofill.state === 'error' && (
               <p className="form-error" role="alert">
                 {autofill.message}
@@ -593,17 +756,18 @@ export function AddEvent({
             ))}
           </ul>
         )}
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
+        {(error || ranOut) && (
+          <p className="form-error" role="alert" ref={ranOutAlert} tabIndex={-1}>
+            {ranOut ? t('add.ranOut', { date: resets }) : error}
           </p>
         )}
         <div className="add-form__foot">
-          <button type="submit" className="btn btn--primary" disabled={sending}>
+          <button type="submit" className="btn btn--primary" disabled={sending || ranOut}>
             {sending ? t('add.sending') : t('add.submit')}
           </button>
         </div>
       </form>
+      {premiumSheet}
     </Screen>
   );
 }
