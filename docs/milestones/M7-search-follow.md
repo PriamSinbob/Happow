@@ -4,7 +4,89 @@ Oct 22, 2026
 
 Spec agreed with the owner on 2026-10-22, to be built after M6 (it uses M6's list overlay, icon set and pin badges). Build it in the usual way: plan, show the plan, build, then replace the "Status" line with the report.
 
-**Status:** spec, not built.
+**Status:** spec, not built. Build plan proposed on 2026-10-24, waiting for the owner's OK.
+
+## Build plan
+
+Proposed on 2026-10-24. As in M6, M7 ships as slices, one branch and one PR to `main` each. The data and API slices come first, so the live app keeps working between PRs. Each slice PR updates its row below and the Status line, and adds a short "Built (slice X)" note under its spec section (built, skipped, open).
+
+The owner plans a native rewrite (Play Store, widgets). So the server side (tables, RPCs, `/api/search`, `/api/follows/match`) is the lasting part, and it is shaped so a native client can use it unchanged. The web UI stays the reference for the native app.
+
+| Slice | Spec           | What                                                                    | Needs | Status   |
+| ----- | -------------- | ----------------------------------------------------------------------- | ----- | -------- |
+| A     | §1, §3         | Performers in the data from every source; 60-day ingest for API sources | —     | proposed |
+| B     | §2 API, §9     | `f_unaccent`, trigram indexes, `search_events` RPC, `GET /api/search`   | A     | proposed |
+| C     | §2 UI, §4 chip | Mockup first; search in the list overlay, performer chips on the card   | B     | proposed |
+| D     | §4             | Follows on the device, `POST /api/follows/match`, ★ on pins and cards   | B, C  | proposed |
+| E     | §4 nationwide  | Ticketmaster nationwide lookups, `follow_lookups` cache, city in list   | D     | proposed |
+| F     | §7             | Meetup public pages through the crawler (config + fixtures)             | —     | proposed |
+| —     | §5, §6         | Alerts and synced follows (needs accounts, M6 §8); Last.fm import       | —     | deferred |
+
+### Slice A: performers and horizon
+
+- **Migration 9** `event_performers (event_id, name, norm, source_id, external_id)`, primary key `(event_id, norm)`, cascade on event delete. `publish_event` writes the performers it gets. A merge takes the union, keyed by `norm`; when the same name has an `external_id`, that one wins.
+- **`normName`** in core: lowercase, unaccent (NFD, strip marks, plus `ł` → `l`, which NFD leaves alone), collapse whitespace. Unit-tested on Polish names. The SQL `f_unaccent` in slice B must give the same result, and a DB test checks that.
+- **Sources:**
+  - Ticketmaster: `_embedded.attractions[]` with the id as `external_id`. Recorded fixture with attractions.
+  - schema.org: `performer` (Person, PerformingGroup, MusicGroup, a plain string, or an array) in `schemaorg.ts`. Fixtures for each shape.
+  - Claude extractor: `performers: string[]` in the output schema and prompt. The recorded LLM fixtures are updated.
+  - Add-event form: an optional "Kto występuje / Who's performing" field (comma or new line). It goes through moderation like the rest of the submission.
+- **`HappowEvent.performers`** (`{ name, externalId? }[]`) in core types and schemas. The area snapshot carries names only (for the card chips in slice C), capped at 5 per event, so the payload stays small.
+- **Horizon (§3).** `ingest.lookaheadHours` 360 → 1440 (60 days). It applies to every source, and the crawlers already use 60. The config check that windows stay within the lookahead still holds. The area snapshot is unchanged. Check Ticketmaster's page count against the 1,000-result cap on the first run, and the database size in Supabase after a week.
+- **Tests.** Contract tests for the Ticketmaster and schema.org changes, a dedup test for the performer union, and a DB test for migration 9.
+
+### Slice B: search API
+
+- **Migration 10:** `create extension pg_trgm, unaccent`; immutable `f_unaccent(text)`; a stored generated column `events.search_text` (title + venue name, normalised); GIN `gin_trgm_ops` indexes on it and on `event_performers.norm`.
+- **RPC `search_events(q, lat, lng, from, to, limit)`.** Upcoming events in the region up to the horizon, with no radius and no time window. Ranking: an exact performer `norm`, then performer similarity, then title/venue similarity (threshold in config, `search.minSimilarity`, about 0.3). Ties break by start time. It returns the distance and the matched performer.
+- **Worker `GET /api/search?q=&lat=&lng=`.** `q` is 2–80 characters after trimming. A per-client rate limit (`search.perHourPerClient` in config) uses the existing `limit()`. Short cache headers (60 s). Nothing about the query is logged; Plausible gets a `search` event without the text.
+- **Tests.** API tests with a stubbed Supabase; a DB test on seed data for the §10 cases ("podsiadlo", "Podsiadło", "podsiadło dawid", one-letter typo). Timing check: p95 < 300 ms with 10,000 synthetic events, run locally rather than in CI.
+
+### Slice C: search UI and performer chips
+
+- **Mockup first:** `docs/design/search-follow.html`, in the prototype's style. It shows the search field at the top of the list overlay, the magnifier on the map screen (where it sits next to the list button), results grouped by day with distance and city, empty and error states, performer chips with ♡ on the card, and the ★ badge on a pin and a card. The owner approves it before any build. It is added to the design README as normative.
+- **Build.** The magnifier opens the list with the field focused. Typing is debounced (300 ms, at least 2 characters) and in-flight requests are cancelled. A result tap opens the card and flies the map there; a result outside the snapshot opens the card only. PL and EN strings.
+- design-review subagent before the PR.
+
+### Slice D: follow
+
+- **On the device.** A store of `{ name, norm, tmAttractionId? }` (localStorage, max 200, never throws), plus a `useFollows` hook.
+- **Ways to follow.** ♡ on a card's performer chip, ♡ on a search result's matched performer, and a "Followed" screen reached from the list. It has a typed name, bulk paste (one per line, de-duplicated by `norm`) and remove.
+- **`POST /api/follows/match`** `{ follows: [...] }` → upcoming matches by `norm` or attraction id, up to the horizon. The body is validated (≤ 200), the request is rate-limited and nothing is stored or logged. The app calls it on open and at most hourly after that, keeping the last answer for that hour.
+- **Display.** ★ on pins (a sprite badge, like the age badge) and cards for matched events. A "Followed" group tops the list when a match is upcoming.
+- **Tests.** Core matching, the API (no write to any table), the store, and the web flows. design-review before the PR.
+
+### Slice E: nationwide Ticketmaster
+
+- **Migration 11** `follow_lookups (attraction_id, fetched_at, events jsonb)`, with no user link.
+- In `follows/match`, for attraction ids whose lookup is older than 24 h: one Discovery call (`attractionId`, `countryCode=PL`). Cached matches outside the region are returned with their city. A daily cap goes in config (`follows.tmLookupsPerDay`), well inside the 5,000/day key.
+- They show in the Followed group with the city, not on the map, and link to Ticketmaster.
+- A contract test on a recorded nationwide response.
+
+### Slice F: Meetup public pages
+
+- A `meetup-pages` crawler source in `config/sources.json`: `startUrls` are each listed group's `/events/` page, following event pages only, with JSON-LD read and the LLM fallback. robots.txt is respected (search and feed URLs stay blocked). It is marked private testing only (ToS §5.4) and switched off before monetising.
+- Check on the first run that JSON-LD is present, then record a fixture for the contract test.
+- Independent of A–E, so it can go at any point.
+
+### Deferred
+
+- **§5 alerts and synced follows.** They need accounts and premium (M6 §8, not built). The native rewrite changes the channel too: push through the Play Store app (FCM) instead of web push. Planned with the accounts work.
+- **§6 Last.fm import.** Not built in the PoC. Follows come from cards, search and bulk paste (the spec's default path). Revisit with the commercial question before launch.
+
+### Questions for the owner
+
+1. Build the web UI slices (C, D) now, or only the server parts and leave the UI to the native app? Recommended: build them. They are small, they prove the flow on a phone, and they become the reference for native.
+2. Defer alerts and synced follows until accounts and the native app? Recommended: yes.
+3. Skip the Last.fm import in the PoC? Recommended: yes.
+4. Meetup public pages (slice F) for private testing now, or wait for the Meetup API decision? Recommended: now, kept off in production config until the decision.
+5. Should the native rewrite go into the brief's Decisions table and milestones list (stack, when it starts, what moves over)?
+
+### Working notes
+
+- Read `CLAUDE.md`, `docs/BRIEF.md` and this spec first. Post the slice plan and wait for the owner's OK before building.
+- Before a PR: `pnpm typecheck`, `pnpm test` and `npx prettier --check` on changed files. No live API calls in tests.
+- On the owner's Windows checkout, many files show as modified with line-ending-only changes. Commit only files with real changes (`git diff --ignore-cr-at-eol`).
 
 ## Why
 

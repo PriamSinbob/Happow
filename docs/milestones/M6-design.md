@@ -4,7 +4,24 @@ Oct 22, 2026
 
 Spec agreed with the owner in the design session of 2026-10-22 (interactive prototypes v1–v3 in that session). Build it in the usual way: plan, show the plan, build, then replace the "Status" line below with the report (built, skipped, open issues) like M1–M4.
 
-**Status:** in progress: §14 built (slice A), §13 data built (slice B), §4.2 and §4.4 data built (slice C), §3 built (slice D), §4.1 and §4.3 built (slice E), §5 and §13.2–§13.5 built (slice F), §4.4 UI, §7 and §15 built (slice G), §6 built (slice H, in review). §8 and §9 stay out of M6. List style B (§5) approved by the owner on a phone (2026-10-23). Also includes the Week and Later windows (§13) and the default-venue fix for single-venue sources (§14), both added 2026-10-22.
+**Status:** done (2026-10-24). All eight slices merged (#9, #10, #12, #13, #14, #17, #18, #19); report below.
+
+### Report
+
+- **Built.** §3 colour and themes (D), §4 pins on one symbol layer with the glyph set, age badge and family marking (C, E, G), §5 map-screen layout with counter, rail, scrubber, list overlay and edge dots (F), §6 lit map and the local atlas (H), §7 dice (G), §13 Week and Later windows (B, F), §14 default venue for single-venue sources (A), §15 wordless settings sheet (G). Each section's "Built" note has the details.
+- **Skipped.** §8 accounts and premium and §9 co-presence (out of M6 by plan). The "new since last open" bloom (§10). The veil on the raster fallback map. Collision thinning of pins (zoom clustering keeps them apart). The first-launch rail nudge (§1).
+- **Acceptance (§11), checked with the owner on 2026-10-24:**
+  - Time to first pin tap < 3 s from a cold open: met on a Pixel 6 Pro.
+  - The §3.2 contrast table: enforced by the contrast test for every shipped preset.
+  - NFM "no location": fixed in slice A, covered by its contract test.
+  - DST week: to be checked by the owner on 25 Oct 2026.
+  - 60 fps rail drag with 500 events: not testable, as Wrocław has far fewer events in a snapshot. It moves to the native app.
+  - 5-second test: not run yet. It needs someone who has never seen the app.
+- **Open.**
+  - The owner plans a native rewrite (Play Store, home-screen widgets), as that is how people prefer to use apps. Performance acceptance carries over to it.
+  - The atlas bar's looks, to be adjusted with the owner.
+  - Veil redraw time on a mid-range phone.
+  - Pins on the map are not focusable; screen-reader users go through the list.
 
 **Visual reference:** `docs/design/` (interactive prototype, exact range icons, README listing what is normative). Slices E to H match it; where this spec's words and the prototype differ, ask the owner.
 
@@ -21,7 +38,7 @@ Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR t
 | E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge                        | C, D  | merged (#14)                             |
 | F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay                      | B, E  | merged (#17)                             |
 | G     | §4.4 UI, §7, §15        | Family-mode filter and chip; dice; wordless settings sheet, no category tints | C, F  | merged (#18)                             |
-| H     | §6                      | Lit map and the local atlas                                                   | F     | in review (`m6-lit-map`)                 |
+| H     | §6                      | Lit map and the local atlas                                                   | F     | merged (#19)                             |
 | —     | §8, §9                  | Accounts and premium; co-presence                                             | —     | out of M6 (build later / after the core) |
 
 ### Slice C: entry and age data
@@ -501,7 +518,7 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
   - repeat visits brighten
   - nothing decays
 - **Storage.** Local only by default: IndexedDB records `{h3 res 9 cell, opens, arrivals, lastSeen}` (owner, 2026-10-23), roughly tens of KB per year of heavy use. Free JSON export and import.
-- **Built** (slice H, 2026-10-23): §6 as planned in "Slice H" above.
+- **Built** (slice H, 2026-10-23, merged in #19): §6 as planned in "Slice H" above.
   - **Veil** (`apps/web/src/atlas/veil.ts`, `MapView`): a 512 px canvas source covering 6 km around the area snapshot's grid point, under the basemap labels; an outer fill (the world minus the box) in the same colour, so panning never shows colour. The opacity is a zoom expression from the theme's `veilOpacity` (z12.8) to 0 (z10.5). Redrawn only when the lit cells, the reach (detent released, locate, long-press), the snapshot box or the theme change. Then the canvas source is played and paused once, which uploads the texture a single time. No map event handlers.
   - **Drawing.** The veil colour, with holes cut (`destination-out`) by one pre-drawn soft blob stamped per jittered blob (5 per cell, seeded by the cell id), and the reach as a soft disc with a seeded cloudy rim. Measured in a desktop browser: 20 ms for 2,000 lit cells (10,000 blobs), about 3 ms for 300; a phone is perhaps 3× slower, and it only runs on change.
   - **Atlas** (`apps/web/src/atlas/`): IndexedDB store `happow/atlas` that never throws; opens from precise fixes (≤ 100 m) once per cell per session (30 min hidden starts a new one), never from a long-press point; arrivals when Going there arrives. h3-js loads after the first paint (`@happow/core/h3`). Nothing is sent.
