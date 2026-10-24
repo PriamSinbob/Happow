@@ -234,14 +234,26 @@ export const appConfigSchema = z.object({
     schemaTypeMap: z.record(z.string()),
   }),
   submissions: z.object({
-    /** URL autofill on the add-event form (planned as a paid add-on; off in the PoC). */
-    autofill: z.boolean(),
+    /**
+     * URL autofill on the add-event form: off, or for signed-in accounts within their monthly
+     * quota (M8 §5, `autofill.perMonth`).
+     */
+    autofill: z.union([z.literal(false), z.literal('account')]),
+    /**
+     * Who may add events: "optional" = anyone, and submissions from an account count against its
+     * monthly quota; "required" = accounts only (M8 §5, switched on with the form's sign-in).
+     */
+    account: z.enum(['optional', 'required']),
     /** Show user submissions on the map (as unverified) before a moderator approves them. */
     publishBeforeModeration: z.boolean(),
     /** Devices that must report an event as off (cancelled, venue closed…) before everyone sees it. */
     flagThreshold: z.number().int().min(1),
+    /** Without an account: per device, and three times this per client IP. */
     maxPerDevicePerDay: z.number().int().positive(),
-    autofillPerHourPerClient: z.number().int().positive(),
+    /** With an account: a guard against loops on top of the monthly quota. */
+    perHourPerAccount: z.number().int().positive(),
+    /** Autofills per account per hour (loops); geocoding allows four times this per client IP. */
+    autofillPerHour: z.number().int().positive(),
     reportsPerDayPerDevice: z.number().int().positive(),
     maxDescriptionChars: z.number().int().positive(),
   }),

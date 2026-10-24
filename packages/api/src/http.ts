@@ -5,6 +5,8 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string,
     message?: string,
+    /** Extra fields for the error body. */
+    readonly details?: Record<string, unknown>,
   ) {
     super(message ?? code);
   }

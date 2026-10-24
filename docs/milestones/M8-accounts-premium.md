@@ -4,7 +4,7 @@ Oct 24, 2026
 
 Spec from the brief's M8 entry (owner, 2026-10-24), M6 §8 and the brief's "Automation add-on (paid): URL autofill", with the owner's answers of 2026-10-24 (§9). M8 comes next after M6; M7 is built after M12 and then uses these accounts (M7 slice G). Build it in the usual way: plan per slice, show the plan, build, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed 2026-10-24; slices A (accounts on the server) and B (plans, the promotion through 30 Nov 2026, grants, the premium provider interface) built, C–G planned. Only the payment provider is open, and it is not needed in M8.
+**Status:** in progress. Spec agreed 2026-10-24; slices A (accounts on the server) and B (plans, the promotion through 30 Nov 2026, grants, the premium provider interface) and C (monthly quotas for events and autofills) built, D–G planned. Only the payment provider is open, and it is not needed in M8.
 
 The PWA is built feature-complete before the native rewrite (brief, 2026-10-24), so every slice is built in full, UI included. The server side (tables, SQL functions, `/api/me`, the premium provider interface) is shaped so a native client uses it unchanged. No speed testing on the web build.
 
@@ -18,7 +18,7 @@ One branch and one PR to `main` per slice, as in M6. The data and API slices com
 | ----- | -------- | ------------------------------------------------------------------------------------------------------ | ----- | ------- |
 | A     | §2       | Accounts on the server: sign-up, profiles, roles, manual code delivery, `/api/me`, export, delete      | —     | built   |
 | B     | §3, §4   | Plans and entitlements in config, the early-access promotion, grants, `PremiumProvider` with `none`    | A     | built   |
-| C     | §5 API   | Monthly quotas per account: events added and autofills                                                 | B     | planned |
+| C     | §5 API   | Monthly quotas per account: events added and autofills                                                 | B     | built   |
 | D     | §1       | Reach circle off the vector map; the raster fallback keeps it                                          | —     | planned |
 | E     | §2–§4 UI | Mockup first. Sign-in sheet, account row in About, plan mark, premium sheet, presets and atlas by tier | A, B  | planned |
 | F     | §2 admin | Admin: sign-in code requests with a ready email to send by hand                                        | A, E  | planned |
@@ -152,11 +152,19 @@ Owner, 2026-10-24: adding events stays free. A free account adds up to 15 events
   - An event counts when it is submitted, whatever moderation decides; a duplicate the server merges counts too.
   - An autofill counts only when it returned at least one prefill. A page that yields nothing, a fetch error or an invalid URL is free. JSON-LD and LLM fills count alike: the user can't tell them apart.
 - **Checked where it is counted.** An SQL function increments and checks in one statement, so two parallel requests can't pass the limit.
-- **Endpoints.** `POST /api/submit` and `POST /api/autofill` take the bearer token; `submissions.autofill` becomes `false | "account"`. Without autofill left, the form still works by hand.
-- **Global guards stay.** `extraction.autofillLlmPerDay` remains a ceiling on LLM calls across all accounts; `autofillPerHourPerClient` becomes per account, against loops.
+- **Endpoints.** `POST /api/submissions` and `POST /api/autofill` take the bearer token; `submissions.autofill` becomes `false | "account"`. Without autofill left, the form still works by hand.
+- **Global guards stay.** `extraction.autofillLlmPerDay` remains a ceiling on LLM calls across all accounts; `submissions.autofillPerHour` (was `autofillPerHourPerClient`) is per account, against loops.
 - **Usage** is in `/api/me` and on the add form: "Wydarzenia 3 / 15 · Autouzupełnienie 1 / 5" as two small meters, with the reset date when one runs out (slice G mockup).
 - **Brief.** Slice C rewrites "Automation add-on (paid): URL autofill" to point here and updates `docs/ADVANTAGES.md`.
 - **Tests.** Limits at the edge, only successful fills count, parallel requests at the limit, month rollover in Europe/Warsaw, premium limits, 401 where an account is required; LLM extraction stays faked.
+- **Built** (slice C, 2026-10-24): §5 on the server. The app looks and works as before: adding events without an account still works, and autofill stays off until the add form signs people in (slice G).
+  - **Migration** `20261024000011_usage.sql`: `account_usage` (users read only their own rows), `usage_take` (checks and counts in one statement), `usage_get`, and `submissions.user_id` (cleared when the account is deleted; the event stays). `submit_event` takes the user, month and limit: it counts and stores in one transaction, refuses past the limit with `HQ001`, and counts nothing when the insert fails. `account_export` adds monthly usage and the account's submissions.
+  - **API:** `POST /api/submissions` counts against `events.perMonth` when it carries a token (a bad token is 401); signed-in users get `submissions.perHourPerAccount` (30) instead of the per-device and per-IP daily caps. `POST /api/autofill` needs an account, checks the quota before fetching the page, and counts only a fill with prefills. A used-up quota is 429 `quota_exceeded` with `kind`, `limit` and `resetsAt`. `GET /api/me` adds `usage` (month, reset time, used and limit for both). The month is worked out in the default region's time zone (`usageMonth` in core).
+  - **Config:** `submissions.account: "optional"` (slice G switches it to `"required"`), `submissions.autofill: false` (slice G: `"account"`), `perHourPerAccount`, and `autofillPerHour` replacing `autofillPerHourPerClient`.
+  - **Tests:** core +2 (`usageMonth` across the month, year and summer time); API +10 (both quotas at the limit, plan limits after the promotion, only fills with prefills count, no fetch once used up, a race on the last fill, anonymous and required-account submissions, a bad token, `usage` on `/api/me`); `scripts/m8.db.test.ts` +4 (the limit in SQL, a failed insert counts nothing, six parallel requests against a limit of three, RLS, export, unlink on delete).
+  - **Brief:** the "Automation add-on (paid): URL autofill" section is now "URL autofill: part of accounts" and points here, and the M8 entry links to it. `docs/ADVANTAGES.md` doesn't mention autofill, so it is unchanged.
+  - Skipped: nothing planned for slice C.
+  - Open: none.
 
 ## 6. The lit map and accounts
 

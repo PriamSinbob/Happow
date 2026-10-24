@@ -173,7 +173,7 @@ Build in increments, each deployable and demoable on a phone in Wrocław. Build 
 - **M4 Crawler and submissions.** JSON-LD crawler with a target list in config, LLM extraction fallback, URL-autofill submission form, moderation screen.
 - **M5 Social signals.** Threads keyword adapter (after app review), confidence scoring, "possibly cancelled" logic, analytics. Instagram was dropped from the PoC on 2026-10-21 (see Future features → More venue and event data).
 - **M6 Design system and map UX** (added 2026-10-22). Spec: [docs/milestones/M6-design.md](milestones/M6-design.md). Where it differs from Core features above (time chips, radius slider, map/list toggle, pin colours, chevrons), the spec wins. Advantages it delivers: [docs/ADVANTAGES.md](ADVANTAGES.md).
-- **M8 Accounts and premium** (added 2026-10-24; next after M6). User accounts (Supabase Auth), the tiers and presets of M6 §8, a premium entitlement behind a provider interface, end-to-end-encrypted atlas sync (M6 §8), and the URL autofill add-on with a per-account quota (Future features → Automation add-on). Also a design change from the owner (2026-10-24): the dashed reach circle goes; the lit veil (M6 §6) shows the reach clearly without it.
+- **M8 Accounts and premium** (added 2026-10-24; next after M6). User accounts (Supabase Auth), the tiers and presets of M6 §8, a premium entitlement behind a provider interface, end-to-end-encrypted atlas sync (M6 §8), and URL autofill with a monthly quota per account (Future features → URL autofill). Also a design change from the owner (2026-10-24): the dashed reach circle goes; the lit veil (M6 §6) shows the reach clearly without it.
 - **M9 Sharing and attendance** (added 2026-10-24). Clean `/e/<id>` links with previews, the generated preview image, share as image, QR code, links that outlive the event, "I'm going" and link-scoped counts (Future features → Event links, sharing and attendance), and co-presence (M6 §9).
 - **M10 Plan ahead** (added 2026-10-24). Saved and accepted events in one agenda, the evening queue with walking times and overlap warnings, and reminders before a start (Future features → Plan ahead).
 - **M11 Organisers and private events** (added 2026-10-24). Organiser accounts and event claims, organiser updates on the event page, organiser self-service publishing, and private events with contacts, groups and invitations (Future features → Organiser updates, Private events, More venue and event data).
@@ -212,13 +212,12 @@ Idea: weather at the spot now and at the event's end hour, plus a warning chip w
 
 Cost control: fetch weather per H3 cell (resolution 7, about 5 km²) and cache it for 30 min, not per event. A city-sized PoC then needs a few hundred calls per day, well inside every free tier. Run it as a scheduled job next to ingestion, since MET Norway requires an identifying User-Agent that browsers cannot send; keep the provider behind a `WeatherProvider` interface and show CC BY 4.0 attribution.
 
-### Automation add-on (paid): URL autofill
+### URL autofill: part of accounts (was the "Automation add-on")
 
-Decided 2026-10-21: in the PoC, people add events by hand. Pasting a link to fill the form (schema.org data, Claude Haiku for pages without it) becomes part of a low-priced subscription for organisers and power users, priced to cover the AI cost per account. The code is built (M4) and switched off with `submissions.autofill: false`. Turning it on as an add-on needs:
+Decided 2026-10-21, changed 2026-10-24: pasting a link to fill the add form (schema.org data, Claude Haiku for pages without it) is no longer a separate paid add-on. It comes with accounts, with a monthly quota per plan: 5 fills a month on a free account, 300 on premium (see `docs/milestones/M8-accounts-premium.md` §5). The code is built (M4); the quota and account check are built (M8 slice C), and it is switched on with `submissions.autofill: "account"` once the add form signs people in (M8 slice G).
 
-- **Accounts and entitlement:** a signed-in user with an active subscription (Supabase Auth plus a payments provider such as Stripe or Przelewy24), checked by `/api/autofill`.
-- **Per-account quota** instead of the global daily cap (`extraction.autofillLlmPerDay`), for example 100 links a month, with usage shown to the user.
-- **Cost model:** about $0.0005–0.001 per page at Haiku 5.5 rates, so even 500 autofills a month cost under $0.50 per account.
+- **Cost model:** about $0.0005–0.001 per page at Haiku 5.5 rates, so even 300 fills a month cost under $0.30 per premium account. A global daily cap on LLM calls (`extraction.autofillLlmPerDay`) bounds the bill whatever happens.
+- **Only useful fills count:** a page with nothing to fill, or one that fails to load, is free.
 - **Possible extras:** recurring imports from an organiser's own events page, and bulk add from a calendar feed (iCal).
 
 ### Plan ahead: a "Later" window

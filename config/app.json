@@ -149,8 +149,10 @@
     "publishBeforeModeration": true,
     "flagThreshold": 1,
     "autofill": false,
+    "account": "optional",
     "maxPerDevicePerDay": 10,
-    "autofillPerHourPerClient": 30,
+    "perHourPerAccount": 30,
+    "autofillPerHour": 30,
     "reportsPerDayPerDevice": 20,
     "maxDescriptionChars": 600
   },

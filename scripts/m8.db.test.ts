@@ -1,15 +1,17 @@
 /**
  * Integration test for M8 against DATABASE_URL after `pnpm db:reset`. Slice A: the profile
  * trigger, row-level security, cascade on delete, staff roles and sign-in code requests. Slice B:
- * plan grants.
+ * plan grants. Slice C: monthly usage and quotas.
  * It writes to auth.users, so it runs only on a local or CI database, never on Supabase.
  */
 import 'dotenv/config';
 import { randomUUID } from 'node:crypto';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { getRegion, loadConfig } from '@happow/core';
 
 const url = process.env.DATABASE_URL;
+const config = loadConfig();
 const local = process.env.CI === 'true' || /localhost|127\.0\.0\.1/.test(url ?? '');
 const tag = randomUUID().slice(0, 8);
 const mail = (name: string) => `${name}-${tag}@example.org`;
@@ -30,6 +32,7 @@ describe.skipIf(!url || !local)('M8 accounts in Postgres', () => {
     await db.query('set search_path = public, extensions');
   });
   afterAll(async () => {
+    await db.query('delete from submissions where submitter_hash = $1', [`hash-${tag}`]);
     await db.query('delete from auth.users where email like $1', [`%-${tag}@example.org`]);
     await db.query('delete from code_requests where email like $1', [`%-${tag}@example.org`]);
     await db.query('delete from moderators where email like $1', [`%-${tag}@example.org`]);
@@ -240,5 +243,104 @@ describe.skipIf(!url || !local)('M8 accounts in Postgres', () => {
     expect(exported.grants).toEqual([expect.objectContaining({ plan: 'premium' })]);
     await db.query('delete from auth.users where id = $1', [b]);
     expect((await db.query('select 1 from plan_grants where user_id = $1', [b])).rowCount).toBe(0);
+  });
+
+  describe('monthly usage (slice C)', () => {
+    const month = '2026-10-01';
+    const region = getRegion(config).id;
+    const source = config.sources.find((s) => s.adapter === 'user-submission')!.id;
+    const submit = (user: string | null, max: number, title = 'Test') =>
+      fn<string>('submit_event($1, $2, $3, false, $4, $5, $6)', [
+        { id: randomUUID(), form: { title, url: null }, normalized: { sourceId: source } },
+        `hash-${tag}`,
+        region,
+        user,
+        user ? month : null,
+        max,
+      ]);
+    const usage = (user: string, m = month) =>
+      fn<{ events: number; autofills: number }>('usage_get($1, $2)', [user, m]);
+
+    it('counts events up to the limit and stores nothing past it', async () => {
+      const id = await newUser(mail('quota'));
+      await submit(id, 2);
+      await submit(id, 2);
+      await expect(submit(id, 2)).rejects.toMatchObject({ code: 'HQ001' });
+      expect(await usage(id)).toEqual({ events: 2, autofills: 0 });
+      const stored = await db.query('select 1 from submissions where user_id = $1', [id]);
+      expect(stored.rowCount).toBe(2);
+      // A new month starts from zero; anonymous submissions count nothing.
+      expect(await usage(id, '2026-11-01')).toEqual({ events: 0, autofills: 0 });
+      await submit(null, 0);
+    });
+
+    it('counts nothing when the submission fails', async () => {
+      const id = await newUser(mail('fail'));
+      await expect(
+        fn('submit_event($1, $2, $3, false, $4, $5, $6)', [
+          { id: randomUUID(), form: {}, normalized: { sourceId: 'no-such-source' } },
+          `hash-${tag}`,
+          region,
+          id,
+          month,
+          5,
+        ]),
+      ).rejects.toThrow();
+      expect(await usage(id)).toEqual({ events: 0, autofills: 0 });
+    });
+
+    it('lets exactly the limit through when requests arrive at once', async () => {
+      const id = await newUser(mail('race'));
+      const clients = Array.from({ length: 6 }, () => new pg.Client({ connectionString: url }));
+      await Promise.all(clients.map((c) => c.connect()));
+      try {
+        const results = await Promise.all(
+          clients.map(
+            async (c) =>
+              (
+                await c.query<{ r: boolean }>(
+                  `select public.usage_take($1, $2, 'autofills', 3) as r`,
+                  [id, month],
+                )
+              ).rows[0]!.r,
+          ),
+        );
+        expect(results.filter(Boolean)).toHaveLength(3);
+      } finally {
+        await Promise.all(clients.map((c) => c.end()));
+      }
+      expect(await usage(id)).toEqual({ events: 0, autofills: 3 });
+      expect(await fn('usage_take($1, $2, $3, 0)', [id, '2026-12-01', 'autofills'])).toBe(false);
+      await expect(fn('usage_take($1, $2, $3, 5)', [id, month, 'logins'])).rejects.toThrow();
+      await expect(fn('usage_take($1, $2, $3, 5)', [id, '2026-10-15', 'events'])).rejects.toThrow();
+    });
+
+    it('shows users their own usage only, exports it, and unlinks events on delete', async () => {
+      const a = await newUser(mail('ua'));
+      const b = await newUser(mail('ub'));
+      const sid = await submit(a, 5, 'Koncert');
+      await submit(b, 5);
+      await db.query('begin');
+      try {
+        await db.query('set local role authenticated');
+        await db.query(`select set_config('request.jwt.claim.sub', $1, true)`, [a]);
+        const rows = (await db.query<{ user_id: string }>('select user_id from account_usage'))
+          .rows;
+        expect(rows.map((r) => r.user_id)).toEqual([a]);
+      } finally {
+        await db.query('rollback');
+      }
+      const exported = await fn<{ usage: unknown[]; submissions: unknown[] }>(
+        'account_export($1)',
+        [a],
+      );
+      expect(exported.usage).toEqual([{ month: '2026-10', events: 1, autofills: 0 }]);
+      expect(exported.submissions).toEqual([
+        expect.objectContaining({ id: sid, title: 'Koncert', status: 'pending' }),
+      ]);
+      await db.query('delete from auth.users where id = $1', [a]);
+      const kept = await db.query('select user_id from submissions where id = $1', [sid]);
+      expect(kept.rows).toEqual([{ user_id: null }]);
+    });
   });
 });
