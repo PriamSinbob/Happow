@@ -102,10 +102,13 @@ describe.skipIf(!url)('milestone 4 in Postgres', () => {
   });
 
   describe('low-confidence extractions', () => {
+    // On the real clock: events_public hides events past stale_after (72 h after the crawl for
+    // NFM), and the database compares that with its own now().
+    const now = new Date();
     const unsure: ExtractedEvent = {
       title: 'Koncert niepewny',
       description: null,
-      start: '2026-11-22T19:00',
+      start: `${new Date(now.getTime() + 30 * 86_400_000).toISOString().slice(0, 10)}T19:00`,
       end: null,
       venueName: 'NFM',
       address: { street: 'plac Wolności 1', postalCode: '50-071', city: 'Wrocław', country: null },
@@ -130,7 +133,7 @@ describe.skipIf(!url)('milestone 4 in Postgres', () => {
     const crawl = () =>
       runIngest({
         ...base,
-        now: new Date('2026-10-20T22:40:00Z'),
+        now,
         sourceIds: ['nfm'],
         fetch: site({
           'https://www.nfm.wroclaw.pl/component/nfmcalendar': page('nfm-event.html'),
