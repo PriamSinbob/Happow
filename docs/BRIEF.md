@@ -10,7 +10,7 @@ Decisions taken (2026-10-20):
 
 | Decision | Choice |
 | --- | --- |
-| Platform | PWA, built feature-complete first. A native rewrite (Play Store, home-screen widgets) is the last milestone, unnumbered. After it, a new project maintains and improves the native app (owner, 2026-10-24) |
+| Platform | PWA, built feature-complete first. A native rewrite (Play Store and App Store, home-screen widgets) is the last milestone, unnumbered. After it, a new project maintains and improves the native app (owner, 2026-10-24) |
 | Repo | Public GitHub repo; keys only in GitHub Secrets and env files, never committed |
 | Build model | Opus 5.5 for planning and UI/UX quality passes; Sonnet 5.5 for routine implementation |
 | Geography | Local PoC (Wrocław), architecture region-agnostic from day one |
@@ -180,7 +180,7 @@ Build in increments, each deployable and demoable on a phone in Wrocław. Build 
 - **M12 More venue and event data** (added 2026-10-24). Adapters for OpenStreetMap venues (Overpass), regular services at places of worship, venue calendar feeds (iCal / RSS), and cultural institutions and universities as crawl targets (Future features → More venue and event data).
 - **M7 Search and followed artists** (added 2026-10-22; moved after M12 by the owner on 2026-10-24, as the hyper-local features come first). Spec: [docs/milestones/M7-search-follow.md](milestones/M7-search-follow.md). Performer data, typo-tolerant search, follows on the device, nationwide Ticketmaster matches, and, on M8's accounts, follows sync and new-date alerts (M7 §5).
 - **M13 Launch readiness** (added 2026-10-24). Legal texts in the app (terms, privacy policy, art. 14 notice, takedown, storage note), crawler politeness (conditional requests, TDM reservations, contact in the User-Agent), GDPR export and deletion across every account feature, and the final domain and contact address in config (Before public launch).
-- **Native app** (last, no number). Rewrite the finished PWA as a native app for the Play Store, with home-screen widgets and native push. The PWA and its specs are the reference; the server, database and API stay. Client speed (M6 §11, §10) is measured here, not on the web build. After this milestone a new project takes over the native app.
+- **Native app** (last, no number). Rewrite the finished PWA as native apps for the Play Store and the App Store (owner, 2026-10-24), with home-screen widgets and native push. The PWA and its specs are the reference; the server, database and API stay. Client speed (M6 §11, §10) is measured here, not on the web build. After this milestone a new project takes over the native app.
 
 Not in the full build: Weather (decided 2026-10-20), Instagram (decided 2026-10-21), Google Places (paid, no caching), Spotify import (M7 §6), ticketing partner feeds (a business agreement, not code). Walking routes at scale is a provider switch in config, done when the quota runs out.
 
