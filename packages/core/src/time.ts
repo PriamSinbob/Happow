@@ -77,3 +77,14 @@ export function localToInstant(date: string, time: string | null, timeZone: stri
   const tm = time ? /^(\d{2}):(\d{2})/.exec(time) : null;
   return zonedTime(+dm[1]!, +dm[2]!, +dm[3]!, tm ? +tm[1]! : 0, tm ? +tm[2]! : 0, timeZone);
 }
+
+/**
+ * The first instant after a local calendar day ("2026-12-31"): midnight after it in `timeZone`,
+ * so something that lasts "through" that day ends there. Null when the date is malformed.
+ */
+export function afterDay(day: string, timeZone: string): Date | null {
+  const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  if (!dm) return null;
+  // Date.UTC rolls 32 December over to 1 January, so day + 1 needs no calendar of its own.
+  return zonedTime(+dm[1]!, +dm[2]!, +dm[3]! + 1, 0, 0, timeZone);
+}

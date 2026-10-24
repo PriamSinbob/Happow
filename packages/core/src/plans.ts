@@ -1,6 +1,6 @@
 import { localDay } from './atlas.js';
 import { planIdSchema } from './schemas.js';
-import { localToInstant } from './time.js';
+import { afterDay, localToInstant } from './time.js';
 import type { Entitlements, PlanId, PlansConfig, ThemePreset } from './types.js';
 
 /**
@@ -43,9 +43,7 @@ export function earlyAccessEnd(
   earlyAccess: NonNullable<PlansConfig['earlyAccess']>,
   timeZone: string,
 ): Date {
-  const [y, m, d] = earlyAccess.until.split('-').map(Number) as [number, number, number];
-  const next = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
-  return localToInstant(next, null, timeZone)!;
+  return afterDay(earlyAccess.until, timeZone)!;
 }
 
 /**

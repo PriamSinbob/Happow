@@ -4,7 +4,7 @@ Oct 24, 2026
 
 Spec from the brief's M8 entry (owner, 2026-10-24), M6 §8 and the brief's "Automation add-on (paid): URL autofill", with the owner's answers of 2026-10-24 (§9). M8 comes next after M6; M7 is built after M12 and then uses these accounts (M7 slice G). Build it in the usual way: plan per slice, show the plan, build, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed 2026-10-24; slices A (accounts on the server), B (plans, the promotion through 30 Nov 2026, grants, the premium provider interface), C (monthly quotas for events and autofills), D (the reach circle off the vector map) and E (sign-in, the account card, presets and atlas by plan, the premium sheet) built, F–G planned. Only the payment provider is open, and it is not needed in M8.
+**Status:** in progress. Spec agreed 2026-10-24; slices A (accounts on the server), B (plans, the promotion through 30 Nov 2026, grants, the premium provider interface), C (monthly quotas for events and autofills), D (the reach circle off the vector map), E (sign-in, the account card, presets and atlas by plan, the premium sheet) and F (the admin panel: sign-in code requests and grants) built: A–F built, G planned. Only the payment provider is open, and it is not needed in M8.
 
 The PWA is built feature-complete before the native rewrite (brief, 2026-10-24), so every slice is built in full, UI included. The server side (tables, SQL functions, `/api/me`, the premium provider interface) is shaped so a native client uses it unchanged. No speed testing on the web build.
 
@@ -21,7 +21,7 @@ One branch and one PR to `main` per slice, as in M6. The data and API slices com
 | C     | §5 API   | Monthly quotas per account: events added and autofills                                                 | B     | built   |
 | D     | §1       | Reach circle off the vector map; the raster fallback keeps it                                          | —     | built   |
 | E     | §2–§4 UI | Mockup first. Sign-in sheet, account row in About, plan mark, premium sheet, presets and atlas by tier | A, B  | built   |
-| F     | §2 admin | Admin: sign-in code requests with a ready email to send by hand                                        | A, E  | planned |
+| F     | §2 admin | Admin: sign-in code requests with a ready email to send by hand                                        | A, E  | built   |
 | G     | §5 UI    | The add form with sign-in, quotas and autofill usage                                                   | C, E  | planned |
 
 D is independent and small; it can ship at any point. A payment provider (§4) is a slice of its own once the owner picks one; it is not in M8 unless added here.
@@ -83,6 +83,16 @@ Browsing, filters, the atlas on the device and reporting stay anonymous (brief, 
   - **Setup** (`docs/SETUP.md`): sign-ups stay off until slice E; Email OTP Expiration 86400 s; the admin role in SQL.
   - Skipped: nothing planned for slice A. The web client still keeps sessions in `sessionStorage`; moving to `localStorage` is slice E.
   - Open: the generate flow is checked against a faked GoTrue only. Supabase's live response to `generate_link` is the first thing to try once deployed: open a code request and generate it as the admin.
+- **Built** (slice F, 2026-10-24): the admin panel, as in `docs/design/admin.html` (approved by the owner on 2026-10-24, with Tabler's copy icon; the screen is titled "Admin" in every language).
+  - **Staff screen** (`components/Moderation.tsx`): for the admin, tabs **Queue · Codes · Grants**, with the number of open requests on Codes. A moderator sees the queue as before, under "Moderation". The bar (email, Refresh, Sign out) is shared, and Refresh reloads the open tab. Arrow keys move between the tabs.
+  - **Code requests** (`components/Admin.tsx`): oldest first, with the email, language, age, new account or has one, and "code made at …" once generated. **Generate code** (then **Generate again**) and a quiet **Delete** with a confirm. A refused generate (502 `auth_failed`) shows in its row.
+  - **Ready email:** the code in large type in two groups of three; To, Subject and Body read-only; **Copy email** (subject and body) and a copy button for the address through `navigator.clipboard`. When copying is refused, the text is selected and the sheet says to press and hold. **Open in mail app** is the server's `mailto:`. The list reloads behind it, so the row says when its code was made.
+  - **Grants:** active first, then ended (dimmed), each with the plan and its mark, the source, the end, the note and who gave it; **End** on active manual grants, with a confirm. **Give premium**: email, no end date or a last day, an optional note. The last day is sent as midnight after it in the region's time zone, through `afterDay` in core, which `earlyAccessEnd` now uses too. A day in the past is refused in the form, and by the server.
+  - **Client:** `apps/web/src/admin.ts` (typed calls over `api()`: `listCodeRequests`, `generateCode`, `deleteCodeRequest`, `listGrants`, `addGrant`, `endGrant`).
+  - **Tests:** `apps/web/test/m8-admin.test.tsx` (11: tabs for the admin only, the list, the empty state, generate with its mailto and the refreshed row, copy and the refused clipboard, delete after the confirm, a 502 in its row, offline, grants active first with End only on manual ones, Give with the last day in the region's time zone and with no end, End after the confirm); core +1 (`afterDay` across the year end and both DST changes).
+  - **Setup** (`docs/SETUP.md` §4): checking the admin role in the app, sending a code from the panel, and giving and ending premium.
+  - Skipped: nothing planned for slice F.
+  - Open: the first live `generate_link` against the real Supabase. The code was only tested against a faked GoTrue. Try it on the preview or after deploy: ask for a code from a second email, then generate it in **Codes**.
 
 ## 3. Plans and entitlements
 

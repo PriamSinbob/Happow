@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  afterDay,
   can,
   checkPlans,
   earlyAccessEnd,
@@ -89,6 +90,13 @@ describe('effectivePlan', () => {
     expect(earlyAccessEnd({ plan: 'premium', until: '2026-10-24' }, tz)).toEqual(
       at('2026-10-24T22:00:00Z'),
     );
+  });
+
+  it('afterDay: midnight after a last day, across the year and DST (admin grants, slice F)', () => {
+    expect(afterDay('2026-12-31', tz)).toEqual(at('2026-12-31T23:00:00Z'));
+    expect(afterDay('2026-10-25', tz)).toEqual(at('2026-10-25T23:00:00Z'));
+    expect(afterDay('2027-03-28', tz)).toEqual(at('2027-03-28T22:00:00Z'));
+    expect(afterDay('31.12.2026', tz)).toBeNull();
   });
 
   it('is the account when there is no promotion and no grant', () => {

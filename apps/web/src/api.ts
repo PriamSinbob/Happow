@@ -16,6 +16,7 @@ export type ApiErrorCode =
   | 'not_found'
   | 'quota_exceeded'
   | 'account_required'
+  | 'auth_failed'
   | 'server_error'
   | 'network';
 
