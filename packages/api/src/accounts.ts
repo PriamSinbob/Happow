@@ -1,4 +1,11 @@
-import { languageSchema, type AppConfig } from '@happow/core';
+import {
+  effectivePlan,
+  entitlementsFor,
+  languageSchema,
+  type AppConfig,
+  type PlanGrant,
+  type PlansConfig,
+} from '@happow/core';
 import { z } from 'zod';
 import { ApiError, body, json, sha256 } from './http.js';
 import { SupabaseError, type AuthUser, type Supabase } from './supabase.js';
@@ -10,6 +17,9 @@ export interface User extends AuthUser {
 
 export interface AccountDeps {
   app: AppConfig;
+  plans: PlansConfig;
+  /** The default region's time zone: the promotion ends at midnight there. */
+  timeZone: string;
   /** Throws 503 when Supabase or the salt are not configured. */
   need: () => { db: Supabase; salt: string };
   now: () => Date;
@@ -25,9 +35,18 @@ const codeRequestSchema = z.object({
   locale: languageSchema,
 });
 const uuid = z.string().uuid();
+const grantSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email().max(254),
+    plan: z.enum(['account', 'premium']).default('premium'),
+    /** Null = no end. */
+    endsAt: z.string().datetime({ offset: true }).nullable(),
+    note: z.string().trim().max(500).nullable().optional(),
+  })
+  .strict();
 
-/** Account endpoints (M8 §2): /api/me, /api/auth/*, /api/admin/*. */
-export function accountRoutes({ app, need, now, limit, clientHash }: AccountDeps) {
+/** Account endpoints (M8 §2–§4): /api/me, /api/auth/*, /api/admin/*. */
+export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHash }: AccountDeps) {
   const { auth, legal } = app;
   /** Checked tokens, so a burst of requests asks Supabase once. Per isolate, short-lived. */
   const cache = new Map<string, { user: User; until: number }>();
@@ -57,13 +76,37 @@ export function accountRoutes({ app, need, now, limit, clientHash }: AccountDeps
     for (const [k, v] of cache) if (v.user.id === userId) cache.delete(k);
   };
 
+  /** The plan in force for a signed-in user and what it allows (M8 §3–§4). */
+  async function planOf(user: { id: string }) {
+    const { db } = need();
+    const grants = await db.rpc<PlanGrant[]>('grants_active', { p_user: user.id });
+    const p = effectivePlan({
+      signedIn: true,
+      grants,
+      now: now(),
+      earlyAccess: plans.earlyAccess,
+      timeZone,
+    });
+    return {
+      plan: p.plan,
+      planSource: p.source,
+      planEndsAt: p.endsAt?.toISOString() ?? null,
+      entitlements: entitlementsFor(plans, p.plan),
+    };
+  }
+
   async function profile(user: User) {
     const { db } = need();
+    const [p, plan] = await Promise.all([
+      db.rpc<object>('profile_get', { p_user: user.id }),
+      planOf(user),
+    ]);
     return {
       id: user.id,
       email: user.email,
       role: user.role,
-      ...(await db.rpc<object>('profile_get', { p_user: user.id })),
+      ...p,
+      ...plan,
     };
   }
 
@@ -140,12 +183,46 @@ export function accountRoutes({ app, need, now, limit, clientHash }: AccountDeps
     return { subject: fill(t.subject), body: fill(t.body) };
   }
 
-  /** /api/admin/code-requests[/:id[/generate]] for the admin only. */
+  /** /api/admin/grants[/:id] for the admin only: manual plan grants (M8 §4). */
+  async function grants(req: Request, path: string[], user: User): Promise<Response> {
+    const { db } = need();
+    const id = path[1];
+    if (req.method === 'GET' && path.length === 1) return json(await db.rpc('grants_list', {}));
+    if (req.method === 'POST' && path.length === 1) {
+      const g = await body(req, grantSchema);
+      if (g.endsAt !== null && Date.parse(g.endsAt) <= now().getTime())
+        throw new ApiError(400, 'invalid_input', 'endsAt');
+      // A grant can go to someone who has never signed in: their account is made for it.
+      await db.ensureUser(g.email);
+      try {
+        const grant = await db.rpc('grant_add', {
+          p_email: g.email,
+          p_plan: g.plan,
+          p_ends_at: g.endsAt,
+          p_note: g.note ?? null,
+          p_created_by: user.email,
+        });
+        return json(grant, 201);
+      } catch (err) {
+        if (err instanceof SupabaseError && err.code === 'P0002')
+          throw new ApiError(404, 'not_found');
+        throw err;
+      }
+    }
+    if (req.method === 'DELETE' && path.length === 2 && uuid.safeParse(id).success) {
+      if (!(await db.rpc<boolean>('grant_end', { p_id: id }))) throw new ApiError(404, 'not_found');
+      return new Response(null, { status: 204, headers: { 'cache-control': 'no-store' } });
+    }
+    throw new ApiError(404, 'not_found');
+  }
+
+  /** /api/admin/code-requests[/:id[/generate]] and /api/admin/grants for the admin only. */
   async function admin(req: Request, path: string[]): Promise<Response> {
     const user = await requireUser(req);
     if (user.role !== 'admin') throw new ApiError(403, 'forbidden');
     const { db } = need();
     const [kind, id, action] = path;
+    if (kind === 'grants') return grants(req, path, user);
     if (kind !== 'code-requests') throw new ApiError(404, 'not_found');
     if (req.method === 'GET' && path.length === 1)
       return json(
@@ -185,5 +262,5 @@ export function accountRoutes({ app, need, now, limit, clientHash }: AccountDeps
     throw new ApiError(404, 'not_found');
   }
 
-  return { requireUser, me, auth: authRoutes, admin };
+  return { requireUser, planOf, me, auth: authRoutes, admin };
 }

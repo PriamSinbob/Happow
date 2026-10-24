@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '@happow/core';
-import { createApi } from '../src';
+import { createApi, type GrantChange, type PremiumProvider } from '../src';
+import { ApiError } from '../src/http.js';
 
 const SB = 'https://proj.supabase.co';
 const env = { SUPABASE_URL: SB, SUPABASE_SERVICE_ROLE_KEY: 'service-key', SUBMITTER_SALT: 'salt' };
@@ -25,6 +26,7 @@ function supabase(rpc: Record<string, Rpc> = {}, opts: { userExists?: boolean } 
     rate_limit_hit: () => ({ body: true }),
     staff_role: (a) => ({ body: roles[a.p_email as string] ?? null }),
     profile_get: () => ({ body: { displayName: null, locale: 'pl', termsVersion: null } }),
+    grants_active: () => ({ body: [] }),
     ...rpc,
   };
   const fetchMock = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
@@ -63,8 +65,8 @@ function supabase(rpc: Record<string, Rpc> = {}, opts: { userExists?: boolean } 
 }
 
 const now = () => new Date('2026-10-24T12:00:00Z');
-const api = (sb: ReturnType<typeof supabase>, cfg = config) =>
-  createApi(env, { fetch: sb.fetch, now, config: cfg, extractor: null });
+const api = (sb: ReturnType<typeof supabase>, cfg = config, premiumProviders?: PremiumProvider[]) =>
+  createApi(env, { fetch: sb.fetch, now, config: cfg, extractor: null, premiumProviders });
 const req = (path: string, init: { method?: string; token?: string; body?: unknown } = {}) =>
   new Request(`https://happow.example/api/${path}`, {
     method: init.method ?? 'GET',
@@ -97,7 +99,13 @@ describe('/api/me', () => {
       displayName: null,
       locale: 'pl',
       termsVersion: null,
+      // Early access: premium through 30 Nov, Warsaw time.
+      plan: 'premium',
+      planSource: 'early_access',
+      planEndsAt: '2026-11-30T23:00:00.000Z',
+      entitlements: config.plans.plans.premium,
     });
+    expect(rpcCalls(sb, 'grants_active')[0]!.body).toEqual({ p_user: 'u1' });
     expect(rpcCalls(sb, 'profile_get')[0]!.body).toEqual({ p_user: 'u1' });
   });
 
@@ -292,5 +300,226 @@ describe('/api/admin/code-requests', () => {
       }),
     );
     expect(gen.status).toBe(404);
+  });
+});
+
+describe('plans on /api/me', () => {
+  const withPromo = (earlyAccess: typeof config.plans.earlyAccess) => ({
+    ...config,
+    plans: { ...config.plans, earlyAccess },
+  });
+  const me = async (sb: ReturnType<typeof supabase>, cfg = config) =>
+    (await api(sb, cfg)(req('me', { token: 'user-token' }))).json();
+
+  it('is the account plan once the promotion is over', async () => {
+    const ended = withPromo({ plan: 'premium', until: '2026-10-23' });
+    expect(await me(supabase(), ended)).toMatchObject({
+      plan: 'account',
+      planSource: 'account',
+      planEndsAt: null,
+      entitlements: { 'events.perMonth': 15, 'autofill.perMonth': 5, 'presets.premium': false },
+    });
+  });
+
+  it('takes premium from an active grant', async () => {
+    const sb = supabase({
+      grants_active: () => ({
+        body: [
+          { plan: 'premium', source: 'manual', startsAt: '2026-10-01T00:00:00Z', endsAt: null },
+          // Not started yet: ignored.
+          {
+            plan: 'premium',
+            source: 'purchase',
+            startsAt: '2027-01-01T00:00:00Z',
+            endsAt: '2027-02-01T00:00:00Z',
+          },
+        ],
+      }),
+    });
+    expect(await me(sb, withPromo(null))).toMatchObject({
+      plan: 'premium',
+      planSource: 'manual',
+      planEndsAt: null,
+      entitlements: { 'events.perMonth': 300 },
+    });
+  });
+});
+
+describe('/api/admin/grants', () => {
+  const GRANT = '9c1d2e3f-4a5b-4c6d-8e7f-8091a2b3c4d5';
+  const rpc: Record<string, Rpc> = {
+    grants_list: () => ({ body: [{ id: GRANT, email: 'ala@example.org', active: true }] }),
+    grant_add: (a) => ({ body: { id: GRANT, plan: a.p_plan, endsAt: a.p_ends_at } }),
+    grant_end: (a) => ({ body: a.p_id === GRANT }),
+  };
+  const post = (sb: ReturnType<typeof supabase>, body: unknown, token = 'admin-token') =>
+    api(sb)(req('admin/grants', { method: 'POST', token, body }));
+
+  it('is for the admin only', async () => {
+    const sb = supabase(rpc);
+    expect((await api(sb)(req('admin/grants', { token: 'mod-token' }))).status).toBe(403);
+    const asUser = await post(sb, { email: 'x@example.org', endsAt: null }, 'user-token');
+    expect(asUser.status).toBe(403);
+    const ok = await api(sb)(req('admin/grants', { token: 'admin-token' }));
+    expect(await ok.json()).toEqual([{ id: GRANT, email: 'ala@example.org', active: true }]);
+  });
+
+  it('creates the account if needed, then grants premium, with or without an end', async () => {
+    const sb = supabase(rpc);
+    const res = await post(sb, { email: ' New@Example.org ', endsAt: null, note: 'organiser' });
+    expect(res.status).toBe(201);
+    expect(await res.json()).toEqual({ id: GRANT, plan: 'premium', endsAt: null });
+    const paths = sb.calls.map((c) => `${c.method} ${c.path}`);
+    expect(paths.indexOf('POST /auth/v1/admin/users')).toBeLessThan(
+      paths.indexOf('POST /rest/v1/rpc/grant_add'),
+    );
+    expect(rpcCalls(sb, 'grant_add')[0]!.body).toEqual({
+      p_email: 'new@example.org',
+      p_plan: 'premium',
+      p_ends_at: null,
+      p_note: 'organiser',
+      p_created_by: 'owner@example.org',
+    });
+    const dated = await post(sb, { email: 'ala@example.org', endsAt: '2027-01-31T23:00:00Z' });
+    expect(dated.status).toBe(201);
+  });
+
+  it('rejects an end in the past, an unknown plan and a missing end', async () => {
+    const sb = supabase(rpc);
+    const past = await post(sb, { email: 'a@example.org', endsAt: '2026-10-01T00:00:00Z' });
+    expect(past.status).toBe(400);
+    const gold = await post(sb, { email: 'a@example.org', endsAt: null, plan: 'gold' });
+    expect(gold.status).toBe(400);
+    expect((await post(sb, { email: 'a@example.org' })).status).toBe(400);
+    expect(rpcCalls(sb, 'grant_add')).toHaveLength(0);
+  });
+
+  it('ends a grant now, and answers 404 for unknown ids', async () => {
+    const sb = supabase(rpc);
+    const del = (id: string) =>
+      api(sb)(req(`admin/grants/${id}`, { method: 'DELETE', token: 'admin-token' }));
+    expect((await del(GRANT)).status).toBe(204);
+    expect(rpcCalls(sb, 'grant_end')[0]!.body).toEqual({ p_id: GRANT });
+    expect((await del(REQ)).status).toBe(404);
+    expect((await del('nope')).status).toBe(404);
+  });
+});
+
+describe('/api/premium', () => {
+  const change = (endsAt: string, providerRef = 'sub_1'): GrantChange => ({
+    userId: 'u1',
+    plan: 'premium',
+    providerRef,
+    startsAt: '2026-10-24T12:00:00Z',
+    endsAt,
+  });
+
+  /** Stands in for a real provider (Stripe, a store…), through the interface only. */
+  function fakeProvider() {
+    const p: PremiumProvider & { pending: GrantChange[] } = {
+      id: 'fake',
+      pending: [],
+      offers: async () => [
+        { id: 'monthly', plan: 'premium', period: 'month', price: 4.99, currency: 'PLN' },
+      ],
+      checkout: async (user, offerId, returnUrl) => ({
+        url: `https://pay.example/${offerId}?u=${user.id}&back=${encodeURIComponent(returnUrl)}`,
+      }),
+      // Whatever user the store says, only the sender gets the plan.
+      verify: async (_user, receipt) => [
+        { ...change('2026-11-24T12:00:00Z', receipt), userId: 'x' },
+      ],
+      webhook: async (r) => {
+        if (r.headers.get('x-signature') !== 'good') throw new ApiError(401, 'bad_signature');
+        return p.pending;
+      },
+    };
+    return p;
+  }
+
+  it('offers nothing and has no provider endpoints when none is configured', async () => {
+    const sb = supabase();
+    expect(config.app.premium.providers).toEqual([]);
+    const offers = await api(sb)(req('premium/offers'));
+    expect(offers.status).toBe(200);
+    expect(await offers.json()).toEqual({ offers: [] });
+    const body = { provider: 'fake', offerId: 'monthly' };
+    const checkout = await api(sb)(
+      req('premium/checkout', { method: 'POST', token: 'user-token', body }),
+    );
+    expect(checkout.status).toBe(404);
+    const hook = await api(sb)(req('premium/webhook/fake', { method: 'POST', body: {} }));
+    expect(hook.status).toBe(404);
+  });
+
+  it('lists offers and starts a checkout that returns to the app', async () => {
+    const a = api(supabase(), config, [fakeProvider()]);
+    expect(await (await a(req('premium/offers'))).json()).toEqual({
+      offers: [
+        {
+          id: 'monthly',
+          plan: 'premium',
+          period: 'month',
+          price: 4.99,
+          currency: 'PLN',
+          provider: 'fake',
+        },
+      ],
+    });
+    const body = { provider: 'fake', offerId: 'monthly' };
+    expect((await a(req('premium/checkout', { method: 'POST', body }))).status).toBe(401);
+    const res = await a(req('premium/checkout', { method: 'POST', token: 'user-token', body }));
+    expect(await res.json()).toEqual({
+      url: 'https://pay.example/monthly?u=u1&back=https%3A%2F%2Fhappow.example%2F',
+    });
+  });
+
+  it('turns webhook events into grants: paid, cancelled to the period end, refunded now', async () => {
+    const sb = supabase({ grant_apply: () => ({ body: {} }) });
+    const provider = fakeProvider();
+    const a = api(sb, config, [provider]);
+    const hook = (signature: string) =>
+      a(
+        new Request('https://happow.example/api/premium/webhook/fake', {
+          method: 'POST',
+          headers: { 'x-signature': signature },
+          body: '{}',
+        }),
+      );
+    const ends = ['2026-11-24T12:00:00Z', '2026-11-24T12:00:00Z', '2026-10-30T09:00:00Z'];
+    for (const end of ends) {
+      provider.pending = [change(end)];
+      expect((await hook('good')).status).toBe(200);
+    }
+    expect(rpcCalls(sb, 'grant_apply').map((c) => c.body)).toEqual(
+      ends.map((end) => ({
+        p_user: 'u1',
+        p_plan: 'premium',
+        p_provider: 'fake',
+        p_ref: 'sub_1',
+        p_starts_at: '2026-10-24T12:00:00Z',
+        p_ends_at: end,
+      })),
+    );
+    // A bad signature writes nothing; an unknown provider is 404.
+    expect((await hook('forged')).status).toBe(401);
+    expect(rpcCalls(sb, 'grant_apply')).toHaveLength(3);
+    expect((await a(req('premium/webhook/other', { method: 'POST', body: {} }))).status).toBe(404);
+  });
+
+  it('verifies a store receipt for the user who sent it and answers with their plan', async () => {
+    const sb = supabase({ grant_apply: () => ({ body: {} }) });
+    const a = api(sb, config, [fakeProvider()]);
+    const body = { provider: 'fake', receipt: 'token-1' };
+    const res = await a(req('premium/verify', { method: 'POST', token: 'user-token', body }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      plan: 'premium',
+      entitlements: { 'events.perMonth': 300 },
+    });
+    expect(rpcCalls(sb, 'grant_apply')[0]!.body).toMatchObject({
+      p_user: 'u1',
+      p_ref: 'token-1',
+    });
   });
 });

@@ -36,6 +36,7 @@ import { normalize } from '@happow/ingest/normalize';
 import { z } from 'zod';
 import { accountRoutes } from './accounts.js';
 import { ApiError, body, json, sha256 } from './http.js';
+import { premiumProviders, premiumRoutes, type PremiumProvider } from './premium.js';
 import { dispatchDueIngest, type ScheduleEnv } from './schedule.js';
 import { Supabase, SupabaseError } from './supabase.js';
 
@@ -57,6 +58,8 @@ export interface ApiDeps {
   /** Overrides for tests. */
   geocoder?: Geocoder;
   extractor?: Extractor | null;
+  /** Instead of the providers named in config (premium.providers). */
+  premiumProviders?: PremiumProvider[];
 }
 
 /** "2026-10-24T19:00" in the region's time zone, for <input type="datetime-local">. */
@@ -199,7 +202,23 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       `${salt}:ip:${req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? 'local'}`,
     );
 
-  const accounts = accountRoutes({ app: config.app, need, now, limit, clientHash });
+  const accounts = accountRoutes({
+    app: config.app,
+    plans: config.plans,
+    timeZone: getRegion(config).timezone,
+    need,
+    now,
+    limit,
+    clientHash,
+  });
+  const premium = premiumRoutes({
+    providers:
+      deps.premiumProviders ??
+      premiumProviders(config.app.premium.providers, env as Record<string, string | undefined>),
+    need,
+    requireUser: accounts.requireUser,
+    planOf: accounts.planOf,
+  });
 
   const regionFor = (id?: string): Region => getRegion(config, id);
 
@@ -630,6 +649,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'me') return await accounts.me(req, rest);
       if (head === 'auth') return await accounts.auth(req, rest);
       if (head === 'admin') return await accounts.admin(req, rest);
+      if (head === 'premium') return await premium(req, rest);
       if (head === 'area' && req.method === 'GET' && !rest.length) return await area(req);
       if (head === 'ingest' && req.method === 'GET' && rest.join('/') === 'status')
         return await ingestStatus();

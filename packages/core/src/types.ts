@@ -2,9 +2,12 @@ import type { z } from 'zod';
 import type {
   appConfigSchema,
   categorySchema,
+  entitlementsSchema,
   entrySchema,
   languageSchema,
   mapConfigSchema,
+  planIdSchema,
+  plansConfigSchema,
   regionSchema,
   rulesSchema,
   seedFileSchema,
@@ -31,6 +34,9 @@ export type ThemeConfig = z.infer<typeof themeConfigSchema>;
 export type ThemePreset = z.infer<typeof themePresetSchema>;
 export type ThemeTokens = z.infer<typeof themeTokensSchema>;
 export type ThemeName = 'day' | 'night';
+export type PlanId = z.infer<typeof planIdSchema>;
+export type Entitlements = z.infer<typeof entitlementsSchema>;
+export type PlansConfig = z.infer<typeof plansConfigSchema>;
 
 export interface LatLng {
   lat: number;
