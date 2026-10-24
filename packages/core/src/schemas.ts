@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const languageSchema = z.enum(['pl', 'en']);
 
 const labelsSchema = z.object({ pl: z.string().min(1), en: z.string().min(1) });
+const emailTemplateSchema = z.object({ subject: z.string().min(1), body: z.string().min(1) });
 const latLngSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
@@ -266,6 +267,26 @@ export const appConfigSchema = z.object({
   legal: z.object({
     /** Takedown / DSA notice contact shown on the About page. */
     contactEmail: z.string().email().nullable(),
+    /** Version of the terms and privacy notice an account accepts at sign-up (M8 §2). */
+    termsVersion: z.string().min(1),
+  }),
+  /** User accounts (M8 §2). */
+  auth: z.object({
+    /**
+     * How sign-in codes reach people: "manual" = the app files a request and the admin sends the
+     * code by hand from the admin panel; "supabase" = Supabase Auth emails it (custom SMTP).
+     */
+    emailDelivery: z.enum(['manual', 'supabase']),
+    codeRequestsPerHourPerClient: z.number().int().positive(),
+    codeRequestsPerDayPerEmail: z.number().int().positive(),
+    /** Unanswered or used code requests are deleted after this many days. */
+    codeRequestRetentionDays: z.number().int().positive(),
+    /** Must match Supabase Auth → Email OTP expiration (24 h at most); quoted in the email. */
+    codeValidHours: z.number().int().positive().max(24),
+    /** How long the API trusts a checked access token before asking Supabase again. */
+    userCacheSec: z.number().int().min(0).max(300),
+    /** The email the admin sends by hand, per language: {code}, {link} and {hours} are filled in. */
+    codeEmail: z.object({ pl: emailTemplateSchema, en: emailTemplateSchema }),
   }),
   ingest: z.object({
     descriptionMaxChars: z.number().int().positive(),
