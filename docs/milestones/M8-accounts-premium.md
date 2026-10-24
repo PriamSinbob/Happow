@@ -4,7 +4,7 @@ Oct 24, 2026
 
 Spec from the brief's M8 entry (owner, 2026-10-24), M6 §8 and the brief's "Automation add-on (paid): URL autofill", with the owner's answers of 2026-10-24 (§9). M8 comes next after M6; M7 is built after M12 and then uses these accounts (M7 slice G). Build it in the usual way: plan per slice, show the plan, build, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed 2026-10-24; slices A (accounts on the server) and B (plans, the promotion through 30 Nov 2026, grants, the premium provider interface) and C (monthly quotas for events and autofills) built, D–G planned. Only the payment provider is open, and it is not needed in M8.
+**Status:** in progress. Spec agreed 2026-10-24; slices A (accounts on the server), B (plans, the promotion through 30 Nov 2026, grants, the premium provider interface), C (monthly quotas for events and autofills) and D (the reach circle off the vector map) built, E–G planned. Only the payment provider is open, and it is not needed in M8.
 
 The PWA is built feature-complete before the native rewrite (brief, 2026-10-24), so every slice is built in full, UI included. The server side (tables, SQL functions, `/api/me`, the premium provider interface) is shaped so a native client uses it unchanged. No speed testing on the web build.
 
@@ -19,7 +19,7 @@ One branch and one PR to `main` per slice, as in M6. The data and API slices com
 | A     | §2       | Accounts on the server: sign-up, profiles, roles, manual code delivery, `/api/me`, export, delete      | —     | built   |
 | B     | §3, §4   | Plans and entitlements in config, the early-access promotion, grants, `PremiumProvider` with `none`    | A     | built   |
 | C     | §5 API   | Monthly quotas per account: events added and autofills                                                 | B     | built   |
-| D     | §1       | Reach circle off the vector map; the raster fallback keeps it                                          | —     | planned |
+| D     | §1       | Reach circle off the vector map; the raster fallback keeps it                                          | —     | built   |
 | E     | §2–§4 UI | Mockup first. Sign-in sheet, account row in About, plan mark, premium sheet, presets and atlas by tier | A, B  | planned |
 | F     | §2 admin | Admin: sign-in code requests with a ready email to send by hand                                        | A, E  | planned |
 | G     | §5 UI    | The add form with sign-in, quotas and autofill usage                                                   | C, E  | planned |
@@ -40,8 +40,13 @@ Owner, 2026-10-24: the dashed reach circle (outline and fill) goes. The lit veil
 - **Vector style.** `MapView` stops adding the `radius` source and the `radius-fill` / `radius-line` layers. `circleBounds` stays: fitting the view to the reach still uses it, and the veil already redraws when the reach changes.
 - **Raster fallback keeps it.** The fallback (`rasterStyle()`, used when the vector style fails to load) has no veil (M6 slice H skipped it), so without the circle nothing would mark the reach. When the map falls back to raster, the radius source and layers are added as today.
 - **What is accepted.** At city zoom the veil fades out (from z12.8 to nothing at z10.5), so nothing marks the reach there on the vector map. The rail shows the distance while it is dragged, and pins outside the reach stay faded.
+- **Owner decisions after the design review** (2026-10-24):
+  1. **Drag ring.** The veil redraws only at the rail's stops, so while the rail is dragged a bright dashed ring shows the reach under the finger, and it goes when the drag ends. Bright (night ink) on the night map; grey (day `muted`) on the day map, where white would vanish into the roads.
+  2. **5 km stop.** No ring there: at 5 km the map works as a view of the whole area, so the veil fading out is fine.
+  3. **No "you" dot on the map.** The overview map's centre is the user; at 5 km and above it does not matter. The dot shows only while navigating, when the route is drawn ("Going there", which already does this).
 - **Spec and design text.** M6 slice H's owner decision 3 ("pins, the reach circle and the user dot stay above it") and the `docs/design/README.md` lit-map line are updated: the circle is drawn only on the raster fallback.
 - **Tests.** The vector style has no `radius-*` layer; after a simulated fallback to raster it has both.
+- **Built** (slice D, 2026-10-24): the vector map draws no reach circle; the veil's lit disc shows the reach. The circle moved to `apps/web/src/reachCircle.ts` and is added only when the map has no vector source, which is the raster fallback, so it appears exactly where there is no veil. It is drawn in day ink in both themes, because the raster tiles stay light at night (design review). The drag ring (decision 1) is a hidden layer on the vector map, shown only while the rail is dragged. Nothing skipped, nothing open.
 
 ## 2. Accounts
 
@@ -188,7 +193,7 @@ The "Settings page" row goes (no settings sync).
 
 ## 8. Acceptance
 
-- The vector map shows no reach circle; the reach reads from the lit veil at street zoom; the raster fallback still draws it.
+- The vector map shows no reach circle, except a dashed ring while the rail is dragged; the reach reads from the lit veil at street zoom; the raster fallback still draws it. The map shows no "you" dot outside "Going there".
 - With manual delivery, a tester asks for a code, the owner sends it from the admin panel's ready email, and the tester signs in with it in an installed iOS home-screen app. Google sign-in works on Android and desktop.
 - A new account has premium until `until`; moving `until` in config extends it for everyone.
 - A free account adds 15 events a month, 5 with autofill; premium 300, all with autofill; the form shows both meters.

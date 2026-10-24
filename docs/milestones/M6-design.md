@@ -22,7 +22,7 @@ Spec agreed with the owner in the design session of 2026-10-22 (interactive prot
   - The atlas bar's looks, to be adjusted with the owner.
   - Veil redraw time on a mid-range phone.
   - Pins on the map are not focusable; screen-reader users go through the list.
-  - The dashed reach circle (outline and fill) stays for now. The owner wants it removed, as the lit veil shows the reach; that goes in M8 (2026-10-24).
+- **Resolved later.** The dashed reach circle (outline and fill) is gone from the vector map since M8 slice D: the lit veil shows the reach. Only the raster fallback still draws it.
 
 **Visual reference:** `docs/design/` (interactive prototype, exact range icons, README listing what is normative). Slices E to H match it; where this spec's words and the prototype differ, ask the owner.
 
@@ -267,7 +267,7 @@ Plan agreed with the owner on 2026-10-23, with every recommendation below. Mocku
 
 1. Records are `{ cell, opens, arrivals, lastSeen }`, not one `count`, so arrivals are strong and opens faint.
 2. Clear (forget) is a 1.5 s hold. No pause switch: nothing leaves the phone.
-3. The veil goes under the basemap labels, so street names stay readable. Pins, the reach circle and the user dot stay above it.
+3. The veil goes under the basemap labels, so street names stay readable. Pins stay above it. The reach circle is gone from the vector map; it is drawn only on the raster fallback, which has no veil (M8 §1, 2026-10-24).
 4. Export and import are free without an account (§8 updated); sync and backup stay premium.
 5. Import merges by the larger count per cell, so importing the same file twice changes nothing.
 6. A long-press "from here" reach is lit like any reach, but it isn't recorded as a visit.

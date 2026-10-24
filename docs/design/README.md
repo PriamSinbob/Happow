@@ -27,7 +27,7 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
   - top-right: dice and filters
   - right edge: reach rail, with locate and list below it
   - list style B: an overlay over the map
-- **Lit map** (§6). A grey veil with soft, cloud-like holes for your reach and the places you've been. It fades out as you zoom out.
+- **Lit map** (§6). A grey veil with soft, cloud-like holes for your reach and the places you've been. It fades out as you zoom out. Its lit disc marks the reach, so the vector map draws no reach circle; only the raster fallback, which has no veil, keeps the dashed circle (M8 §1). The thin reach ring and the user dot that `atlas.html` draws over the veil are superseded: do not copy them back.
   - The veil algorithm in `atlas.html` is normative: blobs seeded by cell id, opens faint, arrivals strong, repeats brighter, labels above the veil.
   - The atlas bar (export, the glyph with the count, import, hold-to-clear) sits whole inside About, settings → ⓘ (owner, 2026-10-23), not in the sheet as drawn in `atlas.html`. Its looks are still to be adjusted.
 
