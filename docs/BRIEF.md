@@ -10,7 +10,7 @@ Decisions taken (2026-10-20):
 
 | Decision | Choice |
 | --- | --- |
-| Platform | PWA for the PoC; native wrapper later only if background location or store presence is needed |
+| Platform | PWA, built feature-complete first. A native rewrite (Play Store, home-screen widgets) is the last milestone, unnumbered. After it, a new project maintains and improves the native app (owner, 2026-10-24) |
 | Repo | Public GitHub repo; keys only in GitHub Secrets and env files, never committed |
 | Build model | Opus 5.5 for planning and UI/UX quality passes; Sonnet 5.5 for routine implementation |
 | Geography | Local PoC (Wrocław), architecture region-agnostic from day one |
@@ -115,7 +115,7 @@ flowchart LR
 
 | Layer | PoC choice (free) | Scale-up path |
 | --- | --- | --- |
-| Client | React + Vite PWA, MapLibre GL, OSM-based tiles, hosted on Cloudflare Workers (static assets) | Same, plus a Capacitor wrapper for store apps |
+| Client | React + Vite PWA, MapLibre GL, OSM-based tiles, hosted on Cloudflare Workers (static assets) | A native app, rewritten from the finished PWA (last milestone) |
 | API | Supabase auto-generated REST + Postgres functions for geo queries (events near point, hotspots); write endpoints (URL autofill, submissions, reports, moderation) as one Cloudflare Worker on the PWA's origin, calling service-role-only Postgres functions (M4: chosen over a Supabase Edge Function so it shares the monorepo's TypeScript and needs no CORS) | Node + Fastify container behind a CDN |
 | Workers | GitHub Actions scheduled workflows, one job per adapter group, writing to Supabase. Free plan gives 2,000 min/month on private repos, unlimited on public ([GitHub](https://docs.github.com/en/billing/concepts/product-billing/github-actions)); a 1-min run every 30 min uses about 1,440 min | BullMQ on Redis on a VPS |
 | Storage | Supabase Free: 500 MB Postgres, pauses after 1 week without activity ([Supabase](https://supabase.com/pricing)); scheduled ingestion keeps it busy. H3 indexes computed in code (h3-js) and stored as columns | Supabase Pro ($25/mo, 8 GB, no pause) or self-hosted Postgres |
@@ -165,15 +165,24 @@ Ruled out: featured or sponsored pins, paid ranking, banner ads, selling locatio
 
 ## Milestones and build-agent instructions
 
-Build in five increments, each deployable and demoable on a phone in Wrocław.
+Build in increments, each deployable and demoable on a phone in Wrocław. Build order: 1–6 (done), 8, 9, 10, 11, 12, 7, 13, then the native app. M7 keeps its number but comes after M12 (owner, 2026-10-24). Changed by the owner on 2026-10-24: the PWA is built feature-complete, so the native rewrite can focus on rewriting, with no feature discussions. Every feature below is decided; the native milestone comes last and has no number.
 
-1. **Skeleton.** Monorepo, PWA shell, MapLibre map with OSM tiles, geolocation, radius slider, list toggle, Postgres + PostGIS + H3, seed data for 20 hand-entered Wrocław events.
-2. **Official APIs.** Ticketmaster and Meetup adapters, normalizer, dedup, scheduler, time-window and category filters, event detail screen.
-3. **Density.** H3 hotspot computation; off-screen chevrons and empty-radius guidance.
-4. **Crawler and submissions.** JSON-LD crawler with a target list in config, LLM extraction fallback, URL-autofill submission form, moderation screen.
-5. **Social signals.** Threads keyword adapter (after app review), confidence scoring, "possibly cancelled" logic, analytics. Instagram was dropped from the PoC on 2026-10-21 (see Future features → More venue and event data).
-6. **Design system and map UX** (added 2026-10-22). Spec: [docs/milestones/M6-design.md](milestones/M6-design.md). Where it differs from Core features above (time chips, radius slider, map/list toggle, pin colours, chevrons), the spec wins. Advantages it delivers: [docs/ADVANTAGES.md](ADVANTAGES.md).
-7. **Search and followed artists** (added 2026-10-22, after M6). Spec: [docs/milestones/M7-search-follow.md](milestones/M7-search-follow.md). Performer data, typo-tolerant search, follows on the device, nationwide Ticketmaster matches, premium alerts.
+- **M1 Skeleton.** Monorepo, PWA shell, MapLibre map with OSM tiles, geolocation, radius slider, list toggle, Postgres + PostGIS + H3, seed data for 20 hand-entered Wrocław events.
+- **M2 Official APIs.** Ticketmaster and Meetup adapters, normalizer, dedup, scheduler, time-window and category filters, event detail screen.
+- **M3 Density.** H3 hotspot computation; off-screen chevrons and empty-radius guidance.
+- **M4 Crawler and submissions.** JSON-LD crawler with a target list in config, LLM extraction fallback, URL-autofill submission form, moderation screen.
+- **M5 Social signals.** Threads keyword adapter (after app review), confidence scoring, "possibly cancelled" logic, analytics. Instagram was dropped from the PoC on 2026-10-21 (see Future features → More venue and event data).
+- **M6 Design system and map UX** (added 2026-10-22). Spec: [docs/milestones/M6-design.md](milestones/M6-design.md). Where it differs from Core features above (time chips, radius slider, map/list toggle, pin colours, chevrons), the spec wins. Advantages it delivers: [docs/ADVANTAGES.md](ADVANTAGES.md).
+- **M8 Accounts and premium** (added 2026-10-24; next after M6). User accounts (Supabase Auth), the tiers and presets of M6 §8, a premium entitlement behind a provider interface, end-to-end-encrypted atlas sync (M6 §8), and the URL autofill add-on with a per-account quota (Future features → Automation add-on). Also a design change from the owner (2026-10-24): the dashed reach circle goes; the lit veil (M6 §6) shows the reach clearly without it.
+- **M9 Sharing and attendance** (added 2026-10-24). Clean `/e/<id>` links with previews, the generated preview image, share as image, QR code, links that outlive the event, "I'm going" and link-scoped counts (Future features → Event links, sharing and attendance), and co-presence (M6 §9).
+- **M10 Plan ahead** (added 2026-10-24). Saved and accepted events in one agenda, the evening queue with walking times and overlap warnings, and reminders before a start (Future features → Plan ahead).
+- **M11 Organisers and private events** (added 2026-10-24). Organiser accounts and event claims, organiser updates on the event page, organiser self-service publishing, and private events with contacts, groups and invitations (Future features → Organiser updates, Private events, More venue and event data).
+- **M12 More venue and event data** (added 2026-10-24). Adapters for OpenStreetMap venues (Overpass), regular services at places of worship, venue calendar feeds (iCal / RSS), and cultural institutions and universities as crawl targets (Future features → More venue and event data).
+- **M7 Search and followed artists** (added 2026-10-22; moved after M12 by the owner on 2026-10-24, as the hyper-local features come first). Spec: [docs/milestones/M7-search-follow.md](milestones/M7-search-follow.md). Performer data, typo-tolerant search, follows on the device, nationwide Ticketmaster matches, and, on M8's accounts, follows sync and new-date alerts (M7 §5).
+- **M13 Launch readiness** (added 2026-10-24). Legal texts in the app (terms, privacy policy, art. 14 notice, takedown, storage note), crawler politeness (conditional requests, TDM reservations, contact in the User-Agent), GDPR export and deletion across every account feature, and the final domain and contact address in config (Before public launch).
+- **Native app** (last, no number). Rewrite the finished PWA as a native app for the Play Store, with home-screen widgets and native push. The PWA and its specs are the reference; the server, database and API stay. Client speed (M6 §11, §10) is measured here, not on the web build. After this milestone a new project takes over the native app.
+
+Not in the full build: Weather (decided 2026-10-20), Instagram (decided 2026-10-21), Google Places (paid, no caching), Spotify import (M7 §6), ticketing partner feeds (a business agreement, not code). Walking routes at scale is a provider switch in config, done when the quota runs out.
 
 Instructions for the build agent:
 
@@ -182,8 +191,11 @@ Instructions for the build agent:
 - Each adapter gets a contract test against recorded fixtures; no live calls in CI.
 - Ship the PWA mobile-first (380 px), Polish and English UI strings from the start.
 - Report after each milestone: what was built, what was skipped, open issues.
+- No speed testing on the web build (owner, 2026-10-24): the native app replaces the client. Server-side budgets (query time, API calls per day) still apply.
 
 ## Future features (not in the PoC)
+
+Update 2026-10-24: these sections are now the source material for milestones 8–12 (see the milestones list). Weather stays out.
 
 ### Weather
 
