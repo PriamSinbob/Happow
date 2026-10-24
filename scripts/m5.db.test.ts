@@ -90,6 +90,13 @@ describe.skipIf(!url)('milestone 5 in Postgres', () => {
     expect(second).toMatchObject({ status: 'ok', missing: 1 });
     expect(await flagOf()).toEqual({ flag_reason: 'source_missing', flag_count: 0 });
 
+    // moderation_queue() lists only events that haven't ended by the database's clock, and the
+    // fixture's events are on 2026-10-24: keep this one upcoming so the check doesn't expire.
+    await db.query(
+      `update events e set end_at = now() + interval '1 day' from event_sources es
+       where es.event_id = e.id and es.source_id = 'ticketmaster' and es.external_id = $1`,
+      [GONE],
+    );
     const queue = (
       await db.query<{ q: { reports: { reasons: object }[] } }>('select moderation_queue() as q')
     ).rows[0]!.q;
