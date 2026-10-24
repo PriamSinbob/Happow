@@ -11,14 +11,14 @@ Spec agreed with the owner in the design session of 2026-10-22 (interactive prot
 - **Built.** §3 colour and themes (D), §4 pins on one symbol layer with the glyph set, age badge and family marking (C, E, G), §5 map-screen layout with counter, rail, scrubber, list overlay and edge dots (F), §6 lit map and the local atlas (H), §7 dice (G), §13 Week and Later windows (B, F), §14 default venue for single-venue sources (A), §15 wordless settings sheet (G). Each section's "Built" note has the details.
 - **Skipped.** §8 accounts and premium and §9 co-presence (out of M6 by plan). The "new since last open" bloom (§10). The veil on the raster fallback map. Collision thinning of pins (zoom clustering keeps them apart). The first-launch rail nudge (§1).
 - **Acceptance (§11), checked with the owner on 2026-10-24:**
-  - Time to first pin tap < 3 s from a cold open: met on a Pixel 6 Pro.
+  - Time to first pin tap < 3 s from a cold open: works on a Pixel 6 Pro (owner). Not measured further, for the same reason.
   - The §3.2 contrast table: enforced by the contrast test for every shipped preset.
   - NFM "no location": fixed in slice A, covered by its contract test.
   - DST week: to be checked by the owner on 25 Oct 2026.
-  - 60 fps rail drag with 500 events: not testable, as Wrocław has far fewer events in a snapshot. It moves to the native app.
+  - 60 fps rail drag with 500 events: not tested. Speed is not tested on the web build (owner, 2026-10-24), as the native app replaces the client; this check moves to the native milestone.
   - 5-second test: not run yet. It needs someone who has never seen the app.
 - **Open.**
-  - The owner plans a native rewrite (Play Store, home-screen widgets), as that is how people prefer to use apps. Performance acceptance carries over to it.
+  - The native rewrite (Play Store, home-screen widgets) is the last milestone (brief, 2026-10-24). §10 and the speed checks in §11 carry over to it.
   - The atlas bar's looks, to be adjusted with the owner.
   - Veil redraw time on a mid-range phone.
   - Pins on the map are not focusable; screen-reader users go through the list.
@@ -29,17 +29,17 @@ Spec agreed with the owner in the design session of 2026-10-22 (interactive prot
 
 Agreed with the owner on 2026-10-22. M6 ships as slices, one branch and one PR to `main` each. The data-only slices come first, so the live app keeps working between PRs; the visuals build on them. Each slice PR updates its row below, the Status line above, and adds a short "Built (slice X)" note under its spec section (built, skipped, open), like §13.4 and §14.
 
-| Slice | Spec                    | What                                                                          | Needs | Status                                   |
-| ----- | ----------------------- | ----------------------------------------------------------------------------- | ----- | ---------------------------------------- |
-| A     | §14                     | Default venue for single-venue sources                                        | —     | merged (#9)                              |
-| B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest                          | —     | merged (#10)                             |
-| C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data                      | —     | merged (#12)                             |
-| D     | §3                      | Colour tokens, day/night themes, presets, contrast test                       | —     | merged (#13)                             |
-| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge                        | C, D  | merged (#14)                             |
-| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay                      | B, E  | merged (#17)                             |
-| G     | §4.4 UI, §7, §15        | Family-mode filter and chip; dice; wordless settings sheet, no category tints | C, F  | merged (#18)                             |
-| H     | §6                      | Lit map and the local atlas                                                   | F     | merged (#19)                             |
-| —     | §8, §9                  | Accounts and premium; co-presence                                             | —     | out of M6 (build later / after the core) |
+| Slice | Spec                    | What                                                                          | Needs | Status                        |
+| ----- | ----------------------- | ----------------------------------------------------------------------------- | ----- | ----------------------------- |
+| A     | §14                     | Default venue for single-venue sources                                        | —     | merged (#9)                   |
+| B     | §13.1, §13.4            | Week/Later windows, `/api/area?range`, 15-day ingest                          | —     | merged (#10)                  |
+| C     | §4.2, §4.4 data         | Entry and grace, `ageMin` and `family` in the event data                      | —     | merged (#12)                  |
+| D     | §3                      | Colour tokens, day/night themes, presets, contrast test                       | —     | merged (#13)                  |
+| E     | §4.1, §4.3              | Pins on one symbol layer: SDF glyphs, rings, age badge                        | C, D  | merged (#14)                  |
+| F     | §5, §13.2, §13.3, §13.5 | Map-screen layout: counter, rail, scrubber, list overlay                      | B, E  | merged (#17)                  |
+| G     | §4.4 UI, §7, §15        | Family-mode filter and chip; dice; wordless settings sheet, no category tints | C, F  | merged (#18)                  |
+| H     | §6                      | Lit map and the local atlas                                                   | F     | merged (#19)                  |
+| —     | §8, §9                  | Accounts and premium; co-presence                                             | —     | out of M6: built in M8 and M9 |
 
 ### Slice C: entry and age data
 
@@ -543,6 +543,8 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
 
 ## 8. Accounts and premium (design now, build later)
 
+Built in M8 (brief, 2026-10-24).
+
 Consistent with the brief's monetization rules: every event is always shown to everyone, and map, filters and details stay free.
 
 | Tier             | Gets                                                                                                                      |
@@ -572,6 +574,8 @@ Atlas sync design:
 
 ## 9. Co-presence (after the core)
 
+Built in M9 (brief, 2026-10-24).
+
 - Per event, from app signals only:
   - **looking:** opened the card in the last 30 min
   - **on the way:** started GoThere
@@ -581,6 +585,8 @@ Atlas sync design:
 - Google's Popular Times is not an option: it is venue-level and not exposed by the official Places API.
 
 ## 10. Performance budget
+
+The API and battery rules hold on the web build. Frame rates are measured in the native app (owner, 2026-10-24).
 
 - **API: zero additional requests.**
   - The rail, scrubber, filters and live-only all run on the existing 5-min area snapshot (`AreaEventRepository`).
@@ -592,6 +598,8 @@ Atlas sync design:
   - At night on OLED, true black pixels are off.
 
 ## 11. Acceptance
+
+Speed checks (60 fps, first pin tap) apply to the native app, not the web build (owner, 2026-10-24).
 
 - 5-second test: someone who has never seen the app says what's on nearby without reading.
 - The §3.2 contrast table holds for every shipped preset.
