@@ -18,7 +18,15 @@ import { useI18n } from '../i18n';
 import { useMapTheme } from '../mapTheme';
 import { addPinLayers, applyPinPaint, PIN_HIT_LAYERS, PIN_SOURCE, pinPaint } from '../pinLayers';
 import { pinFeatures, type PinMode } from '../pins';
-import { addReachCircle, RADIUS_SOURCE, radiusFeature } from '../reachCircle';
+import {
+  addDragRing,
+  addReachCircle,
+  DRAG_LAYER,
+  dragRingColour,
+  RADIUS_SOURCE,
+  radiusFeature,
+  showDragRing,
+} from '../reachCircle';
 import { useTheme } from '../theme';
 
 interface Props {
@@ -275,8 +283,9 @@ export function MapView(props: Props) {
       addVeil(m, veilCanvas.current!, boxRef.current);
       paintVeil(m, themeRef.current.tokens);
       addReachCircle(m, p.center, p.radiusM);
-      addPinLayers(m);
       const th = themeRef.current;
+      addDragRing(m, dragRingColour(th.name));
+      addPinLayers(m);
       applyPinPaint(m, pinPaint(th.tokens, th.preset, th.name));
       setStyleReady((n) => n + 1);
     });
@@ -397,12 +406,20 @@ export function MapView(props: Props) {
 
   useMapTheme(map);
 
-  // Rail drag: the map zooms with the finger (§5), and on the raster fallback the circle follows
-  // it too. No animation: this runs every frame of the drag.
+  useEffect(() => {
+    const m = map.current;
+    if (m?.getLayer(DRAG_LAYER))
+      m.setPaintProperty(DRAG_LAYER, 'line-color', dragRingColour(themeName));
+  }, [themeName, styleReady]);
+
+  // Rail drag: the map zooms with the finger (§5). The dashed ring (vector map) or the circle
+  // (raster fallback) follows it. No animation: this runs every frame of the drag.
   useEffect(() => {
     const m = map.current;
     const r = props.previewRadiusM;
-    if (!m || r === null) return;
+    if (!m) return;
+    showDragRing(m, props.center, r);
+    if (r === null) return;
     (m.getSource(RADIUS_SOURCE) as GeoJSONSource | undefined)?.setData(
       radiusFeature(props.center, r),
     );

@@ -40,9 +40,13 @@ Owner, 2026-10-24: the dashed reach circle (outline and fill) goes. The lit veil
 - **Vector style.** `MapView` stops adding the `radius` source and the `radius-fill` / `radius-line` layers. `circleBounds` stays: fitting the view to the reach still uses it, and the veil already redraws when the reach changes.
 - **Raster fallback keeps it.** The fallback (`rasterStyle()`, used when the vector style fails to load) has no veil (M6 slice H skipped it), so without the circle nothing would mark the reach. When the map falls back to raster, the radius source and layers are added as today.
 - **What is accepted.** At city zoom the veil fades out (from z12.8 to nothing at z10.5), so nothing marks the reach there on the vector map. The rail shows the distance while it is dragged, and pins outside the reach stay faded.
+- **Owner decisions after the design review** (2026-10-24):
+  1. **Drag ring.** The veil redraws only at the rail's stops, so while the rail is dragged a bright dashed ring shows the reach under the finger, and it goes when the drag ends. Bright (night ink) on the night map; grey (day `muted`) on the day map, where white would vanish into the roads.
+  2. **5 km stop.** No ring there: at 5 km the map works as a view of the whole area, so the veil fading out is fine.
+  3. **No "you" dot on the map.** The overview map's centre is the user; at 5 km and above it does not matter. The dot shows only while navigating, when the route is drawn ("Going there", which already does this).
 - **Spec and design text.** M6 slice H's owner decision 3 ("pins, the reach circle and the user dot stay above it") and the `docs/design/README.md` lit-map line are updated: the circle is drawn only on the raster fallback.
 - **Tests.** The vector style has no `radius-*` layer; after a simulated fallback to raster it has both.
-- **Built** (slice D, 2026-10-24): the vector map draws no reach circle; the veil's lit disc shows the reach. The circle moved to `apps/web/src/reachCircle.ts` and is added only when the map has no vector source, which is the raster fallback, so it appears exactly where there is no veil. It is drawn in day ink in both themes, because the raster tiles stay light at night (design review). Nothing skipped. Open questions for the owner are in the PR: the lit disc does not follow the rail during a drag, the 5 km stop zooms out past the veil's fade, and nothing marks exactly where you are.
+- **Built** (slice D, 2026-10-24): the vector map draws no reach circle; the veil's lit disc shows the reach. The circle moved to `apps/web/src/reachCircle.ts` and is added only when the map has no vector source, which is the raster fallback, so it appears exactly where there is no veil. It is drawn in day ink in both themes, because the raster tiles stay light at night (design review). The drag ring (decision 1) is a hidden layer on the vector map, shown only while the rail is dragged. Nothing skipped, nothing open.
 
 ## 2. Accounts
 
@@ -189,7 +193,7 @@ The "Settings page" row goes (no settings sync).
 
 ## 8. Acceptance
 
-- The vector map shows no reach circle; the reach reads from the lit veil at street zoom; the raster fallback still draws it.
+- The vector map shows no reach circle, except a dashed ring while the rail is dragged; the reach reads from the lit veil at street zoom; the raster fallback still draws it. The map shows no "you" dot outside "Going there".
 - With manual delivery, a tester asks for a code, the owner sends it from the admin panel's ready email, and the tester signs in with it in an installed iOS home-screen app. Google sign-in works on Android and desktop.
 - A new account has premium until `until`; moving `until` in config extends it for everyone.
 - A free account adds 15 events a month, 5 with autofill; premium 300, all with autofill; the form shows both meters.
