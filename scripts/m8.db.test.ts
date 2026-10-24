@@ -1,6 +1,7 @@
 /**
- * Integration test for M8 slice A (accounts) against DATABASE_URL after `pnpm db:reset`: the
- * profile trigger, row-level security, cascade on delete, staff roles and sign-in code requests.
+ * Integration test for M8 against DATABASE_URL after `pnpm db:reset`. Slice A: the profile
+ * trigger, row-level security, cascade on delete, staff roles and sign-in code requests. Slice B:
+ * plan grants.
  * It writes to auth.users, so it runs only on a local or CI database, never on Supabase.
  */
 import 'dotenv/config';
@@ -157,5 +158,87 @@ describe.skipIf(!url || !local)('M8 accounts in Postgres', () => {
     expect((await db.query('select 1 from profiles where user_id = $1', [id])).rowCount).toBe(0);
     const reqId = randomUUID();
     expect(await fn('code_request_delete($1)', [reqId])).toBe(false);
+  });
+
+  it('adds, lists and ends manual grants', async () => {
+    const email = mail('grant');
+    const id = await newUser(email);
+    await expect(
+      fn('grant_add($1, $2, null, null, $3)', [mail('nobody'), 'premium', mail('owner')]),
+    ).rejects.toThrow(/no account/);
+    const g = await fn<{ id: string }>('grant_add($1, $2, null, $3, $4)', [
+      email.toUpperCase(),
+      'premium',
+      'tester',
+      mail('Owner'),
+    ]);
+    expect(g).toMatchObject({ plan: 'premium', source: 'manual', endsAt: null, note: 'tester' });
+    expect(await fn<unknown[]>('grants_active($1)', [id])).toHaveLength(1);
+    const listed = (await fn<{ id: string }[]>('grants_list()')).find((r) => r.id === g.id);
+    expect(listed).toMatchObject({ email, createdBy: mail('owner'), active: true });
+
+    expect(await fn('grant_end($1)', [g.id])).toBe(true);
+    expect(await fn<unknown[]>('grants_active($1)', [id])).toHaveLength(0);
+    // Ending it again keeps the first end; an unknown grant is false.
+    const endsAt = async () =>
+      (await db.query('select ends_at from plan_grants where id = $1', [g.id])).rows[0];
+    const ended = await endsAt();
+    expect(await fn('grant_end($1)', [g.id])).toBe(true);
+    expect(await endsAt()).toEqual(ended);
+    expect(await fn('grant_end($1)', [randomUUID()])).toBe(false);
+    await expect(fn('grant_add($1, $2, null, null, null)', [email, 'gold'])).rejects.toThrow();
+  });
+
+  it('applies a provider purchase once, however often it is sent', async () => {
+    const id = await newUser(mail('buyer'));
+    const other = await newUser(mail('other'));
+    const ref = `sub-${tag}`;
+    const apply = (user: string, ends: string) =>
+      fn<{ id: string; endsAt: string }>('grant_apply($1, $2, $3, $4, $5, $6)', [
+        user,
+        'premium',
+        'fake',
+        ref,
+        '2026-10-01T00:00:00Z',
+        ends,
+      ]);
+    const first = await apply(id, '2099-11-01T00:00:00Z');
+    const again = await apply(id, '2099-12-01T00:00:00Z');
+    expect(again.id).toBe(first.id);
+    expect(new Date(again.endsAt).toISOString()).toBe('2099-12-01T00:00:00.000Z');
+    const rows = await db.query('select 1 from plan_grants where provider_ref = $1', [ref]);
+    expect(rows.rowCount).toBe(1);
+    await expect(apply(other, '2099-12-01T00:00:00Z')).rejects.toThrow(/another account/);
+    // A refund ends it now: no longer active.
+    await apply(id, new Date(Date.now() - 1000).toISOString());
+    expect(await fn<unknown[]>('grants_active($1)', [id])).toHaveLength(0);
+  });
+
+  it('shows users only their own grants, exports them and deletes them with the user', async () => {
+    const a = await newUser(mail('ga'));
+    const b = await newUser(mail('gb'));
+    await fn('grant_add($1, $2, null, null, null)', [mail('ga'), 'premium']);
+    await fn('grant_add($1, $2, null, null, null)', [mail('gb'), 'premium']);
+    await db.query('begin');
+    try {
+      await db.query('set local role authenticated');
+      await db.query(`select set_config('request.jwt.claim.sub', $1, true)`, [a]);
+      const rows = (await db.query<{ user_id: string }>('select user_id from plan_grants')).rows;
+      expect(rows.map((r) => r.user_id)).toEqual([a]);
+    } finally {
+      await db.query('rollback');
+    }
+    // The functions are for the API (service role) only.
+    await db.query('begin');
+    try {
+      await db.query('set local role authenticated');
+      await expect(db.query('select grants_active($1)', [a])).rejects.toThrow(/permission denied/);
+    } finally {
+      await db.query('rollback');
+    }
+    const exported = await fn<{ grants: unknown[] }>('account_export($1)', [a]);
+    expect(exported.grants).toEqual([expect.objectContaining({ plan: 'premium' })]);
+    await db.query('delete from auth.users where id = $1', [b]);
+    expect((await db.query('select 1 from plan_grants where user_id = $1', [b])).rowCount).toBe(0);
   });
 });

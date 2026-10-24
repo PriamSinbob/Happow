@@ -4,7 +4,7 @@ Oct 24, 2026
 
 Spec from the brief's M8 entry (owner, 2026-10-24), M6 §8 and the brief's "Automation add-on (paid): URL autofill", with the owner's answers of 2026-10-24 (§9). M8 comes next after M6; M7 is built after M12 and then uses these accounts (M7 slice G). Build it in the usual way: plan per slice, show the plan, build, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed 2026-10-24; slice A (accounts on the server) built, B–G planned. Only the payment provider is open, and it is not needed in M8.
+**Status:** in progress. Spec agreed 2026-10-24; slices A (accounts on the server) and B (plans, the promotion through 30 Nov 2026, grants, the premium provider interface) built, C–G planned. Only the payment provider is open, and it is not needed in M8.
 
 The PWA is built feature-complete before the native rewrite (brief, 2026-10-24), so every slice is built in full, UI included. The server side (tables, SQL functions, `/api/me`, the premium provider interface) is shaped so a native client uses it unchanged. No speed testing on the web build.
 
@@ -17,7 +17,7 @@ One branch and one PR to `main` per slice, as in M6. The data and API slices com
 | Slice | Spec     | What                                                                                                   | Needs | Status  |
 | ----- | -------- | ------------------------------------------------------------------------------------------------------ | ----- | ------- |
 | A     | §2       | Accounts on the server: sign-up, profiles, roles, manual code delivery, `/api/me`, export, delete      | —     | built   |
-| B     | §3, §4   | Plans and entitlements in config, the early-access promotion, grants, `PremiumProvider` with `none`    | A     | planned |
+| B     | §3, §4   | Plans and entitlements in config, the early-access promotion, grants, `PremiumProvider` with `none`    | A     | built   |
 | C     | §5 API   | Monthly quotas per account: events added and autofills                                                 | B     | planned |
 | D     | §1       | Reach circle off the vector map; the raster fallback keeps it                                          | —     | planned |
 | E     | §2–§4 UI | Mockup first. Sign-in sheet, account row in About, plan mark, premium sheet, presets and atlas by tier | A, B  | planned |
@@ -104,10 +104,10 @@ Owner, 2026-10-23: the app is partly paid. Paid never buys visibility: every pub
 
 ## 4. Early access, grants and the premium provider
 
-- **Early access is a promotion with one end date, not a cohort** (owner, 2026-10-24). Every account has premium until a fixed date, the same for everyone, so nobody has to guess whether they still fit in. `config/plans.json` → `earlyAccess: { plan: "premium", until: "2026-12-01" }` (one month from the first testers; exact date at slice B).
+- **Early access is a promotion with one end date, not a cohort** (owner, 2026-10-24). Every account has premium until a fixed date, the same for everyone, so nobody has to guess whether they still fit in. `config/plans.json` → `earlyAccess: { plan: "premium", until: "2026-11-30" }`: premium through the whole of 30 November 2026, Warsaw time (owner, 2026-10-24: about five weeks from the first testers).
   - **Extending it is a config change.** The promotion is not stored per user: the Worker computes the effective plan as the highest of the user's grants and the promotion while `now < until`. Moving `until` and deploying extends it for everyone at once; the owner then announces it ("extended as a promotion").
   - **Recommendation** (asked by the owner): start with one month, as the owner suggests. Extending is free and reads as a gift; shortening is the move to avoid, and a short first term never needs it. The one hard rule: `until` must not pass before a way to buy premium exists (§4, provider), or premium features stop with nothing to buy. Until then, extend.
-  - The account row shows the end date ("Premium do 01.12.2026" / "Premium until 1 Dec 2026"). No reminder emails in M8 (no email sender yet); the owner announces the end or an extension.
+  - The account row shows the end date ("Premium do 30.11.2026" / "Premium until 30 Nov 2026"). No reminder emails in M8 (no email sender yet); the owner announces the end or an extension.
 - **Grants** for everything else: `plan_grants (id, user_id, plan, source, provider, provider_ref, starts_at, ends_at, note, created_at)`, `source` one of `manual`, `trial`, `purchase`. The admin adds manual grants (testers, organisers) in the admin panel (slice F).
 - **When premium ends, nothing made is taken away; only new use stops.**
   - Events already added stay; the monthly quotas fall back to the account's.
@@ -134,6 +134,14 @@ Owner, 2026-10-23: the app is partly paid. Paid never buys visibility: every pub
   - The account row in About shows the plan and its end with a small premium mark.
   - Gated controls are visible to signed-in users with the premium mark; tapping one without the entitlement opens a short sheet saying what it unlocks. No nagging, no counters on the map (pull, not push: M6 §1).
 - **Tests.** Effective plan from grants and the promotion, at the `until` boundary and with overlapping grants; a fake provider through the interface (checkout, webhook → grant, cancel → `ends_at`, refund → grant ended); the fallbacks when premium ends.
+- **Built** (slice B, 2026-10-24): §3 and §4 on the server. The app looks and works as before; presets and the plan mark come in slice E, quotas in slice C.
+  - **Config:** `config/plans.json` (the entitlement table above, checked so every plan lists every entitlement and a higher plan never gives less; `atlas.sync` is off in all plans until §6), loaded by `loadConfig`. `earlyAccess` until `2026-11-30`. `premium.providers: []` in `config/app.json`.
+  - **Core** (`packages/core/src/plans.ts`): `effectivePlan` (the highest of the account, the promotion and active grants; its end is the latest end of whatever gives that plan), `earlyAccessEnd` (midnight after `until` in the default region's time zone), `entitlementsFor`, `can`, `quota`, `presetsFor`.
+  - **Migration** `20261024000010_plans.sql`: `plan_grants` (users read only their own; one grant per provider purchase), `grants_active`, `grants_list`, `grant_add` (by email), `grant_end` (ends now), `grant_apply` (a provider's purchase, updated in place; refuses a purchase already on another account), and `account_export` with the grants.
+  - **API:** `GET /api/me` adds `plan`, `planSource` (`account`, `early_access`, `manual`, `trial`, `purchase`), `planEndsAt` and `entitlements`. Admin: `GET /api/admin/grants`, `POST /api/admin/grants {email, plan?, endsAt | null, note?}` (makes the account if needed), `DELETE /api/admin/grants/:id`. `packages/api/src/premium.ts`: the `PremiumProvider` interface, a registry by config id (empty), and the four `/api/premium/*` endpoints; a receipt only ever gives the user who sent it a plan, and checkout always returns to the app's own origin.
+  - **Tests:** `packages/core/test/plans.test.ts` (11: the `until` boundary, the DST change, overlapping, open-ended, ended and future grants, config checks, presets by tier); `packages/api/test/accounts.test.ts` (+10: plans on `/api/me`, admin grants, premium with no provider and with a fake one through checkout, webhook paid/cancelled/refunded, a bad signature, verify); `scripts/m8.db.test.ts` (+3, CI database).
+  - Skipped: nothing planned for slice B. `manageUrl` has no endpoint yet; the first provider slice adds it with its button.
+  - Open: no way to buy premium yet (Q10). The promotion must be extended before 30 November 2026 unless a provider exists by then (§4 recommendation).
 
 ## 5. Events and autofill per account
 

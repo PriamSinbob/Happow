@@ -288,6 +288,8 @@ export const appConfigSchema = z.object({
     /** The email the admin sends by hand, per language: {code}, {link} and {hours} are filled in. */
     codeEmail: z.object({ pl: emailTemplateSchema, en: emailTemplateSchema }),
   }),
+  /** Ways to buy premium (M8 §4). Empty = none: no offers, premium only from promotions and grants. */
+  premium: z.object({ providers: z.array(z.string().regex(/^[a-z0-9-]+$/)) }),
   ingest: z.object({
     descriptionMaxChars: z.number().int().positive(),
     /** Fetch from this long ago, so events that started earlier and still run are kept. */
@@ -497,3 +499,43 @@ export const seedFileSchema = z.object({
   venues: z.array(seedVenueSchema),
   events: z.array(seedEventSchema),
 });
+
+/** Plans from lowest to highest; a higher plan never gets less (M8 §3). */
+export const planIdSchema = z.enum(['anonymous', 'account', 'premium']);
+
+const quotaSchema = z.number().int().min(0);
+
+/** What a plan allows. Code asks for these, never for a plan (M8 §3). */
+export const entitlementsSchema = z
+  .object({
+    'events.perMonth': quotaSchema,
+    'autofill.perMonth': quotaSchema,
+    'presets.account': z.boolean(),
+    'presets.premium': z.boolean(),
+    'atlas.export': z.boolean(),
+    'atlas.sync': z.boolean(),
+    'alerts.newDates': z.boolean(),
+    'saved.sync': z.boolean(),
+    'private.create': z.boolean(),
+  })
+  .strict();
+
+export const plansConfigSchema = z
+  .object({
+    plans: z.object({
+      anonymous: entitlementsSchema,
+      account: entitlementsSchema,
+      premium: entitlementsSchema,
+    }),
+    /**
+     * A promotion for every account, the same for all (M8 §4): `plan` through the whole `until`
+     * day in the default region's time zone. Null = no promotion.
+     */
+    earlyAccess: z
+      .object({
+        plan: planIdSchema.exclude(['anonymous']),
+        until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      })
+      .nullable(),
+  })
+  .strict();

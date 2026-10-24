@@ -1,0 +1,38 @@
+{
+  "plans": {
+    "anonymous": {
+      "events.perMonth": 0,
+      "autofill.perMonth": 0,
+      "presets.account": false,
+      "presets.premium": false,
+      "atlas.export": false,
+      "atlas.sync": false,
+      "alerts.newDates": false,
+      "saved.sync": false,
+      "private.create": false
+    },
+    "account": {
+      "events.perMonth": 15,
+      "autofill.perMonth": 5,
+      "presets.account": true,
+      "presets.premium": false,
+      "atlas.export": true,
+      "atlas.sync": false,
+      "alerts.newDates": false,
+      "saved.sync": true,
+      "private.create": false
+    },
+    "premium": {
+      "events.perMonth": 300,
+      "autofill.perMonth": 300,
+      "presets.account": true,
+      "presets.premium": true,
+      "atlas.export": true,
+      "atlas.sync": false,
+      "alerts.newDates": true,
+      "saved.sync": true,
+      "private.create": true
+    }
+  },
+  "earlyAccess": { "plan": "premium", "until": "2026-11-30" }
+}

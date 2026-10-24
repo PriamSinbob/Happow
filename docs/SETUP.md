@@ -73,6 +73,17 @@ They then sign in from the app: **About → Moderator sign-in**, or `/#/moderate
 
 **Sign-in codes by hand** (`auth.emailDelivery: "manual"` in `config/app.json`, until the app has its own domain and an email sender). When someone asks for a code in the app, the request waits for you. From M8 slice F the admin panel lists the requests; **Generate** creates the account if needed and shows a ready email (code and link, in their language) with a button that opens it in your mail app. Send it from your own address. Until slice F, the same works through the API: `GET /api/admin/code-requests` and `POST /api/admin/code-requests/<id>/generate`, signed in as the admin.
 
+**Premium by hand (plan grants).** Every account has premium during the early-access promotion: `earlyAccess.until` in `config/plans.json` (the last day included, Warsaw time). To extend it, change that date and deploy; it applies to everyone at once. To give one person premium beyond that (a tester, a partner organiser), add a grant. From M8 slice F the admin panel does it; until then, signed in as the admin:
+
+- `POST /api/admin/grants` with `{"email": "name@example.org", "endsAt": null, "note": "organiser"}` gives premium with no end. For an end, send `"endsAt": "2027-01-31T23:00:00Z"` (UTC; that is midnight in Warsaw in winter). The account is created if the person has never signed in.
+- `GET /api/admin/grants` lists every grant; `DELETE /api/admin/grants/<id>` ends one now.
+
+Or in the **SQL Editor** (the person must have an account):
+
+```sql
+select grant_add('name@example.org', 'premium', null, 'organiser', 'you@example.org');
+```
+
 ## 5. Cloudflare: hosting the app and the `/api`
 
 The app runs as one **Cloudflare Worker** named `happow`. Cloudflare serves the built PWA as static files, and only `/api/*` runs code (`apps/web/worker/index.ts`). The settings live in `wrangler.jsonc` at the repo root. Cloudflare builds and deploys it from GitHub on every push to `main` (Workers Builds); no GitHub Action or Cloudflare token is involved.
