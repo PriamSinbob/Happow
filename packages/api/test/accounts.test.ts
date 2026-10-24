@@ -27,6 +27,7 @@ function supabase(rpc: Record<string, Rpc> = {}, opts: { userExists?: boolean } 
     staff_role: (a) => ({ body: roles[a.p_email as string] ?? null }),
     profile_get: () => ({ body: { displayName: null, locale: 'pl', termsVersion: null } }),
     grants_active: () => ({ body: [] }),
+    usage_get: () => ({ body: { events: 3, autofills: 1 } }),
     ...rpc,
   };
   const fetchMock = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
@@ -104,7 +105,15 @@ describe('/api/me', () => {
       planSource: 'early_access',
       planEndsAt: '2026-11-30T23:00:00.000Z',
       entitlements: config.plans.plans.premium,
+      // This month in Warsaw, and when it ends there.
+      usage: {
+        month: '2026-10',
+        resetsAt: '2026-10-31T23:00:00.000Z',
+        events: { used: 3, limit: 300 },
+        autofill: { used: 1, limit: 300 },
+      },
     });
+    expect(rpcCalls(sb, 'usage_get')[0]!.body).toEqual({ p_user: 'u1', p_month: '2026-10-01' });
     expect(rpcCalls(sb, 'grants_active')[0]!.body).toEqual({ p_user: 'u1' });
     expect(rpcCalls(sb, 'profile_get')[0]!.body).toEqual({ p_user: 'u1' });
   });
@@ -318,6 +327,7 @@ describe('plans on /api/me', () => {
       planSource: 'account',
       planEndsAt: null,
       entitlements: { 'events.perMonth': 15, 'autofill.perMonth': 5, 'presets.premium': false },
+      usage: { events: { used: 3, limit: 15 }, autofill: { used: 1, limit: 5 } },
     });
   });
 

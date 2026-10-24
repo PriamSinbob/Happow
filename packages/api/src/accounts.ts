@@ -2,7 +2,10 @@ import {
   effectivePlan,
   entitlementsFor,
   languageSchema,
+  quota,
+  usageMonth,
   type AppConfig,
+  type Entitlements,
   type PlanGrant,
   type PlansConfig,
 } from '@happow/core';
@@ -45,7 +48,15 @@ const grantSchema = z
   })
   .strict();
 
-/** Account endpoints (M8 §2–§4): /api/me, /api/auth/*, /api/admin/*. */
+/** 429 for a used-up monthly quota, with what the add form needs to say so (M8 §5). */
+export const quotaExceeded = (kind: 'events' | 'autofill', limit: number, resetsAt: Date) =>
+  new ApiError(429, 'quota_exceeded', undefined, {
+    kind,
+    limit,
+    resetsAt: resetsAt.toISOString(),
+  });
+
+/** Account endpoints (M8 §2–§5): /api/me, /api/auth/*, /api/admin/*. */
 export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHash }: AccountDeps) {
   const { auth, legal } = app;
   /** Checked tokens, so a burst of requests asks Supabase once. Per isolate, short-lived. */
@@ -95,6 +106,22 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
     };
   }
 
+  /** This month's use of both quotas, their limits and when they reset (M8 §5). */
+  async function usageOf(user: { id: string }, entitlements: Entitlements) {
+    const { db } = need();
+    const { month, resetsAt } = usageMonth(now(), timeZone);
+    const used = await db.rpc<{ events: number; autofills: number }>('usage_get', {
+      p_user: user.id,
+      p_month: month,
+    });
+    return {
+      month: month.slice(0, 7),
+      resetsAt: resetsAt.toISOString(),
+      events: { used: used.events, limit: quota(entitlements, 'events.perMonth') },
+      autofill: { used: used.autofills, limit: quota(entitlements, 'autofill.perMonth') },
+    };
+  }
+
   async function profile(user: User) {
     const { db } = need();
     const [p, plan] = await Promise.all([
@@ -107,6 +134,7 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
       role: user.role,
       ...p,
       ...plan,
+      usage: await usageOf(user, plan.entitlements),
     };
   }
 
@@ -262,5 +290,5 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
     throw new ApiError(404, 'not_found');
   }
 
-  return { requireUser, planOf, me, auth: authRoutes, admin };
+  return { requireUser, planOf, usageOf, me, auth: authRoutes, admin };
 }

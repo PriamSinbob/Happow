@@ -8,6 +8,7 @@ import {
   loadConfig,
   presetsFor,
   quota,
+  usageMonth,
   type PlanGrant,
   type PlansConfig,
 } from '../src';
@@ -134,6 +135,26 @@ describe('effectivePlan', () => {
   it('keeps the higher plan over a lower grant that lasts longer', () => {
     const low = grant({ plan: 'account', endsAt: null });
     expect(plan('2026-10-24T12:00:00Z', [low]).plan).toBe('premium');
+  });
+});
+
+describe('usageMonth', () => {
+  it('counts calendar months in Warsaw time, not UTC', () => {
+    // 31 Oct 23:30 UTC is already 1 Nov 00:30 in Warsaw.
+    expect(usageMonth(at('2026-10-31T22:59:59Z'), tz)).toEqual({
+      month: '2026-10-01',
+      resetsAt: at('2026-10-31T23:00:00Z'),
+    });
+    expect(usageMonth(at('2026-10-31T23:30:00Z'), tz)).toEqual({
+      month: '2026-11-01',
+      resetsAt: at('2026-11-30T23:00:00Z'),
+    });
+  });
+
+  it('rolls over the year, and resets at local midnight in summer time', () => {
+    expect(usageMonth(at('2026-12-31T23:00:00Z'), tz).month).toBe('2027-01-01');
+    // 1 July 00:00 in Warsaw (CEST, UTC+2) is 30 June 22:00 UTC.
+    expect(usageMonth(at('2027-06-15T12:00:00Z'), tz).resetsAt).toEqual(at('2027-06-30T22:00:00Z'));
   });
 });
 

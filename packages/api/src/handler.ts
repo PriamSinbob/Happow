@@ -9,6 +9,8 @@ import {
   isAreaKey,
   isInBbox,
   loadConfig,
+  quota,
+  usageMonth,
   type HappowConfig,
   type LatLng,
   type Region,
@@ -34,7 +36,7 @@ import {
 } from '@happow/extract';
 import { normalize } from '@happow/ingest/normalize';
 import { z } from 'zod';
-import { accountRoutes } from './accounts.js';
+import { accountRoutes, quotaExceeded } from './accounts.js';
 import { ApiError, body, json, sha256 } from './http.js';
 import { premiumProviders, premiumRoutes, type PremiumProvider } from './premium.js';
 import { dispatchDueIngest, type ScheduleEnv } from './schedule.js';
@@ -202,10 +204,12 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       `${salt}:ip:${req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? 'local'}`,
     );
 
+  // Quotas count per calendar month, and the promotion ends, in the default region's time zone.
+  const accountZone = getRegion(config).timezone;
   const accounts = accountRoutes({
     app: config.app,
     plans: config.plans,
-    timeZone: getRegion(config).timezone,
+    timeZone: accountZone,
     need,
     now,
     limit,
@@ -221,6 +225,9 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   });
 
   const regionFor = (id?: string): Region => getRegion(config, id);
+  /** The signed-in user when the request carries a token (a bad token is 401), else null. */
+  const optionalUser = (req: Request) =>
+    req.headers.has('authorization') ? accounts.requireUser(req) : Promise.resolve(null);
 
   async function locate(e: ExtractedEvent, region: Region): Promise<LatLng | null> {
     if (e.point) return e.point;
@@ -275,12 +282,22 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   /** POST /api/autofill {url} → up to 5 prefills from the page (JSON-LD first, LLM fallback). */
   async function autofill(req: Request): Promise<Response> {
     if (!limits.autofill) throw new ApiError(404, 'not_found');
-    const { db, salt } = need();
+    const { db } = need();
+    const user = await accounts.requireUser(req);
     const { url, regionId } = await body(
       req,
       z.object({ url: z.string().min(4).max(2000), regionId: z.string().optional() }),
     );
-    await limit('autofill', await clientHash(req, salt), 3600, limits.autofillPerHourPerClient);
+    await limit('autofill', user.id, 3600, limits.autofillPerHour);
+    // Checked before the page is fetched, so a used-up quota costs no fetch and no LLM call;
+    // counted only once the page gave something to fill the form with.
+    const usage = usageMonth(now(), accountZone);
+    const quotaMax = quota((await accounts.planOf(user)).entitlements, 'autofill.perMonth');
+    const used = await db.rpc<{ autofills: number }>('usage_get', {
+      p_user: user.id,
+      p_month: usage.month,
+    });
+    if (used.autofills >= quotaMax) throw quotaExceeded('autofill', quotaMax, usage.resetsAt);
     const region = regionFor(regionId);
     let page;
     try {
@@ -332,6 +349,16 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       .slice(0, 5);
     const prefills = await Promise.all(usable.map(({ e }) => toPrefill(e, page.url, region)));
     if (!prefills.length) method = 'none';
+    else if (
+      !(await db.rpc<boolean>('usage_take', {
+        p_user: user.id,
+        p_month: usage.month,
+        p_kind: 'autofills',
+        p_max: quotaMax,
+      }))
+    )
+      // Another request took the last one in the meantime.
+      throw quotaExceeded('autofill', quotaMax, usage.resetsAt);
     const meta = pageMeta(page.html);
     return json({ method, url: page.url, title: meta.title, events: prefills });
   }
@@ -343,7 +370,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       req,
       z.object({ q: z.string().trim().min(3).max(200), regionId: z.string().optional() }),
     );
-    await limit('geocode', await clientHash(req, salt), 3600, limits.autofillPerHourPerClient * 4);
+    await limit('geocode', await clientHash(req, salt), 3600, limits.autofillPerHour * 4);
     const region = regionFor(regionId);
     const hit = await geocoder.geocode(
       {
@@ -361,6 +388,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   async function submit(req: Request): Promise<Response> {
     const { db, salt } = need();
     if (!submissionsSource) throw new ApiError(503, 'not_configured');
+    const user = await optionalUser(req);
+    if (!user && limits.account === 'required') throw new ApiError(401, 'account_required');
     const input = await body(req, submissionSchema);
     const region = regionFor(input.regionId);
     const e = input.event;
@@ -384,8 +413,17 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     }
 
     const submitter = await sha256(`${salt}:device:${input.deviceId}`);
-    await limit('submit', submitter, 86_400, limits.maxPerDevicePerDay);
-    await limit('submit-ip', await clientHash(req, salt), 86_400, limits.maxPerDevicePerDay * 3);
+    // An account has a monthly quota (checked as the event is stored) and an hourly guard;
+    // without one, the per-device and per-IP daily caps apply.
+    let quotaMax = 0;
+    if (user) {
+      await limit('submit-account', user.id, 3600, limits.perHourPerAccount);
+      quotaMax = quota((await accounts.planOf(user)).entitlements, 'events.perMonth');
+    } else {
+      await limit('submit', submitter, 86_400, limits.maxPerDevicePerDay);
+      await limit('submit-ip', await clientHash(req, salt), 86_400, limits.maxPerDevicePerDay * 3);
+    }
+    const usage = usageMonth(now(), accountZone);
 
     const id = crypto.randomUUID();
     const res = normalize(
@@ -431,12 +469,21 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     );
     if (!res.ok) throw new ApiError(400, 'invalid_input', res.reason);
     const publish = limits.publishBeforeModeration;
-    await db.rpc('submit_event', {
-      p: { id, form: { ...e, url: e.url ?? null }, normalized: res.value },
-      p_submitter: submitter,
-      p_region: region.id,
-      p_publish: publish,
-    });
+    try {
+      await db.rpc('submit_event', {
+        p: { id, form: { ...e, url: e.url ?? null }, normalized: res.value },
+        p_submitter: submitter,
+        p_region: region.id,
+        p_publish: publish,
+        p_user: user?.id ?? null,
+        p_month: user ? usage.month : null,
+        p_max: quotaMax,
+      });
+    } catch (err) {
+      if (err instanceof SupabaseError && err.code === 'HQ001')
+        throw quotaExceeded('events', quotaMax, usage.resetsAt);
+      throw err;
+    }
     return json(
       {
         id,
@@ -662,7 +709,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       throw new ApiError(404, 'not_found');
     } catch (err) {
       if (err instanceof ApiError)
-        return json({ error: err.code, message: err.message }, err.status);
+        return json({ error: err.code, message: err.message, ...err.details }, err.status);
       console.error(err);
       return json({ error: 'server_error' }, 500);
     }

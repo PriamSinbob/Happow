@@ -17,6 +17,14 @@ interface Backend {
   users?: Record<string, string>;
 }
 
+/** What a signed-in request needs: no staff role, no grants, nothing used this month. */
+const accountRpc: Backend['rpc'] = {
+  staff_role: () => ({ body: null }),
+  grants_active: () => ({ body: [] }),
+  usage_get: () => ({ body: { events: 0, autofills: 0 } }),
+  usage_take: () => ({ body: true }),
+};
+
 /** Fake Supabase (PostgREST RPC + GoTrue) and web, recording every call. */
 function backend(b: Backend) {
   const calls: { name: string; args: Record<string, unknown>; headers: Headers }[] = [];
@@ -27,14 +35,14 @@ function backend(b: Backend) {
       const name = url.slice(`${SB}/rest/v1/rpc/`.length);
       const args = JSON.parse(String(init.body ?? '{}'));
       calls.push({ name, args, headers });
-      const handler = b.rpc[name];
+      const handler = { ...accountRpc, ...b.rpc }[name];
       if (!handler) return new Response('{}', { status: 404 });
       const { status = 200, body } = handler(args);
       return new Response(JSON.stringify(body), { status });
     }
     if (url === `${SB}/auth/v1/user`) {
       const token = headers.get('authorization')?.replace('Bearer ', '') ?? '';
-      const email = b.users?.[token];
+      const email = (b.users ?? { 'user-token': 'ala@example.org' })[token];
       return email
         ? new Response(JSON.stringify({ id: `id-${token}`, email }), { status: 200 })
         : new Response('{"msg":"invalid"}', { status: 401 });
@@ -50,17 +58,19 @@ function backend(b: Backend) {
 const geocoder: Geocoder = {
   geocode: async () => ({ point: { lat: 51.1079, lng: 17.0385 }, precision: 'venue', label: 'x' }),
 };
-// URL autofill is off in the PoC config (planned paid add-on); these tests switch it on.
+// URL autofill is off until the add form signs people in (M8 slice G); these tests switch it on.
 const base = loadConfig();
+const config = base;
 const autofillOn = {
   ...base,
-  app: { ...base.app, submissions: { ...base.app.submissions, autofill: true } },
+  app: { ...base.app, submissions: { ...base.app.submissions, autofill: 'account' as const } },
 };
 const withAutofill = (...[env, deps]: Parameters<typeof createApi>) =>
   createApi(env, { config: autofillOn, ...deps });
 
 const allow = { rate_limit_hit: () => ({ body: true }) };
 
+const auth = { authorization: 'Bearer user-token' };
 const post = (path: string, payload: unknown, headers: Record<string, string> = {}) =>
   new Request(`https://happow.example/api/${path}`, {
     method: 'POST',
@@ -71,10 +81,10 @@ const post = (path: string, payload: unknown, headers: Record<string, string> = 
 describe('POST /api/autofill', () => {
   const goUrl = 'https://www.wroclaw.pl/go/wydarzenia/edukacja-i-rozwoj/1416880-cool-moms-club';
 
-  it('prefills from JSON-LD, geocodes the place and rate-limits by hashed IP', async () => {
+  it('prefills from JSON-LD, geocodes the place and rate-limits per account', async () => {
     const web = backend({ rpc: allow, pages: { [goUrl]: page('go-event-1.html') } });
     const api = withAutofill(env, { fetch: web.fetch, now, geocoder, extractor: null });
-    const res = await api(post('autofill', { url: goUrl }));
+    const res = await api(post('autofill', { url: goUrl }, auth));
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.method).toBe('jsonld');
@@ -91,8 +101,7 @@ describe('POST /api/autofill', () => {
     expect(data.events[0]).not.toHaveProperty('description');
     const rl = web.calls.find((c) => c.name === 'rate_limit_hit')!;
     expect(rl.args).toMatchObject({ p_bucket: 'autofill', p_window_seconds: 3600 });
-    expect(String(rl.args.p_actor)).toMatch(/^[0-9a-f]{64}$/);
-    expect(String(rl.args.p_actor)).not.toContain('203.0.113.7');
+    expect(rl.args.p_actor).toBe('id-user-token');
     expect(rl.headers.get('apikey')).toBe('service-key');
   });
 
@@ -137,7 +146,7 @@ describe('POST /api/autofill', () => {
       geocoder,
       extractor: { id: 'fake', extract },
     });
-    const data = await (await api(post('autofill', { url }))).json();
+    const data = await (await api(post('autofill', { url }, auth))).json();
     expect(data.method).toBe('llm');
     expect(data.events[0]).toMatchObject({
       title: 'Pustynne portato',
@@ -167,7 +176,7 @@ describe('POST /api/autofill', () => {
     });
     const deps = { now, geocoder, extractor: { id: 'fake', extract } };
     const off = await (
-      await withAutofill(env, { ...deps, fetch: capped.fetch })(post('autofill', { url }))
+      await withAutofill(env, { ...deps, fetch: capped.fetch })(post('autofill', { url }, auth))
     ).json();
     expect(off).toMatchObject({ method: 'none', events: [] });
     expect(extract).not.toHaveBeenCalled();
@@ -177,7 +186,9 @@ describe('POST /api/autofill', () => {
     });
 
     const open = backend({ rpc: allow, pages: { [url]: page('nfm-event.html') } });
-    const res = await withAutofill(env, { ...deps, fetch: open.fetch })(post('autofill', { url }));
+    const res = await withAutofill(env, { ...deps, fetch: open.fetch })(
+      post('autofill', { url }, auth),
+    );
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ method: 'none', events: [] });
     expect(extract).toHaveBeenCalledOnce();
@@ -186,19 +197,103 @@ describe('POST /api/autofill', () => {
   it('refuses private addresses and reports unreachable pages', async () => {
     const web = backend({ rpc: allow });
     const api = withAutofill(env, { fetch: web.fetch, now, geocoder, extractor: null });
-    const bad = await api(post('autofill', { url: 'http://169.254.169.254/latest/meta-data' }));
+    const bad = await api(
+      post('autofill', { url: 'http://169.254.169.254/latest/meta-data' }, auth),
+    );
     expect(bad.status).toBe(400);
     expect((await bad.json()).error).toBe('unsafe_url');
-    const gone = await api(post('autofill', { url: 'https://gone.example/event' }));
+    const gone = await api(post('autofill', { url: 'https://gone.example/event' }, auth));
     expect(gone.status).toBe(422);
   });
 
   it('answers 503 until the server is configured, and 429 when over the limit', async () => {
     const api503 = withAutofill({}, { now, geocoder, extractor: null });
-    expect((await api503(post('autofill', { url: 'https://x.example' }))).status).toBe(503);
+    expect((await api503(post('autofill', { url: 'https://x.example' }, auth))).status).toBe(503);
     const web = backend({ rpc: { rate_limit_hit: () => ({ body: false }) } });
     const api = withAutofill(env, { fetch: web.fetch, now, geocoder, extractor: null });
-    expect((await api(post('autofill', { url: 'https://x.example' }))).status).toBe(429);
+    expect((await api(post('autofill', { url: 'https://x.example' }, auth))).status).toBe(429);
+  });
+});
+
+describe('autofill quota (M8 §5)', () => {
+  const goUrl = 'https://www.wroclaw.pl/go/wydarzenia/edukacja-i-rozwoj/1416880-cool-moms-club';
+  const pages = { [goUrl]: page('go-event-1.html') };
+  const run = (b: Backend, headers: Record<string, string> = auth, url = goUrl) => {
+    const web = backend(b);
+    const api = withAutofill(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    return { web, res: api(post('autofill', { url }, headers)) };
+  };
+  const fetchedPage = (web: ReturnType<typeof backend>) =>
+    (web.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.some(
+      ([u]) => String(u) === goUrl,
+    );
+
+  it('needs an account', async () => {
+    const { web, res } = run({ rpc: allow, pages }, {});
+    expect((await res).status).toBe(401);
+    expect(fetchedPage(web)).toBe(false);
+    expect((await run({ rpc: allow, pages }, { authorization: 'Bearer forged' }).res).status).toBe(
+      401,
+    );
+  });
+
+  it('counts a fill that gave prefills, in this month, against the plan limit', async () => {
+    const { web, res } = run({ rpc: allow, pages });
+    expect((await res).status).toBe(200);
+    const take = web.calls.find((c) => c.name === 'usage_take')!;
+    // Early access: premium, 300 a month.
+    expect(take.args).toEqual({
+      p_user: 'id-user-token',
+      p_month: '2026-10-01',
+      p_kind: 'autofills',
+      p_max: config.plans.plans.premium['autofill.perMonth'],
+    });
+  });
+
+  it('counts nothing for a page with nothing to fill or a page that fails', async () => {
+    const empty = run({ rpc: allow, pages: { [goUrl]: '<html><body>Nic</body></html>' } });
+    expect(await (await empty.res).json()).toMatchObject({ method: 'none', events: [] });
+    expect(empty.web.calls.some((c) => c.name === 'usage_take')).toBe(false);
+    const gone = run({ rpc: allow }, auth, 'https://gone.example/event');
+    expect((await gone.res).status).toBe(422);
+    expect(gone.web.calls.some((c) => c.name === 'usage_take')).toBe(false);
+  });
+
+  it('refuses before fetching once the quota is used up, saying when it resets', async () => {
+    const limit = config.plans.plans.premium['autofill.perMonth'];
+    const { web, res } = run({
+      rpc: { ...allow, usage_get: () => ({ body: { events: 0, autofills: limit } }) },
+      pages,
+    });
+    const r = await res;
+    expect(r.status).toBe(429);
+    expect(await r.json()).toMatchObject({
+      error: 'quota_exceeded',
+      kind: 'autofill',
+      limit,
+      // 1 November 00:00 in Warsaw (CET).
+      resetsAt: '2026-10-31T23:00:00.000Z',
+    });
+    expect(fetchedPage(web)).toBe(false);
+  });
+
+  it('refuses when another request took the last fill meanwhile', async () => {
+    const { res } = run({ rpc: { ...allow, usage_take: () => ({ body: false }) }, pages });
+    const r = await res;
+    expect(r.status).toBe(429);
+    expect((await r.json()).error).toBe('quota_exceeded');
+  });
+
+  it('uses the account limit once the promotion is over', async () => {
+    const after = { ...autofillOn, plans: { ...autofillOn.plans, earlyAccess: null } };
+    const web = backend({
+      rpc: { ...allow, usage_get: () => ({ body: { events: 0, autofills: 5 } }) },
+      pages,
+    });
+    const api = createApi(env, { config: after, fetch: web.fetch, now, geocoder, extractor: null });
+    const r = await api(post('autofill', { url: goUrl }, auth));
+    expect(r.status).toBe(429);
+    expect((await r.json()).limit).toBe(config.plans.plans.account['autofill.perMonth']);
   });
 });
 
@@ -279,6 +374,86 @@ describe('POST /api/submissions', () => {
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe(error);
     expect(web.calls.some((c) => c.name === 'submit_event')).toBe(false);
+  });
+
+  it('counts an account submission against its quota, with an hourly guard instead of daily caps', async () => {
+    const web = backend({ rpc: { ...allow, submit_event: () => ({ body: 'uuid' }) } });
+    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    expect((await api(post('submissions', valid, auth))).status).toBe(201);
+    const call = web.calls.find((c) => c.name === 'submit_event')!;
+    expect(call.args).toMatchObject({
+      p_user: 'id-user-token',
+      p_month: '2026-10-01',
+      p_max: config.plans.plans.premium['events.perMonth'],
+    });
+    const buckets = web.calls.filter((c) => c.name === 'rate_limit_hit').map((c) => c.args);
+    expect(buckets).toEqual([
+      expect.objectContaining({
+        p_bucket: 'submit-account',
+        p_actor: 'id-user-token',
+        p_window_seconds: 3600,
+        p_max: config.app.submissions.perHourPerAccount,
+      }),
+    ]);
+  });
+
+  it('counts nothing without an account, and keeps the device and IP caps', async () => {
+    const web = backend({ rpc: { ...allow, submit_event: () => ({ body: 'uuid' }) } });
+    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    expect((await api(post('submissions', valid))).status).toBe(201);
+    const call = web.calls.find((c) => c.name === 'submit_event')!;
+    expect(call.args).toMatchObject({ p_user: null, p_month: null, p_max: 0 });
+    const buckets = web.calls
+      .filter((c) => c.name === 'rate_limit_hit')
+      .map((c) => c.args.p_bucket);
+    expect(buckets).toEqual(['submit', 'submit-ip']);
+  });
+
+  it('answers 429 with the reset date when the events quota is used up', async () => {
+    const web = backend({
+      rpc: {
+        ...allow,
+        submit_event: () => ({
+          status: 400,
+          body: { code: 'HQ001', message: 'events quota used up' },
+        }),
+      },
+    });
+    const api = createApi(env, { fetch: web.fetch, now, geocoder, extractor: null });
+    const res = await api(post('submissions', valid, auth));
+    expect(res.status).toBe(429);
+    expect(await res.json()).toMatchObject({
+      error: 'quota_exceeded',
+      kind: 'events',
+      limit: config.plans.plans.premium['events.perMonth'],
+      resetsAt: '2026-10-31T23:00:00.000Z',
+    });
+  });
+
+  it('refuses a bad token, and anonymous events once accounts are required', async () => {
+    const web = backend({ rpc: { ...allow, submit_event: () => ({ body: 'uuid' }) } });
+    const forged = await createApi(env, { fetch: web.fetch, now, geocoder, extractor: null })(
+      post('submissions', valid, { authorization: 'Bearer forged' }),
+    );
+    expect(forged.status).toBe(401);
+    const required = {
+      ...config,
+      app: {
+        ...config.app,
+        submissions: { ...config.app.submissions, account: 'required' as const },
+      },
+    };
+    const api = createApi(env, {
+      config: required,
+      fetch: web.fetch,
+      now,
+      geocoder,
+      extractor: null,
+    });
+    const anon = await api(post('submissions', valid));
+    expect(anon.status).toBe(401);
+    expect((await anon.json()).error).toBe('account_required');
+    expect((await api(post('submissions', valid, auth))).status).toBe(201);
   });
 });
 

@@ -1,3 +1,4 @@
+import { localDay } from './atlas.js';
 import { planIdSchema } from './schemas.js';
 import { localToInstant } from './time.js';
 import type { Entitlements, PlanId, PlansConfig, ThemePreset } from './types.js';
@@ -90,6 +91,17 @@ export const entitlementsFor = (config: PlansConfig, plan: PlanId): Entitlements
 export const can = (ent: Entitlements, key: FeatureKey): boolean => ent[key];
 
 export const quota = (ent: Entitlements, key: QuotaKey): number => ent[key];
+
+/**
+ * The calendar month quotas count in (M8 §5): its first day in `timeZone` ("2026-10-01") and the
+ * instant the next month starts there.
+ */
+export function usageMonth(now: Date, timeZone: string): { month: string; resetsAt: Date } {
+  const day = localDay(now, timeZone);
+  const [y, m] = day.split('-').map(Number) as [number, number];
+  const next = new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10);
+  return { month: `${day.slice(0, 7)}-01`, resetsAt: localToInstant(next, null, timeZone)! };
+}
 
 /** The live-hue presets these entitlements allow (M8 §3: presets by tier). */
 export function presetsFor<P extends Pick<ThemePreset, 'tier'>>(
