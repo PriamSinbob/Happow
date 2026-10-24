@@ -14,6 +14,8 @@ export type ApiErrorCode =
   | 'unknown_event'
   | 'already_reviewed'
   | 'not_found'
+  | 'quota_exceeded'
+  | 'account_required'
   | 'server_error'
   | 'network';
 
@@ -29,7 +31,11 @@ export class ApiError extends Error {
 /** Calls the same-origin API (Cloudflare Pages Function in production, Vite middleware in dev). */
 export async function api<T>(
   path: string,
-  options: { body?: unknown; token?: string | null; method?: 'GET' | 'POST' } = {},
+  options: {
+    body?: unknown;
+    token?: string | null;
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  } = {},
 ): Promise<T> {
   let res: Response;
   try {

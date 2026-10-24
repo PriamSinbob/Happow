@@ -45,9 +45,10 @@ export function AtlasGlyph({
 /**
  * The atlas bar (§6, `docs/design/atlas.html`), inside About with the theme and colour
  * settings (owner, 2026-10-23): export, the number of lit areas, import, and a hold-to-clear
- * bin. Wordless, black and white; every button has a translated name.
+ * bin. Wordless, black and white; every button has a translated name. Export and import need an
+ * account (M8 §6); the count and hold-to-clear are for everyone.
  */
-export function AtlasBar({ atlas }: { atlas: Atlas }) {
+export function AtlasBar({ atlas, transfer }: { atlas: Atlas; transfer: boolean }) {
   const { t } = useI18n();
   const file = useRef<HTMLInputElement>(null);
   const [toast, setToast] = useState<Toast | null>(null);
@@ -85,18 +86,20 @@ export function AtlasBar({ atlas }: { atlas: Atlas }) {
 
   return (
     <div className="atlas-bar">
-      <button
-        type="button"
-        className="atlas-row__btn"
-        aria-label={t('atlas.export')}
-        onClick={() =>
-          void atlas
-            .exportFile()
-            .then((ok) => ok && setToast({ ok: true, label: t('atlas.saved') }))
-        }
-      >
-        <Icon name="download" size={24} strokeWidth={1.8} />
-      </button>
+      {transfer && (
+        <button
+          type="button"
+          className="atlas-row__btn"
+          aria-label={t('atlas.export')}
+          onClick={() =>
+            void atlas
+              .exportFile()
+              .then((ok) => ok && setToast({ ok: true, label: t('atlas.saved') }))
+          }
+        >
+          <Icon name="download" size={24} strokeWidth={1.8} />
+        </button>
+      )}
       <span
         className="atlas-row__main"
         role="img"
@@ -105,14 +108,16 @@ export function AtlasBar({ atlas }: { atlas: Atlas }) {
         <AtlasGlyph />
         <span className="atlas-row__count">{atlas.count}</span>
       </span>
-      <button
-        type="button"
-        className="atlas-row__btn"
-        aria-label={t('atlas.import')}
-        onClick={() => file.current?.click()}
-      >
-        <Icon name="upload" size={24} strokeWidth={1.8} />
-      </button>
+      {transfer && (
+        <button
+          type="button"
+          className="atlas-row__btn"
+          aria-label={t('atlas.import')}
+          onClick={() => file.current?.click()}
+        >
+          <Icon name="upload" size={24} strokeWidth={1.8} />
+        </button>
+      )}
       <button
         type="button"
         className="atlas-row__btn atlas-row__clear"

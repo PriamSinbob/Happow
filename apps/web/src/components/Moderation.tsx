@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '../api';
-import { accessToken, authAvailable, loadSession, sendMagicLink, signOut } from '../auth';
+import { accessToken, authAvailable, loadSession, signOut } from '../auth';
 import { config, region } from '../config';
 import { errorText } from '../errors';
 import { formatDay, formatTime } from '../format';
@@ -43,7 +43,7 @@ interface Queue {
 
 type State =
   | { name: 'loading' }
-  | { name: 'signedOut'; sent?: boolean; error?: string }
+  | { name: 'signedOut' }
   | { name: 'forbidden'; email: string | null }
   | { name: 'error'; message: string }
   | { name: 'ready'; queue: Queue };
@@ -52,7 +52,6 @@ type State =
 export function Moderation({ onClose }: { onClose: () => void }) {
   const { t, lang } = useI18n();
   const [state, setState] = useState<State>({ name: 'loading' });
-  const [email, setEmail] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -104,52 +103,13 @@ export function Moderation({ onClose }: { onClose: () => void }) {
     }
   }
 
-  async function requestLink(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      const ok = await sendMagicLink(email.trim());
-      setState(
-        ok ? { name: 'signedOut', sent: true } : { name: 'signedOut', error: t('error.generic') },
-      );
-    } catch {
-      setState({ name: 'signedOut', error: t('error.network') });
-    }
-  }
-
   const when = (iso: string, tz = region.timezone) =>
     `${formatDay(iso, tz, lang)} · ${formatTime(iso, tz, lang)}`;
 
   let body: React.ReactNode;
   if (!authAvailable()) body = <p className="muted">{t('mod.notAvailable')}</p>;
   else if (state.name === 'loading') body = <p className="muted">{t('event.loading')}</p>;
-  else if (state.name === 'signedOut')
-    body = state.sent ? (
-      <p className="notice" role="status">
-        {t('mod.linkSent')}
-      </p>
-    ) : (
-      <form className="add-form" onSubmit={requestLink}>
-        <p>{t('mod.signIn')}</p>
-        <label className="field">
-          <span className="field__label">{t('mod.email')}</span>
-          <input
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
-        {state.error && (
-          <p className="form-error" role="alert">
-            {state.error}
-          </p>
-        )}
-        <button type="submit" className="btn btn--primary" disabled={!email.includes('@')}>
-          {t('mod.sendLink')}
-        </button>
-      </form>
-    );
+  else if (state.name === 'signedOut') body = <p className="muted">{t('mod.signInFirst')}</p>;
   else if (state.name === 'forbidden')
     body = (
       <>

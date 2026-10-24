@@ -2122,3 +2122,210 @@ label.choice input {
 .maplibregl-ctrl-bottom-left {
   bottom: calc(80px + var(--safe-bottom));
 }
+
+/* ---------- Account (M8 slice E, docs/design/account.html) ---------- */
+.account-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+}
+.account-card > .btn {
+  flex: none;
+}
+.account-card .btn {
+  height: 44px;
+}
+.account-card__perks {
+  margin: 0;
+  font-size: 13px;
+  color: var(--quiet);
+}
+.account-card__who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.account-card__avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  font-weight: 700;
+}
+.account-card__id {
+  min-width: 0;
+}
+.account-card__email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+.account-card__plan {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--quiet);
+}
+/* The plan line opens the premium sheet: a 36 px target without looking like a button. */
+button.account-card__plan {
+  min-height: 36px;
+  margin: -8px 0;
+}
+.account-card__plan--usage {
+  font-variant-numeric: tabular-nums;
+}
+.account-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.danger-link,
+.account-sheet__aside .inline-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+}
+.danger-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--error-ink);
+}
+.premium-mark {
+  flex: none;
+}
+.segmented--2 {
+  gap: 3px;
+}
+.segmented .premium-mark {
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: -1px;
+}
+/* Staff only (M8 §2): the shield row at the end of About. */
+.mod-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--quiet);
+}
+.account-sheet {
+  padding-bottom: calc(18px + var(--safe-bottom));
+}
+.account-sheet__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.account-sheet__lead {
+  margin: 6px 0 14px;
+  color: var(--quiet);
+}
+.account-sheet__aside {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 13px;
+}
+.account-sheet__foot {
+  display: flex;
+  gap: 8px;
+}
+.btn--block {
+  width: 100%;
+  flex: none;
+  height: 44px;
+}
+/* Google's own button style: a plain outlined button with its "G", unlike the filled primary. */
+.btn--google {
+  background: var(--paper);
+  border-color: var(--line);
+  color: var(--ink);
+}
+.account-sheet .btn--danger {
+  background: var(--error);
+  border-color: var(--error);
+  color: var(--error-ink);
+}
+.or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.or::before,
+.or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.field .code-input {
+  letter-spacing: 0.5em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.perks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.perks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.perks svg {
+  flex: none;
+  margin-top: 2px;
+}
+.account-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--paper-2);
+  font-size: 13.5px;
+}
+.account-terms {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--quiet);
+}
+.account-terms summary {
+  font-weight: 600;
+  color: var(--ink);
+}
+.account-terms ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+.account-terms li {
+  margin: 0 0 6px;
+}

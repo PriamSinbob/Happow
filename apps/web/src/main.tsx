@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
+import { AccountProvider } from './account';
 import { initAnalytics } from './analytics';
 import { App } from './App';
 import { captureAuthRedirect } from './auth';
@@ -10,8 +11,8 @@ import { applyInitialTheme, ThemeProvider } from './theme';
 import './styles.css';
 
 registerSW({ immediate: true });
-// Before the app reads the hash: a moderator's magic-link sign-in lands here with tokens in it.
-captureAuthRedirect();
+// Before the app reads the URL: a sign-in from a code email's link or from Google lands here.
+const signedIn = captureAuthRedirect();
 initAnalytics();
 
 applyInitialTheme();
@@ -22,9 +23,11 @@ document.documentElement.lang = lang;
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <I18nProvider initial={lang}>
-      <ThemeProvider>
-        <App />
-      </ThemeProvider>
+      <AccountProvider ready={signedIn}>
+        <ThemeProvider>
+          <App />
+        </ThemeProvider>
+      </AccountProvider>
     </I18nProvider>
   </StrictMode>,
 );

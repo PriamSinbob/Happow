@@ -139,7 +139,7 @@ Map, events, filters, details and navigation are free for everyone, always. Paid
 | Family mode and age markings                                        | ✓          | ✓            | ✓       |
 | Search, follow artists on the phone, nationwide matches             | ✓          | ✓            | ✓       |
 | Violet and Mono colour presets                                      | ✓          | ✓            | ✓       |
-| Settings page, Tally red preset                                     |            | ✓            | ✓       |
+| Tally red preset                                                    |            | ✓            | ✓       |
 | Export and import your lit map                                      |            | ✓            | ✓       |
 | Encrypted lit-map sync and backup across devices and phone upgrades |            |              | ✓       |
 | Extended colour presets (Magenta and future ones)                   |            |              | ✓       |

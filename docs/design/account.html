@@ -1,314 +1,840 @@
 <!doctype html>
 <html lang="pl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Happow account screens</title>
-<style>
-/* Design reference for M8 slice E (accounts, plans, premium). Draft for the owner's OK, 2026-10-24.
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Happow account screens</title>
+    <style>
+      /* Design reference for M8 slice E (accounts, plans, premium). Draft for the owner's OK, 2026-10-24.
    Tokens are config/theme.json; layout and type follow apps/web/src/styles.css (Screen, field,
    segmented, btn, atlas bar). Touch-first: no hover styles. */
-:root{
-  --paper:#FBFAF7;--paper-2:#EEEAE2;--ink:#17171A;--muted:#86807A;--quiet:#5C5852;
-  --line:#DFD8CC;--raised:#FFFFFF;--on-raised:#17171A;--scrim:rgba(23,23,26,.42);
-  --error:#FBE3E1;--error-ink:#9B1C1C;
-  --violet:#6A4CF5;--red:#EE2E4E;--magenta:#C8177A;--mono:#17171A;
-}
-.night{
-  --paper:#1A1D23;--paper-2:#242832;--ink:#ECE9E3;--muted:#80838B;--quiet:#A9ACB3;
-  --line:#323846;--raised:#ECE9E3;--on-raised:#1A1D23;--scrim:rgba(0,0,0,.6);
-  --error:#3D1A1C;--error-ink:#FFB4B4;
-  --violet:#8C74FF;--red:#FF4766;--magenta:#FF4FA8;--mono:#ECE9E3;
-}
-*{box-sizing:border-box}
-body{margin:0;padding:20px 16px 40px;background:#f4f3ef;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#17171a}
-.controls{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 auto 10px;max-width:760px}
-.controls button{font:inherit;font-size:13px;padding:6px 10px;border:1px solid #c9c6bf;border-radius:8px;background:#fff;color:#17171a}
-.controls button[aria-pressed="true"]{background:#17171a;color:#fff;border-color:#17171a}
-.controls .sep{width:100%;height:0}
-.cap{max-width:380px;margin:10px auto 0;font-size:12.5px;color:#6b6b66;text-align:center}
+      :root {
+        --paper: #fbfaf7;
+        --paper-2: #eeeae2;
+        --ink: #17171a;
+        --muted: #86807a;
+        --quiet: #5c5852;
+        --line: #dfd8cc;
+        --raised: #ffffff;
+        --on-raised: #17171a;
+        --scrim: rgba(23, 23, 26, 0.42);
+        --error: #fbe3e1;
+        --error-ink: #9b1c1c;
+        --violet: #6a4cf5;
+        --red: #ee2e4e;
+        --magenta: #c8177a;
+        --mono: #17171a;
+      }
+      .night {
+        --paper: #1a1d23;
+        --paper-2: #242832;
+        --ink: #ece9e3;
+        --muted: #80838b;
+        --quiet: #a9acb3;
+        --line: #323846;
+        --raised: #ece9e3;
+        --on-raised: #1a1d23;
+        --scrim: rgba(0, 0, 0, 0.6);
+        --error: #3d1a1c;
+        --error-ink: #ffb4b4;
+        --violet: #8c74ff;
+        --red: #ff4766;
+        --magenta: #ff4fa8;
+        --mono: #ece9e3;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 20px 16px 40px;
+        background: #f4f3ef;
+        font:
+          15px/1.45 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        color: #17171a;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: center;
+        margin: 0 auto 10px;
+        max-width: 760px;
+      }
+      .controls button {
+        font: inherit;
+        font-size: 13px;
+        padding: 6px 10px;
+        border: 1px solid #c9c6bf;
+        border-radius: 8px;
+        background: #fff;
+        color: #17171a;
+      }
+      .controls button[aria-pressed='true'] {
+        background: #17171a;
+        color: #fff;
+        border-color: #17171a;
+      }
+      .controls .sep {
+        width: 100%;
+        height: 0;
+      }
+      .cap {
+        max-width: 380px;
+        margin: 10px auto 0;
+        font-size: 12.5px;
+        color: #6b6b66;
+        text-align: center;
+      }
 
-/* The phone */
-.ph{position:relative;width:380px;max-width:100%;height:760px;margin:0 auto;border:6px solid #8a8a86;border-radius:26px;overflow:hidden;background:var(--paper-2);color:var(--ink)}
-.bar{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--paper);border-bottom:1px solid var(--line)}
-.bar h1{margin:0;font-size:18px;letter-spacing:-.01em}
-.icon-btn{display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:12px;background:transparent;color:var(--ink);padding:0}
-.scroll{position:absolute;top:61px;bottom:0;left:0;right:0;overflow-y:auto}
-.body{padding:16px 16px 32px}
-h2{margin:22px 0 10px;font-size:15px;letter-spacing:-.005em}
-h2:first-child{margin-top:4px}
-.lead{margin:0 0 4px;color:var(--quiet)}
-.muted{color:var(--muted)}
-.small{font-size:12.5px}
-svg{display:block}
+      /* The phone */
+      .ph {
+        position: relative;
+        width: 380px;
+        max-width: 100%;
+        height: 760px;
+        margin: 0 auto;
+        border: 6px solid #8a8a86;
+        border-radius: 26px;
+        overflow: hidden;
+        background: var(--paper-2);
+        color: var(--ink);
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        background: var(--paper);
+        border-bottom: 1px solid var(--line);
+      }
+      .bar h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.01em;
+      }
+      .icon-btn {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 12px;
+        background: transparent;
+        color: var(--ink);
+        padding: 0;
+      }
+      .scroll {
+        position: absolute;
+        top: 61px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        overflow-y: auto;
+      }
+      .body {
+        padding: 16px 16px 32px;
+      }
+      h2 {
+        margin: 22px 0 10px;
+        font-size: 15px;
+        letter-spacing: -0.005em;
+      }
+      h2:first-child {
+        margin-top: 4px;
+      }
+      .lead {
+        margin: 0 0 4px;
+        color: var(--quiet);
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .small {
+        font-size: 12.5px;
+      }
+      svg {
+        display: block;
+      }
 
-/* Account card at the top of About */
-.acct{display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--paper)}
-.acct__who{display:flex;align-items:center;gap:12px;min-width:0}
-.avatar{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--paper-2);color:var(--ink);font-weight:700}
-.acct__email{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.acct__plan{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--quiet)}
-.acct__perks{margin:0;font-size:13px;color:var(--quiet)}
-.acct > .btn{flex:none}
-.row{display:flex;gap:8px}
-.btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;font-size:14px;font-weight:600}
-.btn:disabled{opacity:.45}
-.btn--primary{background:var(--ink);border-color:var(--ink);color:var(--paper)}
-.btn--google{background:#fff;border-color:#DADCE0;color:#1F1F1F}
-.night .btn--google{background:#131314;border-color:#8E918F;color:#E3E3E3}
-.link{border:0;background:none;padding:0;font:inherit;font-size:13px;font-weight:600;color:var(--quiet);text-decoration:underline;text-underline-offset:3px}
-.link--danger{color:var(--error-ink)}
+      /* Account card at the top of About */
+      .acct {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--paper);
+      }
+      .acct__who {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+      .avatar {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--paper-2);
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .acct__email {
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .acct__plan {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--quiet);
+      }
+      .acct__perks {
+        margin: 0;
+        font-size: 13px;
+        color: var(--quiet);
+      }
+      .acct > .btn {
+        flex: none;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      .btn {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 44px;
+        padding: 0 14px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        color: var(--ink);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+      }
+      .btn--primary {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--paper);
+      }
+      .btn--google {
+        background: #fff;
+        border-color: #dadce0;
+        color: #1f1f1f;
+      }
+      .night .btn--google {
+        background: #131314;
+        border-color: #8e918f;
+        color: #e3e3e3;
+      }
+      .link {
+        border: 0;
+        background: none;
+        padding: 0;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--quiet);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .link--danger {
+        color: var(--error-ink);
+      }
 
-/* Fields */
-.field{display:flex;flex-direction:column;gap:6px;margin:0 0 14px}
-.field__label{font-size:13px;font-weight:700}
-.field__hint{font-size:12px;color:var(--muted)}
-.field input{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);font:inherit;font-size:16px;color:var(--ink)}
-.code{letter-spacing:.5em;text-align:center;font-variant-numeric:tabular-nums;font-weight:700}
-.check{display:flex;gap:10px;align-items:flex-start;font-size:14px}
-.check input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--ink);flex:none}
-.or{display:flex;align-items:center;gap:10px;margin:14px 0;font-size:12px;color:var(--muted)}
-.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+      /* Fields */
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 0 0 14px;
+      }
+      .field__label {
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .field__hint {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .field input {
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--paper);
+        font: inherit;
+        font-size: 16px;
+        color: var(--ink);
+      }
+      .code {
+        letter-spacing: 0.5em;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+      }
+      .check {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        font-size: 14px;
+      }
+      .check input {
+        width: 20px;
+        height: 20px;
+        margin: 1px 0 0;
+        accent-color: var(--ink);
+        flex: none;
+      }
+      .or {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 14px 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .or::before,
+      .or::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--line);
+      }
 
-/* Segmented colour control: four presets in a 2 × 2 grid */
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;background:var(--line);border-radius:12px}
-.seg button{position:relative;display:flex;align-items:center;justify-content:center;gap:7px;height:38px;border:0;border-radius:10px;background:transparent;font:inherit;font-size:14px;font-weight:600;color:var(--muted)}
-.seg button.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+      /* Segmented colour control: four presets in a 2 × 2 grid */
+      .seg {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3px;
+        padding: 3px;
+        background: var(--line);
+        border-radius: 12px;
+      }
+      .seg button {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        height: 38px;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .seg button.on {
+        background: var(--paper);
+        color: var(--ink);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      }
 
-.swatch{width:12px;height:12px;border-radius:50%}
-.seg3{grid-template-columns:1fr 1fr 1fr}
+      .swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+      .seg3 {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
 
-/* Atlas bar (M6 slice H) */
-.atlas{position:relative;display:flex;align-items:center;justify-content:center;gap:22px;min-height:66px;margin:16px 0;border-top:.5px solid var(--line);border-bottom:.5px solid var(--line)}
-.atlas__btn{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:12px;background:transparent;color:var(--ink);padding:0}
-.atlas__main{display:flex;flex-direction:column;align-items:center;gap:1px}
-.atlas__count{font-size:11px;font-weight:600;color:var(--quiet)}
-.atlas__clear{position:absolute;right:0;top:11px;color:var(--quiet)}
+      /* Atlas bar (M6 slice H) */
+      .atlas {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        min-height: 66px;
+        margin: 16px 0;
+        border-top: 0.5px solid var(--line);
+        border-bottom: 0.5px solid var(--line);
+      }
+      .atlas__btn {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border: 0;
+        border-radius: 12px;
+        background: transparent;
+        color: var(--ink);
+        padding: 0;
+      }
+      .atlas__main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+      }
+      .atlas__count {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--quiet);
+      }
+      .atlas__clear {
+        position: absolute;
+        right: 0;
+        top: 11px;
+        color: var(--quiet);
+      }
 
-/* Bottom sheet over About */
-.scrim{position:absolute;inset:0;background:var(--scrim)}
-.sheet{position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;padding:8px 18px 22px;border-radius:22px 22px 0 0;background:var(--paper);box-shadow:0 -8px 30px rgba(0,0,0,.2)}
-.grab{width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 12px}
-.sheet h3{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:19px;letter-spacing:-.01em}
-.sheet p{margin:0 0 14px;color:var(--quiet)}
-.perks{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:10px}
-.perks li{display:flex;gap:10px;align-items:flex-start}
-.perks svg{flex:none;margin-top:2px}
-.note{padding:10px 12px;border-radius:12px;background:var(--paper-2);font-size:13.5px;color:var(--ink);margin:0 0 14px}
-details{margin:0 0 14px;font-size:13px;color:var(--quiet)}
-details summary{font-weight:600;color:var(--ink);cursor:pointer}
-details ul{margin:8px 0 0;padding-left:18px}
-details li{margin:0 0 6px}
-.mod{display:flex;align-items:center;gap:8px;margin-top:18px;font-size:13px;font-weight:600;color:var(--quiet)}
-</style>
-</head>
-<body>
-<div class="controls" id="ctl"></div>
-<div class="ph" id="ph"></div>
-<p class="cap" id="cap"></p>
+      /* Bottom sheet over About */
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: var(--scrim);
+      }
+      .sheet {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-height: 88%;
+        overflow-y: auto;
+        padding: 8px 18px 22px;
+        border-radius: 22px 22px 0 0;
+        background: var(--paper);
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2);
+      }
+      .grab {
+        width: 36px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--line);
+        margin: 0 auto 12px;
+      }
+      .sheet h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 6px;
+        font-size: 19px;
+        letter-spacing: -0.01em;
+      }
+      .sheet p {
+        margin: 0 0 14px;
+        color: var(--quiet);
+      }
+      .perks {
+        list-style: none;
+        margin: 0 0 16px;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .perks li {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .perks svg {
+        flex: none;
+        margin-top: 2px;
+      }
+      .note {
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: var(--paper-2);
+        font-size: 13.5px;
+        color: var(--ink);
+        margin: 0 0 14px;
+      }
+      details {
+        margin: 0 0 14px;
+        font-size: 13px;
+        color: var(--quiet);
+      }
+      details summary {
+        font-weight: 600;
+        color: var(--ink);
+        cursor: pointer;
+      }
+      details ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+      details li {
+        margin: 0 0 6px;
+      }
+      .mod {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 18px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--quiet);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls" id="ctl"></div>
+    <div class="ph" id="ph"></div>
+    <p class="cap" id="cap"></p>
 
-<script>
-/* ---------- Icons: the app's set (Icons.tsx, Tabler) plus the three premium-mark options ---------- */
-const I={
-  back:'M15 5l-7 7 7 7',
-  download:'M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2M7 11l5 5l5 -5M12 4l0 12',
-  upload:'M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2M7 9l5 -5l5 5M12 4l0 12',
-  trash:'M4 7l16 0M10 11l0 6M14 11l0 6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3',
-  check:'M5 12l5 5L20 7',
-  shield:'M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06M15 19l2 2l4 -4',
-  mail:'M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2zM3 7l9 6l9 -6',
-  close:'M6 6l12 12M18 6L6 18',
-};
-/* Premium mark options (Tabler sparkles, crown, diamond), always filled ink so they read at 12 px. */
-const MARKS={
-  sparkles:{d:'M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z',fill:true},
-  crown:{d:'M12 6l4 6l5 -4l-2 10h-14l-2 -10l5 4z',fill:true},
-  diamond:{d:'M6 5h12l3 5l-8.5 9.5a.7 .7 0 0 1 -1 0l-8.5 -9.5l3 -5',fill:true},
-};
-const svg=(d,s=20,sw=1.8)=>`<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
-const mark=(s=14)=>{const m=MARKS[st.mark];return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" role="img" aria-label="${T('premium')}"><path d="${m.d}"/></svg>`};
-const glyph=`<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13M9 4v13M15 7v13"/><circle cx="12" cy="11.5" r="1.9" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r="4.2" stroke-width="1" stroke-dasharray="1.2 1.6"/></svg>`;
-const google=`<svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>`;
+    <script>
+      /* ---------- Icons: the app's set (Icons.tsx, Tabler) plus the three premium-mark options ---------- */
+      const I = {
+        back: 'M15 5l-7 7 7 7',
+        download: 'M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2M7 11l5 5l5 -5M12 4l0 12',
+        upload: 'M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2M7 9l5 -5l5 5M12 4l0 12',
+        trash:
+          'M4 7l16 0M10 11l0 6M14 11l0 6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3',
+        check: 'M5 12l5 5L20 7',
+        shield:
+          'M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06M15 19l2 2l4 -4',
+        mail: 'M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2zM3 7l9 6l9 -6',
+        close: 'M6 6l12 12M18 6L6 18',
+      };
+      /* Premium mark options (Tabler sparkles, crown, diamond), always filled ink so they read at 12 px. */
+      const MARKS = {
+        sparkles: {
+          d: 'M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z',
+          fill: true,
+        },
+        crown: { d: 'M12 6l4 6l5 -4l-2 10h-14l-2 -10l5 4z', fill: true },
+        diamond: { d: 'M6 5h12l3 5l-8.5 9.5a.7 .7 0 0 1 -1 0l-8.5 -9.5l3 -5', fill: true },
+      };
+      const svg = (d, s = 20, sw = 1.8) =>
+        `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+      const mark = (s = 14) => {
+        const m = MARKS[st.mark];
+        return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" role="img" aria-label="${T('premium')}"><path d="${m.d}"/></svg>`;
+      };
+      const glyph = `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13M9 4v13M15 7v13"/><circle cx="12" cy="11.5" r="1.9" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r="4.2" stroke-width="1" stroke-dasharray="1.2 1.6"/></svg>`;
+      const google = `<svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>`;
 
-/* ---------- Strings (Polish and English) ---------- */
-const S={
-pl:{
-  about:'O aplikacji',intro:'Co dzieje się wokół ciebie, teraz i dziś.',
-  account:'Konto',signIn:'Zaloguj się',
-  outPerks:'Konto jest darmowe: dodawanie wydarzeń, kolor Czerwień oraz eksport i import twojej mapy.',
-  premium:'Premium',premiumUntil:'Premium do 30.11.2026',earlyAccess:'wczesny dostęp',
-  freePlan:'Darmowe konto',freeUntil:'Wydarzenia 3 / 15 w tym miesiącu',
-  export:'Pobierz dane',signOut:'Wyloguj',del:'Usuń konto',
-  appearance:'Wygląd',colour:'Kolor „teraz”',colourHintOut:'Zaloguj się, aby wybrać Czerwień.',colourHint:'Mono sprawdza się na czytnikach e-ink i przy wysokim kontraście.',
-  theme:'Motyw',auto:'Auto',day:'Dzień',night:'Noc',
-  lit:'oświetlone miejsca',moderate:'Moderacja',
-  // Sign-in sheet
-  siTitle:'Zaloguj się',siLead:'Bez hasła: kod z e-maila albo konto Google.',google:'Kontynuuj z Google',or:'lub',
-  email:'E-mail',sendCode:'Wyślij mi kod',
-  codeTitle:'Wpisz kod',codeLead:'Kod przyjdzie e-mailem od zespołu Happow na adres ala@example.org. Wysyłamy go ręcznie, więc może to potrwać kilka godzin. Kod działa przez 24 godziny.',
-  code:'Kod z e-maila',codeHint:'6 cyfr',signInBtn:'Zaloguj',changeEmail:'Zmień e-mail',
-  // Consent (new accounts only)
-  welcome:'Witaj w Happow',welcomeLead:'Jeszcze jedno: zaakceptuj zasady konta.',
-  terms:'Akceptuję zasady konta i informację o prywatności.',done:'Gotowe',
-  termsShow:'Zasady konta (wersja tymczasowa)',
-  t1:'Konto przechowuje twój e-mail, język, datę akceptacji zasad, wydarzenia, które dodajesz, i liczniki miesięcznych limitów.',
-  t2:'Darmowe konto dodaje do 15 wydarzeń miesięcznie, 5 z autouzupełnianiem z linku. Premium: 300, wszystkie z autouzupełnianiem.',
-  t3:'Wczesny dostęp: każde konto ma Premium do 30 listopada 2026. Możemy go przedłużyć; nie skrócimy go. Nic nie jest pobierane automatycznie: nie podajesz danych płatniczych.',
-  t4:'Ustawienia (motyw, kolor, język, zasięg) i oświetlona mapa zostają na urządzeniu.',
-  t5:'W O aplikacji możesz pobrać wszystkie dane konta albo usunąć konto; dodane wydarzenia zostają opublikowane, bez powiązania z tobą.',
-  // Premium sheet
-  pTitle:'Premium',pLead:'Odblokowuje:',p1:'300 wydarzeń miesięcznie, wszystkie z autouzupełnianiem z linku',p2:'Magenta i przyszłe kolory',
-  pEarly:'W ramach wczesnego dostępu masz Premium do 30.11.2026.',pNone:'Premium nie jest jeszcze w sprzedaży. Dodawanie wydarzeń zostaje darmowe.',ok:'OK',
-  // Delete
-  dTitle:'Usunąć konto?',dLead:'Usuniemy e-mail, limity i powiązania. Dodane wydarzenia zostają opublikowane, bez twojego konta. Oświetlona mapa zostaje na tym telefonie.',dYes:'Usuń konto',dNo:'Anuluj',
-},
-en:{
-  about:'About',intro:"What's on around you, now and today.",
-  account:'Account',signIn:'Sign in',
-  outPerks:'An account is free: add events, the Tally red colour, and export and import your map.',
-  premium:'Premium',premiumUntil:'Premium until 30 Nov 2026',earlyAccess:'early access',
-  freePlan:'Free account',freeUntil:'Events 3 / 15 this month',
-  export:'Get my data',signOut:'Sign out',del:'Delete account',
-  appearance:'Appearance',colour:'Colour of "on now"',colourHintOut:'Sign in to choose Tally red.',colourHint:'Mono suits e-ink screens and high contrast.',
-  theme:'Theme',auto:'Auto',day:'Day',night:'Night',
-  lit:'lit places',moderate:'Moderation',
-  siTitle:'Sign in',siLead:'No password: a code by email, or your Google account.',google:'Continue with Google',or:'or',
-  email:'Email',sendCode:'Send me a code',
-  codeTitle:'Enter your code',codeLead:'The Happow team will email your code to ala@example.org. We send codes by hand for now, so it can take a few hours. The code works for 24 hours.',
-  code:'Code from the email',codeHint:'6 digits',signInBtn:'Sign in',changeEmail:'Change email',
-  welcome:'Welcome to Happow',welcomeLead:'One more thing: accept the account terms.',
-  terms:'I accept the account terms and the privacy notice.',done:'Done',
-  termsShow:'Account terms (interim version)',
-  t1:'An account stores your email, language, when you accepted the terms, the events you add, and your monthly usage counts.',
-  t2:'A free account adds up to 15 events a month, 5 with autofill from a link. Premium: 300, all with autofill.',
-  t3:'Early access: every account has premium until 30 November 2026. We may extend it; we will not shorten it. Nothing is charged automatically: you give no payment details.',
-  t4:'Your settings (theme, colour, language, reach) and your lit map stay on your device.',
-  t5:'In About you can download all your account data or delete the account; events you added stay published, without a link to you.',
-  pTitle:'Premium',pLead:'Unlocks:',p1:'300 events a month, all with autofill from a link',p2:'Magenta and future colours',
-  pEarly:'With early access you have premium until 30 Nov 2026.',pNone:'Premium is not on sale yet. Adding events stays free.',ok:'OK',
-  dTitle:'Delete your account?',dLead:'We delete your email, usage and links to you. Events you added stay published, without your account. Your lit map stays on this phone.',dYes:'Delete account',dNo:'Cancel',
-}};
-const T=k=>S[st.lang][k];
+      /* ---------- Strings (Polish and English) ---------- */
+      const S = {
+        pl: {
+          about: 'O aplikacji',
+          intro: 'Co dzieje się wokół ciebie, teraz i dziś.',
+          account: 'Konto',
+          signIn: 'Zaloguj się',
+          outPerks:
+            'Konto jest darmowe: dodawanie wydarzeń, kolor Czerwień oraz eksport i import twojej mapy.',
+          premium: 'Premium',
+          premiumUntil: 'Premium do 30.11.2026',
+          earlyAccess: 'wczesny dostęp',
+          freePlan: 'Darmowe konto',
+          freeUntil: 'Wydarzenia 3 / 15 w tym miesiącu',
+          export: 'Pobierz dane',
+          signOut: 'Wyloguj',
+          del: 'Usuń konto',
+          appearance: 'Wygląd',
+          colour: 'Kolor „teraz”',
+          colourHintOut: 'Zaloguj się, aby wybrać Czerwień.',
+          colourHint: 'Mono sprawdza się na czytnikach e-ink i przy wysokim kontraście.',
+          theme: 'Motyw',
+          auto: 'Auto',
+          day: 'Dzień',
+          night: 'Noc',
+          lit: 'oświetlone miejsca',
+          moderate: 'Moderacja',
+          // Sign-in sheet
+          siTitle: 'Zaloguj się',
+          siLead: 'Bez hasła: kod z e-maila albo konto Google.',
+          google: 'Kontynuuj z Google',
+          or: 'lub',
+          email: 'E-mail',
+          sendCode: 'Wyślij mi kod',
+          codeTitle: 'Wpisz kod',
+          codeLead:
+            'Kod przyjdzie e-mailem od zespołu Happow na adres ala@example.org. Wysyłamy go ręcznie, więc może to potrwać kilka godzin. Kod działa przez 24 godziny.',
+          code: 'Kod z e-maila',
+          codeHint: '6 cyfr',
+          signInBtn: 'Zaloguj',
+          changeEmail: 'Zmień e-mail',
+          // Consent (new accounts only)
+          welcome: 'Witaj w Happow',
+          welcomeLead: 'Jeszcze jedno: zaakceptuj zasady konta.',
+          terms: 'Akceptuję zasady konta i informację o prywatności.',
+          done: 'Gotowe',
+          termsShow: 'Zasady konta (wersja tymczasowa)',
+          t1: 'Konto przechowuje twój e-mail, język, datę akceptacji zasad, wydarzenia, które dodajesz, i liczniki miesięcznych limitów.',
+          t2: 'Darmowe konto dodaje do 15 wydarzeń miesięcznie, 5 z autouzupełnianiem z linku. Premium: 300, wszystkie z autouzupełnianiem.',
+          t3: 'Wczesny dostęp: każde konto ma Premium do 30 listopada 2026. Możemy go przedłużyć; nie skrócimy go. Nic nie jest pobierane automatycznie: nie podajesz danych płatniczych.',
+          t4: 'Ustawienia (motyw, kolor, język, zasięg) i oświetlona mapa zostają na urządzeniu.',
+          t5: 'W O aplikacji możesz pobrać wszystkie dane konta albo usunąć konto; dodane wydarzenia zostają opublikowane, bez powiązania z tobą.',
+          // Premium sheet
+          pTitle: 'Premium',
+          pLead: 'Odblokowuje:',
+          p1: '300 wydarzeń miesięcznie, wszystkie z autouzupełnianiem z linku',
+          p2: 'Magenta i przyszłe kolory',
+          pEarly: 'W ramach wczesnego dostępu masz Premium do 30.11.2026.',
+          pNone: 'Premium nie jest jeszcze w sprzedaży. Dodawanie wydarzeń zostaje darmowe.',
+          ok: 'OK',
+          // Delete
+          dTitle: 'Usunąć konto?',
+          dLead:
+            'Usuniemy e-mail, limity i powiązania. Dodane wydarzenia zostają opublikowane, bez twojego konta. Oświetlona mapa zostaje na tym telefonie.',
+          dYes: 'Usuń konto',
+          dNo: 'Anuluj',
+        },
+        en: {
+          about: 'About',
+          intro: "What's on around you, now and today.",
+          account: 'Account',
+          signIn: 'Sign in',
+          outPerks:
+            'An account is free: add events, the Tally red colour, and export and import your map.',
+          premium: 'Premium',
+          premiumUntil: 'Premium until 30 Nov 2026',
+          earlyAccess: 'early access',
+          freePlan: 'Free account',
+          freeUntil: 'Events 3 / 15 this month',
+          export: 'Get my data',
+          signOut: 'Sign out',
+          del: 'Delete account',
+          appearance: 'Appearance',
+          colour: 'Colour of "on now"',
+          colourHintOut: 'Sign in to choose Tally red.',
+          colourHint: 'Mono suits e-ink screens and high contrast.',
+          theme: 'Theme',
+          auto: 'Auto',
+          day: 'Day',
+          night: 'Night',
+          lit: 'lit places',
+          moderate: 'Moderation',
+          siTitle: 'Sign in',
+          siLead: 'No password: a code by email, or your Google account.',
+          google: 'Continue with Google',
+          or: 'or',
+          email: 'Email',
+          sendCode: 'Send me a code',
+          codeTitle: 'Enter your code',
+          codeLead:
+            'The Happow team will email your code to ala@example.org. We send codes by hand for now, so it can take a few hours. The code works for 24 hours.',
+          code: 'Code from the email',
+          codeHint: '6 digits',
+          signInBtn: 'Sign in',
+          changeEmail: 'Change email',
+          welcome: 'Welcome to Happow',
+          welcomeLead: 'One more thing: accept the account terms.',
+          terms: 'I accept the account terms and the privacy notice.',
+          done: 'Done',
+          termsShow: 'Account terms (interim version)',
+          t1: 'An account stores your email, language, when you accepted the terms, the events you add, and your monthly usage counts.',
+          t2: 'A free account adds up to 15 events a month, 5 with autofill from a link. Premium: 300, all with autofill.',
+          t3: 'Early access: every account has premium until 30 November 2026. We may extend it; we will not shorten it. Nothing is charged automatically: you give no payment details.',
+          t4: 'Your settings (theme, colour, language, reach) and your lit map stay on your device.',
+          t5: 'In About you can download all your account data or delete the account; events you added stay published, without a link to you.',
+          pTitle: 'Premium',
+          pLead: 'Unlocks:',
+          p1: '300 events a month, all with autofill from a link',
+          p2: 'Magenta and future colours',
+          pEarly: 'With early access you have premium until 30 Nov 2026.',
+          pNone: 'Premium is not on sale yet. Adding events stays free.',
+          ok: 'OK',
+          dTitle: 'Delete your account?',
+          dLead:
+            'We delete your email, usage and links to you. Events you added stay published, without your account. Your lit map stays on this phone.',
+          dYes: 'Delete account',
+          dNo: 'Cancel',
+        },
+      };
+      const T = (k) => S[st.lang][k];
 
-/* ---------- State ---------- */
-const SCREENS=[
-  ['out','About, signed out'],['email','Sign in: email'],['code','Sign in: code'],['consent','New account: terms'],
-  ['in','About, premium (early access)'],['free','About, free account'],['premium','Premium sheet'],['delete','Delete account'],
-];
-const st={dark:false,lang:'pl',screen:'out',mark:'sparkles',preset:'violet'};
+      /* ---------- State ---------- */
+      const SCREENS = [
+        ['out', 'About, signed out'],
+        ['email', 'Sign in: email'],
+        ['code', 'Sign in: code'],
+        ['consent', 'New account: terms'],
+        ['in', 'About, premium (early access)'],
+        ['free', 'About, free account'],
+        ['premium', 'Premium sheet'],
+        ['delete', 'Delete account'],
+      ];
+      const st = { dark: false, lang: 'pl', screen: 'out', mark: 'sparkles', preset: 'violet' };
 
-/* ---------- About ---------- */
-function about(){
-  const signedIn=st.screen!=='out'&&st.screen!=='email'&&st.screen!=='code';
-  const free=st.screen==='free'||st.screen==='premium';
-  const premium=signedIn&&!free;
-  const acct=!signedIn?`
+      /* ---------- About ---------- */
+      function about() {
+        const signedIn = st.screen !== 'out' && st.screen !== 'email' && st.screen !== 'code';
+        const free = st.screen === 'free' || st.screen === 'premium';
+        const premium = signedIn && !free;
+        const acct = !signedIn
+          ? `
     <div class="acct">
       <p class="acct__perks">${T('outPerks')}</p>
       <button class="btn btn--primary" type="button">${T('signIn')}</button>
-    </div>`:`
+    </div>`
+          : `
     <div class="acct">
       <div class="acct__who">
         <span class="avatar" aria-hidden="true">A</span>
         <div style="min-width:0">
           <div class="acct__email">ala@example.org</div>
-          <div class="acct__plan">${premium?`${mark(13)}<span>${T('premiumUntil')} · ${T('earlyAccess')}</span>`:`<span>${T('freePlan')} · ${T('freeUntil')}</span>`}</div>
+          <div class="acct__plan">${premium ? `${mark(13)}<span>${T('premiumUntil')} · ${T('earlyAccess')}</span>` : `<span>${T('freePlan')} · ${T('freeUntil')}</span>`}</div>
         </div>
       </div>
       <div class="row">
-        <button class="btn" type="button">${svg(I.download,18)}${T('export')}</button>
+        <button class="btn" type="button">${svg(I.download, 18)}${T('export')}</button>
         <button class="btn" type="button">${T('signOut')}</button>
       </div>
       <div><button class="link link--danger" type="button">${T('del')}</button></div>
     </div>`;
-  const presets=[['violet','Fiolet','Violet','anonymous'],['mono','Mono','Mono','anonymous'],['red','Czerwień','Tally red','account'],['magenta','Magenta','Magenta','premium']]
-    .filter(p=>signedIn||p[3]==='anonymous');
-  const seg=presets.map(([id,pl,en,tier])=>{
-    const locked=tier==='premium'&&!premium;
-    return `<button type="button" role="radio" aria-checked="${st.preset===id}" class="${st.preset===id?'on':''}" data-preset="${id}" ${locked?'data-locked="1"':''}>
-      <span class="swatch" style="background:var(--${id})"></span>${st.lang==='pl'?pl:en}${tier==='premium'?mark(12):''}</button>`}).join('');
-  const atlas=`<div class="atlas">
-      ${signedIn?`<button class="atlas__btn" type="button" aria-label="Export">${svg(I.download,24)}</button>`:''}
+        const presets = [
+          ['violet', 'Fiolet', 'Violet', 'anonymous'],
+          ['mono', 'Mono', 'Mono', 'anonymous'],
+          ['red', 'Czerwień', 'Tally red', 'account'],
+          ['magenta', 'Magenta', 'Magenta', 'premium'],
+        ].filter((p) => signedIn || p[3] === 'anonymous');
+        const seg = presets
+          .map(([id, pl, en, tier]) => {
+            const locked = tier === 'premium' && !premium;
+            return `<button type="button" role="radio" aria-checked="${st.preset === id}" class="${st.preset === id ? 'on' : ''}" data-preset="${id}" ${locked ? 'data-locked="1"' : ''}>
+      <span class="swatch" style="background:var(--${id})"></span>${st.lang === 'pl' ? pl : en}${tier === 'premium' ? mark(12) : ''}</button>`;
+          })
+          .join('');
+        const atlas = `<div class="atlas">
+      ${signedIn ? `<button class="atlas__btn" type="button" aria-label="Export">${svg(I.download, 24)}</button>` : ''}
       <div class="atlas__main">${glyph}<span class="atlas__count">128 ${T('lit')}</span></div>
-      ${signedIn?`<button class="atlas__btn" type="button" aria-label="Import">${svg(I.upload,24)}</button>`:''}
-      <span class="atlas__clear">${svg(I.trash,20)}</span>
+      ${signedIn ? `<button class="atlas__btn" type="button" aria-label="Import">${svg(I.upload, 24)}</button>` : ''}
+      <span class="atlas__clear">${svg(I.trash, 20)}</span>
     </div>`;
-  return `
-  <header class="bar"><button class="icon-btn" type="button" aria-label="Back">${svg(I.back,22,2)}</button><h1>${T('about')}</h1></header>
+        return `
+  <header class="bar"><button class="icon-btn" type="button" aria-label="Back">${svg(I.back, 22, 2)}</button><h1>${T('about')}</h1></header>
   <div class="scroll"><div class="body">
     <h2>${T('account')}</h2>
     ${acct}
     <h2>${T('appearance')}</h2>
     <div class="field"><span class="field__label">${T('theme')}</span>
-      <div class="seg seg3"><button type="button" class="${st.dark?'':'on'}">${T('auto')}</button><button type="button">${T('day')}</button><button type="button" class="${st.dark?'on':''}">${T('night')}</button></div></div>
+      <div class="seg seg3"><button type="button" class="${st.dark ? '' : 'on'}">${T('auto')}</button><button type="button">${T('day')}</button><button type="button" class="${st.dark ? 'on' : ''}">${T('night')}</button></div></div>
     <div class="field"><span class="field__label">${T('colour')}</span>
       <div class="seg" role="radiogroup">${seg}</div>
-      <span class="field__hint">${signedIn?T('colourHint'):T('colourHintOut')}</span></div>
+      <span class="field__hint">${signedIn ? T('colourHint') : T('colourHintOut')}</span></div>
     ${atlas}
     <p class="muted small">…</p>
-    ${signedIn?`<div class="mod">${svg(I.shield,18)}${T('moderate')}<span class="muted" style="font-weight:400">(moderators only)</span></div>`:''}
+    ${signedIn ? `<div class="mod">${svg(I.shield, 18)}${T('moderate')}<span class="muted" style="font-weight:400">(moderators only)</span></div>` : ''}
   </div></div>`;
-}
+      }
 
-/* ---------- Sheets ---------- */
-function sheet(){
-  switch(st.screen){
-  case 'email':return `<div class="sheet" role="dialog" aria-label="${T('siTitle')}"><div class="grab"></div>
+      /* ---------- Sheets ---------- */
+      function sheet() {
+        switch (st.screen) {
+          case 'email':
+            return `<div class="sheet" role="dialog" aria-label="${T('siTitle')}"><div class="grab"></div>
     <h3>${T('siTitle')}</h3><p>${T('siLead')}</p>
     <button class="btn btn--google" type="button" style="width:100%">${google}${T('google')}</button>
     <div class="or">${T('or')}</div>
     <div class="field"><label class="field__label" for="em">${T('email')}</label><input id="em" type="email" inputmode="email" autocomplete="email" value="ala@example.org"></div>
-    <button class="btn btn--primary" type="button" style="width:100%">${svg(I.mail,18)}${T('sendCode')}</button></div>`;
-  case 'code':return `<div class="sheet" role="dialog" aria-label="${T('codeTitle')}"><div class="grab"></div>
+    <button class="btn btn--primary" type="button" style="width:100%">${svg(I.mail, 18)}${T('sendCode')}</button></div>`;
+          case 'code':
+            return `<div class="sheet" role="dialog" aria-label="${T('codeTitle')}"><div class="grab"></div>
     <h3>${T('codeTitle')}</h3><p>${T('codeLead')}</p>
     <div class="field"><label class="field__label" for="cd">${T('code')}</label><input id="cd" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="4821"><span class="field__hint">${T('codeHint')}</span></div>
     <button class="btn btn--primary" type="button" style="width:100%" disabled>${T('signInBtn')}</button>
     <p style="margin:12px 0 0;text-align:center"><button class="link" type="button">${T('changeEmail')}</button></p></div>`;
-  case 'consent':return `<div class="sheet" role="dialog" aria-label="${T('welcome')}"><div class="grab"></div>
+          case 'consent':
+            return `<div class="sheet" role="dialog" aria-label="${T('welcome')}"><div class="grab"></div>
     <h3>${T('welcome')}</h3><p>${T('welcomeLead')}</p>
     <details open><summary>${T('termsShow')}</summary><ul><li>${T('t1')}</li><li>${T('t2')}</li><li>${T('t3')}</li><li>${T('t4')}</li><li>${T('t5')}</li></ul></details>
     <label class="check" style="margin:0 0 14px"><input type="checkbox" checked><span>${T('terms')}</span></label>
     <button class="btn btn--primary" type="button" style="width:100%">${T('done')}</button></div>`;
-  case 'premium':return `<div class="sheet" role="dialog" aria-label="${T('pTitle')}"><div class="grab"></div>
+          case 'premium':
+            return `<div class="sheet" role="dialog" aria-label="${T('pTitle')}"><div class="grab"></div>
     <h3>${mark(18)}${T('pTitle')}</h3><p style="margin-bottom:10px">${T('pLead')}</p>
-    <ul class="perks"><li>${svg(I.check,18,2)}<span>${T('p1')}</span></li><li>${svg(I.check,18,2)}<span>${T('p2')}</span></li></ul>
+    <ul class="perks"><li>${svg(I.check, 18, 2)}<span>${T('p1')}</span></li><li>${svg(I.check, 18, 2)}<span>${T('p2')}</span></li></ul>
     <div class="note">${T('pNone')}</div>
     <button class="btn" type="button" style="width:100%">${T('ok')}</button></div>`;
-  case 'delete':return `<div class="sheet" role="alertdialog" aria-label="${T('dTitle')}"><div class="grab"></div>
+          case 'delete':
+            return `<div class="sheet" role="alertdialog" aria-label="${T('dTitle')}"><div class="grab"></div>
     <h3>${T('dTitle')}</h3><p>${T('dLead')}</p>
-    <div class="row"><button class="btn" type="button">${T('dNo')}</button><button class="btn" type="button" style="background:var(--error);border-color:var(--error);color:var(--error-ink)">${svg(I.trash,18)}${T('dYes')}</button></div></div>`;
-  default:return '';}
-}
+    <div class="row"><button class="btn" type="button">${T('dNo')}</button><button class="btn" type="button" style="background:var(--error);border-color:var(--error);color:var(--error-ink)">${svg(I.trash, 18)}${T('dYes')}</button></div></div>`;
+          default:
+            return '';
+        }
+      }
 
-const CAPTIONS={
-  out:'Signed out: an account card on top says what a free account gives. Colours: Violet and Mono only. Atlas bar: count and hold-to-clear only (§6).',
-  email:'Google first (one tap on Android and desktop); email code below. Manual delivery: "Send me a code" calls /api/auth/code-request.',
-  code:'Manual delivery says plainly that a person sends the code. 24 h validity. The button enables at 6 digits; iOS can fill it from Mail (one-time-code).',
-  consent:'Shown once, only when the account has not accepted the current terms version (new accounts, or after the terms change). Also after Google sign-in. Draft interim terms inside for your OK.',
-  in:'Signed in during early access: email, plan with its end and the premium mark, export data, sign out, delete account. All four colours. Atlas export and import come back. Moderation row only for moderator or admin roles.',
-  free:'After the promotion (free account): the plan line shows this month\'s events instead. Magenta keeps the mark; tapping it opens the premium sheet.',
-  premium:'What premium unlocks, with no buy button while no payment provider exists. During early access this sheet only opens from the account row (shows the early-access line instead).',
-  delete:'Confirmation before DELETE /api/me. The red uses the error tokens, not the live hue.',
-};
+      const CAPTIONS = {
+        out: 'Signed out: an account card on top says what a free account gives. Colours: Violet and Mono only. Atlas bar: count and hold-to-clear only (§6).',
+        email:
+          'Google first (one tap on Android and desktop); email code below. Manual delivery: "Send me a code" calls /api/auth/code-request.',
+        code: 'Manual delivery says plainly that a person sends the code. 24 h validity. The button enables at 6 digits; iOS can fill it from Mail (one-time-code).',
+        consent:
+          'Shown once, only when the account has not accepted the current terms version (new accounts, or after the terms change). Also after Google sign-in. Draft interim terms inside for your OK.',
+        in: 'Signed in during early access: email, plan with its end and the premium mark, export data, sign out, delete account. All four colours. Atlas export and import come back. Moderation row only for moderator or admin roles.',
+        free: "After the promotion (free account): the plan line shows this month's events instead. Magenta keeps the mark; tapping it opens the premium sheet.",
+        premium:
+          'What premium unlocks, with no buy button while no payment provider exists. During early access this sheet only opens from the account row (shows the early-access line instead).',
+        delete:
+          'Confirmation before DELETE /api/me. The red uses the error tokens, not the live hue.',
+      };
 
-function render(){
-  document.documentElement.lang=st.lang;
-  const ph=document.getElementById('ph');
-  ph.className='ph'+(st.dark?' night':'');
-  const over=['email','code','consent','premium','delete'].includes(st.screen);
-  ph.innerHTML=about()+(over?`<div class="scrim"></div>${sheet()}`:'');
-  document.getElementById('cap').textContent=CAPTIONS[st.screen];
-  const c=document.getElementById('ctl');
-  const b=(label,on,fn)=>{const x=document.createElement('button');x.type='button';x.textContent=label;x.setAttribute('aria-pressed',String(on));x.onclick=()=>{fn();render()};return x};
-  c.innerHTML='';
-  SCREENS.forEach(([id,label])=>c.append(b(label,st.screen===id,()=>st.screen=id)));
-  c.append(Object.assign(document.createElement('span'),{className:'sep'}));
-  c.append(b('Day',!st.dark,()=>st.dark=false),b('Night',st.dark,()=>st.dark=true),b('PL',st.lang==='pl',()=>st.lang='pl'),b('EN',st.lang==='en',()=>st.lang='en'));
-  c.append(Object.assign(document.createElement('span'),{className:'sep'}));
-  [['sparkles','Mark A: sparkles'],['crown','Mark B: crown'],['diamond','Mark C: diamond']].forEach(([id,l])=>c.append(b(l,st.mark===id,()=>st.mark=id)));
-  ph.querySelectorAll('[data-preset]').forEach(x=>x.onclick=()=>{if(x.dataset.locked){st.screen='premium'}else st.preset=x.dataset.preset;render()});
-}
-render();
-</script>
-</body>
+      function render() {
+        document.documentElement.lang = st.lang;
+        const ph = document.getElementById('ph');
+        ph.className = 'ph' + (st.dark ? ' night' : '');
+        const over = ['email', 'code', 'consent', 'premium', 'delete'].includes(st.screen);
+        ph.innerHTML = about() + (over ? `<div class="scrim"></div>${sheet()}` : '');
+        document.getElementById('cap').textContent = CAPTIONS[st.screen];
+        const c = document.getElementById('ctl');
+        const b = (label, on, fn) => {
+          const x = document.createElement('button');
+          x.type = 'button';
+          x.textContent = label;
+          x.setAttribute('aria-pressed', String(on));
+          x.onclick = () => {
+            fn();
+            render();
+          };
+          return x;
+        };
+        c.innerHTML = '';
+        SCREENS.forEach(([id, label]) =>
+          c.append(b(label, st.screen === id, () => (st.screen = id))),
+        );
+        c.append(Object.assign(document.createElement('span'), { className: 'sep' }));
+        c.append(
+          b('Day', !st.dark, () => (st.dark = false)),
+          b('Night', st.dark, () => (st.dark = true)),
+          b('PL', st.lang === 'pl', () => (st.lang = 'pl')),
+          b('EN', st.lang === 'en', () => (st.lang = 'en')),
+        );
+        c.append(Object.assign(document.createElement('span'), { className: 'sep' }));
+        [
+          ['sparkles', 'Mark A: sparkles'],
+          ['crown', 'Mark B: crown'],
+          ['diamond', 'Mark C: diamond'],
+        ].forEach(([id, l]) => c.append(b(l, st.mark === id, () => (st.mark = id))));
+        ph.querySelectorAll('[data-preset]').forEach(
+          (x) =>
+            (x.onclick = () => {
+              if (x.dataset.locked) {
+                st.screen = 'premium';
+              } else st.preset = x.dataset.preset;
+              render();
+            }),
+        );
+      }
+      render();
+    </script>
+  </body>
 </html>

@@ -289,6 +289,8 @@ export const appConfigSchema = z.object({
      * code by hand from the admin panel; "supabase" = Supabase Auth emails it (custom SMTP).
      */
     emailDelivery: z.enum(['manual', 'supabase']),
+    /** Sign-in providers besides the email code, once set up in Supabase (docs/SETUP.md). */
+    providers: z.array(z.enum(['google'])),
     codeRequestsPerHourPerClient: z.number().int().positive(),
     codeRequestsPerDayPerEmail: z.number().int().positive(),
     /** Unanswered or used code requests are deleted after this many days. */

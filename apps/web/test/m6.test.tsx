@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import seed from '../../../data/seed/wroclaw.events.json';
+import { entitlementsFor } from '@happow/core';
 import { materializeSeed } from '@happow/core/seed';
 import { RuleList } from '../src/components/EventCard';
 import { config, region } from '../src/config';
@@ -84,8 +85,9 @@ describe('themes (slice D)', () => {
     applyTheme('day', violet);
     expect(s.getPropertyValue('--live')).toBe('#6A4CF5');
     expect(s.colorScheme).toBe('light');
-    // Account and premium presets wait for accounts (§8).
-    expect(selectablePresets.map((p) => p.id)).toEqual(['violet', 'mono']);
+    // Without an account only the presets anyone may use (M8 §3).
+    const anonymous = entitlementsFor(config.plans, 'anonymous');
+    expect(selectablePresets(anonymous).map((p) => p.id)).toEqual(['violet', 'mono']);
   });
 
   it('the stylesheet uses theme tokens, not fixed colours', () => {

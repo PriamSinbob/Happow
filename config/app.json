@@ -171,6 +171,7 @@
   },
   "auth": {
     "emailDelivery": "manual",
+    "providers": [],
     "codeRequestsPerHourPerClient": 5,
     "codeRequestsPerDayPerEmail": 3,
     "codeRequestRetentionDays": 7,
