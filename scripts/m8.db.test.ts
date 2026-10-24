@@ -55,13 +55,19 @@ describe.skipIf(!url || !local)('M8 accounts in Postgres', () => {
     } finally {
       await db.query('rollback');
     }
-    await db.query('begin');
-    try {
-      await db.query('set local role anon');
-      expect((await db.query('select 1 from profiles')).rowCount).toBe(0);
-      await expect(db.query('select 1 from code_requests')).rejects.toThrow();
-    } finally {
-      await db.query('rollback');
+    // Anonymous visitors and signed-in users get no access at all to these tables (no grant).
+    for (const [role, table] of [
+      ['anon', 'profiles'],
+      ['anon', 'code_requests'],
+      ['authenticated', 'code_requests'],
+    ]) {
+      await db.query('begin');
+      try {
+        await db.query(`set local role ${role}`);
+        await expect(db.query(`select 1 from ${table}`)).rejects.toThrow(/permission denied/);
+      } finally {
+        await db.query('rollback');
+      }
     }
   });
 
