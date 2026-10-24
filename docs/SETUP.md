@@ -23,9 +23,13 @@ Never paste a secret into an issue, a commit, a chat or a file in the repo. Secr
    - the **Project URL** (`https://<ref>.supabase.co`). This is both **`VITE_SUPABASE_URL`** and **`SUPABASE_URL`**.
    - the **publishable** key (`sb_publishable_…`), or the legacy **anon** key. This is **`VITE_SUPABASE_ANON_KEY`**. It is public by design: it ships inside the app and can only call what the database allows anonymous users to call.
    - the **secret** key (`sb_secret_…`), or the legacy **service_role** key. This is **`SUPABASE_SERVICE_ROLE_KEY`**. It bypasses all security rules: keep it server-side only and never put it in a variable whose name starts with `VITE_`.
-4. **Sign-in settings.** Open **Authentication → Sign In / Providers** and turn off **Allow new users to sign up**: moderators are invited and nobody else can sign up. Then open **Authentication → URL Configuration**:
+4. **Sign-in settings.** Open **Authentication → Sign In / Providers**:
+   - Keep **Allow new users to sign up** off until Google sign-in arrives (M8 slice E). Accounts are created by the admin panel when you send someone a code (section 4), which works with sign-ups off.
+   - Click **Email** in the provider list. Set **Email OTP Expiration** to `86400` (24 hours, the maximum), so a code you send by hand later the same day still works, and check that **Email OTP Length** is `6`. Save.
+
+   Then open **Authentication → URL Configuration**:
    - Set **Site URL** to the deployed app, for example `https://happow.<your-subdomain>.workers.dev` (later your own domain).
-   - Add the same URL and `http://localhost:5173` to **Redirect URLs**.
+   - Add the same URL and `http://localhost:5173` to **Redirect URLs**. The sign-in link in a code email returns to the address you generated it from, so it must be on this list.
 
 ## 2. Anthropic: Claude API key
 
@@ -51,7 +55,14 @@ Run it again after every merge that adds a file to `supabase/migrations/`. It is
 
 Command-line alternative: put `DATABASE_URL` in `.env`, then run `pnpm db:migrate && pnpm db:seed`.
 
-## 4. Moderators
+## 4. Moderators, the admin and sign-in codes
+
+Staff are ordinary accounts with a role in the `moderators` table: `moderator` (the moderation queue) or `admin` (the queue, sign-in code requests and, from M8 slice B, plan grants). Make yourself the admin once, in the **SQL Editor**:
+
+```sql
+insert into moderators (email, role) values ('you@example.org', 'admin')
+on conflict (email) do update set role = 'admin';
+```
 
 For each moderator:
 
@@ -59,6 +70,8 @@ For each moderator:
 2. Open the **SQL Editor** and run `insert into moderators (email) values ('name@example.org');`, with the email in lower case.
 
 They then sign in from the app: **About → Moderator sign-in**, or `/#/moderate`.
+
+**Sign-in codes by hand** (`auth.emailDelivery: "manual"` in `config/app.json`, until the app has its own domain and an email sender). When someone asks for a code in the app, the request waits for you. From M8 slice F the admin panel lists the requests; **Generate** creates the account if needed and shows a ready email (code and link, in their language) with a button that opens it in your mail app. Send it from your own address. Until slice F, the same works through the API: `GET /api/admin/code-requests` and `POST /api/admin/code-requests/<id>/generate`, signed in as the admin.
 
 ## 5. Cloudflare: hosting the app and the `/api`
 

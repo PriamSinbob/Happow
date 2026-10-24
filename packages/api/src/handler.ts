@@ -34,6 +34,8 @@ import {
 } from '@happow/extract';
 import { normalize } from '@happow/ingest/normalize';
 import { z } from 'zod';
+import { accountRoutes } from './accounts.js';
+import { ApiError, body, json, sha256 } from './http.js';
 import { dispatchDueIngest, type ScheduleEnv } from './schedule.js';
 import { Supabase, SupabaseError } from './supabase.js';
 
@@ -55,27 +57,6 @@ export interface ApiDeps {
   /** Overrides for tests. */
   geocoder?: Geocoder;
   extractor?: Extractor | null;
-}
-
-class ApiError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-    message?: string,
-  ) {
-    super(message ?? code);
-  }
-}
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-  });
-
-async function sha256(text: string): Promise<string> {
-  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 /** "2026-10-24T19:00" in the region's time zone, for <input type="datetime-local">. */
@@ -143,18 +124,6 @@ const moderateSchema = z.object({
   action: z.enum(['approve', 'reject', 'dismiss', 'cancel', 'hide']),
   note: z.string().trim().max(500).nullable().optional(),
 });
-
-async function body<T>(req: Request, schema: z.ZodType<T>): Promise<T> {
-  let raw: unknown;
-  try {
-    raw = await req.json();
-  } catch {
-    throw new ApiError(400, 'invalid_json');
-  }
-  const parsed = schema.safeParse(raw);
-  if (!parsed.success) throw new ApiError(400, 'invalid_input', parsed.error.issues[0]?.message);
-  return parsed.data;
-}
 
 /** One prefill the add-event form can use. */
 export interface Prefill {
@@ -229,6 +198,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     sha256(
       `${salt}:ip:${req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? 'local'}`,
     );
+
+  const accounts = accountRoutes({ app: config.app, need, now, limit, clientHash });
 
   const regionFor = (id?: string): Region => getRegion(config, id);
 
@@ -479,14 +450,9 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   }
 
   async function moderator(req: Request): Promise<string> {
-    const { db } = need();
-    const token = /^Bearer (.+)$/i.exec(req.headers.get('authorization') ?? '')?.[1];
-    if (!token) throw new ApiError(401, 'unauthorized');
-    const email = await db.userEmail(token);
-    if (!email) throw new ApiError(401, 'unauthorized');
-    if (!(await db.rpc<boolean>('is_moderator', { p_email: email })))
-      throw new ApiError(403, 'forbidden');
-    return email;
+    const user = await accounts.requireUser(req);
+    if (!user.role) throw new ApiError(403, 'forbidden');
+    return user.email;
   }
 
   async function moderation(req: Request, path: string[]): Promise<Response> {
@@ -661,6 +627,9 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       for (let i = 0; i < path.length; i++) path[i] = decodeURIComponent(path[i]!);
       const [head, ...rest] = path;
       if (head === 'moderation') return await moderation(req, rest);
+      if (head === 'me') return await accounts.me(req, rest);
+      if (head === 'auth') return await accounts.auth(req, rest);
+      if (head === 'admin') return await accounts.admin(req, rest);
       if (head === 'area' && req.method === 'GET' && !rest.length) return await area(req);
       if (head === 'ingest' && req.method === 'GET' && rest.join('/') === 'status')
         return await ingestStatus();
