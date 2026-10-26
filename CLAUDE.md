@@ -7,5 +7,5 @@
 - Each data adapter gets a contract test against recorded fixtures; no live API calls in CI.
 - UI is mobile-first (380 px), polished, Polish and English strings from the start.
 - UI work matches `docs/design/` (interactive prototype and exact icons; see its README). Open the prototype before building a screen; don't redraw its icons or invent alternatives. Deviations need the owner's OK first.
-- Before opening a pull request that changes UI, run the `design-review` subagent (`.claude/agents/design-review.md`, Sonnet at high effort), fix its must-fix items, and put its verdict and any owner questions in the PR description.
+- The `design-review` subagent (`.claude/agents/design-review.md`) is paused (owner, 2026-10-26): don't run it until the owner asks for it again. UI still follows the approved mockups.
 - End each milestone with a short report: built, skipped, open issues.

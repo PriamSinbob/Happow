@@ -67,5 +67,5 @@ Not proposed: streaks, daily goals, public leaderboards (they reward volume over
 
 - **Builds on:** M4 (crawler, autofill, moderation), M6 (lit map, GoThere arrivals, analytics), M8 (accounts, quotas, grants, admin panel).
 - **Before testing on previews:** the Cloudflare preview needs its own Supabase secrets and build variables (found on 2026-10-25), or nothing signed-in can be checked there.
-- **UI slices** get a mockup in `docs/design/` and the owner's OK first, then the `design-review` subagent before the PR.
+- **UI slices** get a mockup in `docs/design/` and the owner's OK first. The `design-review` subagent is paused until the owner asks for it again (2026-10-26).
 - **Docs to update as it ships:** the brief's "More venue and event data", `docs/ADVANTAGES.md` (sources and the contributor rows in "Free and paid"), the About attribution for OSM.
