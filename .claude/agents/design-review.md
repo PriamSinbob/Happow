@@ -1,6 +1,6 @@
 ---
 name: design-review
-description: Reviews a UI change against docs/design and the milestone specs before a pull request is opened. Use proactively after building or changing any screen, pin, icon, colour or layout, and whenever the owner asks whether the UI matches the design.
+description: Reviews a UI change against docs/design and the milestone specs. Paused (owner, 2026-10-26) — run it only when the owner explicitly asks for a design review; never proactively, and never for backend or algorithm work.
 tools: Read, Glob, Grep, Bash, mcp__browseros__tabs, mcp__browseros__navigate, mcp__browseros__snapshot, mcp__browseros__screenshot, mcp__browseros__act, mcp__browseros__evaluate, mcp__browseros__wait, mcp__browseros__read, mcp__claude-in-chrome__tabs_context_mcp, mcp__claude-in-chrome__tabs_create_mcp, mcp__claude-in-chrome__navigate, mcp__claude-in-chrome__computer, mcp__claude-in-chrome__read_page, mcp__claude-in-chrome__resize_window, mcp__claude-in-chrome__javascript_tool
 model: sonnet
 effort: high
