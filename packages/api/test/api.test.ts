@@ -23,6 +23,12 @@ const accountRpc: Backend['rpc'] = {
   grants_active: () => ({ body: [] }),
   usage_get: () => ({ body: { events: 0, autofills: 0 } }),
   usage_take: () => ({ body: true }),
+  // M12 slice E: nobody is trusted, nothing published by trusted accounts, rewards recorded.
+  contributor_trusted: () => ({ body: false }),
+  trusted_recent: () => ({ body: [] }),
+  duplicate_candidates: () => ({ body: { title: 'x', others: [] } }),
+  contribution_award: () => ({ body: { kind: 'verified', days: 3, startsAt: null } }),
+  contribution_revoke_event: () => ({ body: 0 }),
 };
 
 /** Fake Supabase (PostgREST RPC + GoTrue) and web, recording every call. */
@@ -540,7 +546,12 @@ describe('/api/moderation', () => {
     expect((await api(get('user-token'))).status).toBe(403);
     const ok = await api(get('good-token'));
     expect(ok.status).toBe(200);
-    expect(await ok.json()).toEqual({ moderator: 'mod@example.org', submissions: [], reports: [] });
+    expect(await ok.json()).toEqual({
+      moderator: 'mod@example.org',
+      submissions: [],
+      reports: [],
+      trusted: [],
+    });
   });
 
   it('approves submissions and resolves reports as the moderator', async () => {

@@ -34,5 +34,35 @@
       "private.create": true
     }
   },
-  "earlyAccess": { "plan": "premium", "until": "2026-11-30" }
+  "earlyAccess": {
+    "plan": "premium",
+    "until": "2026-11-30"
+  },
+  "contributions": {
+    "premiumDaysPerEvent": 3,
+    "premiumDaysPerMonth": 30,
+    "trustedAfter": 5,
+    "levels": [
+      {
+        "id": "neighbour",
+        "events": 1,
+        "opens": 0
+      },
+      {
+        "id": "local",
+        "events": 5,
+        "opens": 0
+      },
+      {
+        "id": "guide",
+        "events": 20,
+        "opens": 200
+      },
+      {
+        "id": "cityGuide",
+        "events": 50,
+        "opens": 1000
+      }
+    ]
+  }
 }

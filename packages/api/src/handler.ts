@@ -37,6 +37,7 @@ import {
 import { normalize } from '@happow/ingest/normalize';
 import { z } from 'zod';
 import { accountRoutes, quotaExceeded } from './accounts.js';
+import { contributionRoutes } from './contributions.js';
 import { ApiError, body, json, sha256 } from './http.js';
 import { premiumProviders, premiumRoutes, type PremiumProvider } from './premium.js';
 import { dispatchDueIngest, type ScheduleEnv } from './schedule.js';
@@ -215,6 +216,22 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     limit,
     clientHash,
   });
+  const contributions = contributionRoutes({
+    config,
+    timeZone: accountZone,
+    need,
+    now,
+    limit,
+  });
+  /** A reward that fails must not undo the approval or the submission it follows. */
+  const award = async (submissionId: string, eventId: string | null) => {
+    try {
+      return await contributions.award(submissionId, eventId);
+    } catch (err) {
+      console.error(JSON.stringify({ award: submissionId, error: String(err) }));
+      return null;
+    }
+  };
   const premium = premiumRoutes({
     providers:
       deps.premiumProviders ??
@@ -416,9 +433,11 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     // An account has a monthly quota (checked as the event is stored) and an hourly guard;
     // without one, the per-device and per-IP daily caps apply.
     let quotaMax = 0;
+    let trusted = false;
     if (user) {
       await limit('submit-account', user.id, 3600, limits.perHourPerAccount);
       quotaMax = quota((await accounts.planOf(user)).entitlements, 'events.perMonth');
+      trusted = await contributions.trusted(user.id);
     } else {
       await limit('submit', submitter, 86_400, limits.maxPerDevicePerDay);
       await limit('submit-ip', await clientHash(req, salt), 86_400, limits.maxPerDevicePerDay * 3);
@@ -478,17 +497,22 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         p_user: user?.id ?? null,
         p_month: user ? usage.month : null,
         p_max: quotaMax,
+        p_trusted: trusted,
       });
     } catch (err) {
       if (err instanceof SupabaseError && err.code === 'HQ001')
         throw quotaExceeded('events', quotaMax, usage.resetsAt);
       throw err;
     }
+    // Published by a trusted account: the reward follows at once, as an approval would give it.
+    const reward = trusted ? await award(id, res.value.event.id) : null;
     return json(
       {
         id,
-        eventId: publish ? res.value.event.id : null,
-        status: publish ? 'published' : 'pending',
+        eventId: publish || trusted ? res.value.event.id : null,
+        status: publish || trusted ? 'published' : 'pending',
+        trusted,
+        ...(reward && { reward }),
       },
       201,
     );
@@ -525,29 +549,47 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     const email = await moderator(req);
     const { db } = need();
     if (req.method === 'GET' && path.length === 0)
-      return json({ moderator: email, ...(await db.rpc<object>('moderation_queue', {})) });
+      return json({
+        moderator: email,
+        ...(await db.rpc<object>('moderation_queue', {})),
+        // Spot checks of what trusted accounts published (M12 §5.3).
+        trusted: await db.rpc<object[]>('trusted_recent', { p_days: 7 }),
+      });
     if (req.method !== 'POST' || path.length !== 2) throw new ApiError(404, 'not_found');
     const { action, note } = await body(req, moderateSchema);
     const [kind, id] = path as [string, string];
     try {
-      if (kind === 'submissions' && (action === 'approve' || action === 'reject'))
+      if (kind === 'submissions' && (action === 'approve' || action === 'reject')) {
+        const done = await db.rpc<{ id: string; eventId: string | null; action: string }>(
+          'moderate_submission',
+          { p_id: id, p_action: action, p_note: note ?? null, p_moderator: email },
+        );
+        // Rewards come only after moderation (M12 §5).
+        const reward = action === 'approve' ? await award(id, done.eventId) : null;
+        return json({ ...done, ...(reward && { reward }) });
+      }
+      if (kind === 'trusted' && action === 'reject')
         return json(
-          await db.rpc('moderate_submission', {
+          await db.rpc('moderate_trusted', {
             p_id: id,
-            p_action: action,
             p_note: note ?? null,
             p_moderator: email,
           }),
         );
-      if (kind === 'reports' && (action === 'dismiss' || action === 'cancel' || action === 'hide'))
-        return json({
-          resolved: await db.rpc<number>('resolve_reports', {
-            p_event: id,
-            p_action: action,
-            p_note: note ?? null,
-            p_moderator: email,
-          }),
+      if (
+        kind === 'reports' &&
+        (action === 'dismiss' || action === 'cancel' || action === 'hide')
+      ) {
+        const resolved = await db.rpc<number>('resolve_reports', {
+          p_event: id,
+          p_action: action,
+          p_note: note ?? null,
+          p_moderator: email,
         });
+        // Hidden as wrong: its reward stops counting, and days not yet started are taken back.
+        if (action === 'hide') await db.rpc('contribution_revoke_event', { p_event: id });
+        return json({ resolved });
+      }
     } catch (err) {
       if (err instanceof SupabaseError && err.code === 'P0002')
         throw new ApiError(404, 'not_found');
@@ -693,6 +735,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       for (let i = 0; i < path.length; i++) path[i] = decodeURIComponent(path[i]!);
       const [head, ...rest] = path;
       if (head === 'moderation') return await moderation(req, rest);
+      if (head === 'me' && rest.join('/') === 'contributions' && req.method === 'GET')
+        return json(await contributions.mine((await accounts.requireUser(req)).id));
       if (head === 'me') return await accounts.me(req, rest);
       if (head === 'auth') return await accounts.auth(req, rest);
       if (head === 'admin') return await accounts.admin(req, rest);
@@ -705,6 +749,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'geocode') return await geocode(req);
       if (head === 'submissions') return await submit(req);
       if (head === 'reports') return await report(req);
+      if (head === 'counts' && req.method === 'POST' && !rest.length)
+        return await contributions.counts(req);
       if (head === 'route') return await route(req);
       throw new ApiError(404, 'not_found');
     } catch (err) {

@@ -11,6 +11,7 @@ import { hasRules, RuleList } from './EventCard';
 import { Glyph, Icon } from './Icons';
 import { glyphOf } from '../pins';
 import { ReportDialog } from './ReportDialog';
+import { countEvent } from '../counts';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
 
@@ -51,6 +52,12 @@ export function EventDetail({
 }: Props) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
+
+  // An open for its adder's "your impact" (M12 §5.1).
+  const eventId = ev?.id;
+  useEffect(() => {
+    if (eventId) countEvent(eventId, 'open');
+  }, [eventId]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();

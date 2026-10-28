@@ -57,6 +57,8 @@ import type { PinMode } from './pins';
 import { storage } from './storage';
 import { useTheme } from './theme';
 
+import { countEvent } from './counts';
+
 type View = 'map' | 'list';
 
 const { minM, maxM, defaultM } = config.app.radius;
@@ -649,7 +651,10 @@ export function App() {
           ev={detail.ev && withFlag(detail.ev, myReports)}
           now={clock}
           refresh={(id, from) => repo.byId(id, from)}
-          onArrive={atlas.arrive}
+          onArrive={(id, point) => {
+            atlas.arrive(id, point);
+            countEvent(id, 'arrival');
+          }}
           onClose={close}
         />
       )}

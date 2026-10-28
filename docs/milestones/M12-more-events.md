@@ -4,7 +4,7 @@ Oct 26, 2026
 
 Spec from the scope draft of 2026-10-26 (agreed in direction by the owner the same day) and the owner's answers to its questions (§9). M12 comes right after M8. Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics), C1 (OSM venues, the website check and accepted sites), C2 (the Sources tab) and D (share into Happow), 2026-10-28. Slice B is folded into C.
+**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics), C1 (OSM venues, the website check and accepted sites), C2 (the Sources tab), D (share into Happow) and E (contributions on the server), 2026-10-28. Slice B is folded into C.
 
 Goal: **more events on the map, and more people adding events in the app.** Both halves matter. The reasons to add events (§6) matter most. The brief's rules hold throughout: no streaks, no guilt mechanics, no fake urgency, pull not push, and paid never buys visibility. Every source and provider lives in config, each adapter gets a contract test on recorded fixtures, and CI makes no live API calls.
 
@@ -19,7 +19,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 | C1    | §2.1–2.2  | OSM venues, links and pin moves, the website check, candidates, and the reader for accepted sites (iCal, REST, JSON-LD) | A     | —      | built   |
 | C2    | §2.2      | Admin tab "Source candidates": samples, accept or reject, paused sites                                                  | C1    | admin  | built   |
 | D     | §4.1      | Share into Happow: PWA share target opens the add form filling from the link                                            | —     | no     | built   |
-| E     | §5        | Contributions on the server: rewards ledger, impact counters, premium days, trusted contributor, levels, credit opt-in  | —     | —      | planned |
+| E     | §5        | Contributions on the server: rewards ledger, impact counters, premium days, trusted contributor, levels, credit opt-in  | —     | —      | built   |
 | F     | §5 UI     | Your impact and contributor card: after-add screen, account card, level, credit toggle                                  | E     | yes    | planned |
 | G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                             | D     | yes    | planned |
 | H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                               | F     | yes    | planned |
@@ -234,7 +234,29 @@ Neighbour → Local → Guide → City guide, from verified events and opens of 
 
 "Added by <display name>" (and the level) on an event card only when the account turns on **"Show my name on events I add"**; off by default (owner, §9.4). Otherwise events stay anonymous. Turning it off hides the name everywhere at once.
 
-### 5.6 Slice F UI
+### 5.6 Built (slice E, 2026-10-28)
+
+Owner, 2026-10-28: the levels as proposed (Neighbour 1 verified event; Local 5; Guide 20 and 200 opens; City guide 50 and 1,000 opens).
+
+- **Ledger** (`20261028000015_contributions.sql`). `contributions` has one row per account submission that a moderator approved or a trusted account published. Premium days, trust and levels all read from it. `contribution_award` records a submission once:
+  - it gives `premiumDaysPerEvent` (3), never past `premiumDaysPerMonth` (30) in the calendar month, counted in Warsaw time;
+  - the days are a `contribution` grant that starts after the account's latest premium end, and not before a running promotion ends;
+  - one award at a time per account, so two approvals can't both pass the cap.
+- **Duplicates earn nothing.** This was needed because a user's event is published without dedup. Before recording, the API checks other live events within `dedup.radiusM` (200 m) starting within the dedup tolerance, and compares titles with ingest's dedup rule. An older listing with a similar title makes it a `duplicate`, worth 0 days. On real data, other screenings at the same cinema and time have different titles, so they don't count.
+- **Taking back.** A moderator hiding a reported event, or rejecting a trusted publication, revokes its reward: days not yet started are taken back, started ones stay.
+- **Showing the real end of premium.** Core `effectivePlan` carries the end through back-to-back grants of the same plan, so days banked behind the promotion show their real end. `grants_active` already returned future grants.
+- **Trusted.** At least `trustedAfter` (5) approved events and no rejection since trust was last restored. A trusted account's events are stored as approved by `trusted` and published verified, with their reward recorded at once. Moderators see the last 7 days under "Published by trusted contributors" in the queue, with Reject. The admin restores trust with `POST /api/admin/trust {email}`; its button comes with F.
+- **Counts.** `POST /api/counts {deviceId, items}` adds opens (an event card opened), routes (in-app "Going there" started) and arrivals to `event_counts`:
+  - per event and day, totals only, nothing stored about the device;
+  - at most `counts.maxBatch` (50) items, rate-limited per device (`counts.perHourPerDevice`);
+  - the app batches them every 10 s and when the page is hidden, once per event and kind per session, and drops failures.
+- **Contributor's side.** `GET /api/me/contributions` returns verified events, opens, routes and arrivals, whether you're trusted, this month's days, your level (stored as the highest reached), the credit setting and your events with their counts. `PUT /api/me` takes `showName` and `displayName`.
+- **Credit.** `event_credit(event)` (public) gives the name and level only while the adder has the credit on and a name. It's read live, so turning it off hides it everywhere at once. Showing it on the card comes with F.
+- **Export.** It now includes the account's rewards.
+- **Tests.** Core (the cap, joining grants, levels, the config check), API (rewards on approval and trusted publishing, duplicates, revoking, counts, the contributor's side, credit and trust), web (the counts batch, the trusted list), and `scripts/m12-contributions.db.test.ts` in CI. The migration ran on the live data in a rolled-back transaction.
+- **Not checked signed in** on the Cloudflare preview: it still lacks its Supabase settings. Open: the restore-trust button and showing the credit come with slice F.
+
+### 5.7 Slice F UI
 
 The after-add screen (what happens next, your impact so far, days earned), and the account card's contributor section: impact totals, level, trusted status, days earned this month, the credit toggle and your past events (for add again). Mockup first.
 

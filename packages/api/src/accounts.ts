@@ -31,8 +31,15 @@ export interface AccountDeps {
 }
 
 const meSchema = z
-  .object({ locale: languageSchema.optional(), termsVersion: z.string().min(1).max(60).optional() })
+  .object({
+    locale: languageSchema.optional(),
+    termsVersion: z.string().min(1).max(60).optional(),
+    /** "Show my name on events I add" (M12 §5.5), off by default, and the name it shows. */
+    showName: z.boolean().optional(),
+    displayName: z.string().trim().min(1).max(60).optional(),
+  })
   .strict();
+const trustSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254) }).strict();
 const codeRequestSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   locale: languageSchema,
@@ -150,7 +157,7 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
     const sub = path.join('/');
     if (req.method === 'GET' && sub === '') return json(await profile(user));
     if (req.method === 'PUT' && sub === '') {
-      const { locale, termsVersion } = await body(req, meSchema);
+      const { locale, termsVersion, showName, displayName } = await body(req, meSchema);
       if (termsVersion !== undefined && termsVersion !== legal.termsVersion)
         throw new ApiError(400, 'invalid_input', 'termsVersion');
       await db.rpc('profile_update', {
@@ -158,6 +165,12 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
         p_locale: locale ?? null,
         p_terms_version: termsVersion ?? null,
       });
+      if (showName !== undefined || displayName !== undefined)
+        await db.rpc('profile_prefs', {
+          p_user: user.id,
+          p_show_name: showName ?? null,
+          p_display_name: displayName ?? null,
+        });
       return json(await profile(user));
     }
     if (req.method === 'GET' && sub === 'export') {
@@ -282,6 +295,13 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
     const [kind, id, action] = path;
     if (kind === 'grants') return grants(req, path, user);
     if (kind === 'sources') return sources(req, path, user);
+    // Trust back after a rejection (M12 §5.3).
+    if (kind === 'trust' && req.method === 'POST' && path.length === 1) {
+      const { email } = await body(req, trustSchema);
+      if (!(await db.rpc<boolean>('trust_restore', { p_email: email })))
+        throw new ApiError(404, 'not_found');
+      return json({ ok: true });
+    }
     if (kind !== 'code-requests') throw new ApiError(404, 'not_found');
     if (req.method === 'GET' && path.length === 1)
       return json(
