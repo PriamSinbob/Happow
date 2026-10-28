@@ -32,7 +32,8 @@
         "threads",
         "submissions"
       ],
-      "seedFile": "data/seed/wroclaw.events.json"
+      "seedFile": "data/seed/wroclaw.events.json",
+      "districts": { "file": "data/districts/wroclaw.geojson", "adminLevel": 9 }
     }
   ]
 }

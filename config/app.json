@@ -165,6 +165,14 @@
     "plausibleDomain": null,
     "scriptUrl": "https://plausible.io/js/script.manual.js"
   },
+  "osm": {
+    "overpassUrl": "https://overpass-api.de/api/interpreter",
+    "userAgent": "Happow/0.4"
+  },
+  "metrics": {
+    "eveningFromHour": 18,
+    "weekly": { "weekday": 1, "hour": 8 }
+  },
   "legal": {
     "contactEmail": "krasnoroda@gmail.com",
     "termsVersion": "2026-10-24-interim"

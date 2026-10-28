@@ -18,6 +18,23 @@ await withClient(async (db) => {
   try {
     await new EventStore(db).syncConfig(config);
 
+    // District boundaries for the M12 metrics, replaced as a whole from each region's file.
+    for (const region of config.regions) {
+      if (!region.districts) continue;
+      const file = JSON.parse(await readFile(root + region.districts.file, 'utf8')) as {
+        features: { id: string; properties: { name: string }; geometry: unknown }[];
+      };
+      await db.query('delete from districts where region_id = $1', [region.id]);
+      for (const f of file.features) {
+        await db.query(
+          `insert into districts (region_id, id, name, polygon)
+           values ($1, $2, $3, st_multi(st_setsrid(st_geomfromgeojson($4), 4326)))`,
+          [region.id, f.id, f.properties.name, JSON.stringify(f.geometry)],
+        );
+      }
+      console.log(`loaded ${file.features.length} districts for ${region.id}`);
+    }
+
     // Replace previous seed events so offsets re-anchor to now.
     await db.query(
       `delete from events where id in (select event_id from event_sources where source_id = 'seed')`,

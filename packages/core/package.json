@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./seed": "./src/seed.ts",
-    "./h3": "./src/h3.ts"
+    "./h3": "./src/h3.ts",
+    "./districts": "./src/districts.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
