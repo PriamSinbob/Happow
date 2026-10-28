@@ -4,7 +4,7 @@ Oct 26, 2026
 
 Spec from the scope draft of 2026-10-26 (agreed in direction by the owner the same day) and the owner's answers to its questions (§9). M12 comes right after M8. Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec for the owner's OK (2026-10-26). Nothing built yet.
+**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics, 2026-10-28).
 
 Goal: **more events on the map, and more people adding events in the app.** Both halves matter. The reasons to add events (§6) matter most. The brief's rules hold throughout: no streaks, no guilt mechanics, no fake urgency, pull not push, and paid never buys visibility. Every source and provider lives in config, each adapter gets a contract test on recorded fixtures, and CI makes no live API calls.
 
@@ -14,7 +14,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 
 | Slice | Spec      | What                                                                                                                   | Needs | Mockup | Status  |
 | ----- | --------- | ---------------------------------------------------------------------------------------------------------------------- | ----- | ------ | ------- |
-| A     | §1        | Metrics: districts in data, `m12_metrics()`, `pnpm metrics`, a weekly snapshot table                                   | —     | —      | planned |
+| A     | §1        | Metrics: districts in data, `m12_metrics()`, `pnpm metrics`, a weekly row by the cron                                  | —     | —      | built   |
 | B     | §2.1      | Venue calendar feeds: `ical-feed` adapter (iCal and RSS), URL list in config                                           | —     | —      | planned |
 | C     | §2.2      | OSM venues (Overpass) into Venue; website probe → source review list; admin tab for the list                           | B     | admin  | planned |
 | D     | §4.1      | Share into Happow: PWA share target opens the add form filling from the link                                           | —     | yes    | planned |
@@ -73,8 +73,16 @@ Read from the baseline: the city portal gives 95% of the week, the evening is co
 
 - **Districts as data.** `data/districts/<region>.geojson` (from OSM, ODbL, attribution in About) and a `districts` entry per region in `config/regions.json`: the file path, the OSM `admin_level`, and an optional name field. A `districts` table (region, id, name, polygon) is loaded by `pnpm seed`. No city names in code.
 - **`m12_metrics(region, at)`** SQL function returning the five metrics, plus the 7-day counts per source and per category.
-- **`pnpm metrics`** prints them; a weekly GitHub Actions job (Monday 08:00 local) stores a row in `metrics_weekly` (region, week, json). The admin coverage view (slice O) reads it.
+- **`pnpm metrics`** prints them. The Worker's existing 15-minute cron stores the week's row in `metrics_weekly` (region, week, json) from Monday 08:00 local on (owner, 2026-10-28: the Worker cron instead of a GitHub Actions job, which would spend Actions minutes). The admin coverage view (slice O) reads it.
 - **Tests.** The function on fixture events across a district edge, the evening boundary and midnight in the region's time zone.
+- **Built** (slice A, 2026-10-28):
+  - **Districts.** `pnpm districts [region]` reads the region's `boundary=administrative` relations at `districts.adminLevel` inside its bbox from Overpass (`osm.overpassUrl` in `config/app.json`). It joins each district's ways into rings, simplifies each way to 10 m and writes `data/districts/wroclaw.geojson`: 48 districts, 55 KB. Neighbours share their border ways, so simplifying each way before joining keeps the borders gap-free. `--from <file>` builds from a saved Overpass answer. `pnpm db:seed` loads the file into `districts`.
+  - **Database** (`20261028000012_metrics.sql`): the `districts` and `metrics_weekly` tables, and `m12_metrics(region, at, evening_hour)`. It counts live (not cancelled, not hidden) events and submissions that existed at `at`, so a past moment can be measured again, though later edits to events still show. `metrics_save` stores a week's row once and returns false after that. Both functions are callable by the service role only. `metrics.eveningFromHour` (18) and `metrics.weekly` (Monday, 08:00) are in `config/app.json`.
+  - **Cron.** `saveWeeklyMetrics` (`packages/api/src/metrics.ts`) runs next to the ingest dispatch on every tick. On the configured weekday from the configured hour it calls `metrics_save`. A failure in one job no longer stops the other, and both are logged on the tick's line.
+  - **Checked** against the live data, in a rolled-back transaction, for 26 Oct 22:44: 119 today, 59 tonight, 5 of 48 districts, as in the baseline. The 7-day count is 412, not 404: events the city portal changed since then.
+  - **Seen in the numbers:** 329 of the week's 418 events (79%) are cinema screenings from wroclaw-go. "Events for 7 days" is mostly screenings, so `byCategory7d` matters when reading it.
+  - **Tests:** ring joining, simplifying, holes and shared borders; the committed district file; the Worker job across the change to winter time; `scripts/m12.db.test.ts` on the 25-hour day of 25 Oct 2026 (CI database).
+  - Skipped: nothing. Open: run `pnpm db:migrate` and `pnpm db:seed` on Supabase after merge (the "Migrate database" workflow). The first weekly row comes on Monday 2 Nov 2026.
 
 ## 2. More sources
 

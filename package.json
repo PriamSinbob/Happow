@@ -16,6 +16,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "db:reset": "tsx scripts/migrate.ts --reset && tsx scripts/seed.ts",
+    "districts": "tsx scripts/districts.ts",
+    "metrics": "tsx scripts/metrics.ts",
     "test:db": "vitest run --root scripts --no-file-parallelism",
     "ingest": "tsx packages/ingest/src/cli.ts",
     "deploy": "pnpm --filter @happow/web build && wrangler deploy"

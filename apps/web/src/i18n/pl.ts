@@ -377,7 +377,7 @@ export const pl: Record<MessageKey, string> = {
   'about.draft': 'Wersja robocza na czas pilotażu. Zostanie sprawdzona przed publicznym startem.',
   'about.licenses': 'Licencje zewnętrzne',
   'about.attribution':
-    'Dane mapy © współtwórcy OpenStreetMap, kafelki OpenFreeMap. Informacje o wydarzeniach © ich organizatorzy i źródła.',
+    'Dane mapy i dzielnic © współtwórcy OpenStreetMap (ODbL), kafelki OpenFreeMap. Informacje o wydarzeniach © ich organizatorzy i źródła.',
   'about.moderate': 'Moderacja',
   'nav.inApp': 'Trasa w Happow',
   'nav.googleMaps': 'Mapy Google',

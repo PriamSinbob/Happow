@@ -363,7 +363,7 @@ export const en = {
   'about.draft': 'Draft text for the pilot. It will be reviewed before the public launch.',
   'about.licenses': 'Third-party licences',
   'about.attribution':
-    'Map data © OpenStreetMap contributors, tiles by OpenFreeMap. Event details © their organisers and sources.',
+    'Map and district data © OpenStreetMap contributors (ODbL), tiles by OpenFreeMap. Event details © their organisers and sources.',
   'about.moderate': 'Moderation',
   'nav.inApp': 'Route in Happow',
   'nav.googleMaps': 'Google Maps',

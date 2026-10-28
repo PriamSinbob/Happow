@@ -66,6 +66,13 @@ export const regionSchema = z.object({
   bbox: z.object({ west: z.number(), south: z.number(), east: z.number(), north: z.number() }),
   enabledSources: z.array(z.string()),
   seedFile: z.string().optional(),
+  /**
+   * District boundaries for the M12 metrics: a GeoJSON file written by `pnpm districts` from
+   * OSM `boundary=administrative` relations at this `admin_level`, inside the bbox.
+   */
+  districts: z
+    .object({ file: z.string().min(1), adminLevel: z.number().int().min(2).max(11) })
+    .optional(),
 });
 export const regionsConfigSchema = z.object({ regions: z.array(regionSchema).min(1) });
 
@@ -275,6 +282,22 @@ export const appConfigSchema = z.object({
     plausibleDomain: z.string().min(1).nullable(),
     /** Plausible's manual-pageview script (page views carry screen names, not URLs). */
     scriptUrl: z.string().url(),
+  }),
+  /** OpenStreetMap data beyond the map tiles (M12): district boundaries, later venues. */
+  osm: z.object({
+    overpassUrl: z.string().url(),
+    /** overpass-api.de answers 406 to a User-Agent with a URL in it, so no crawler URL here. */
+    userAgent: z.string().min(1),
+  }),
+  /** M12 metrics (docs/milestones/M12-more-events.md §1), in the default region's time zone. */
+  metrics: z.object({
+    /** "Tonight" runs from this hour to midnight. */
+    eveningFromHour: z.number().int().min(0).max(23),
+    /** The Worker's cron saves the week's row from this ISO weekday (1 = Monday) and hour on. */
+    weekly: z.object({
+      weekday: z.number().int().min(1).max(7),
+      hour: z.number().int().min(0).max(23),
+    }),
   }),
   legal: z.object({
     /** Takedown / DSA notice contact shown on the About page. */

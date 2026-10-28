@@ -7,9 +7,16 @@
  * for the ingest schedule.
  *
  * The Cron Trigger (`triggers.crons` in wrangler.jsonc) starts the GitHub ingest workflow when a
- * source is due; see packages/api/src/schedule.ts and docs/SETUP.md.
+ * source is due (packages/api/src/schedule.ts, docs/SETUP.md), and on Mondays it saves the week's
+ * M12 metrics row (packages/api/src/metrics.ts).
  */
-import { createApi, dispatchDueIngest, type ApiEnv, type ScheduleEnv } from '@happow/api';
+import {
+  createApi,
+  dispatchDueIngest,
+  saveWeeklyMetrics,
+  type ApiEnv,
+  type ScheduleEnv,
+} from '@happow/api';
 
 /** The parts of Cloudflare's ScheduledController this Worker reads. */
 interface ScheduledController {
@@ -27,8 +34,15 @@ export default {
   },
 
   async scheduled(controller: ScheduledController, env: ApiEnv & ScheduleEnv): Promise<void> {
-    const result = await dispatchDueIngest(env, new Date(controller.scheduledTime));
-    // One line per tick in Observability → Logs: what was due and whether the workflow started.
-    console.log(JSON.stringify({ cron: controller.cron, ...result }));
+    const now = new Date(controller.scheduledTime);
+    // Independent jobs: one failing must not stop the other.
+    const [ingest, metrics] = await Promise.allSettled([
+      dispatchDueIngest(env, now),
+      saveWeeklyMetrics(env, now),
+    ]);
+    const out = (r: PromiseSettledResult<object>) =>
+      r.status === 'fulfilled' ? r.value : { error: String(r.reason) };
+    // One line per tick in Observability → Logs: what was due and what happened.
+    console.log(JSON.stringify({ cron: controller.cron, ...out(ingest), metrics: out(metrics) }));
   },
 };
