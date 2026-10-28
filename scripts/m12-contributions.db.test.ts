@@ -24,7 +24,8 @@ describe.skipIf(!url || !local)('M12 contributions in Postgres', () => {
     const id = randomUUID();
     await db.query(
       `insert into submissions (id, kind, status, submitter_hash, user_id, event_id, reviewed_at)
-       values ($1, 'user', $2, $3, $4, $5, case when $2 <> 'pending' then now() end)`,
+       values ($1, 'user', $2::submission_status, $3, $4, $5,
+         case when $2::submission_status <> 'pending' then now() end)`,
       [id, status, `hash-${tag}`, user, eventId],
     );
     return id;
