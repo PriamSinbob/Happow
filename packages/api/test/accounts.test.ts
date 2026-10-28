@@ -533,3 +533,53 @@ describe('/api/premium', () => {
     });
   });
 });
+
+describe('/api/admin/sources', () => {
+  const rpc: Record<string, Rpc> = {
+    source_candidates_list: () => ({
+      body: [{ id: 7, status: 'new', url: 'https://klub.example/k.ics' }],
+    }),
+    source_candidate_decide: (a) =>
+      a.p_id === 7
+        ? a.p_action === 'restore'
+          ? { status: 400, body: { code: 'HQ002', message: 'cannot restore a new candidate' } }
+          : { body: { id: 7, status: a.p_action === 'accept' ? 'accepted' : 'rejected' } }
+        : { body: null },
+  };
+  const decide = (
+    sb: ReturnType<typeof supabase>,
+    id: string,
+    body: unknown,
+    token = 'admin-token',
+  ) => api(sb)(req(`admin/sources/${id}`, { method: 'POST', token, body }));
+
+  it('is for the admin only', async () => {
+    const sb = supabase(rpc);
+    expect((await api(sb)(req('admin/sources', { token: 'mod-token' }))).status).toBe(403);
+    expect((await decide(sb, '7', { action: 'accept' }, 'user-token')).status).toBe(403);
+    const ok = await api(sb)(req('admin/sources', { token: 'admin-token' }));
+    expect(await ok.json()).toEqual([{ id: 7, status: 'new', url: 'https://klub.example/k.ics' }]);
+  });
+
+  it('records who decided, and answers 404 for unknown ids', async () => {
+    const sb = supabase(rpc);
+    const res = await decide(sb, '7', { action: 'accept' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ id: 7, status: 'accepted' });
+    expect(rpcCalls(sb, 'source_candidate_decide')[0]!.body).toEqual({
+      p_id: 7,
+      p_action: 'accept',
+      p_by: 'owner@example.org',
+    });
+    expect((await decide(sb, '8', { action: 'accept' })).status).toBe(404);
+    expect((await decide(sb, 'abc', { action: 'accept' })).status).toBe(404);
+  });
+
+  it('refuses an unknown action, and says when the status changed meanwhile', async () => {
+    const sb = supabase(rpc);
+    expect((await decide(sb, '7', { action: 'delete' })).status).toBe(400);
+    const stale = await decide(sb, '7', { action: 'restore' });
+    expect(stale.status).toBe(409);
+    expect(await stale.json()).toMatchObject({ error: 'already_reviewed' });
+  });
+});

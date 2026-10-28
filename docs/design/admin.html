@@ -8,7 +8,10 @@
       /* Design reference for M8 slice F (the admin panel: sign-in code requests and premium grants).
    Draft for the owner's OK, 2026-10-24. Tokens are config/theme.json; layout and type follow
    apps/web/src/styles.css (Screen, mod-card, segmented, btn, field) and docs/design/account.html.
-   Touch-first: no hover styles. */
+   Touch-first: no hover styles.
+   M12 slice C2 (approved by the owner, 2026-10-28): a fourth admin tab, Sources, for the
+   website check's candidates (docs/milestones/M12-more-events.md §2.2). Same cards, buttons and
+   tokens; no new icons. */
       :root {
         --paper: #fbfaf7;
         --paper-2: #eeeae2;
@@ -167,6 +170,56 @@
       .seg2 {
         grid-template-columns: 1fr 1fr;
         margin: 0;
+      }
+      .seg4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .seg4 button {
+        gap: 4px;
+        font-size: 13.5px;
+      }
+
+      /* Sources (M12 C2): a candidate's site, its samples, and the paused line */
+      .site {
+        display: block;
+        margin: 2px 0 0;
+        font-size: 13px;
+        color: var(--quiet);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .samples {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid var(--line);
+      }
+      .samples li {
+        display: flex;
+        gap: 10px;
+        padding: 6px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 13.5px;
+      }
+      .samples time {
+        flex: none;
+        width: 92px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .samples span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .more {
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: var(--muted);
       }
       .count {
         min-width: 18px;
@@ -653,6 +706,35 @@
           endLead:
             'Premium dla ala@example.org kończy się teraz. Nic nie znika: konto i dodane wydarzenia zostają, a limity wracają do darmowych (albo do wczesnego dostępu, póki trwa).',
           endYes: 'Zakończ Premium',
+          // Sources (M12 C2)
+          sources: 'Źródła',
+          srcNew: 'Nowe',
+          srcRead: 'Czytane',
+          srcRejected: 'Odrzucone',
+          kindIcal: 'kalendarz iCal',
+          kindTribe: 'API kalendarza WordPress',
+          kindJsonld: 'dane wydarzeń na stronie',
+          found2d: 'znalezione 2 dni temu',
+          foundToday: 'znalezione dziś',
+          upcoming7: '7 nadchodzących wydarzeń',
+          upcoming2: '2 nadchodzące wydarzenia',
+          upcoming14: '14 nadchodzących wydarzeń',
+          andMore4: 'i 4 kolejne',
+          andMore11: 'i 11 kolejnych',
+          accept: 'Czytaj codziennie',
+          rejectSrc: 'Odrzuć',
+          acceptedNote: 'Czytane od najbliższego przebiegu (raz dziennie).',
+          lastRun: 'ostatnio: dziś 06:17 · 9 wydarzeń',
+          lastRun2: 'ostatnio: dziś 06:17 · 3 wydarzenia',
+          paused: 'Wstrzymane po 3 nieudanych próbach: HTTP 503 (serwer niedostępny).',
+          resume: 'Wznów',
+          stop: 'Przestań czytać',
+          restore: 'Przywróć',
+          rejectedOn: 'odrzucone 26.10',
+          noSrc: 'Nic nowego',
+          noSrcLead:
+            'Strony miejsc są sprawdzane codziennie. Gdy któraś publikuje wydarzenia w czytelnej formie, pojawi się tutaj.',
+          errAccept: 'Nie udało się zapisać: brak połączenia. Spróbuj ponownie.',
         },
         en: {
           titleMod: 'Moderation',
@@ -730,6 +812,34 @@
           endLead:
             'Premium for ala@example.org ends now. Nothing is taken away: the account and its events stay, and the limits go back to the free ones (or to early access while it runs).',
           endYes: 'End premium',
+          sources: 'Sources',
+          srcNew: 'New',
+          srcRead: 'Read',
+          srcRejected: 'Rejected',
+          kindIcal: 'iCal calendar',
+          kindTribe: 'WordPress calendar API',
+          kindJsonld: 'event data on the page',
+          found2d: 'found 2 days ago',
+          foundToday: 'found today',
+          upcoming7: '7 upcoming events',
+          upcoming2: '2 upcoming events',
+          upcoming14: '14 upcoming events',
+          andMore4: 'and 4 more',
+          andMore11: 'and 11 more',
+          accept: 'Read daily',
+          rejectSrc: 'Reject',
+          acceptedNote: 'Read from the next run (once a day).',
+          lastRun: 'last run: today 06:17 · 9 events',
+          lastRun2: 'last run: today 06:17 · 3 events',
+          paused: 'Paused after 3 failed runs: HTTP 503 (server unavailable).',
+          resume: 'Resume',
+          stop: 'Stop reading',
+          restore: 'Restore',
+          rejectedOn: 'rejected 26 Oct',
+          noSrc: 'Nothing new',
+          noSrcLead:
+            'Venue websites are checked daily. When one publishes its events in a readable form, it shows up here.',
+          errAccept: "Couldn't save: you're offline. Try again.",
         },
       };
       const T = (k) => S[st.lang][k];
@@ -751,6 +861,12 @@
         ['giveDate', 'Give: last day'],
         ['givePast', 'Give: past date'],
         ['endGrant', 'End grant'],
+        ['srcNew', 'Sources: new'],
+        ['srcAccepted', 'Sources: just accepted'],
+        ['srcErr', 'Sources: save failed'],
+        ['srcRead', 'Sources: read'],
+        ['srcRejected', 'Sources: rejected'],
+        ['srcEmpty', 'Sources: nothing new'],
       ];
       const st = { dark: false, lang: 'pl', screen: 'codes' };
 
@@ -760,7 +876,9 @@
           ? 'queue'
           : ['grants', 'give', 'giveDate', 'givePast', 'endGrant'].includes(st.screen)
             ? 'grants'
-            : 'codes';
+            : st.screen.startsWith('src')
+              ? 'sources'
+              : 'codes';
 
       /* ---------- The screen ---------- */
       function header(admin) {
@@ -770,7 +888,13 @@
         const n = st.screen === 'empty' ? 0 : 3;
         const b = (id, label, extra = '') =>
           `<button type="button" role="tab" aria-selected="${tab() === id}" class="${tab() === id ? 'on' : ''}">${label}${extra}</button>`;
-        return `<div class="seg" role="tablist">${b('queue', T('queue'))}${b('codes', T('codes'), n ? `<span class="count" aria-label="${n}">${n}</span>` : '')}${b('grants', T('grants'))}</div>`;
+        // Sources counts new candidates only, like Codes counts open requests.
+        const s = ['srcEmpty', 'srcAccepted'].includes(st.screen)
+          ? st.screen === 'srcAccepted'
+            ? 2
+            : 0
+          : 3;
+        return `<div class="seg seg4" role="tablist">${b('queue', T('queue'))}${b('codes', T('codes'), n ? `<span class="count" aria-label="${n}">${n}</span>` : '')}${b('grants', T('grants'))}${b('sources', T('sources'), s ? `<span class="count" aria-label="${s}">${s}</span>` : '')}</div>`;
       }
       const modBar = () =>
         `<div class="mod-bar"><span class="who">${ADMIN}</span><button class="btn btn--inline" type="button">${T('refresh')}</button><button class="btn btn--inline" type="button">${T('signOut')}</button></div>`;
@@ -827,10 +951,136 @@
     ${row('olek@example.org', T('trial'), T('endedOn'), '', '', { ended: true })}`;
       }
 
+      function sources() {
+        const view = ['srcRead', 'srcRejected'].includes(st.screen) ? st.screen : 'srcNew';
+        const nNew = st.screen === 'srcEmpty' ? 0 : st.screen === 'srcAccepted' ? 2 : 3;
+        const sub = (id, label, n) =>
+          `<button type="button" role="tab" aria-selected="${view === id}" class="${view === id ? 'on' : ''}">${label}${n ? ` <span class="muted">${n}</span>` : ''}</button>`;
+        const head = `<div class="seg" role="tablist" style="margin-bottom:4px">${sub('srcNew', T('srcNew'), nNew)}${sub('srcRead', T('srcRead'), st.screen === 'srcAccepted' ? 4 : 3)}${sub('srcRejected', T('srcRejected'), 4)}</div>`;
+        const samples = (rows, more) =>
+          `<ul class="samples">${rows.map(([d, t]) => `<li><time>${d}</time><span>${t}</span></li>`).join('')}</ul>${more ? `<p class="more">${more}</p>` : ''}`;
+        const card = (o) => `
+    <article class="card ${o.dim ? 'card--ended' : ''}">
+      <div class="card__top"><h3 class="card__email">${o.venue}</h3><span class="lang">${o.kind}</span></div>
+      <a class="site" href="#" onclick="return false">${o.url}</a>
+      <p class="meta">${o.meta}</p>
+      ${o.samples ?? ''}
+      ${o.note ? `<p class="made">${svg(I.check, 15, 2.4)}${o.note}</p>` : ''}
+      ${o.err ? `<p class="form-error" role="alert">${o.err}</p>` : ''}
+      <div class="actions">${o.actions}</div>
+    </article>`;
+        const accept = `<button class="btn btn--primary" type="button">${T('accept')}</button><span class="spacer"></span><button class="quiet quiet--danger" type="button">${T('rejectSrc')}</button>`;
+
+        if (view === 'srcNew') {
+          if (st.screen === 'srcEmpty')
+            return `${head}<div class="empty">${svg(I.check, 32, 1.6)}<strong style="color:var(--ink)">${T('noSrc')}</strong><br>${T('noSrcLead')}</div>`;
+          const klub = card({
+            venue: 'Klub Przykładowy',
+            kind: 'iCal',
+            url: 'klub.example/kalendarz.ics',
+            meta: `${T('kindIcal')} · ${T('upcoming7')} · ${T('found2d')}`,
+            samples: samples(
+              [
+                [st.lang === 'pl' ? 'wt 3.11 20:00' : 'Tue 3 Nov 20:00', 'Jam session'],
+                [st.lang === 'pl' ? 'sob 7.11' : 'Sat 7 Nov', 'Kiermasz płyt'],
+                [st.lang === 'pl' ? 'wt 10.11 21:00' : 'Tue 10 Nov 21:00', 'Jam session'],
+              ],
+              T('andMore4'),
+            ),
+            ...(st.screen === 'srcAccepted'
+              ? {
+                  note: T('acceptedNote'),
+                  actions: `<span class="spacer"></span><button class="quiet" type="button">${T('stop')}</button>`,
+                }
+              : { actions: accept, err: st.screen === 'srcErr' ? T('errAccept') : '' }),
+          });
+          const dk = card({
+            venue: 'Dom Kultury Przykładowy',
+            kind: 'API',
+            url: 'dk.example/wp-json/tribe/events/v1/events',
+            meta: `${T('kindTribe')} · ${T('upcoming14')} · ${T('foundToday')}`,
+            samples: samples(
+              [
+                [
+                  st.lang === 'pl' ? 'czw 29.10 18:00' : 'Thu 29 Oct 18:00',
+                  'Warsztaty ceramiczne dla dorosłych',
+                ],
+                [st.lang === 'pl' ? 'pt 30.10 19:00' : 'Fri 30 Oct 19:00', 'Wieczór poezji'],
+                [st.lang === 'pl' ? 'sob 31.10 11:00' : 'Sat 31 Oct 11:00', 'Teatrzyk dla dzieci'],
+              ],
+              T('andMore11'),
+            ),
+            actions: accept,
+          });
+          const parafia = card({
+            venue: 'Parafia Przykładowa',
+            kind: 'JSON-LD',
+            url: 'parafia.example/wydarzenia/',
+            meta: `${T('kindJsonld')} · ${T('upcoming2')} · ${T('foundToday')}`,
+            samples: samples([
+              [st.lang === 'pl' ? 'ndz 8.11 16:00' : 'Sun 8 Nov 16:00', 'Koncert organowy'],
+              [st.lang === 'pl' ? 'sob 21.11 10:00' : 'Sat 21 Nov 10:00', 'Kiermasz parafialny'],
+            ]),
+            actions: accept,
+          });
+          // Accepted cards leave New on the next refresh; drawn here as they look right after the tap.
+          return `${head}${klub}${dk}${parafia}`;
+        }
+        if (view === 'srcRead')
+          return `${head}${card({
+            venue: 'Biblioteka Przykładowa',
+            kind: 'iCal',
+            url: 'biblioteka.example/wydarzenia.ics',
+            meta: `${T('kindIcal')}`,
+            err: T('paused'),
+            actions: `<button class="btn btn--primary" type="button">${T('resume')}</button><span class="spacer"></span><button class="quiet quiet--danger" type="button">${T('stop')}</button>`,
+          })}${card({
+            venue: 'Klub Muzyczny Przykład',
+            kind: 'API',
+            url: 'muzyczny.example/wp-json/tribe/events/v1/events',
+            meta: `${T('kindTribe')} · ${T('lastRun')}`,
+            actions: `<span class="spacer"></span><button class="quiet quiet--danger" type="button">${T('stop')}</button>`,
+          })}${card({
+            venue: 'Galeria Przykładowa',
+            kind: 'JSON-LD',
+            url: 'galeria.example/program/',
+            meta: `${T('kindJsonld')} · ${T('lastRun2')}`,
+            actions: `<span class="spacer"></span><button class="quiet quiet--danger" type="button">${T('stop')}</button>`,
+          })}`;
+        return `${head}${[
+          'Kino Przykładowe',
+          'Teatr Przykładowy',
+          'Pub Przykładowy',
+          'Szkoła Muzyczna',
+        ]
+          .map((venue, i) =>
+            card({
+              venue,
+              kind: ['JSON-LD', 'iCal', 'JSON-LD', 'API'][i],
+              url: [
+                'kino.example/repertuar/',
+                'teatr.example/?ical=1',
+                'pub.example/imprezy/',
+                'szkola.example/wp-json/tribe/events/v1/events',
+              ][i],
+              meta: T('rejectedOn'),
+              dim: true,
+              actions: `<span class="spacer"></span><button class="quiet" type="button">${T('restore')}</button>`,
+            }),
+          )
+          .join('')}`;
+      }
+
       function screen() {
         const admin = st.screen !== 'moderator';
         const content =
-          !admin || tab() === 'queue' ? queue() : tab() === 'codes' ? codes() : grants();
+          !admin || tab() === 'queue'
+            ? queue()
+            : tab() === 'codes'
+              ? codes()
+              : tab() === 'sources'
+                ? sources()
+                : grants();
         return `${header(admin)}<div class="scroll"><div class="body">${admin ? tabs() : ''}${modBar()}${content}</div></div>`;
       }
 
@@ -921,6 +1171,17 @@
           'A last day before today: the field says so and the button stays off. (The server refuses it too.)',
         endGrant:
           'End asks first, then ends the grant now (DELETE). The list refreshes and the grant moves to Ended.',
+        srcNew:
+          'M12 C2. A fourth tab, Sources, counts new finds of the daily website check. Each card: the venue (from OSM), what was found (iCal, API or JSON-LD) and where, how many upcoming events, and three of them, so you can judge the site before accepting. "Read daily" is primary; Reject is quiet. Neither asks first: both can be undone from the other list.',
+        srcAccepted:
+          'Right after "Read daily": the card says when reading starts and offers "Stop reading". It moves to Read on the next refresh; the tab count drops.',
+        srcErr:
+          'Saving failed (offline or a server error): the error shows inside that card, and the button stays.',
+        srcRead:
+          'Sites being read. A paused site (3 failed runs in a row) comes first, with the last error and Resume. Others show their last run and how many events it gave. "Stop reading" moves a site back to Rejected.',
+        srcRejected:
+          'Rejected sites, dimmed, with Restore (back to New). The website check never offers a rejected address again.',
+        srcEmpty: 'Nothing new: no count on the tab, and the list says when finds appear.',
       };
 
       function render() {

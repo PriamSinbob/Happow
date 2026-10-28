@@ -48,6 +48,11 @@ const grantSchema = z
   })
   .strict();
 
+/** A decision on a website-check candidate (M12 §2.2, the Sources tab). */
+const sourceActionSchema = z
+  .object({ action: z.enum(['accept', 'reject', 'stop', 'resume', 'restore']) })
+  .strict();
+
 /** 429 for a used-up monthly quota, with what the add form needs to say so (M8 §5). */
 export const quotaExceeded = (kind: 'events' | 'autofill', limit: number, resetsAt: Date) =>
   new ApiError(429, 'quota_exceeded', undefined, {
@@ -244,13 +249,39 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
     throw new ApiError(404, 'not_found');
   }
 
-  /** /api/admin/code-requests[/:id[/generate]] and /api/admin/grants for the admin only. */
+  /** /api/admin/sources[/:id] for the admin only: the website check's candidates (M12 §2.2). */
+  async function sources(req: Request, path: string[], user: User): Promise<Response> {
+    const { db } = need();
+    if (req.method === 'GET' && path.length === 1)
+      return json(await db.rpc('source_candidates_list', {}));
+    const id = Number(path[1]);
+    if (req.method === 'POST' && path.length === 2 && Number.isSafeInteger(id) && id > 0) {
+      const { action } = await body(req, sourceActionSchema);
+      try {
+        const done = await db.rpc<{ id: number; status: string } | null>(
+          'source_candidate_decide',
+          { p_id: id, p_action: action, p_by: user.email },
+        );
+        if (!done) throw new ApiError(404, 'not_found');
+        return json(done);
+      } catch (err) {
+        // Its status changed meanwhile (another tab, or a run paused it): reload and look again.
+        if (err instanceof SupabaseError && err.code === 'HQ002')
+          throw new ApiError(409, 'already_reviewed');
+        throw err;
+      }
+    }
+    throw new ApiError(404, 'not_found');
+  }
+
+  /** /api/admin/code-requests[/:id[/generate]], /grants and /sources for the admin only. */
   async function admin(req: Request, path: string[]): Promise<Response> {
     const user = await requireUser(req);
     if (user.role !== 'admin') throw new ApiError(403, 'forbidden');
     const { db } = need();
     const [kind, id, action] = path;
     if (kind === 'grants') return grants(req, path, user);
+    if (kind === 'sources') return sources(req, path, user);
     if (kind !== 'code-requests') throw new ApiError(404, 'not_found');
     if (req.method === 'GET' && path.length === 1)
       return json(

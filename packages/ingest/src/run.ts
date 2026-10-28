@@ -248,7 +248,7 @@ async function runSource(
   const venueDb = opts.store?.venues() ?? null;
   const siteTargets =
     source.adapter === 'venue-sites' && venueDb ? await venueDb.siteTargets(region.id) : [];
-  const siteResults: { id: number; error: string | null }[] = [];
+  const siteResults: { id: number; error: string | null; events: number }[] = [];
   const raws = await adapter.fetch({
     source,
     region,
@@ -264,7 +264,7 @@ async function runSource(
       maxInputChars: extraction.maxInputChars,
       maxPageBytes: extraction.maxPageBytes,
       siteTargets,
-      onSiteResult: (id, error) => siteResults.push({ id, error }),
+      onSiteResult: (id, error, events) => siteResults.push({ id, error, events }),
     },
   });
   if (venueDb && siteResults.length)

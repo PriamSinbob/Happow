@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAccount } from '../account';
-import { listCodeRequests } from '../admin';
+import { listCodeRequests, listSources, sourceLists } from '../admin';
 import { api, ApiError } from '../api';
 import { accessToken, authAvailable, loadSession, signOut } from '../auth';
 import { config, region } from '../config';
@@ -8,7 +8,7 @@ import { errorText } from '../errors';
 import { formatDay, formatTime } from '../format';
 import { eventHref } from '../hooks/useHashRoute';
 import { useI18n } from '../i18n';
-import { CodeRequests, Grants } from './Admin';
+import { CodeRequests, Grants, Sources } from './Admin';
 import { Screen } from './Screen';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
@@ -51,12 +51,13 @@ type State =
   | { name: 'error'; message: string }
   | { name: 'ready'; queue: Queue };
 
-type Tab = 'queue' | 'codes' | 'grants';
-const TABS: Tab[] = ['queue', 'codes', 'grants'];
+type Tab = 'queue' | 'codes' | 'grants' | 'sources';
+const TABS: Tab[] = ['queue', 'codes', 'grants', 'sources'];
 
 /**
  * The staff screen. Moderators: the queue of pending submissions (user and low-confidence crawls)
- * and open reports. The admin also gets tabs for sign-in code requests and grants (M8 slice F).
+ * and open reports. The admin also gets tabs for sign-in code requests and grants (M8 slice F)
+ * and the website check's candidates (M12 slice C2).
  */
 export function Moderation({ onClose }: { onClose: () => void }) {
   const { t, lang } = useI18n();
@@ -68,14 +69,19 @@ export function Moderation({ onClose }: { onClose: () => void }) {
   // Bumped by Refresh on the admin tabs, which load by themselves.
   const [reload, setReload] = useState(0);
   const [codeCount, setCodeCount] = useState(0);
+  const [sourceCount, setSourceCount] = useState(0);
 
-  // The Codes tab shows its count before it is opened.
+  // The Codes and Sources tabs show their counts before they are opened.
   useEffect(() => {
-    if (admin)
-      listCodeRequests().then(
-        (r) => setCodeCount(r.length),
-        () => {},
-      );
+    if (!admin) return;
+    listCodeRequests().then(
+      (r) => setCodeCount(r.length),
+      () => {},
+    );
+    listSources().then(
+      (r) => setSourceCount(sourceLists(r).fresh.length),
+      () => {},
+    );
   }, [admin]);
 
   const signedOut = () => {
@@ -296,6 +302,8 @@ export function Moderation({ onClose }: { onClose: () => void }) {
         />
         {tab === 'codes' ? (
           <CodeRequests reload={reload} onCount={setCodeCount} />
+        ) : tab === 'sources' ? (
+          <Sources reload={reload} onCount={setSourceCount} />
         ) : (
           <Grants reload={reload} />
         )}
@@ -307,7 +315,7 @@ export function Moderation({ onClose }: { onClose: () => void }) {
       {admin ? (
         <>
           <div
-            className="segmented segmented--3 admin-tabs"
+            className="segmented segmented--4 admin-tabs"
             role="tablist"
             aria-label={t('admin.tabs')}
             onKeyDown={(e) => {
@@ -337,6 +345,12 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                   <>
                     {' '}
                     <span className="count-pill">{codeCount}</span>
+                  </>
+                )}
+                {id === 'sources' && sourceCount > 0 && (
+                  <>
+                    {' '}
+                    <span className="count-pill">{sourceCount}</span>
                   </>
                 )}
               </button>

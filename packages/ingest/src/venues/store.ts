@@ -203,7 +203,7 @@ export class VenueStore {
 
   /** After a run: a failure counts towards pausing the site, a success resets the count. */
   async recordSiteResults(
-    results: { id: number; error: string | null }[],
+    results: { id: number; error: string | null; events?: number }[],
     pauseAfter: number,
   ): Promise<number> {
     let paused = 0;
@@ -212,9 +212,11 @@ export class VenueStore {
         `update source_candidates set last_run_at = now(),
            failures = case when $2::text is null then 0 else failures + 1 end,
            last_error = $2,
+           -- The admin's Read list shows what the last good run gave.
+           last_run_events = case when $2::text is null then $4 else last_run_events end,
            status = case when $2::text is not null and failures + 1 >= $3 then 'paused' else status end
          where id = $1 returning status`,
-        [r.id, r.error, pauseAfter],
+        [r.id, r.error, pauseAfter, r.events ?? null],
       );
       if (rows[0]?.status === 'paused') paused++;
     }

@@ -151,4 +151,53 @@ describe.skipIf(!url || !local)('M12 venues in Postgres', () => {
     expect(row.rows[0]).toEqual({ status: 'paused', failures: 3, last_error: 'HTTP 500 #3' });
     await db.query('delete from source_candidates where region_id = $1', [region]);
   });
+
+  it('moves candidates between the admin lists only along allowed steps (C2)', async () => {
+    const klub = (await venues().sitesToCheck(region, 10, 0))[0]!;
+    const url = `https://klub.example/${tag}/c2.ics`;
+    await venues().saveProbe(region, klub, {
+      status: 'found',
+      candidates: [{ url, kind: 'ical', count: 3, sample: [] }],
+    });
+    const id = Number(
+      (await db.query('select id from source_candidates where url = $1', [url])).rows[0].id,
+    );
+    const decide = async (action: string) =>
+      (
+        await db.query<{ r: { status: string } | null }>(
+          `select source_candidate_decide($1, $2, 'owner@example.org') r`,
+          [id, action],
+        )
+      ).rows[0]!.r?.status;
+
+    await expect(decide('resume')).rejects.toMatchObject({ code: 'HQ002' });
+    expect(await decide('accept')).toBe('accepted');
+    await expect(decide('accept')).rejects.toMatchObject({ code: 'HQ002' });
+    // A good run stores what it gave, for the Read list.
+    await venues().recordSiteResults([{ id, error: null, events: 9 }], 3);
+    for (const n of [1, 2, 3])
+      await venues().recordSiteResults([{ id, error: `HTTP 503 #${n}` }], 3);
+    expect(await decide('resume')).toBe('accepted');
+    const resumed = await db.query(
+      'select failures, last_error, last_run_events, decided_by from source_candidates where id = $1',
+      [id],
+    );
+    expect(resumed.rows[0]).toEqual({
+      failures: 0,
+      last_error: null,
+      last_run_events: 9,
+      decided_by: 'owner@example.org',
+    });
+    expect(await decide('stop')).toBe('rejected');
+    expect(await decide('restore')).toBe('new');
+    expect(
+      await db.query<{ r: null }>(`select source_candidate_decide(-1, 'accept', 'x') r`),
+    ).toMatchObject({ rows: [{ r: null }] });
+
+    const listed = (
+      await db.query<{ r: { url: string; status: string }[] }>('select source_candidates_list() r')
+    ).rows[0]!.r.find((c) => c.url === url);
+    expect(listed).toMatchObject({ status: 'new', lastRunEvents: 9, eventCount: 3 });
+    await db.query('delete from source_candidates where region_id = $1', [region]);
+  });
 });
