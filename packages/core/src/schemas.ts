@@ -177,6 +177,8 @@ export const appConfigSchema = z.object({
     titleSimilarity: z.number().min(0).max(1),
     /** H3 rings around the event's cell to search, so venues on a cell edge still match. */
     h3Ring: z.number().int().min(0).max(3),
+    /** Same place for the reward check (M12 §5): about what h3Ring 1 covers at resolution 9. */
+    radiusM: z.number().positive(),
   }),
   geocoding: z.object({
     provider: z.literal('nominatim'),
@@ -312,6 +314,12 @@ export const appConfigSchema = z.object({
     }),
     /** Runs in a row an accepted site may fail before it is paused. */
     pauseAfterFailures: z.number().int().positive(),
+  }),
+  /** Per-event opens, routes and arrivals for "your impact" (M12 §5.1). */
+  counts: z.object({
+    /** Counts accepted in one POST /api/counts. */
+    maxBatch: z.number().int().positive(),
+    perHourPerDevice: z.number().int().positive(),
   }),
   /** M12 metrics (docs/milestones/M12-more-events.md §1), in the default region's time zone. */
   metrics: z.object({
@@ -598,5 +606,25 @@ export const plansConfigSchema = z
         until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       })
       .nullable(),
+    /** Rewards for adding events (M12 §5): only after moderation or trusted publishing. */
+    contributions: z
+      .object({
+        /** Premium days per verified event, and at most this many earned per calendar month. */
+        premiumDaysPerEvent: z.number().int().nonnegative(),
+        premiumDaysPerMonth: z.number().int().nonnegative(),
+        /** Verified events with no rejection after which new events skip the queue. */
+        trustedAfter: z.number().int().positive(),
+        /** Ascending: a level needs both its verified events and opens of the account's events. */
+        levels: z
+          .array(
+            z.object({
+              id: z.string().min(1),
+              events: z.number().int().nonnegative(),
+              opens: z.number().int().nonnegative(),
+            }),
+          )
+          .min(1),
+      })
+      .strict(),
   })
   .strict();

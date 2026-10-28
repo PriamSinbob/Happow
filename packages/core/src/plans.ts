@@ -17,12 +17,14 @@ export type QuotaKey = {
 export type FeatureKey = Exclude<keyof Entitlements, QuotaKey>;
 
 /** Where the effective plan comes from: the account itself, the promotion or a grant. */
-export type PlanSource = 'account' | 'early_access' | 'manual' | 'trial' | 'purchase';
+export type PlanSource =
+  'account' | 'early_access' | 'manual' | 'trial' | 'purchase' | 'contribution';
 
 /** A grant as the API reads it from plan_grants. */
 export interface PlanGrant {
   plan: PlanId;
-  source: 'manual' | 'trial' | 'purchase';
+  /** `contribution`: premium days for verified events (M12 §5.2). */
+  source: 'manual' | 'trial' | 'purchase' | 'contribution';
   startsAt: string;
   /** Null = no end. */
   endsAt: string | null;
@@ -49,7 +51,9 @@ export function earlyAccessEnd(
 /**
  * The plan in force at `now`: anonymous when signed out; otherwise the highest of the account,
  * the promotion and the active grants. Its end is the latest end among whatever gives that plan
- * (they all hold at `now`, so together they last until the latest one ends).
+ * (they all hold at `now`, so together they last until the latest one ends), carried on through
+ * grants of that plan that start before it ends: premium days earned during the promotion start
+ * when it ends (M12 §5.2), so the account shows when premium really stops.
  */
 export function effectivePlan(input: {
   signedIn: boolean;
@@ -80,7 +84,20 @@ export function effectivePlan(input: {
   const best = candidates
     .filter((c) => planRank(c.plan) === top)
     .reduce((a, b) => (later(a.endsAt, b.endsAt) ? a : b));
-  return best;
+  let end = best.endsAt;
+  for (let moved = true; end && moved;) {
+    moved = false;
+    for (const g of grants) {
+      if (planRank(g.plan) !== top || new Date(g.startsAt).getTime() > end.getTime()) continue;
+      const gEnd = g.endsAt ? new Date(g.endsAt) : null;
+      if (gEnd === null || gEnd.getTime() > end.getTime()) {
+        end = gEnd;
+        moved = true;
+        if (!end) break;
+      }
+    }
+  }
+  return { ...best, endsAt: end };
 }
 
 export const entitlementsFor = (config: PlansConfig, plan: PlanId): Entitlements =>
@@ -123,5 +140,13 @@ export function checkPlans(config: PlansConfig): string[] {
   const [y, m, d] = (until ?? '').split('-').map(Number) as [number, number, number];
   if (until && new Date(Date.UTC(y, m - 1, d)).toISOString().slice(0, 10) !== until)
     errors.push(`earlyAccess.until "${until}" is not a date`);
+  const levels = config.contributions.levels;
+  levels.forEach((l, i) => {
+    const prev = levels[i - 1];
+    if (prev && (l.events < prev.events || l.opens < prev.opens))
+      errors.push(`contributions level "${l.id}" needs less than "${prev.id}"`);
+    if (levels.findIndex((x) => x.id === l.id) !== i)
+      errors.push(`duplicate contributions level "${l.id}"`);
+  });
   return errors;
 }

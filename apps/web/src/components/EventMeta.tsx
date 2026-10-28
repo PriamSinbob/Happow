@@ -14,6 +14,7 @@ import {
 import { useI18n } from '../i18n';
 import { Glyph, Icon } from './Icons';
 import { glyphOf } from '../pins';
+import { countEvent } from '../counts';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
 
@@ -119,6 +120,7 @@ export function GoButtons({ ev, onGo }: { ev: NearbyEvent; onGo: () => void }) {
         className="btn btn--square"
         onClick={() => {
           track('Directions', { via: 'happow' });
+          countEvent(ev.id, 'route');
           onGo();
         }}
         aria-label={t('nav.inApp')}

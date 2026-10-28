@@ -42,6 +42,8 @@ interface Queue {
   moderator: string;
   submissions: QueuedSubmission[];
   reports: ReportedEvent[];
+  /** Published by trusted accounts in the last 7 days, for spot checks (M12 §5.3). */
+  trusted?: QueuedSubmission[];
 }
 
 type State =
@@ -124,6 +126,7 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                 ...s.queue,
                 submissions: s.queue.submissions.filter((x) => `s:${x.id}` !== key),
                 reports: s.queue.reports.filter((x) => `r:${x.event_id}` !== key),
+                trusted: s.queue.trusted?.filter((x) => `t:${x.id}` !== key),
               },
             }
           : s,
@@ -229,6 +232,41 @@ export function Moderation({ onClose }: { onClose: () => void }) {
             );
           })}
         </section>
+
+        {(queue.trusted?.length ?? 0) > 0 && (
+          <section className="mod-section">
+            <h2>{t('mod.trusted', { count: queue.trusted!.length })}</h2>
+            {queue.trusted!.map((s) => {
+              const key = `t:${s.id}`;
+              return (
+                <article key={s.id} className="mod-card">
+                  <div className="event-card__cats">{t('mod.kind.trusted')}</div>
+                  <h3>
+                    {s.event_id ? (
+                      <a href={eventHref(s.event_id)}>{s.event?.title ?? '—'}</a>
+                    ) : (
+                      (s.event?.title ?? '—')
+                    )}
+                  </h3>
+                  <p className="mod-card__meta">
+                    {s.event && when(s.event.startAt, s.event.timezone)}
+                    {s.venue && ` · ${s.venue.name}`}
+                  </p>
+                  <div className="event-card__actions">
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={busy === key}
+                      onClick={() => act(`trusted/${s.id}`, 'reject', key)}
+                    >
+                      {t('mod.reject')}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+        )}
 
         <section className="mod-section">
           <h2>{t('mod.reports', { count: queue.reports.length })}</h2>

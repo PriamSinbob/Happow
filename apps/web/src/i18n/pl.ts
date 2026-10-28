@@ -222,6 +222,8 @@ export const pl: Record<MessageKey, string> = {
   'mod.kind.user': 'Użytkownik',
   'mod.kind.crawl': 'Crawler: {source}',
   'mod.confidence': 'pewność {value}%',
+  'mod.trusted': 'Opublikowane przez zaufanych ({count})',
+  'mod.kind.trusted': 'Zaufana osoba, opublikowane bez sprawdzenia',
   'mod.reportCount':
     '{count, plural, one {# raport} few {# raporty} many {# raportów} other {# raportu}}',
   'mod.published': 'na mapie, niezweryfikowane',

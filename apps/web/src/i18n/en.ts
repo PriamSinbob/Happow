@@ -211,6 +211,8 @@ export const en = {
   'mod.kind.user': 'User',
   'mod.kind.crawl': 'Crawler: {source}',
   'mod.confidence': 'confidence {value}%',
+  'mod.trusted': 'Published by trusted contributors ({count})',
+  'mod.kind.trusted': 'Trusted contributor, published without review',
   'mod.reportCount': '{count, plural, one {# report} other {# reports}}',
   'mod.published': 'on the map, unverified',
   'mod.refresh': 'Refresh',

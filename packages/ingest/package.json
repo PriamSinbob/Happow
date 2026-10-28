@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./normalize": "./src/normalize.ts",
-    "./schedule": "./src/schedule.ts"
+    "./schedule": "./src/schedule.ts",
+    "./dedup": "./src/dedup.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
