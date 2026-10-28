@@ -2682,3 +2682,13 @@ button.account-card__plan {
   margin: 12px 0;
   font-size: 13px;
 }
+
+/* Share into Happow (M12 slice D): the line on an add form opened by a share */
+.add-shared {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--quiet);
+}

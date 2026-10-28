@@ -156,6 +156,7 @@ export const pl: Record<MessageKey, string> = {
   'add.found':
     '{count, plural, one {Znaleźliśmy # wydarzenie. Sprawdź je poniżej.} few {Znaleźliśmy # wydarzenia. Wybierz jedno:} many {Znaleźliśmy # wydarzeń. Wybierz jedno:} other {Znaleźliśmy # wydarzenia. Wybierz jedno:}}',
   'add.notFound': 'Nie znaleźliśmy wydarzenia na tej stronie. Uzupełnij formularz poniżej.',
+  'add.shared': 'Z udostępnionego linku. Sprawdź, co się uzupełniło.',
   'add.field.title': 'Tytuł',
   'add.field.categories': 'Kategoria (do 3)',
   'add.field.start': 'Początek',

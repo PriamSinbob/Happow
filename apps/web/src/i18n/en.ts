@@ -148,6 +148,7 @@ export const en = {
   'add.found':
     '{count, plural, one {Found # event. Check it below.} other {Found # events. Pick one:}}',
   'add.notFound': 'No event found on that page. Fill in the form below.',
+  'add.shared': 'From a shared link. Check what it filled in.',
   'add.field.title': 'Title',
   'add.field.categories': 'Category (up to 3)',
   'add.field.start': 'Starts',
