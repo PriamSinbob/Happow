@@ -1,0 +1,465 @@
+{
+  "events": [
+    {
+      "id": 1762,
+      "global_id": "demo.theeventscalendar.com?id=1762",
+      "global_id_lineage": ["demo.theeventscalendar.com?id=1762"],
+      "author": "18",
+      "status": "publish",
+      "date": "2022-12-01 12:36:40",
+      "date_utc": "2022-12-01 17:36:40",
+      "modified": "2025-07-01 14:06:09",
+      "modified_utc": "2025-07-01 18:06:09",
+      "url": "https://demo.theeventscalendar.com/event/hosted-dinner-with-chef-monica-geller/",
+      "rest_url": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/events/1762",
+      "title": "Hosted Dinner with Chef Monica Geller",
+      "slug": "hosted-dinner-with-chef-monica-geller",
+      "all_day": false,
+      "start_date": "2026-10-30 18:30:00",
+      "start_date_details": {
+        "year": "2026",
+        "month": "10",
+        "day": "30",
+        "hour": "18",
+        "minutes": "30",
+        "seconds": "00"
+      },
+      "end_date": "2026-10-30 21:00:00",
+      "end_date_details": {
+        "year": "2026",
+        "month": "10",
+        "day": "30",
+        "hour": "21",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "utc_start_date": "2026-10-30 22:30:00",
+      "utc_start_date_details": {
+        "year": "2026",
+        "month": "10",
+        "day": "30",
+        "hour": "22",
+        "minutes": "30",
+        "seconds": "00"
+      },
+      "utc_end_date": "2026-10-31 01:00:00",
+      "utc_end_date_details": {
+        "year": "2026",
+        "month": "10",
+        "day": "31",
+        "hour": "01",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "timezone": "America/Detroit",
+      "timezone_abbr": "EDT",
+      "cost": "&#036;100.00",
+      "cost_details": {
+        "currency_symbol": "",
+        "currency_code": "",
+        "currency_position": "",
+        "values": ["100"]
+      },
+      "website": "",
+      "show_map": true,
+      "show_map_link": true,
+      "hide_from_listings": false,
+      "sticky": false,
+      "featured": false,
+      "categories": [
+        {
+          "name": "Hosted Dinner",
+          "slug": "hosted-dinner",
+          "term_group": 0,
+          "term_taxonomy_id": 25,
+          "taxonomy": "tribe_events_cat",
+          "description": "",
+          "parent": 0,
+          "count": 3,
+          "filter": "raw",
+          "id": 25,
+          "urls": {
+            "self": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/categories/25",
+            "collection": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/categories"
+          }
+        }
+      ],
+      "tags": [
+        {
+          "name": "hosted dinner",
+          "slug": "hosted-dinner",
+          "term_group": 0,
+          "term_taxonomy_id": 26,
+          "taxonomy": "post_tag",
+          "description": "",
+          "parent": 0,
+          "count": 3,
+          "filter": "raw",
+          "id": 26,
+          "urls": {
+            "self": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/tags/26",
+            "collection": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/tags"
+          }
+        },
+        {
+          "name": "special guest",
+          "slug": "special-guest",
+          "term_group": 0,
+          "term_taxonomy_id": 27,
+          "taxonomy": "post_tag",
+          "description": "",
+          "parent": 0,
+          "count": 4,
+          "filter": "raw",
+          "id": 27,
+          "urls": {
+            "self": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/tags/27",
+            "collection": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/tags"
+          }
+        }
+      ],
+      "venue": {
+        "id": 1744,
+        "author": "18",
+        "status": "publish",
+        "date": "2022-12-01 11:39:04",
+        "date_utc": "2022-12-01 16:39:04",
+        "modified": "2022-12-01 11:39:04",
+        "modified_utc": "2022-12-01 16:39:04",
+        "url": "https://demo.theeventscalendar.com/venue/abc-cooking-school-event-center/",
+        "venue": "ABC Cooking School Event Center",
+        "slug": "abc-cooking-school-event-center",
+        "address": "123 1st Aveune",
+        "city": "New York City",
+        "country": "United States",
+        "state": "NY",
+        "zip": "10036",
+        "stateprovince": "NY",
+        "geo_lat": 40.7607184,
+        "geo_lng": -73.9613766,
+        "show_map": true,
+        "show_map_link": true,
+        "global_id": "demo.theeventscalendar.com?id=1744",
+        "global_id_lineage": ["demo.theeventscalendar.com?id=1744"]
+      },
+      "organizer": [
+        {
+          "id": 1859,
+          "author": "18",
+          "status": "publish",
+          "date": "2022-12-04 12:46:21",
+          "date_utc": "2022-12-04 17:46:21",
+          "modified": "2022-12-04 12:46:21",
+          "modified_utc": "2022-12-04 17:46:21",
+          "url": "https://demo.theeventscalendar.com/organizer/chef-monica-geller/",
+          "organizer": "Chef Monica Geller",
+          "slug": "chef-monica-geller",
+          "phone": "888-888-8888",
+          "global_id": "demo.theeventscalendar.com?id=1859",
+          "global_id_lineage": ["demo.theeventscalendar.com?id=1859"]
+        }
+      ],
+      "custom_fields": [],
+      "ticketed": ["woo"],
+      "is_virtual": false,
+      "virtual_url": null,
+      "virtual_video_source": ""
+    },
+    {
+      "id": 1861,
+      "global_id": "demo.theeventscalendar.com?id=1861",
+      "global_id_lineage": ["demo.theeventscalendar.com?id=1861"],
+      "author": "18",
+      "status": "publish",
+      "date": "2022-12-04 12:58:56",
+      "date_utc": "2022-12-04 17:58:56",
+      "modified": "2022-12-05 13:06:13",
+      "modified_utc": "2022-12-05 18:06:13",
+      "url": "https://demo.theeventscalendar.com/event/home-made-cheese-making-class/",
+      "rest_url": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/events/1861",
+      "title": "Home Made Cheese Making Class",
+      "slug": "home-made-cheese-making-class",
+      "all_day": false,
+      "start_date": "2026-11-04 08:00:00",
+      "start_date_details": {
+        "year": "2026",
+        "month": "11",
+        "day": "04",
+        "hour": "08",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "end_date": "2026-11-04 17:00:00",
+      "end_date_details": {
+        "year": "2026",
+        "month": "11",
+        "day": "04",
+        "hour": "17",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "utc_start_date": "2026-11-04 13:00:00",
+      "utc_start_date_details": {
+        "year": "2026",
+        "month": "11",
+        "day": "04",
+        "hour": "13",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "utc_end_date": "2026-11-04 22:00:00",
+      "utc_end_date_details": {
+        "year": "2026",
+        "month": "11",
+        "day": "04",
+        "hour": "22",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "timezone": "America/Detroit",
+      "timezone_abbr": "EST",
+      "cost": "Free",
+      "cost_details": {
+        "currency_symbol": "",
+        "currency_code": "",
+        "currency_position": "",
+        "values": ["0.00"]
+      },
+      "website": "",
+      "show_map": true,
+      "show_map_link": true,
+      "hide_from_listings": false,
+      "sticky": false,
+      "featured": false,
+      "categories": [
+        {
+          "name": "Cooking Class",
+          "slug": "cooking-class",
+          "term_group": 0,
+          "term_taxonomy_id": 21,
+          "taxonomy": "tribe_events_cat",
+          "description": "",
+          "parent": 0,
+          "count": 8,
+          "filter": "raw",
+          "id": 21,
+          "urls": {
+            "self": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/categories/21",
+            "collection": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/categories"
+          }
+        }
+      ],
+      "tags": [
+        {
+          "name": "cooking class",
+          "slug": "cooking-class",
+          "term_group": 0,
+          "term_taxonomy_id": 24,
+          "taxonomy": "post_tag",
+          "description": "",
+          "parent": 0,
+          "count": 7,
+          "filter": "raw",
+          "id": 24,
+          "urls": {
+            "self": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/tags/24",
+            "collection": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/tags"
+          }
+        },
+        {
+          "name": "cooking skills",
+          "slug": "cooking-skills",
+          "term_group": 0,
+          "term_taxonomy_id": 23,
+          "taxonomy": "post_tag",
+          "description": "",
+          "parent": 0,
+          "count": 3,
+          "filter": "raw",
+          "id": 23,
+          "urls": {
+            "self": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/tags/23",
+            "collection": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/tags"
+          }
+        },
+        {
+          "name": "virtual",
+          "slug": "virtual",
+          "term_group": 0,
+          "term_taxonomy_id": 37,
+          "taxonomy": "post_tag",
+          "description": "",
+          "parent": 0,
+          "count": 3,
+          "filter": "raw",
+          "id": 37,
+          "urls": {
+            "self": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/tags/37",
+            "collection": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/tags"
+          }
+        }
+      ],
+      "venue": [],
+      "organizer": [
+        {
+          "id": 1734,
+          "author": "18",
+          "status": "publish",
+          "date": "2022-12-01 11:26:35",
+          "date_utc": "2022-12-01 16:26:35",
+          "modified": "2022-12-01 11:26:35",
+          "modified_utc": "2022-12-01 16:26:35",
+          "url": "https://demo.theeventscalendar.com/organizer/abc-cooking-school/",
+          "organizer": "ABC Cooking School",
+          "slug": "abc-cooking-school",
+          "phone": "555-555-5555",
+          "email": "organizer@example.com",
+          "global_id": "demo.theeventscalendar.com?id=1734",
+          "global_id_lineage": ["demo.theeventscalendar.com?id=1734"]
+        }
+      ],
+      "custom_fields": [],
+      "ticketed": ["woo"],
+      "is_virtual": true,
+      "virtual_url": "",
+      "virtual_video_source": "zoom"
+    },
+    {
+      "id": 10005472,
+      "global_id": "demo.theeventscalendar.com?id=10005472",
+      "global_id_lineage": ["demo.theeventscalendar.com?id=10005472"],
+      "author": "18",
+      "status": "publish",
+      "date": "2022-12-04 13:06:34",
+      "date_utc": "2022-12-04 18:06:34",
+      "modified": "2022-12-05 12:56:25",
+      "modified_utc": "2022-12-05 17:56:25",
+      "url": "https://demo.theeventscalendar.com/event/meal-planning-for-weight-loss/2026-11-07/",
+      "rest_url": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/events/10005472",
+      "title": "Meal Planning For Weight Loss",
+      "slug": "meal-planning-for-weight-loss",
+      "all_day": false,
+      "start_date": "2026-11-07 08:00:00",
+      "start_date_details": {
+        "year": "2026",
+        "month": "11",
+        "day": "07",
+        "hour": "08",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "end_date": "2026-11-07 17:00:00",
+      "end_date_details": {
+        "year": "2026",
+        "month": "11",
+        "day": "07",
+        "hour": "17",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "utc_start_date": "2026-11-07 13:00:00",
+      "utc_start_date_details": {
+        "year": "2026",
+        "month": "11",
+        "day": "07",
+        "hour": "13",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "utc_end_date": "2026-11-07 22:00:00",
+      "utc_end_date_details": {
+        "year": "2026",
+        "month": "11",
+        "day": "07",
+        "hour": "22",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "timezone": "America/Detroit",
+      "timezone_abbr": "EST",
+      "cost": "",
+      "cost_details": {
+        "currency_symbol": "",
+        "currency_code": "",
+        "currency_position": "",
+        "values": []
+      },
+      "website": "",
+      "show_map": false,
+      "show_map_link": false,
+      "hide_from_listings": false,
+      "sticky": false,
+      "featured": false,
+      "categories": [
+        {
+          "name": "Nutritional Class",
+          "slug": "nutritional-class",
+          "term_group": 0,
+          "term_taxonomy_id": 22,
+          "taxonomy": "tribe_events_cat",
+          "description": "",
+          "parent": 0,
+          "count": 3,
+          "filter": "raw",
+          "id": 22,
+          "urls": {
+            "self": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/categories/22",
+            "collection": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/categories"
+          }
+        }
+      ],
+      "tags": [],
+      "venue": {
+        "id": 1733,
+        "author": "18",
+        "status": "publish",
+        "date": "2022-12-01 11:26:34",
+        "date_utc": "2022-12-01 16:26:34",
+        "modified": "2022-12-01 11:26:34",
+        "modified_utc": "2022-12-01 16:26:34",
+        "url": "https://demo.theeventscalendar.com/venue/abc-cooking-school/",
+        "venue": "ABC Cooking School",
+        "slug": "abc-cooking-school",
+        "address": "123 Main Street",
+        "city": "New York City",
+        "country": "United States",
+        "state": "NY",
+        "zip": "90210",
+        "stateprovince": "NY",
+        "geo_lat": 40.762569,
+        "geo_lng": -73.8314318,
+        "show_map": true,
+        "show_map_link": true,
+        "global_id": "demo.theeventscalendar.com?id=1733",
+        "global_id_lineage": ["demo.theeventscalendar.com?id=1733"]
+      },
+      "organizer": [
+        {
+          "id": 1734,
+          "author": "18",
+          "status": "publish",
+          "date": "2022-12-01 11:26:35",
+          "date_utc": "2022-12-01 16:26:35",
+          "modified": "2022-12-01 11:26:35",
+          "modified_utc": "2022-12-01 16:26:35",
+          "url": "https://demo.theeventscalendar.com/organizer/abc-cooking-school/",
+          "organizer": "ABC Cooking School",
+          "slug": "abc-cooking-school",
+          "phone": "555-555-5555",
+          "email": "organizer@example.com",
+          "global_id": "demo.theeventscalendar.com?id=1734",
+          "global_id_lineage": ["demo.theeventscalendar.com?id=1734"]
+        }
+      ],
+      "custom_fields": [],
+      "ticketed": false,
+      "is_virtual": false,
+      "virtual_url": null,
+      "virtual_video_source": ""
+    }
+  ],
+  "rest_url": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/events/?page=1&per_page=5&start_date=2026-10-27 00:00:00&end_date=2028-10-28 23:59:59&status=publish",
+  "next_rest_url": "https://demo.theeventscalendar.com/wp-json/tribe/events/v1/events/?per_page=5&start_date=2026-10-27+00%3A00%3A00&end_date=2028-10-28+23%3A59%3A59&status=publish&page=2",
+  "total": 24,
+  "total_pages": 5
+}

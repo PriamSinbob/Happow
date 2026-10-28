@@ -86,6 +86,19 @@ export interface AdapterServices {
   userAgent: string;
   maxInputChars: number;
   maxPageBytes: number;
+  /** Accepted website-check candidates in the region (the `venue-sites` source). */
+  siteTargets?: SiteTarget[];
+  /** Per site after a run: an error, or null and how many events it gave. */
+  onSiteResult?: (id: number, error: string | null, events: number) => void;
+}
+
+/** A site an admin accepted from the website check (source_candidates). */
+export interface SiteTarget {
+  id: number;
+  url: string;
+  kind: 'ical' | 'tribe' | 'jsonld';
+  venueName: string;
+  point: { lat: number; lng: number };
 }
 
 export interface AdapterContext {

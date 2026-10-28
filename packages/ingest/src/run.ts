@@ -3,6 +3,7 @@ import {
   scoreConfidence,
   type Category,
   type HappowConfig,
+  type LatLng,
   type Region,
   type Source,
 } from '@happow/core';
@@ -17,10 +18,13 @@ import {
 import { adapters } from './adapters/index.js';
 import { isDue, plannedRuns } from './schedule.js';
 import { sourceRanker } from './dedup.js';
+import { h3Cell } from './geo.js';
 import { HttpClient, isTimeout, redact } from './http.js';
 import { normalize, type RejectReason } from './normalize.js';
 import type { EventStore } from './store.js';
 import type { NormalizedEvent, ParsedEvent, RawEvent, SourceAdapter } from './types.js';
+import { venueJobs, type JobStats } from './venues/jobs.js';
+import { distanceM } from './venues/osm.js';
 
 export interface IngestOptions {
   config: HappowConfig;
@@ -58,6 +62,8 @@ export interface SourceRunSummary {
   merged?: number;
   queued?: number;
   events?: NormalizedEvent[];
+  /** What a venue job did. */
+  stats?: JobStats;
 }
 
 export function missingSecrets(source: Source, env: IngestOptions['env']): string[] {
@@ -84,7 +90,8 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
     };
 
     const adapter = adapters[source.adapter];
-    if (!adapter) {
+    const job = venueJobs[source.adapter];
+    if (!adapter && !job) {
       // e.g. the manual seed, loaded by `pnpm db:seed`.
       if (opts.sourceIds?.includes(source.id)) skip(`no ingest adapter "${source.adapter}"`);
       continue;
@@ -104,8 +111,32 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
     }
 
     const runId = store ? await store.startRun(source.id, region.id) : null;
+    if (job) {
+      // Venue jobs write venues and candidates, not events.
+      try {
+        const stats = await job({
+          source,
+          region,
+          config,
+          now,
+          store,
+          fetch: opts.fetch,
+          sleep: opts.sleep,
+          log,
+        });
+        if (runId !== null) await store!.finishRun(runId, 'ok', stats);
+        log(`✓ ${source.id}@${region.id}: ${JSON.stringify(stats)}`);
+        summaries.push({ ...base, status: 'ok', stats });
+      } catch (err) {
+        const message = redact((err as Error).message);
+        if (runId !== null) await store!.finishRun(runId, 'failed', {}, message);
+        log(`✗ ${source.id}@${region.id}: ${message}`);
+        summaries.push({ ...base, status: 'failed', reason: message });
+      }
+      continue;
+    }
     try {
-      const result = await runSource(adapter, source, region, config, now, opts);
+      const result = await runSource(adapter!, source, region, config, now, opts);
       const applied = store
         ? await store.apply(result.events, result.raws, {
             regionId: region.id,
@@ -213,6 +244,11 @@ async function runSource(
     from: new Date(now.getTime() - ingest.lookbackHours * 3_600_000),
     to: new Date(now.getTime() + ingest.lookaheadHours * 3_600_000),
   };
+  // Accepted website-check sites (venue-sites), and how each one did this run.
+  const venueDb = opts.store?.venues() ?? null;
+  const siteTargets =
+    source.adapter === 'venue-sites' && venueDb ? await venueDb.siteTargets(region.id) : [];
+  const siteResults: { id: number; error: string | null }[] = [];
   const raws = await adapter.fetch({
     source,
     region,
@@ -227,8 +263,14 @@ async function runSource(
       userAgent: ingest.userAgent,
       maxInputChars: extraction.maxInputChars,
       maxPageBytes: extraction.maxPageBytes,
+      siteTargets,
+      onSiteResult: (id, error) => siteResults.push({ id, error }),
     },
   });
+  if (venueDb && siteResults.length)
+    await venueDb.recordSiteResults(siteResults, config.app.venues.pauseAfterFailures);
+  // Venues whose pin moved to its OSM point (M12 §2.2): events there take that point.
+  const pins = venueDb ? await venueDb.osmPins(region.id) : new Map<string, LatLng>();
 
   const categories: Category[] = config.categories;
   const events: NormalizedEvent[] = [];
@@ -296,8 +338,30 @@ async function runSource(
       now,
       sharedCategoryMap: extraction.schemaTypeMap,
     });
-    if (res.ok) events.push(res.value);
+    if (res.ok) events.push(atOsmPin(res.value, pins, config));
     else rejected[res.reason] = (rejected[res.reason] ?? 0) + 1;
   }
   return { raws, window, events, dropped, geocoded, rejected };
+}
+
+/** An event at a venue whose pin moved to its OSM point takes that point, if it is at the venue. */
+function atOsmPin(
+  item: NormalizedEvent,
+  pins: Map<string, LatLng>,
+  config: HappowConfig,
+): NormalizedEvent {
+  const pin = item.venue && pins.get(item.venue.id);
+  if (!pin || distanceM(item.event.point, pin) > config.app.venues.link.radiusM) return item;
+  const { eventResolution, densityResolution } = config.app.h3;
+  const h3r9 = h3Cell(pin, eventResolution);
+  return {
+    ...item,
+    event: {
+      ...item.event,
+      point: pin,
+      h3r9,
+      ...(item.event.densityCell !== undefined && { densityCell: h3Cell(pin, densityResolution) }),
+    },
+    venue: { ...item.venue!, point: pin, h3r9 },
+  };
 }

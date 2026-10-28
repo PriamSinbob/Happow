@@ -1,0 +1,128 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//The Events Calendar - ECPv6.18.2//NONSGML v1.0//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:The Events Calendar
+X-ORIGINAL-URL:https://demo.theeventscalendar.com
+X-WR-CALDESC:Events for The Events Calendar
+REFRESH-INTERVAL;VALUE=DURATION:PT1H
+X-Robots-Tag:noindex
+X-PUBLISHED-TTL:PT1H
+BEGIN:VTIMEZONE
+TZID:America/Detroit
+BEGIN:DAYLIGHT
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0400
+TZNAME:EDT
+DTSTART:20250309T070000
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+TZNAME:EST
+DTSTART:20251102T060000
+END:STANDARD
+BEGIN:DAYLIGHT
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0400
+TZNAME:EDT
+DTSTART:20260308T070000
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+TZNAME:EST
+DTSTART:20261101T060000
+END:STANDARD
+BEGIN:DAYLIGHT
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0400
+TZNAME:EDT
+DTSTART:20270314T070000
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+TZNAME:EST
+DTSTART:20271107T060000
+END:STANDARD
+BEGIN:DAYLIGHT
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0400
+TZNAME:EDT
+DTSTART:20280312T070000
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+TZNAME:EST
+DTSTART:20281105T060000
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+DTSTART;TZID=America/Detroit:20261030T183000
+DTEND;TZID=America/Detroit:20261030T210000
+DTSTAMP:20250701T180609Z
+CREATED:20221201T173640Z
+LAST-MODIFIED:20250701T180609Z
+UID:10000267-1793385000-1793394000@demo.theeventscalendar.com
+SUMMARY:Hosted Dinner with Chef Monica Geller
+DESCRIPTION:Join Chef Moinca Geller for a Hosted Dinner! She will discuss how her weight loss contributed to her wanting to be a chef all while preparing her guests a healthy\, balanced meal for you to enjoy.
+URL:https://demo.theeventscalendar.com/event/hosted-dinner-with-chef-monica-geller/
+LOCATION:ABC Cooking School Event Center\, 123 1st Aveune\, New York City\, NY\, 10036\, United States
+CATEGORIES:Hosted Dinner
+ATTACH;FMTTYPE=image/jpeg:https://demo.theeventscalendar.com/wp-content/uploads/2022/06/pexels-kampus-production-7964686.jpg
+GEO:40.7607184;-73.9613766
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=ABC Cooking School Event Center 123 1st Aveune New York City NY 10036 United States;X-APPLE-RADIUS=500;X-TITLE=123 1st Aveune:geo:-73.9613766,40.7607184
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=America/Detroit:20261104T080000
+DTEND;TZID=America/Detroit:20261104T170000
+DTSTAMP:20221205T180613Z
+CREATED:20221204T175856Z
+LAST-MODIFIED:20221205T180613Z
+UID:10000269-1793779200-1793811600@demo.theeventscalendar.com
+SUMMARY:Home Made Cheese Making Class
+DESCRIPTION:Learn how to make gourmet cheeses right from your own home! This class will be a hybrid (virtual and in person). The virtual class will focus on the history of cheese making\, equipment and tools needs\, how to know if your cheese is ready\, and much more. Then we will meet to apply what you’ve learned by making four cheeses which you can take home and enjoy!
+URL:https://demo.theeventscalendar.com/event/home-made-cheese-making-class/
+CATEGORIES:Cooking Class
+ATTACH;FMTTYPE=image/jpeg:https://demo.theeventscalendar.com/wp-content/uploads/2022/06/pexels-polina-tankilevitch-45190532.jpg
+ORGANIZER;CN="ABC Cooking School":MAILTO:organizer@example.com
+LOCATION:https://demo.theeventscalendar.com/event/home-made-cheese-making-class/
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=America/Detroit:20261107T080000
+DTEND;TZID=America/Detroit:20261107T170000
+DTSTAMP:20221205T175625Z
+CREATED:20221204T180634Z
+LAST-MODIFIED:20221205T175625Z
+UID:10005472-1794038400-1794070800@demo.theeventscalendar.com
+SUMMARY:Meal Planning For Weight Loss
+DESCRIPTION:Join us for an educational course on meal planning specifically for weight loss. We will have some of our top chefs teach you how you can quickly and easily prep your meals for the week to ensure you eat clean and healthy to meet your wight loss goals.
+URL:https://demo.theeventscalendar.com/event/meal-planning-for-weight-loss/2026-11-07/
+LOCATION:ABC Cooking School\, 123 Main Street\, New York City\, NY\, 90210\, United States
+CATEGORIES:Nutritional Class
+ATTACH;FMTTYPE=image/jpeg:https://demo.theeventscalendar.com/wp-content/uploads/2022/06/pexels-anna-shvets-6593581.jpg
+ORGANIZER;CN="ABC Cooking School":MAILTO:organizer@example.com
+GEO:40.762569;-73.8314318
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=ABC Cooking School 123 Main Street New York City NY 90210 United States;X-APPLE-RADIUS=500;X-TITLE=123 Main Street:geo:-73.8314318,40.762569
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=America/Detroit:20261118T173000
+DTEND;TZID=America/Detroit:20261118T213000
+DTSTAMP:20221204T181724Z
+CREATED:20221204T181724Z
+LAST-MODIFIED:20221204T181724Z
+UID:10000275-1795023000-1795037400@demo.theeventscalendar.com
+SUMMARY:Wine Tasting Class & Chocolate Pairing
+DESCRIPTION:Lorem ipsum dolor sit amet\, consectetur adipiscing elit\, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam\, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident\, sunt in culpa qui officia deserunt mollit anim id est laborum.
+URL:https://demo.theeventscalendar.com/event/wine-tasting-class-chocolate-pairing/
+LOCATION:ABC Cooking School Event Center\, 123 1st Aveune\, New York City\, NY\, 10036\, United States
+CATEGORIES:Tasting/Pairing Class
+ATTACH;FMTTYPE=image/jpeg:https://demo.theeventscalendar.com/wp-content/uploads/2022/12/wine-chocolate-scaled.jpg
+ORGANIZER;CN="ABC Cooking School":MAILTO:organizer@example.com
+GEO:40.7607184;-73.9613766
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=ABC Cooking School Event Center 123 1st Aveune New York City NY 10036 United States;X-APPLE-RADIUS=500;X-TITLE=123 1st Aveune:geo:-73.9613766,40.7607184
+END:VEVENT
+END:VCALENDAR

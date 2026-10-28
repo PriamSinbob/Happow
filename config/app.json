@@ -166,8 +166,47 @@
     "scriptUrl": "https://plausible.io/js/script.manual.js"
   },
   "osm": {
-    "overpassUrl": "https://overpass-api.de/api/interpreter",
+    "overpassUrls": [
+      "https://overpass-api.de/api/interpreter",
+      "https://overpass.private.coffee/api/interpreter",
+      "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+    ],
     "userAgent": "Happow/0.4"
+  },
+  "venues": {
+    "osmTags": {
+      "amenity": [
+        "theatre",
+        "arts_centre",
+        "cinema",
+        "nightclub",
+        "community_centre",
+        "social_centre",
+        "library",
+        "place_of_worship",
+        "music_venue",
+        "events_venue",
+        "concert_hall",
+        "conference_centre"
+      ],
+      "tourism": ["museum", "gallery"]
+    },
+    "link": { "radiusM": 150, "minSimilarity": 0.6, "moveSimilarity": 0.8, "minMoveM": 15 },
+    "probe": {
+      "perRun": 20,
+      "recheckDays": 30,
+      "eventsPageWords": [
+        "wydarzeni",
+        "kalendarz",
+        "repertuar",
+        "program",
+        "koncerty",
+        "imprezy",
+        "events",
+        "calendar"
+      ]
+    },
+    "pauseAfterFailures": 3
   },
   "metrics": {
     "eveningFromHour": 18,

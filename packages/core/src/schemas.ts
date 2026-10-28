@@ -285,9 +285,33 @@ export const appConfigSchema = z.object({
   }),
   /** OpenStreetMap data beyond the map tiles (M12): district boundaries, later venues. */
   osm: z.object({
-    overpassUrl: z.string().url(),
+    /** Overpass servers, tried in order: one alone can refuse or time out for hours. */
+    overpassUrls: z.array(z.string().url()).min(1),
     /** overpass-api.de answers 406 to a User-Agent with a URL in it, so no crawler URL here. */
     userAgent: z.string().min(1),
+  }),
+  /** OSM venues, links to event venues and the website check (M12 §2.2). */
+  venues: z.object({
+    /** OSM tags that make a venue: key → values (e.g. amenity → theatre, cinema). */
+    osmTags: z.record(z.array(z.string().min(1)).min(1)),
+    link: z.object({
+      /** An event venue links to the OSM venue with the most similar name within this distance. */
+      radiusM: z.number().positive(),
+      /** Name similarity (0–1, as for event titles) needed to link. */
+      minSimilarity: z.number().min(0).max(1),
+      /** Similarity needed to move the pin to OSM's point; closer than minMoveM it stays. */
+      moveSimilarity: z.number().min(0).max(1),
+      minMoveM: z.number().nonnegative(),
+    }),
+    probe: z.object({
+      /** Websites checked per run, never checked first, then the oldest. */
+      perRun: z.number().int().positive(),
+      recheckDays: z.number().int().positive(),
+      /** Words in a link (path or text) that make it the site's events page. */
+      eventsPageWords: z.array(z.string().min(1)).min(1),
+    }),
+    /** Runs in a row an accepted site may fail before it is paused. */
+    pauseAfterFailures: z.number().int().positive(),
   }),
   /** M12 metrics (docs/milestones/M12-more-events.md §1), in the default region's time zone. */
   metrics: z.object({

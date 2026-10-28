@@ -18,7 +18,16 @@ const okRow = (source_id: string, started_at = '2026-10-24T11:50:00Z') => ({
   started_at,
   status: 'ok',
 });
-const allFresh = ['ticketmaster', 'meetup', 'ebilet', 'wroclaw-go', 'nfm'].map((id) => okRow(id));
+const allFresh = [
+  'ticketmaster',
+  'meetup',
+  'ebilet',
+  'wroclaw-go',
+  'nfm',
+  'osm-venues',
+  'venue-probe',
+  'venue-sites',
+].map((id) => okRow(id));
 
 function fake(rows: unknown[], dispatchStatus = 204) {
   return vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
@@ -41,7 +50,8 @@ describe('dispatchDueIngest', () => {
     expect(r).toEqual({ due: [], dispatched: false, tokenSet: true });
     expect(f).toHaveBeenCalledTimes(1);
     const url = new URL(String(f.mock.calls[0]![0]));
-    expect(url.searchParams.get('started_at')).toBe('gte.2026-10-23T11:00:00.000Z');
+    // A week and an hour back: the weekly OSM venues job is the longest schedule.
+    expect(url.searchParams.get('started_at')).toBe('gte.2026-10-17T11:00:00.000Z');
   });
 
   it('dispatches the configured workflow when a source is due', async () => {

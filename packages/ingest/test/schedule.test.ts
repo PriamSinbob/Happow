@@ -12,9 +12,16 @@ const run = (sourceId: string, startedAt: Date, status: RunRecord['status']): Ru
   status,
 });
 /** Every scheduled source succeeded recently, so nothing is due unless a test changes that. */
-const fresh: RunRecord[] = ['ticketmaster', 'meetup', 'ebilet', 'wroclaw-go', 'nfm'].map((id) =>
-  run(id, at('11:50'), 'ok'),
-);
+const fresh: RunRecord[] = [
+  'ticketmaster',
+  'meetup',
+  'ebilet',
+  'wroclaw-go',
+  'nfm',
+  'osm-venues',
+  'venue-probe',
+  'venue-sites',
+].map((id) => run(id, at('11:50'), 'ok'));
 const without = (id: string) => fresh.filter((r) => r.sourceId !== id);
 
 describe('dueForDispatch', () => {
@@ -60,6 +67,7 @@ describe('dueForDispatch', () => {
   });
 
   it('reads back far enough for the longest schedule and the skip backoff', () => {
-    expect(dispatchLookbackMs(config, policy)).toBe(25 * 3_600_000);
+    // The weekly OSM venues job is the longest schedule.
+    expect(dispatchLookbackMs(config, policy)).toBe(169 * 3_600_000);
   });
 });

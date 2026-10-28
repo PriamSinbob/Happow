@@ -4,13 +4,11 @@ import {
   findLinks,
   htmlToText,
   nextDate,
-  parseRobots,
-  productToken,
   resolveInstant,
   type ExtractedEvent,
-  type Robots,
 } from '@happow/extract';
 import { HttpError, isTimeout } from '../http.js';
+import { robotsGate } from '../robots.js';
 import type { AdapterContext, ParsedEvent, RawEvent, SourceAdapter } from '../types.js';
 import { inRegion, llmExtract, localDate, sha256 } from './extraction.js';
 
@@ -61,24 +59,7 @@ export const crawler: SourceAdapter = {
     const opts = options(ctx);
     const services = ctx.services;
     if (!services) throw new Error('crawler needs adapter services');
-    const robotsByOrigin = new Map<string, Robots>();
-
-    const allowed = async (url: string): Promise<boolean> => {
-      const origin = new URL(url).origin;
-      let robots = robotsByOrigin.get(origin);
-      if (!robots) {
-        let txt = '';
-        try {
-          txt = await ctx.http.text(`${origin}/robots.txt`);
-        } catch (err) {
-          // No robots.txt (4xx) means no restrictions; anything else, stay away from the site.
-          if (!(err instanceof HttpError && err.status >= 400 && err.status < 500)) throw err;
-        }
-        robots = parseRobots(txt, productToken(services.userAgent));
-        robotsByOrigin.set(origin, robots);
-      }
-      return robots.isAllowed(url);
-    };
+    const allowed = robotsGate(ctx.http, services.userAgent);
 
     const out: RawEvent[] = [];
     const fetchedAt = ctx.now.toISOString();

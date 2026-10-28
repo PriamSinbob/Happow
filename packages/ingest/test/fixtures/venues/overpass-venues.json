@@ -1,0 +1,69 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API (hand-built in its response shape)",
+  "osm3s": {
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+    {
+      "type": "node",
+      "id": 1001,
+      "lat": 51.10795,
+      "lon": 17.02675,
+      "tags": {
+        "amenity": "concert_hall",
+        "name": "Narodowe Forum Muzyki",
+        "website": "https://www.nfm.wroclaw.pl/",
+        "wheelchair": "yes",
+        "addr:street": "plac Wolności",
+        "addr:housenumber": "1",
+        "addr:postcode": "50-071",
+        "addr:city": "Wrocław"
+      }
+    },
+    {
+      "type": "way",
+      "id": 2002,
+      "center": { "lat": 51.10565, "lon": 17.03605 },
+      "tags": {
+        "amenity": "nightclub",
+        "name": "Klub Przykładowy",
+        "website": "klub.example",
+        "opening_hours": "Tu-Sa 18:00-02:00"
+      }
+    },
+    {
+      "type": "relation",
+      "id": 3003,
+      "center": { "lat": 51.1145, "lon": 17.0466 },
+      "tags": {
+        "amenity": "place_of_worship",
+        "religion": "christian",
+        "name": "Parafia Przykładowa",
+        "service_times": "Su 08:00,10:00,12:00; Mo-Sa 18:00",
+        "contact:website": "http://parafia.example/msze"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4004,
+      "lat": 51.11,
+      "lon": 17.03,
+      "tags": { "amenity": "library" }
+    },
+    {
+      "type": "node",
+      "id": 5005,
+      "lat": 51.11,
+      "lon": 17.03,
+      "tags": { "amenity": "cafe", "name": "Kawiarnia" }
+    },
+    {
+      "type": "node",
+      "id": 6006,
+      "lat": 51.1093,
+      "lon": 17.0322,
+      "tags": { "tourism": "museum", "name": "Muzeum Przykładowe", "website": "not a website" }
+    }
+  ]
+}

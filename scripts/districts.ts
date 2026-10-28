@@ -8,6 +8,7 @@ import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getRegion, loadConfig } from '@happow/core';
 import { districtsFromOverpass, type OverpassRelation } from '@happow/core/districts';
+import { overpass, overpassBbox } from '@happow/ingest';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const config = loadConfig();
@@ -18,29 +19,17 @@ const from = fromAt >= 0 ? args.splice(fromAt, 2)[1] : undefined;
 const region = getRegion(config, args[0] ?? config.app.defaultRegion);
 if (!region.districts) throw new Error(`region "${region.id}" has no districts in regions.json`);
 
-const { west, south, east, north } = region.bbox;
 const query =
   `[out:json][timeout:90];` +
   `rel["boundary"="administrative"]["admin_level"="${region.districts.adminLevel}"]` +
-  `(${south},${west},${north},${east});out geom;`;
-
-async function overpass(): Promise<OverpassRelation[]> {
-  const res = await fetch(config.app.osm.overpassUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Accept: 'application/json',
-      'User-Agent': config.app.osm.userAgent,
-    },
-    body: new URLSearchParams({ data: query }),
-  });
-  if (!res.ok) throw new Error(`Overpass answered ${res.status}: ${await res.text()}`);
-  return ((await res.json()) as { elements: OverpassRelation[] }).elements;
-}
+  `${overpassBbox(region.bbox)};out geom;`;
 
 const elements = from
   ? (JSON.parse(await readFile(from, 'utf8')) as { elements: OverpassRelation[] }).elements
-  : await overpass();
+  : ((await overpass(query, {
+      urls: config.app.osm.overpassUrls,
+      userAgent: config.app.osm.userAgent,
+    })) as OverpassRelation[]);
 
 const { collection, problems } = districtsFromOverpass(elements);
 for (const p of problems) console.warn(`warning: ${p}`);
