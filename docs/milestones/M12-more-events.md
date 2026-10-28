@@ -4,7 +4,7 @@ Oct 26, 2026
 
 Spec from the scope draft of 2026-10-26 (agreed in direction by the owner the same day) and the owner's answers to its questions (§9). M12 comes right after M8. Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics, 2026-10-28).
+**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics) and C1 (OSM venues, the website check and accepted sites), 2026-10-28. Slice B is folded into C.
 
 Goal: **more events on the map, and more people adding events in the app.** Both halves matter. The reasons to add events (§6) matter most. The brief's rules hold throughout: no streaks, no guilt mechanics, no fake urgency, pull not push, and paid never buys visibility. Every source and provider lives in config, each adapter gets a contract test on recorded fixtures, and CI makes no live API calls.
 
@@ -12,23 +12,24 @@ Goal: **more events on the map, and more people adding events in the app.** Both
 
 One branch and one PR to `main` per slice, as in M6 and M8. The order follows the owner's answer to §9.1: sources A1 → A2, then share target → impact → premium for contributions → poster photo, then the rest. Slice A comes first because it is small and makes the progress measurable. Each slice PR updates its row below and the Status line, and adds a short "Built (slice X)" note under its spec section (built, skipped, open).
 
-| Slice | Spec      | What                                                                                                                   | Needs | Mockup | Status  |
-| ----- | --------- | ---------------------------------------------------------------------------------------------------------------------- | ----- | ------ | ------- |
-| A     | §1        | Metrics: districts in data, `m12_metrics()`, `pnpm metrics`, a weekly row by the cron                                  | —     | —      | built   |
-| B     | §2.1      | Venue calendar feeds: `ical-feed` adapter (iCal and RSS), URL list in config                                           | —     | —      | planned |
-| C     | §2.2      | OSM venues (Overpass) into Venue; website probe → source review list; admin tab for the list                           | B     | admin  | planned |
-| D     | §4.1      | Share into Happow: PWA share target opens the add form filling from the link                                           | —     | yes    | planned |
-| E     | §5        | Contributions on the server: rewards ledger, impact counters, premium days, trusted contributor, levels, credit opt-in | —     | —      | planned |
-| F     | §5 UI     | Your impact and contributor card: after-add screen, account card, level, credit toggle                                 | E     | yes    | planned |
-| G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                            | D     | yes    | planned |
-| H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                              | F     | yes    | planned |
-| I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                            | H     | yes    | planned |
-| J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                       | C     | —      | planned |
-| K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                             | B     | —      | planned |
-| L     | §4.6      | Calendar feed import for an account                                                                                    | B, E  | yes    | planned |
-| M     | §6.1, 6.4 | Places first on the map, and thanks from visitors after GoThere                                                        | E, F  | yes    | planned |
-| N     | §6.2–6.3  | District goals in empty states, and season collections                                                                 | A, F  | yes    | planned |
-| O     | §3        | Admin coverage view: events per district and category, today and the week                                              | A, C  | admin  | planned |
+| Slice | Spec      | What                                                                                                                    | Needs | Mockup | Status  |
+| ----- | --------- | ----------------------------------------------------------------------------------------------------------------------- | ----- | ------ | ------- |
+| A     | §1        | Metrics: districts in data, `m12_metrics()`, `pnpm metrics`, a weekly row by the cron                                   | —     | —      | built   |
+| B     | §2.1      | Folded into C (owner, 2026-10-28): no feeds found by hand, so the website check finds them                              | —     | —      | folded  |
+| C1    | §2.1–2.2  | OSM venues, links and pin moves, the website check, candidates, and the reader for accepted sites (iCal, REST, JSON-LD) | A     | —      | built   |
+| C2    | §2.2      | Admin tab "Source candidates": samples, accept or reject, paused sites                                                  | C1    | admin  | planned |
+| D     | §4.1      | Share into Happow: PWA share target opens the add form filling from the link                                            | —     | yes    | planned |
+| E     | §5        | Contributions on the server: rewards ledger, impact counters, premium days, trusted contributor, levels, credit opt-in  | —     | —      | planned |
+| F     | §5 UI     | Your impact and contributor card: after-add screen, account card, level, credit toggle                                  | E     | yes    | planned |
+| G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                             | D     | yes    | planned |
+| H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                               | F     | yes    | planned |
+| I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                             | H     | yes    | planned |
+| J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                        | C     | —      | planned |
+| K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                              | B     | —      | planned |
+| L     | §4.6      | Calendar feed import for an account                                                                                     | B, E  | yes    | planned |
+| M     | §6.1, 6.4 | Places first on the map, and thanks from visitors after GoThere                                                         | E, F  | yes    | planned |
+| N     | §6.2–6.3  | District goals in empty states, and season collections                                                                  | A, F  | yes    | planned |
+| O     | §3        | Admin coverage view: events per district and category, today and the week                                               | A, C  | admin  | planned |
 
 B, C, J and K add events with no UI and can ship while the UI slices wait for their mockups. D needs only the add form from M8 G.
 
@@ -104,6 +105,17 @@ Each source is an adapter plus config with a contract test on recorded fixtures.
 - **Admin tab** "Source candidates" in the M8 admin panel: list, sample events, accept / reject. Mockup first.
 - **Attribution.** "Venue data © OpenStreetMap contributors (ODbL)" in About.
 - **Tests.** An Overpass fixture; upsert keeps ids; the probe on fixture pages (feed, JSON-LD, neither, robots disallow).
+- **Owner decisions (2026-10-28).** Slice B is folded into C: a check of 16 major Wrocław venue sites found no calendar feeds, so feeds are found by checking every OSM venue's website instead of a hand-made list. The feed reader (iCal and The Events Calendar's REST API) is built here; RSS is left out (its items carry publishing dates, not event times). Accepted sites are read from `source_candidates` under one `venue-sites` source in config, so an accept needs no commit. C is split: C1 (server) and C2 (the admin tab, mockup first).
+- **Built** (slice C1, 2026-10-28):
+  - **Three sources** in `config/sources.json`, all on: `osm-venues` (weekly), `venue-probe` (daily, `venues.probe.perRun` 20 sites) and `venue-sites` (daily). They are on because nothing reaches the map until an admin accepts a site. Venue settings (OSM tags, link thresholds, probe words, pausing) are under `venues` in `config/app.json`. Overpass servers are a list (`osm.overpassUrls`), tried in order, with a plain User-Agent (`osm.userAgent`), because overpass-api.de refuses one with a URL in it.
+  - **Database** (`20261028000013_venues.sql`): `osm_venues`, `venues.osm_id` and `venues.osm_point`, `venue_moves` (every pin move, for undoing) and `source_candidates`.
+  - **OSM venues.** OSM venues get their own table, not rows in `venues`: `venues` holds the places events use, one row per source. An event venue links to the OSM venue with the most similar name within 150 m (similarity 0.6, the measure dedup uses for titles). At 0.8 and 15 m or more, the pin moves to OSM's point. Moving a pin on its own would not last: the next ingest run writes the source's point back. So `osm_point` is kept apart, and ingest puts events at a moved venue on it (within 150 m). Clearing `osm_point` undoes a move.
+  - **Website check** (`packages/ingest/src/venues/probe.ts`). At most five requests per site: the home page, one events page (a link with one of `venues.probe.eventsPageWords`), The Events Calendar's REST API on WordPress sites, and up to two feeds. Each find goes to `source_candidates` with its number of upcoming events and three samples. Venues sharing a website are checked once, and again after 30 days. `pnpm venues:probe <url…>` runs the same check by hand and writes nothing.
+  - **Reading accepted sites** (`venue-sites`). iCal through `ical.js`: a repeating event gives one event per date, removed and edited dates are respected, and zones the feed defines are converted. The Events Calendar's REST API: up to 4 pages of 50, following next pages on the same site only, virtual events marked online. JSON-LD pages use the crawler's reader. Items reuse the crawler's payload and parse step. An event with no place of its own is at the site's venue. A site failing 3 runs in a row is paused (`venues.pauseAfterFailures`).
+  - **Crawler policy.** `docs/CRAWLER.md` now describes the website check. Both new crawling sources keep its promises: once a day per site and 5 s between requests (`rateLimit` "12/m").
+  - **First real check.** 6 major sites through `pnpm venues:probe` (CK Zamek, Firlej, BWA, OKiS, CK Agora, Strefa Kultury): none publishes events in a readable form. Their events pages carry only SEO page data, and Firlej refused the connection. So the check's yield will come from smaller venues, if at all. Institutions like these need the crawler's AI fallback (slice K).
+  - **Tests.** Readers on real recordings (The Events Calendar's demo site as iCal and REST, a Google Calendar export) and a hand-built Wrocław feed: repeats, removed and edited dates, all-day, cancelled, online, a broken event, UTC and US time zones. OSM parsing and linking; Overpass fallback; the website check (finds, robots, nothing, errors, five requests at most); the adapter end to end; the jobs as scheduled sources. `scripts/m12-venues.db.test.ts` covers the storage in CI. The migration was also run on the live data in a rolled-back transaction: 197 event venues in the region.
+  - Skipped: nothing planned for C1. Open: no OSM data has been loaded yet, because Overpass refused this machine all day. The first weekly run in Actions will show how many venues and websites Wrocław has. C2, the admin tab for candidates, comes next.
 
 ### 2.3 Regular services at places of worship (slice J)
 

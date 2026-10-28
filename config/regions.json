@@ -30,10 +30,16 @@
         "wroclaw-go",
         "nfm",
         "threads",
+        "osm-venues",
+        "venue-probe",
+        "venue-sites",
         "submissions"
       ],
       "seedFile": "data/seed/wroclaw.events.json",
-      "districts": { "file": "data/districts/wroclaw.geojson", "adminLevel": 9 }
+      "districts": {
+        "file": "data/districts/wroclaw.geojson",
+        "adminLevel": 9
+      }
     }
   ]
 }

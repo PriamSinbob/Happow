@@ -5,6 +5,7 @@ import type { ExtractedEvent, GeoResult, KeyValueCache } from '@happow/extract';
 import { decide, type DedupConfig, type Listing, type StoredEvent } from './dedup.js';
 import { h3Neighbourhood } from './geo.js';
 import type { NormalizedEvent, RawEvent } from './types.js';
+import { VenueStore } from './venues/store.js';
 
 export interface ApplyStats {
   inserted: number;
@@ -118,6 +119,11 @@ export function payloadHash(payload: unknown): string {
 /** Postgres side of ingestion. Expects `search_path` to include the PostGIS schema. */
 export class EventStore {
   constructor(private readonly db: pg.ClientBase) {}
+
+  /** OSM venues, links and the website check (M12), on the same connection. */
+  venues(): VenueStore {
+    return new VenueStore(this.db);
+  }
 
   /** Start of the latest successful run, or null. */
   async lastSuccess(sourceId: string, regionId: string): Promise<Date | null> {
