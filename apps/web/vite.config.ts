@@ -85,6 +85,13 @@ export default defineConfig(({ mode }) => {
           display: 'standalone',
           orientation: 'portrait',
           start_url: '/',
+          // Share into Happow (M12 slice D): the installed app shows in Android's share sheet;
+          // a share opens /share, which the app turns into the add form (src/share.ts).
+          share_target: {
+            action: '/share',
+            method: 'GET',
+            params: { title: 'title', text: 'text', url: 'url' },
+          },
           icons: [
             { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
             { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },

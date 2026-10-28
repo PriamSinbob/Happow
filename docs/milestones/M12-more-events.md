@@ -4,7 +4,7 @@ Oct 26, 2026
 
 Spec from the scope draft of 2026-10-26 (agreed in direction by the owner the same day) and the owner's answers to its questions (§9). M12 comes right after M8. Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics), C1 (OSM venues, the website check and accepted sites) and C2 (the Sources tab), 2026-10-28. Slice B is folded into C.
+**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics), C1 (OSM venues, the website check and accepted sites), C2 (the Sources tab) and D (share into Happow), 2026-10-28. Slice B is folded into C.
 
 Goal: **more events on the map, and more people adding events in the app.** Both halves matter. The reasons to add events (§6) matter most. The brief's rules hold throughout: no streaks, no guilt mechanics, no fake urgency, pull not push, and paid never buys visibility. Every source and provider lives in config, each adapter gets a contract test on recorded fixtures, and CI makes no live API calls.
 
@@ -18,7 +18,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 | B     | §2.1      | Folded into C (owner, 2026-10-28): no feeds found by hand, so the website check finds them                              | —     | —      | folded  |
 | C1    | §2.1–2.2  | OSM venues, links and pin moves, the website check, candidates, and the reader for accepted sites (iCal, REST, JSON-LD) | A     | —      | built   |
 | C2    | §2.2      | Admin tab "Source candidates": samples, accept or reject, paused sites                                                  | C1    | admin  | built   |
-| D     | §4.1      | Share into Happow: PWA share target opens the add form filling from the link                                            | —     | yes    | planned |
+| D     | §4.1      | Share into Happow: PWA share target opens the add form filling from the link                                            | —     | no     | built   |
 | E     | §5        | Contributions on the server: rewards ledger, impact counters, premium days, trusted contributor, levels, credit opt-in  | —     | —      | planned |
 | F     | §5 UI     | Your impact and contributor card: after-add screen, account card, level, credit toggle                                  | E     | yes    | planned |
 | G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                             | D     | yes    | planned |
@@ -37,7 +37,7 @@ B, C, J and K add events with no UI and can ship while the UI slices wait for th
 
 - Read `CLAUDE.md` and `docs/BRIEF.md` first. Post each slice's detailed plan and wait for the owner's OK before building.
 - Before a PR: `pnpm typecheck`, `pnpm test` and `npx prettier --check` on changed files. Each new adapter has a contract test against recorded fixtures in `packages/ingest/test/fixtures/`. Overpass, feeds and Claude are faked in tests; no live calls in CI.
-- **UI slices** (C admin, D, F, G, H, I, L, M, N, O): a mockup in `docs/design/` for the owner's OK first, built from the prototype's components and the exact icons in `docs/design/icons/`. The `design-review` subagent is paused (owner, 2026-10-26); run it only if the owner asks.
+- **UI slices** (C admin, D, F, G, H, I, L, M, N, O): built from the prototype's components and the exact icons in `docs/design/icons/`. From slice D on, no mockup first (owner, 2026-10-28): new screens follow the existing ones, and the owner adjusts the design with the design studio once the whole functionality is built. C2 had its mockup before this. The `design-review` subagent is paused (owner, 2026-10-26); run it only if the owner asks.
 - **Sign-in on previews.** Sign-in does not work on Cloudflare previews yet (the preview Worker lacks its Supabase secrets and build variables). It gets fixed later and does not block M12. Each UI PR lists what could not be checked signed in on the preview, and checks it locally with `pnpm dev` where possible.
 - On the owner's Windows checkout: commit only files with real changes (`git diff --ignore-cr-at-eol`), and write commit messages to a file (`git commit -F`), because PowerShell 5.1 breaks quoted `-m` messages.
 - GitHub auto-merge is off. Merge with `gh pr merge` once checks pass, when the owner asks.
@@ -158,7 +158,20 @@ All paths end in the M8 add form and the same server endpoint. Quotas stay as in
 
 - `share_target` in the PWA manifest (`GET /share?url=&text=&title=`). A link found in `url` or `text` opens the add form, which runs autofill on it (one autofill from the quota, only if it fills something, as in M8).
 - Signed out: the M8 sign-in sheet first, then the form with the link kept.
-- Android installed PWA shows Happow in the share sheet. iOS does not support web share targets: the add form's paste-link field stays the path there, and the mockup shows the iOS hint.
+- Android installed PWA shows Happow in the share sheet. iOS does not support web share targets: the add form's paste-link field stays the path there.
+- **Owner decisions (2026-10-28).** When the shared page gives nothing (typical for Instagram and Facebook links, which need a login), the shared title goes into the event's title. No mockup: the form looks like the add form it is.
+- **Built** (slice D, 2026-10-28):
+  - **Share target.** `share_target` in the manifest (`vite.config.ts`): `GET /share` with `title`, `text` and `url`. No Worker change: `/share` gets the app page like any unknown path, and the offline cache does the same.
+  - **Reading a share** (`apps/web/src/share.ts`). Before the app reads its route, `/share` is read:
+    - the link is `url`, else the first web link in `text`, since many Android apps send "text https://…" with no `url`;
+    - the title is `title`, else the rest of `text`, at most 160 characters.
+    - It is kept for this tab only (sessionStorage), and the address becomes `/#/add`, so a reload or Back never fills again and the link leaves the address bar.
+  - **The add form takes it once**, when the account is known, so a signed-out share waits through sign-in:
+    - with an autofill left, it fills from the link straight away; an autofill counts only when it fills something;
+    - with none left, or when the page gives nothing or fails, the link goes into the website field and the shared title into an empty title;
+    - a line says the form came from a shared link.
+  - **Checked.** Tests for reading shares and for the form (fills once, falls back to the title, spends nothing when none is left). The built manifest has the share target. In the dev build, `/share?…` became `/#/add` with the share waiting behind the sign-in sheet.
+  - **Not checked.** Signed-in filling on the Cloudflare preview: it still lacks its Supabase settings. The Android share menu: it needs the installed app, and an already-installed app picks up the new manifest within about a day (or on reinstall).
 
 ### 4.2 Poster photo (slice G)
 

@@ -8,6 +8,7 @@ import { config, region } from '../config';
 import { errorText } from '../errors';
 import { formatDay, formatTime } from '../format';
 import { useI18n } from '../i18n';
+import { takeShare } from '../share';
 import { Glyph, Icon } from './Icons';
 import { PinMap } from './PinMap';
 import { PremiumMark, PremiumSheet } from './Premium';
@@ -200,6 +201,8 @@ export function AddEvent({
   // The events quota ran out on the server while this form was open (another device, a race).
   const [ranOut, setRanOut] = useState(false);
   const [premiumOpen, setPremiumOpen] = useState(false);
+  // Opened by sharing a page into Happow.
+  const [shared, setShared] = useState(false);
   // The submit button turns off under the finger, so the message takes the focus.
   const ranOutAlert = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
@@ -242,21 +245,28 @@ export function AddEvent({
       ? [...AGE_CHOICES, form.ageMin].sort((a, b) => (a ?? -1) - (b ?? -1))
       : [...AGE_CHOICES];
 
-  async function fill(e: React.FormEvent) {
+  function fill(e: React.FormEvent) {
     e.preventDefault();
-    if (!link.trim()) return;
+    if (link.trim()) void fillFrom(link.trim());
+  }
+
+  /** Fills the form from a page. `fallbackTitle`: a share's title, used when the page gives none. */
+  async function fillFrom(url: string, fallbackTitle: string | null = null) {
+    // Nothing usable from the page: keep the link, and the shared title if the form has none.
+    const keepLink = () => setForm((f) => ({ ...f, url, title: f.title || (fallbackTitle ?? '') }));
     setAutofill({ state: 'loading' });
     try {
       const res = await api<{ events: Prefill[] }>('autofill', {
         token: await accessToken(),
-        body: { url: link.trim(), regionId: region.id },
+        body: { url, regionId: region.id },
       });
       setAutofill({ state: 'found', events: res.events });
       if (res.events.length === 1) apply(res.events[0]!, 0);
-      if (!res.events.length) set('url', link.trim());
+      if (!res.events.length) keepLink();
       // Only a fill that found something counts (M8 §5).
       else void account.refresh();
     } catch (err) {
+      keepLink();
       if (err instanceof ApiError && (err.code === 'quota_exceeded' || err.status === 401)) {
         // Used up meanwhile, or the session ended: /api/me tells the form which.
         setAutofill({ state: 'idle' });
@@ -264,6 +274,21 @@ export function AddEvent({
       } else setAutofill({ state: 'error', message: errorText(t, err, lang) });
     }
   }
+
+  // A page shared into Happow (M12 §4.1): taken once the account is known, so a signed-out share
+  // waits through sign-in. It fills from the link when an autofill is left; otherwise the link
+  // and the shared title go straight into the form.
+  const ready = !gated && account.status !== 'loading' && (!autofillOn || me !== null);
+  useEffect(() => {
+    if (!ready) return;
+    const s = takeShare();
+    if (!s) return;
+    setShared(true);
+    if (s.link) setLink(s.link);
+    if (s.link && autofillOn && !linkOff) void fillFrom(s.link, s.title);
+    else setForm((f) => ({ ...f, url: s.link ?? f.url, title: f.title || (s.title ?? '') }));
+    // Once, when the form becomes ready; fillFrom reads the latest state itself.
+  }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function apply(p: Prefill, index: number) {
     setChosen(index);
@@ -446,6 +471,12 @@ export function AddEvent({
   return (
     <Screen title={t('add.title')} onClose={onClose}>
       {me && <Usage me={me} />}
+      {shared && (
+        <p className="add-shared" role="status">
+          <Icon name="link" size={15} />
+          {t('add.shared')}
+        </p>
+      )}
       {autofillOn && (
         <>
           <form className="autofill" onSubmit={fill}>
