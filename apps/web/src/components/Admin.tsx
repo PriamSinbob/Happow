@@ -3,20 +3,25 @@ import { localDay } from '@happow/core';
 import {
   activeFirst,
   addGrant,
+  decideSource,
   deleteCodeRequest,
   endGrant,
   generateCode,
   grantEndsAt,
   listCodeRequests,
   listGrants,
+  listSources,
+  sourceLists,
   type CodeRequest,
   type Grant,
   type ReadyEmail,
+  type SourceAction,
+  type SourceCandidate,
 } from '../admin';
 import { ApiError } from '../api';
 import { region } from '../config';
 import { errorText } from '../errors';
-import { formatAgo, formatTime, isSameDay } from '../format';
+import { formatAgo, formatDay, formatTime, isSameDay } from '../format';
 import { useI18n } from '../i18n';
 import { Icon } from './Icons';
 import { planLastDay, PremiumMark } from './Premium';
@@ -24,7 +29,8 @@ import { Sheet } from './Sheet';
 
 /**
  * The admin's tabs in the staff screen (M8 slice F, `docs/design/admin.html`): sign-in code
- * requests with a ready email to send by hand, and manual premium grants.
+ * requests with a ready email to send by hand, and manual premium grants. M12 slice C2 adds the
+ * website check's candidates (Sources).
  */
 
 /** Copies `text`; when the clipboard is refused, selects `el` so it can be copied by hand. */
@@ -641,5 +647,248 @@ export function GiveGrantSheet({ onClose, onGiven }: { onClose: () => void; onGi
         </button>
       </form>
     </Sheet>
+  );
+}
+
+const KIND_CHIP: Record<SourceCandidate['kind'], string> = {
+  ical: 'iCal',
+  tribe: 'API',
+  jsonld: 'JSON-LD',
+};
+type SourceView = 'new' | 'read' | 'rejected';
+const SOURCE_VIEWS: SourceView[] = ['new', 'read', 'rejected'];
+
+/**
+ * The website check's candidates (M12 slice C2, `docs/design/admin.html`): New, Read (paused
+ * first) and Rejected. Every decision can be undone from another list, so none asks first.
+ */
+export function Sources({ reload, onCount }: { reload: number; onCount: (n: number) => void }) {
+  const { t, lang } = useI18n();
+  const [all, setAll] = useState<SourceCandidate[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [rowError, setRowError] = useState<{ id: number; message: string } | null>(null);
+  const [busy, setBusy] = useState<number | null>(null);
+  const [view, setView] = useState<SourceView>('new');
+  // Accepted here: the card stays in New, saying when reading starts, until the next refresh.
+  const [justAccepted, setJustAccepted] = useState<ReadonlySet<number>>(new Set());
+  const count = useRef(onCount);
+  count.current = onCount;
+
+  const load = useCallback(async () => {
+    try {
+      const list = await listSources();
+      setAll(list);
+      setJustAccepted(new Set());
+      setError(null);
+      count.current(sourceLists(list).fresh.length);
+    } catch (err) {
+      setError(errorText(t, err, lang));
+    }
+  }, [t, lang]);
+
+  useEffect(() => {
+    void load();
+  }, [load, reload]);
+
+  async function decide(c: SourceCandidate, action: SourceAction) {
+    setBusy(c.id);
+    setRowError(null);
+    try {
+      const { status } = await decideSource(c.id, action);
+      const next = (all ?? []).map((x) =>
+        x.id === c.id
+          ? { ...x, status, decidedAt: new Date().toISOString(), failures: 0, lastError: null }
+          : x,
+      );
+      setAll(next);
+      const accepted = new Set(justAccepted);
+      if (action === 'accept') accepted.add(c.id);
+      else accepted.delete(c.id);
+      setJustAccepted(accepted);
+      count.current(sourceLists(next).fresh.length);
+    } catch (err) {
+      // Decided elsewhere meanwhile (another tab, or a run paused it): show the current lists.
+      if (err instanceof ApiError && (err.code === 'already_reviewed' || err.status === 404))
+        void load();
+      else setRowError({ id: c.id, message: errorText(t, err, lang) });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const now = new Date();
+  const tz = region.timezone;
+  /** A sample's start as the check stored it: a date, an instant, or local wall time. */
+  const sampleWhen = (start: string) => {
+    if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(start))
+      return `${formatDay(start, tz, lang)} ${formatTime(start, tz, lang)}`;
+    // A date or a wall time is already local: read it as UTC so no zone shifts it.
+    const day = formatDay(`${start.slice(0, 10)}T12:00:00Z`, 'UTC', lang);
+    if (start.length === 10) return day;
+    return `${day} ${formatTime(`${start.slice(0, 16)}:00Z`, 'UTC', lang)}`;
+  };
+
+  const lists = sourceLists(all ?? []);
+  const fresh = (all ?? []).filter((c) => c.status === 'new' || justAccepted.has(c.id));
+  const shown = view === 'new' ? fresh : view === 'read' ? lists.read : lists.rejected;
+  const counts = {
+    new: lists.fresh.length,
+    read: lists.read.length,
+    rejected: lists.rejected.length,
+  };
+
+  const button = (c: SourceCandidate, action: SourceAction) => (
+    <button
+      type="button"
+      className="btn btn--primary"
+      disabled={busy === c.id}
+      onClick={() => void decide(c, action)}
+    >
+      {t(`admin.sources.${action}`)}
+    </button>
+  );
+  const link = (c: SourceCandidate, action: SourceAction, danger = true) => (
+    <button
+      type="button"
+      className={danger ? 'inline-link danger-link' : 'inline-link danger-link admin-quiet-link'}
+      disabled={busy === c.id}
+      onClick={() => void decide(c, action)}
+    >
+      {t(`admin.sources.${action}`)}
+    </button>
+  );
+  const kind = (c: SourceCandidate) => t(`admin.sources.kind.${c.kind}`);
+  const ago = (iso: string) => formatAgo(iso, now, lang, t('time.justNow'));
+
+  const card = (c: SourceCandidate) => {
+    const accepted = justAccepted.has(c.id) && c.status === 'accepted';
+    const meta =
+      c.status === 'rejected'
+        ? t('admin.sources.rejectedOn', {
+            date: c.decidedAt ? formatDay(c.decidedAt, tz, lang) : '',
+          })
+        : c.status === 'paused'
+          ? kind(c)
+          : c.status === 'accepted' && !accepted
+            ? `${kind(c)} · ${
+                c.lastRunAt
+                  ? t('admin.sources.lastRun', {
+                      when: ago(c.lastRunAt),
+                      events: t('admin.sources.events', { count: c.lastRunEvents ?? 0 }),
+                    })
+                  : t('admin.sources.notRunYet')
+              }`
+            : `${kind(c)} · ${t('admin.sources.upcoming', { count: c.eventCount })} · ${t(
+                'admin.sources.found',
+                { ago: ago(c.foundAt) },
+              )}`;
+    const showSamples = c.status === 'new' || accepted;
+    return (
+      <article
+        key={c.id}
+        className={c.status === 'rejected' ? 'mod-card mod-card--ended' : 'mod-card'}
+      >
+        <div className="admin-card__top">
+          <h3 className="admin-card__email">{c.venueName}</h3>
+          <span className="admin-lang">{KIND_CHIP[c.kind]}</span>
+        </div>
+        <a className="admin-site" href={c.url} target="_blank" rel="noreferrer">
+          {c.url.replace(/^https?:\/\//, '')}
+        </a>
+        <p className="mod-card__meta">{meta}</p>
+        {showSamples && c.sample.length > 0 && (
+          <>
+            <ul className="admin-samples">
+              {c.sample.map((s, i) => (
+                <li key={i}>
+                  <time>{sampleWhen(s.start)}</time>
+                  <span>{s.title}</span>
+                </li>
+              ))}
+            </ul>
+            {c.eventCount > c.sample.length && (
+              <p className="admin-more">
+                {t('admin.sources.more', { count: c.eventCount - c.sample.length })}
+              </p>
+            )}
+          </>
+        )}
+        {accepted && (
+          <p className="admin-made">
+            <Icon name="check" size={15} strokeWidth={2.4} />
+            {t('admin.sources.accepted')}
+          </p>
+        )}
+        {c.status === 'paused' && (
+          <p className="form-error admin-row-error">
+            {t('admin.sources.paused', { count: c.failures, error: c.lastError ?? '?' })}
+          </p>
+        )}
+        {rowError?.id === c.id && (
+          <p className="form-error admin-row-error" role="alert">
+            {rowError.message}
+          </p>
+        )}
+        <div className="admin-actions">
+          {c.status === 'new' && (
+            <>
+              {button(c, 'accept')}
+              {link(c, 'reject')}
+            </>
+          )}
+          {c.status === 'paused' && (
+            <>
+              {button(c, 'resume')}
+              {link(c, 'stop')}
+            </>
+          )}
+          {c.status === 'accepted' && link(c, 'stop', !accepted)}
+          {c.status === 'rejected' && link(c, 'restore', false)}
+        </div>
+      </article>
+    );
+  };
+
+  return (
+    <>
+      <div
+        className="segmented segmented--3 admin-sublists"
+        role="tablist"
+        aria-label={t('admin.sources.lists')}
+      >
+        {SOURCE_VIEWS.map((id) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={view === id}
+            className={view === id ? 'is-active' : ''}
+            onClick={() => setView(id)}
+          >
+            {t(`admin.sources.${id}`)}
+            {counts[id] > 0 && <span className="admin-sublists__n">{counts[id]}</span>}
+          </button>
+        ))}
+      </div>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+      {all === null && !error && <p className="muted">{t('event.loading')}</p>}
+      {all !== null && shown.length === 0 && view === 'new' && (
+        <div className="admin-empty">
+          <Icon name="check" size={32} strokeWidth={1.6} />
+          <strong>{t('admin.sources.empty')}</strong>
+          <span>{t('admin.sources.emptyLead')}</span>
+        </div>
+      )}
+      {all !== null && shown.length === 0 && view !== 'new' && (
+        <p className="muted">
+          {view === 'read' ? t('admin.sources.emptyRead') : t('admin.sources.emptyRejected')}
+        </p>
+      )}
+      {shown.map(card)}
+    </>
   );
 }

@@ -74,3 +74,42 @@ export const activeFirst = (grants: readonly Grant[]): Grant[] => [
   ...grants.filter((g) => g.active),
   ...grants.filter((g) => !g.active),
 ];
+
+/** GET /api/admin/sources: the website check's candidates, oldest find first (M12 §2.2). */
+export interface SourceCandidate {
+  id: number;
+  regionId: string;
+  venueName: string;
+  url: string;
+  kind: 'ical' | 'tribe' | 'jsonld';
+  /** Upcoming events the check found, and up to three of them. */
+  eventCount: number;
+  sample: { title: string; start: string }[];
+  status: 'new' | 'accepted' | 'paused' | 'rejected';
+  failures: number;
+  lastError: string | null;
+  foundAt: string;
+  decidedAt: string | null;
+  decidedBy: string | null;
+  lastRunAt: string | null;
+  lastRunEvents: number | null;
+}
+
+export type SourceAction = 'accept' | 'reject' | 'stop' | 'resume' | 'restore';
+
+export const listSources = () => call<SourceCandidate[]>('sources');
+
+export const decideSource = (id: number, action: SourceAction) =>
+  call<{ id: number; status: SourceCandidate['status'] }>(`sources/${id}`, { body: { action } });
+
+/** The Sources tab's lists: New, Read (paused first) and Rejected. */
+export function sourceLists(all: readonly SourceCandidate[]) {
+  return {
+    fresh: all.filter((c) => c.status === 'new'),
+    read: [
+      ...all.filter((c) => c.status === 'paused'),
+      ...all.filter((c) => c.status === 'accepted'),
+    ],
+    rejected: all.filter((c) => c.status === 'rejected'),
+  };
+}

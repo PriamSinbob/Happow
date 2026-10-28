@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { afterDay, entitlementsFor } from '@happow/core';
 import { AccountProvider, type Me } from '../src/account';
-import type { CodeRequest, Grant, ReadyEmail } from '../src/admin';
+import type { CodeRequest, Grant, ReadyEmail, SourceCandidate } from '../src/admin';
 import { Moderation } from '../src/components/Moderation';
 import { config, region } from '../src/config';
 import { I18nProvider } from '../src/i18n';
@@ -25,6 +25,7 @@ function serve(role: Me['role'], handler: Handler = () => undefined) {
       return json({ moderator: 'priam@example.org', submissions: [], reports: [] });
     if (url === '/api/admin/code-requests') return json([]);
     if (url === '/api/admin/grants') return json([]);
+    if (url === '/api/admin/sources') return json([]);
     return json({ error: 'not_found' }, 404);
   });
   vi.stubGlobal('fetch', fetchMock);
@@ -128,6 +129,7 @@ describe('the staff screen (M8 slice F)', () => {
       'Queue',
       'Codes 2',
       'Grants',
+      'Sources',
     ]);
     expect(screen.getByRole('heading', { name: 'Admin' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Queue' }).getAttribute('aria-selected')).toBe('true');
@@ -144,6 +146,7 @@ describe('the staff screen (M8 slice F)', () => {
     expect(screen.queryByRole('tab')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Moderation' })).toBeTruthy();
     expect(calls('/api/admin/code-requests')).toHaveLength(0);
+    expect(calls('/api/admin/sources')).toHaveLength(0);
   });
 });
 
@@ -404,5 +407,137 @@ describe('grants (M8 slice F)', () => {
     await screen.findByText('Ended (1)');
     expect(calls(`/api/admin/grants/${lasting.id}`, 'DELETE')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'End' })).toBeNull();
+  });
+});
+
+describe('sources (M12 slice C2)', () => {
+  const candidate = (over: Partial<SourceCandidate> = {}): SourceCandidate => ({
+    id: 1,
+    regionId: 'wroclaw',
+    venueName: 'Klub Przykładowy',
+    url: 'https://klub.example/kalendarz.ics',
+    kind: 'ical',
+    eventCount: 7,
+    sample: [
+      { title: 'Koncert jesienny', start: '2026-10-31T19:00' },
+      { title: 'Kiermasz płyt', start: '2026-11-07' },
+      { title: 'Warsztaty', start: '2026-11-02T17:00:00.000Z' },
+    ],
+    status: 'new',
+    failures: 0,
+    lastError: null,
+    foundAt: ago(60 * 48),
+    decidedAt: null,
+    decidedBy: null,
+    lastRunAt: null,
+    lastRunEvents: null,
+    ...over,
+  });
+  const paused = candidate({
+    id: 2,
+    venueName: 'Biblioteka Przykładowa',
+    status: 'paused',
+    failures: 3,
+    lastError: 'HTTP 503',
+  });
+  const reading = candidate({
+    id: 3,
+    venueName: 'Galeria Przykładowa',
+    kind: 'jsonld',
+    url: 'https://galeria.example/program/',
+    status: 'accepted',
+    lastRunAt: ago(90),
+    lastRunEvents: 9,
+  });
+  const rejected = candidate({
+    id: 4,
+    venueName: 'Pub',
+    status: 'rejected',
+    decidedAt: ago(60 * 30),
+  });
+  const decisions: { id: string; action: string }[] = [];
+  const list = () => json([candidate(), paused, reading, rejected]);
+  function serveSources(status = 200) {
+    decisions.length = 0;
+    serve('admin', (url, init) => {
+      if (url === '/api/admin/sources') return list();
+      const m = /^\/api\/admin\/sources\/(\d+)$/.exec(url);
+      if (m && init?.method === 'POST') {
+        const { action } = JSON.parse(String(init.body)) as { action: string };
+        decisions.push({ id: m[1]!, action });
+        if (status !== 200) return json({ error: 'already_reviewed' }, status);
+        const next = { accept: 'accepted', resume: 'accepted', restore: 'new' } as const;
+        return json({ id: Number(m[1]), status: next[action as keyof typeof next] ?? 'rejected' });
+      }
+      return undefined;
+    });
+  }
+
+  it('counts new finds on the tab and shows each with its samples', async () => {
+    serveSources();
+    renderStaff();
+    await openTab(/^Sources/);
+    expect(await screen.findByRole('tab', { name: 'Sources 1' })).toBeTruthy();
+    const card = (await screen.findByRole('heading', { name: 'Klub Przykładowy' })).closest(
+      'article',
+    )!;
+    const c = within(card as HTMLElement);
+    expect(c.getByText('iCal')).toBeTruthy();
+    expect(c.getByRole('link', { name: 'klub.example/kalendarz.ics' }).getAttribute('href')).toBe(
+      'https://klub.example/kalendarz.ics',
+    );
+    expect(c.getByText(/iCal calendar · 7 upcoming events · found/)).toBeTruthy();
+    expect(c.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      // Wall time, a date and an instant all read in the region's own clock.
+      'Sat, Oct 31 7:00 PMKoncert jesienny',
+      'Sat, Nov 7Kiermasz płyt',
+      'Mon, Nov 2 6:00 PMWarsztaty',
+    ]);
+    expect(c.getByText('and 4 more')).toBeTruthy();
+  });
+
+  it('accepts without asking: the card stays, says when reading starts, and the count drops', async () => {
+    serveSources();
+    renderStaff();
+    await openTab(/^Sources/);
+    fireEvent.click(await screen.findByRole('button', { name: 'Read daily' }));
+    expect(await screen.findByText('Read from the next run (once a day).')).toBeTruthy();
+    expect(decisions).toEqual([{ id: '1', action: 'accept' }]);
+    expect(screen.getByRole('tab', { name: 'Sources' })).toBeTruthy();
+    // Changed its mind: stop reading moves it to Rejected.
+    fireEvent.click(screen.getByRole('button', { name: 'Stop reading' }));
+    await waitFor(() => expect(decisions).toHaveLength(2));
+    expect(decisions[1]).toEqual({ id: '1', action: 'stop' });
+  });
+
+  it('lists paused sites first in Read, with the error and Resume; Restore in Rejected', async () => {
+    serveSources();
+    renderStaff();
+    await openTab(/^Sources/);
+    fireEvent.click(await screen.findByRole('tab', { name: 'Read 2' }));
+    const headings = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+    expect(headings).toEqual(['Biblioteka Przykładowa', 'Galeria Przykładowa']);
+    expect(screen.getByText('Paused after 3 failed runs: HTTP 503')).toBeTruthy();
+    expect(screen.getByText(/event data on the page · last run: .* · 9 events/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+    await waitFor(() => expect(decisions).toEqual([{ id: '2', action: 'resume' }]));
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Rejected 1' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore' }));
+    await waitFor(() => expect(decisions[1]).toEqual({ id: '4', action: 'restore' }));
+  });
+
+  it('reloads when someone else decided first, and says when nothing is new', async () => {
+    serveSources(409);
+    renderStaff();
+    await openTab(/^Sources/);
+    fireEvent.click(await screen.findByRole('button', { name: 'Read daily' }));
+    await waitFor(() => expect(calls('/api/admin/sources').length).toBeGreaterThanOrEqual(3));
+    cleanup();
+
+    serve('admin');
+    renderStaff();
+    await openTab(/^Sources/);
+    expect(await screen.findByText('Nothing new')).toBeTruthy();
   });
 });
