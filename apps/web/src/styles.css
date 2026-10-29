@@ -2976,3 +2976,47 @@ button.account-card__plan {
   background: var(--ink);
   color: var(--paper);
 }
+
+/* Coverage (M12 slice O): the admin tab, a fifth tab, and the measures as a small table that
+   scrolls on its own at 380 px. */
+.segmented--5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+.admin-tabs.segmented--5 button {
+  gap: 3px;
+  padding-inline: 2px;
+  font-size: 12.5px;
+}
+.coverage__scroll {
+  overflow-x: auto;
+  margin: 0 -4px;
+}
+.coverage__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.coverage__table th,
+.coverage__table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+.coverage__table th[scope='row'],
+.coverage__table thead th:first-child {
+  text-align: left;
+}
+.coverage__table thead th {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--quiet);
+  white-space: normal;
+}
+.coverage__table .is-now {
+  font-weight: 700;
+}
+.coverage .field select {
+  width: 100%;
+}

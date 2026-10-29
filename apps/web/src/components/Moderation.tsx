@@ -9,6 +9,7 @@ import { formatDay, formatTime } from '../format';
 import { eventHref } from '../hooks/useHashRoute';
 import { useI18n } from '../i18n';
 import { CodeRequests, Grants, Sources } from './Admin';
+import { Coverage } from './Coverage';
 import { feedHost } from './Feeds';
 import { Screen } from './Screen';
 
@@ -77,8 +78,8 @@ type State =
   | { name: 'error'; message: string }
   | { name: 'ready'; queue: Queue };
 
-type Tab = 'queue' | 'codes' | 'grants' | 'sources';
-const TABS: Tab[] = ['queue', 'codes', 'grants', 'sources'];
+type Tab = 'queue' | 'codes' | 'grants' | 'sources' | 'coverage';
+const TABS: Tab[] = ['queue', 'codes', 'grants', 'sources', 'coverage'];
 
 /**
  * The staff screen. Moderators: the queue of pending submissions (user and low-confidence crawls)
@@ -414,6 +415,8 @@ export function Moderation({ onClose }: { onClose: () => void }) {
           <CodeRequests reload={reload} onCount={setCodeCount} />
         ) : tab === 'sources' ? (
           <Sources reload={reload} onCount={setSourceCount} />
+        ) : tab === 'coverage' ? (
+          <Coverage reload={reload} />
         ) : (
           <Grants reload={reload} />
         )}
@@ -425,7 +428,7 @@ export function Moderation({ onClose }: { onClose: () => void }) {
       {admin ? (
         <>
           <div
-            className="segmented segmented--4 admin-tabs"
+            className="segmented segmented--5 admin-tabs"
             role="tablist"
             aria-label={t('admin.tabs')}
             onKeyDown={(e) => {

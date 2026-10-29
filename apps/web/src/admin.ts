@@ -100,6 +100,33 @@ export interface SourceCandidate {
 
 export type SourceAction = 'accept' | 'reject' | 'stop' | 'resume' | 'restore';
 
+/** The five metrics of M12 §1, as m12_metrics returns them. */
+export interface Metrics {
+  eventsToday: number;
+  events7d: number;
+  districts: number;
+  districtsTonight: number;
+  communityShare: number;
+  accountsAdded7d: number;
+  accountsAddedTotal: number;
+}
+
+/** GET /api/admin/coverage (M12 §3): districts emptiest first, the metrics now and by week. */
+export interface Coverage {
+  now: Metrics;
+  districts: {
+    id: string;
+    name: string;
+    today: number;
+    week: number;
+    byCategory: Record<string, { today: number; week: number }>;
+  }[];
+  weeks: { week: string; metrics: Metrics }[];
+}
+
+export const loadCoverage = () =>
+  call<Coverage>(`coverage?region=${encodeURIComponent(region.id)}`);
+
 export const listSources = () => call<SourceCandidate[]>('sources');
 
 export const decideSource = (id: number, action: SourceAction) =>

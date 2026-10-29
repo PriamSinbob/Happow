@@ -4,7 +4,7 @@ Oct 26, 2026
 
 Spec from the scope draft of 2026-10-26 (agreed in direction by the owner the same day) and the owner's answers to its questions (§9). M12 comes right after M8. Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics), C1 (OSM venues, the website check and accepted sites), C2 (the Sources tab), D (share into Happow) and E (contributions on the server), 2026-10-28; F (your impact and the contributor card) and G (poster photo), 2026-10-29. Slice B is folded into C.
+**Status:** built, waiting for merge and "Migrate database". Built: slice A (metrics), C1 (OSM venues, the website check and accepted sites), C2 (the Sources tab), D (share into Happow) and E (contributions on the server), 2026-10-28; F (your impact and the contributor card), G (poster photo), H (quick add and add again), and, at the owner's request built in a row without stopping (2026-10-29), I (recurring events), J (regular services), K (more crawl targets), L (account calendar feeds), M (places first and thanks), N (district goals and seasons) and O (the coverage view). Slice B is folded into C. The functionality summary: [M12-summary.md](M12-summary.md).
 
 Goal: **more events on the map, and more people adding events in the app.** Both halves matter. The reasons to add events (§6) matter most. The brief's rules hold throughout: no streaks, no guilt mechanics, no fake urgency, pull not push, and paid never buys visibility. Every source and provider lives in config, each adapter gets a contract test on recorded fixtures, and CI makes no live API calls.
 
@@ -12,24 +12,24 @@ Goal: **more events on the map, and more people adding events in the app.** Both
 
 One branch and one PR to `main` per slice, as in M6 and M8. The order follows the owner's answer to §9.1: sources A1 → A2, then share target → impact → premium for contributions → poster photo, then the rest. Slice A comes first because it is small and makes the progress measurable. Each slice PR updates its row below and the Status line, and adds a short "Built (slice X)" note under its spec section (built, skipped, open).
 
-| Slice | Spec      | What                                                                                                                    | Needs | Mockup | Status  |
-| ----- | --------- | ----------------------------------------------------------------------------------------------------------------------- | ----- | ------ | ------- |
-| A     | §1        | Metrics: districts in data, `m12_metrics()`, `pnpm metrics`, a weekly row by the cron                                   | —     | —      | built   |
-| B     | §2.1      | Folded into C (owner, 2026-10-28): no feeds found by hand, so the website check finds them                              | —     | —      | folded  |
-| C1    | §2.1–2.2  | OSM venues, links and pin moves, the website check, candidates, and the reader for accepted sites (iCal, REST, JSON-LD) | A     | —      | built   |
-| C2    | §2.2      | Admin tab "Source candidates": samples, accept or reject, paused sites                                                  | C1    | admin  | built   |
-| D     | §4.1      | Share into Happow: PWA share target opens the add form filling from the link                                            | —     | no     | built   |
-| E     | §5        | Contributions on the server: rewards ledger, impact counters, premium days, trusted contributor, levels, credit opt-in  | —     | —      | built   |
-| F     | §5 UI     | Your impact and contributor card: after-add screen, account card, level, credit toggle                                  | E     | waived | built   |
-| G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                             | D     | waived | built   |
-| H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                               | F     | waived | built   |
-| I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                             | H     | waived | built   |
-| J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                        | C     | —      | built   |
-| K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                              | B     | —      | built   |
-| L     | §4.6      | Calendar feed import for an account                                                                                     | B, E  | waived | built   |
-| M     | §6.1, 6.4 | Places first on the map, and thanks from visitors after GoThere                                                         | E, F  | waived | built   |
-| N     | §6.2–6.3  | District goals in empty states, and season collections                                                                  | A, F  | waived | built   |
-| O     | §3        | Admin coverage view: events per district and category, today and the week                                               | A, C  | admin  | planned |
+| Slice | Spec      | What                                                                                                                    | Needs | Mockup | Status |
+| ----- | --------- | ----------------------------------------------------------------------------------------------------------------------- | ----- | ------ | ------ |
+| A     | §1        | Metrics: districts in data, `m12_metrics()`, `pnpm metrics`, a weekly row by the cron                                   | —     | —      | built  |
+| B     | §2.1      | Folded into C (owner, 2026-10-28): no feeds found by hand, so the website check finds them                              | —     | —      | folded |
+| C1    | §2.1–2.2  | OSM venues, links and pin moves, the website check, candidates, and the reader for accepted sites (iCal, REST, JSON-LD) | A     | —      | built  |
+| C2    | §2.2      | Admin tab "Source candidates": samples, accept or reject, paused sites                                                  | C1    | admin  | built  |
+| D     | §4.1      | Share into Happow: PWA share target opens the add form filling from the link                                            | —     | no     | built  |
+| E     | §5        | Contributions on the server: rewards ledger, impact counters, premium days, trusted contributor, levels, credit opt-in  | —     | —      | built  |
+| F     | §5 UI     | Your impact and contributor card: after-add screen, account card, level, credit toggle                                  | E     | waived | built  |
+| G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                             | D     | waived | built  |
+| H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                               | F     | waived | built  |
+| I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                             | H     | waived | built  |
+| J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                        | C     | —      | built  |
+| K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                              | B     | —      | built  |
+| L     | §4.6      | Calendar feed import for an account                                                                                     | B, E  | waived | built  |
+| M     | §6.1, 6.4 | Places first on the map, and thanks from visitors after GoThere                                                         | E, F  | waived | built  |
+| N     | §6.2–6.3  | District goals in empty states, and season collections                                                                  | A, F  | waived | built  |
+| O     | §3        | Admin coverage view: events per district and category, today and the week                                               | A, C  | admin  | built  |
 
 B, C, J and K add events with no UI and can ship while the UI slices wait for their mockups. D needs only the add form from M8 G.
 
@@ -170,6 +170,17 @@ JSON-LD crawl targets where their terms allow it (Biletyna, KupBilecik). Each ge
 ## 3. Coverage view for the admin (slice O)
 
 A tab in the admin panel: events per district × category for today and the week, from `m12_metrics` and `metrics_weekly`, with the weekly trend of the five metrics. Empty districts come first, so the next source is chosen by data. Mockup first.
+
+#### Built (slice O, 2026-10-29)
+
+- **Admin → Coverage**, the fifth tab (the tab row now fits five at 380 px).
+  - **The five measures:** a small table with "Now" (`m12_metrics` at this moment) and the weekly rows of `metrics_weekly`, newest first: events today, events for 7 days, districts with an event tonight (of all), community share, accounts that added an event. With no weekly row yet it says the first comes on Monday morning.
+  - **Districts:** every district with its live events today and this week (now to the end of day 7, as the metrics count), **emptiest first**, then by name; each line names its three busiest categories. A category picker counts only that category, so "districts with no music this week" is one tap. The heading says how many districts have nothing.
+- **Server.** `coverage()` (migration 21) builds it in one call: districts × categories from the district polygons (slice A), the metrics now and the last 12 weeks. `GET /api/admin/coverage[?region]`, admin only, not cached.
+- **No mockup** (owner waived mockups from slice D on, 2026-10-28; the spec's "mockup first" predates that). It reuses the admin's sections and the account card's list rows.
+- **Tests.** API: admin only, the call's arguments, an unknown region. Database (CI): counts per district and category, today and the week, hidden and later events left out, emptiest first, service role only. Web: the measures table and its order, districts emptiest first, the category picker.
+- **Checked** in the dev build at 380 px in English and Polish on a throwaway page with a stubbed `/api` (deleted): the five tabs and the table fit without overflow.
+- **Not checked:** signed in on the Cloudflare preview, and Supabase (migration 21 needs "Migrate database").
 
 ## 4. Adding events: faster
 

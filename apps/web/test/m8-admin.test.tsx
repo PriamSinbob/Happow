@@ -130,6 +130,7 @@ describe('the staff screen (M8 slice F)', () => {
       'Codes 2',
       'Grants',
       'Sources',
+      'Coverage',
     ]);
     expect(screen.getByRole('heading', { name: 'Admin' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Queue' }).getAttribute('aria-selected')).toBe('true');
