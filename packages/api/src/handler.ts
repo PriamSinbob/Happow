@@ -624,6 +624,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     // A series earns as one event, on its first date.
     const first = items[0]!;
     const reward = trusted ? await award(first.id, first.eventId) : null;
+    // Nothing at this place lately: "first added by you" on the adder's card (M12 §6.1).
+    const firstPlace = user ? await contributions.firstPlace(first.id) : false;
     const shown = publish || trusted;
     return json(
       {
@@ -631,6 +633,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         eventId: shown ? first.eventId : null,
         status: shown ? 'published' : 'pending',
         trusted,
+        firstPlace,
         ...(seriesId && {
           seriesId,
           dates: items.map((i) => ({ id: i.id, eventId: shown ? i.eventId : null })),
@@ -888,6 +891,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'geocode') return await geocode(req);
       if (head === 'submissions') return await submit(req);
       if (head === 'reports') return await report(req);
+      if (head === 'thanks' && !rest.length) return await contributions.thanks(req);
       if (head === 'counts' && req.method === 'POST' && !rest.length)
         return await contributions.counts(req);
       if (head === 'route') return await route(req);

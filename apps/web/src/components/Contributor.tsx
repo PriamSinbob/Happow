@@ -28,6 +28,7 @@ export function ImpactStats({ c }: { c: Contributions }) {
     ['opens', c.opens],
     ['routes', c.routes],
     ['arrivals', c.arrivals],
+    ['thanks', c.thanks],
   ] as const;
   return (
     <dl className="impact">
@@ -281,6 +282,9 @@ function MyEvents({
                 </span>
                 {state === 'live' && ` · ${t('contrib.opens', { count: opens })}`}
                 {days > 0 && state === 'live' && ` · ${t('contrib.days', { count: days })}`}
+                {e.firstPlace && (state === 'live' || state === 'pending') && (
+                  <span className="my-events__first"> · {t('contrib.firstPlace')}</span>
+                )}
               </span>
             </>
           );

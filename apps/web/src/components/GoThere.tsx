@@ -8,6 +8,7 @@ import { useLiveLocation } from '../hooks/useLiveLocation';
 import { useI18n } from '../i18n';
 import { useMapTheme, type OwnLayerPaint } from '../mapTheme';
 import { pathLength, progress } from '../nav';
+import { sendThanks, thanked } from '../thanks';
 import { FlagNotice } from './EventMeta';
 import { glyphSvg, Icon } from './Icons';
 import { glyphOf } from '../pins';
@@ -191,6 +192,9 @@ export function GoThere({
               {t('nav.close')}
             </button>
           )}
+          {ev && phase === 'arrived' && ev.trust === 'community' && (
+            <ThanksButton eventId={ev.id} />
+          )}
           {ev && phase !== 'arrived' && (
             <a
               className="btn btn--primary go-buttons__maps"
@@ -205,6 +209,43 @@ export function GoThere({
         {route?.attribution && <p className="go__credit">{route.attribution}</p>}
       </footer>
     </div>
+  );
+}
+
+/**
+ * "Thanks" for an event someone added, once you're there (M12 §6.4): one tap, anonymous, once
+ * per device. Nobody sees a count on the card; the adder sees the total in their impact.
+ */
+export function ThanksButton({ eventId }: { eventId: string }) {
+  const { t } = useI18n();
+  const [state, setState] = useState<'idle' | 'sending' | 'done'>(() =>
+    thanked(eventId) ? 'done' : 'idle',
+  );
+  if (state === 'done')
+    return (
+      <p className="go__thanked" role="status">
+        <Icon name="check" size={16} />
+        {t('nav.thanked')}
+      </p>
+    );
+  return (
+    <button
+      type="button"
+      className="btn btn--primary"
+      disabled={state === 'sending'}
+      onClick={async () => {
+        setState('sending');
+        try {
+          await sendThanks(eventId);
+          setState('done');
+        } catch {
+          // Nothing to fix by hand: the button simply stays for another try.
+          setState('idle');
+        }
+      }}
+    >
+      {t('nav.thanks')}
+    </button>
   );
 }
 

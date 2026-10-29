@@ -9,7 +9,7 @@ import {
 import { titleSimilarity } from '@happow/ingest/dedup';
 import { z } from 'zod';
 import { ApiError, body, json, sha256 } from './http.js';
-import type { Supabase } from './supabase.js';
+import { SupabaseError, type Supabase } from './supabase.js';
 
 /**
  * Contributions on the server (M12 §5, slice E): rewards for events that passed moderation or were
@@ -39,6 +39,11 @@ const countsSchema = z.object({
 });
 
 const FIELD = { open: 'opens', route: 'routes', arrival: 'arrivals' } as const;
+
+const thanksSchema = z.object({
+  deviceId: z.string().min(8).max(100),
+  eventId: z.string().min(1).max(300),
+});
 
 export function contributionRoutes({ config, timeZone, need, now, limit }: ContributionDeps) {
   const cfg = config.plans.contributions;
@@ -132,5 +137,44 @@ export function contributionRoutes({ config, timeZone, need, now, limit }: Contr
     };
   }
 
-  return { award, trusted, counts, mine };
+  /**
+   * POST /api/thanks {deviceId, eventId}: a visitor who arrived says thanks, once per device and
+   * event (M12 §6.4). Only the adder sees the total, in their impact; the card never shows it.
+   */
+  async function thanks(req: Request): Promise<Response> {
+    const { db, salt } = need();
+    const input = await body(req, thanksSchema);
+    const device = await sha256(`${salt}:device:${input.deviceId}`);
+    await limit('thanks', device, 3600, config.app.counts.perHourPerDevice);
+    try {
+      const added = await db.rpc<boolean>('thanks_add', {
+        p_event: input.eventId,
+        p_device: device,
+      });
+      return json({ added }, 202);
+    } catch (err) {
+      if (err instanceof SupabaseError && err.code === 'P0002')
+        throw new ApiError(404, 'unknown_event');
+      throw err;
+    }
+  }
+
+  /**
+   * Marks a new submission "first added by you" when nothing happened at its place lately
+   * (M12 §6.1). A failure only loses the mark.
+   */
+  async function firstPlace(submissionId: string): Promise<boolean> {
+    try {
+      return await need().db.rpc<boolean>('first_place_mark', {
+        p_submission: submissionId,
+        p_radius_m: cfg.firstPlace.radiusM,
+        p_quiet_days: cfg.firstPlace.quietDays,
+      });
+    } catch (err) {
+      console.error(JSON.stringify({ firstPlace: submissionId, error: String(err) }));
+      return false;
+    }
+  }
+
+  return { award, trusted, counts, mine, thanks, firstPlace };
 }

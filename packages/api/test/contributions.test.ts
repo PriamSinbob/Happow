@@ -349,3 +349,71 @@ describe('GET /api/me/submissions/:id, add again (M12 §4.4)', () => {
     expect(b.call('submission_form')).toHaveLength(0);
   });
 });
+
+describe('POST /api/thanks (M12 §6.4)', () => {
+  it('counts a hashed device once per event, with an hourly guard', async () => {
+    const b = backend({ thanks_add: () => ({ body: true }) });
+    const res = await b.api(
+      req('thanks', { body: { deviceId: 'device-0123456789', eventId: 'submissions:e1' } }),
+    );
+    expect(res.status).toBe(202);
+    expect(await res.json()).toEqual({ added: true });
+    const args = b.call('thanks_add')[0]!.args;
+    expect(args.p_event).toBe('submissions:e1');
+    expect(String(args.p_device)).toMatch(/^[0-9a-f]{64}$/);
+    expect(b.call('rate_limit_hit')[0]!.args).toMatchObject({ p_bucket: 'thanks' });
+  });
+
+  it('is 404 for an event nobody added', async () => {
+    const b = backend({
+      thanks_add: () => ({ status: 400, body: { code: 'P0002', message: 'unknown event' } }),
+    });
+    const res = await b.api(
+      req('thanks', { body: { deviceId: 'device-0123456789', eventId: 'crawler:x' } }),
+    );
+    expect(res.status).toBe(404);
+    expect((await res.json()).error).toBe('unknown_event');
+  });
+});
+
+describe('first added by you (M12 §6.1)', () => {
+  const event = {
+    title: 'Pchli targ na Ruskiej',
+    categoryIds: ['garage-sale'],
+    venueName: 'Podwórko Ruska 46',
+    point: { lat: 51.1105, lng: 17.0255 },
+    start: '2026-11-07T10:00',
+    isFree: true,
+  };
+  const send = (b: ReturnType<typeof backend>) =>
+    b.api(
+      req('submissions', {
+        token: 'user-token',
+        body: { deviceId: 'device-0123456789', event },
+      }),
+    );
+
+  it('marks a new submission with the configured radius and quiet days, and says so', async () => {
+    const b = backend({
+      submit_event: () => ({ body: 'uuid' }),
+      first_place_mark: () => ({ body: true }),
+    });
+    const out = await (await send(b)).json();
+    expect(out.firstPlace).toBe(true);
+    expect(b.call('first_place_mark')[0]!.args).toEqual({
+      p_submission: out.id,
+      p_radius_m: config.plans.contributions.firstPlace.radiusM,
+      p_quiet_days: config.plans.contributions.firstPlace.quietDays,
+    });
+  });
+
+  it('never fails the submission when the mark fails', async () => {
+    const b = backend({
+      submit_event: () => ({ body: 'uuid' }),
+      first_place_mark: () => ({ status: 500, body: { message: 'boom' } }),
+    });
+    const res = await send(b);
+    expect(res.status).toBe(201);
+    expect((await res.json()).firstPlace).toBe(false);
+  });
+});

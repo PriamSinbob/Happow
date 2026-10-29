@@ -51,6 +51,8 @@ const myEvent = (over: Partial<MyEvent> = {}): MyEvent => ({
   opens: 34,
   routes: 8,
   arrivals: 6,
+  thanks: 0,
+  firstPlace: false,
   ...over,
 });
 
@@ -59,6 +61,7 @@ const contributions = (over: Partial<Contributions> = {}): Contributions => ({
   opens: 240,
   routes: 31,
   arrivals: 12,
+  thanks: 2,
   trusted: false,
   monthDays: 9,
   level: 'local',
@@ -397,5 +400,15 @@ describe('a weekly repeat on the account card (M12 slice I)', () => {
     expect(screen.getByText(/3 dates · next .*14.* · 15 opens · \+3 days/)).toBeTruthy();
     fireEvent.click(screen.getByText('Pchli targ'));
     expect(onOpen).toHaveBeenCalledWith('user:d2');
+  });
+});
+
+describe('places first and thanks on the account card (M12 slice M)', () => {
+  it('shows the thanks total and "first added by you" to the adder', async () => {
+    serve(me(), contributions({ thanks: 2, events: [myEvent({ firstPlace: true, thanks: 2 })] }));
+    render(<ContributorSection onOpenEvent={vi.fn()} onAddAgain={vi.fn()} />, { wrapper: wrap });
+    await screen.findByText('Your contributions');
+    expect(screen.getByText('Thanks').nextElementSibling?.textContent).toBe('2');
+    expect(screen.getByText(/first added by you/)).toBeTruthy();
   });
 });

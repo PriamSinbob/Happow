@@ -568,6 +568,13 @@ export const pl: Record<MessageKey, string> = {
   'mod.feed': 'Z kalendarza: {host}',
   'mod.feedStop': 'Zatrzymaj ten kalendarz',
   'mod.feedStopped': 'Kalendarz zatrzymany',
+  // Places first and thanks (M12 slice M)
+  'contrib.stat.thanks': 'Podziękowania',
+  'contrib.firstPlace': 'dodane przez Ciebie jako pierwsze',
+  'add.done.firstPlace':
+    'Od dawna nic się tu nie działo: na Twojej karcie widnieje „dodane przez Ciebie jako pierwsze”.',
+  'nav.thanks': 'Dziękuję',
+  'nav.thanked': 'Podziękowanie wysłane osobie, która to dodała',
   'error.photo_unavailable':
     'Czytanie zdjęć jest teraz niedostępne. Spróbuj później albo uzupełnij formularz.',
   'error.photo_too_large': 'To zdjęcie jest za duże. Spróbuj innego.',
