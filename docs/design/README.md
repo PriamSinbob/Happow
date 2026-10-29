@@ -50,6 +50,7 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
 - The demo clock (Friday 23 October, 16:10) and the hard-coded walking speed.
 - Category glyphs in the prototype are older placeholders. The reference is the app's set in `apps/web/src/glyphs.ts` (see below).
 - Control icons in the prototype (dice, filters, locate, list) are also Tabler placeholders; if the app adopts Tabler, keep its MIT notice.
+- The add form's poster-photo button (M12 slice G) uses Tabler's `camera` outline icon as published, approved by the owner on 2026-10-29.
 
 ## Where the owner sees it
 

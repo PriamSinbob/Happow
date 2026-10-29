@@ -16,6 +16,7 @@ import { Screen } from './Screen';
 import { SignInSheet } from './SignIn';
 import { AfterAdd } from './Contributor';
 import type { Reward } from '../contributions';
+import { shrinkPhoto } from '../photo';
 
 /** What /api/autofill returns per event found on the page (mirrors packages/api `Prefill`). */
 interface Prefill {
@@ -29,7 +30,8 @@ interface Prefill {
   isFree: boolean | null;
   priceMin: number | null;
   currency: string | null;
-  url: string;
+  /** None for a poster photo. */
+  url: string | null;
   ticketUrl: string | null;
   ageMin: number | null;
   family: boolean | null;
@@ -76,17 +78,23 @@ const EMPTY: Form = {
   terms: false,
 };
 
+/** The photo could not be decoded on the device (an unusual format, or a broken file). */
+class PhotoUnreadable extends Error {}
+
 const MAX_CATEGORIES = 3;
 /** Age choices: not stated, all ages, 12+, 16+, 18+. */
 const AGE_CHOICES = [null, 0, 12, 16, 18] as const;
 const ENTRY_TYPES: EntryType[] = ['fixed', 'open'];
 const { submissions } = config.app;
 
+/** Where a fill came from: a link, or a poster photo (M12 slice G). */
+type FillSource = 'link' | 'photo';
+
 type Autofill =
   | { state: 'idle' }
-  | { state: 'loading' }
+  | { state: 'loading'; from: FillSource }
   | { state: 'error'; message: string }
-  | { state: 'found'; events: Prefill[] };
+  | { state: 'found'; events: Prefill[]; from: FillSource };
 
 type Done = {
   status: 'published' | 'pending';
@@ -264,24 +272,59 @@ export function AddEvent({
   async function fillFrom(url: string, fallbackTitle: string | null = null) {
     // Nothing usable from the page: keep the link, and the shared title if the form has none.
     const keepLink = () => setForm((f) => ({ ...f, url, title: f.title || (fallbackTitle ?? '') }));
-    setAutofill({ state: 'loading' });
-    try {
-      const res = await api<{ events: Prefill[] }>('autofill', {
+    await runFill('link', keepLink, async () =>
+      api<{ events: Prefill[] }>('autofill', {
         token: await accessToken(),
         body: { url, regionId: region.id },
-      });
-      setAutofill({ state: 'found', events: res.events });
+      }),
+    );
+  }
+
+  /** Fills the form from a poster photo, shrunk on the device first (M12 §4.2). */
+  async function fillFromPhoto(file: File) {
+    await runFill(
+      'photo',
+      () => {},
+      async () => {
+        let photo;
+        try {
+          photo = await shrinkPhoto(file);
+        } catch {
+          throw new PhotoUnreadable();
+        }
+        return api<{ events: Prefill[] }>('autofill/photo', {
+          token: await accessToken(),
+          body: { image: photo.data, mediaType: photo.mediaType, regionId: region.id },
+        });
+      },
+    );
+  }
+
+  async function runFill(
+    from: FillSource,
+    onNothing: () => void,
+    request: () => Promise<{ events: Prefill[] }>,
+  ) {
+    setAutofill({ state: 'loading', from });
+    try {
+      const res = await request();
+      setAutofill({ state: 'found', events: res.events, from });
       if (res.events.length === 1) apply(res.events[0]!, 0);
-      if (!res.events.length) keepLink();
+      if (!res.events.length) onNothing();
       // Only a fill that found something counts (M8 §5).
       else void account.refresh();
     } catch (err) {
-      keepLink();
+      onNothing();
       if (err instanceof ApiError && (err.code === 'quota_exceeded' || err.status === 401)) {
         // Used up meanwhile, or the session ended: /api/me tells the form which.
         setAutofill({ state: 'idle' });
         void account.refresh();
-      } else setAutofill({ state: 'error', message: errorText(t, err, lang) });
+      } else
+        setAutofill({
+          state: 'error',
+          message:
+            err instanceof PhotoUnreadable ? t('add.photo.unreadable') : errorText(t, err, lang),
+        });
     }
   }
 
@@ -315,7 +358,7 @@ export function AddEvent({
       isFree: p.isFree,
       amount: p.priceMin !== null && !p.isFree ? String(p.priceMin) : '',
       currency: p.currency ?? region.currency,
-      url: p.url,
+      url: p.url ?? f.url,
       ageMin: p.ageMin,
       family: p.family === true,
       entry: p.entry,
@@ -508,10 +551,32 @@ export function AddEvent({
                   disabled={!link.trim() || autofill.state === 'loading' || linkOff}
                 >
                   <Icon name="link" size={16} />
-                  {autofill.state === 'loading' ? t('add.filling') : t('add.fill')}
+                  {autofill.state === 'loading' && autofill.from === 'link'
+                    ? t('add.filling')
+                    : t('add.fill')}
                 </button>
               </span>
               {!autofillOut && <span className="field__hint">{t('add.linkHint')}</span>}
+            </label>
+            <label
+              className={`btn btn--block autofill__photo${linkOff || autofill.state === 'loading' ? ' is-disabled' : ''}`}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                className="visually-hidden"
+                disabled={linkOff || autofill.state === 'loading'}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  // The same photo can be picked again after a failure.
+                  e.target.value = '';
+                  if (file) void fillFromPhoto(file);
+                }}
+              />
+              <Icon name="camera" size={18} />
+              {autofill.state === 'loading' && autofill.from === 'photo'
+                ? t('add.photo.reading')
+                : t('add.photo')}
             </label>
             {autofillOut && (
               <div className="notice notice--quota" role="status">
@@ -527,7 +592,11 @@ export function AddEvent({
             {autofill.state === 'found' && (
               <div className="found" aria-live="polite">
                 <p className="field__hint">
-                  {found.length ? t('add.found', { count: found.length }) : t('add.notFound')}
+                  {found.length
+                    ? t('add.found', { count: found.length })
+                    : autofill.from === 'photo'
+                      ? t('add.photo.notFound')
+                      : t('add.notFound')}
                 </p>
                 {found.length > 1 && (
                   <ul className="found__list">

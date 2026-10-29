@@ -239,6 +239,13 @@ export const appConfigSchema = z.object({
     maxPageBytes: z.number().int().positive(),
     /** Most LLM calls URL autofill may make per day across all users (cost cap). */
     autofillLlmPerDay: z.number().int().nonnegative(),
+    /** Poster photos for autofill (M12 §4.2): the largest decoded image the API accepts. */
+    photo: z.object({
+      maxBytes: z.number().int().positive(),
+      /** Shrunk on the device first: the long edge in px, and the JPEG quality (0–1). */
+      maxEdge: z.number().int().positive(),
+      jpegQuality: z.number().min(0.1).max(1),
+    }),
     /** schema.org Event subtypes (lower-case) → category ids, for every crawled page and URL autofill. */
     schemaTypeMap: z.record(z.string()),
   }),

@@ -156,4 +156,48 @@ describe('ClaudeExtractor', () => {
       /max_tokens/,
     );
   });
+  it('reads a poster photo: the image first, a poster prompt, absolute links only', async () => {
+    const fetchMock = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) =>
+      reply({
+        events: [
+          {
+            ...nfmEvent,
+            title: 'Jazz na podwórku',
+            venue_name: 'Podwórko Nadodrze',
+            event_url: '/wydarzenie',
+            ticket_url: 'https://bilety.example.pl/jazz',
+            confidence: 0.85,
+          },
+        ],
+      }),
+    );
+    const [e] = await extractor(fetchMock as typeof fetch).extractImage({
+      data: 'AAAA',
+      mediaType: 'image/jpeg',
+      today: '2026-10-29',
+      timeZone: 'Europe/Warsaw',
+      categories,
+    });
+    expect(e).toMatchObject({
+      title: 'Jazz na podwórku',
+      venueName: 'Podwórko Nadodrze',
+      start: '2026-11-22T10:00',
+      // A relative link on a poster points nowhere; an absolute one is kept.
+      url: null,
+      ticketUrl: 'https://bilety.example.pl/jazz',
+      imageUrl: null,
+      method: 'llm',
+    });
+    const body = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string);
+    const [image, text] = body.messages[0].content;
+    expect(image).toEqual({
+      type: 'image',
+      source: { type: 'base64', media_type: 'image/jpeg', data: 'AAAA' },
+    });
+    expect(text.type).toBe('text');
+    expect(text.text).toContain('Today: 2026-10-29');
+    expect(body.system[0].text).toMatch(/photo of a poster/);
+    expect(body.system[0].text).not.toContain('2026-10-29');
+    expect(body.system[0].cache_control).toEqual({ type: 'ephemeral' });
+  });
 });

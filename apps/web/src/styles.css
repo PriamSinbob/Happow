@@ -2838,3 +2838,19 @@ button.account-card__plan {
 .detail__credit + .detail__source {
   margin-top: 10px;
 }
+
+/* Poster photo (M12 slice G): a label wrapping the hidden file input, styled as the form's
+   secondary button; no mockup (owner, 2026-10-28). */
+.autofill__photo {
+  margin: 0 0 12px;
+  cursor: pointer;
+}
+.autofill__photo.is-disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+.autofill__photo:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}

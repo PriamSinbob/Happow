@@ -132,6 +132,7 @@ export function About({
           {NUMBERS.map((n) => (
             <li key={n}>{t(`about.privacy.${n}`)}</li>
           ))}
+          {config.app.submissions.autofill && <li>{t('about.privacy.autofill')}</li>}
           {config.app.analytics.plausibleDomain && <li>{t('about.privacy.analytics')}</li>}
         </ul>
 

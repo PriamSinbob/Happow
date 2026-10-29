@@ -127,6 +127,11 @@
     "minConfidence": 0.7,
     "maxPageBytes": 3000000,
     "autofillLlmPerDay": 300,
+    "photo": {
+      "maxBytes": 1500000,
+      "maxEdge": 1568,
+      "jpegQuality": 0.85
+    },
     "schemaTypeMap": {
       "musicevent": "music",
       "danceevent": "music",

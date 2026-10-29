@@ -488,6 +488,16 @@ export const en = {
   'admin.trust.confirm': 'Restore',
   'admin.trust.done': 'Trust restored for {email}.',
   'admin.trust.notFound': 'No account with this email.',
+  // M12 slice G: poster photo
+  'add.photo': 'Photo of a poster',
+  'add.photo.reading': 'Reading the poster…',
+  'add.photo.notFound': "Couldn't read an event from this photo. Fill in the form below.",
+  'add.photo.unreadable': "This photo couldn't be opened. Try another one.",
+  'error.photo_unavailable':
+    "Reading photos isn't available right now. Try again later, or fill in the form.",
+  'error.photo_too_large': 'This photo is too large. Try another one.',
+  'about.privacy.autofill':
+    'When you fill the form from a link or a poster photo, the page text or the photo is sent to an AI service only to be read. It is not kept.',
 } as const;
 
 export type MessageKey = keyof typeof en;
