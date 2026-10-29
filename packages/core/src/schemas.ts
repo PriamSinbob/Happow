@@ -280,6 +280,11 @@ export const appConfigSchema = z.object({
       maxAccuracyM: z.number().positive(),
       roundMin: z.number().int().min(1).max(60),
     }),
+    /** Weekly repeats on the add form (M12 §4.5): how far ahead, and how many dates at most. */
+    recurring: z.object({
+      maxWeeks: z.number().int().min(1).max(52),
+      maxOccurrences: z.number().int().min(2).max(100),
+    }),
   }),
   /** Inputs to scoreConfidence (see confidence.ts); each is a factor between 0 and 1. */
   confidence: z.object({

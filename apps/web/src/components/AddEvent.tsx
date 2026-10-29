@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { entryOf, type EntryType, type Language, type LatLng } from '@happow/core';
+import {
+  entryOf,
+  isoWeekday,
+  lastRepeatDay,
+  weeklyStarts,
+  type EntryType,
+  type Language,
+  type LatLng,
+  type WeeklyRepeat,
+} from '@happow/core';
 import { useAccount, type Me } from '../account';
 import { track } from '../analytics';
 import { api, ApiError, deviceId } from '../api';
@@ -138,6 +147,8 @@ type Autofill =
 
 type Done = {
   status: 'published' | 'pending';
+  /** Every date of a weekly repeat (M12 §4.5). */
+  dates?: { id: string; eventId: string | null }[];
   eventId: string | null;
   /** Given at once to a trusted account's event (M12 §5.3). */
   reward?: Reward;
@@ -172,6 +183,15 @@ function resetDay(resetsAt: string, lang: Language): string {
   })
     .format(new Date(resetsAt))
     .replace(/ /g, '\u00a0'); // "1 listopada" never splits across lines
+}
+
+/** Short weekday names, Monday first: ISO weekday 1 … 7. */
+function weekdayName(day: number, lang: Language): string {
+  // 2 Nov 2026 is a Monday.
+  return new Intl.DateTimeFormat(lang === 'pl' ? 'pl-PL' : 'en-GB', {
+    weekday: 'short',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(2026, 10, 1 + day)));
 }
 
 /** One meter of the usage strip; it turns warm with the reset date once used up. */
@@ -322,6 +342,38 @@ export function AddEvent({
     if (span !== null && form.start) setForm((f) => ({ ...f, end: shiftInput(f.start, span) }));
   }, [span, form.start]);
   const compact = quick === 'compact';
+  // "Repeats weekly" (M12 §4.5): one event per date, each counting against the month.
+  const [repeat, setRepeat] = useState<WeeklyRepeat | null>(null);
+  const { recurring } = submissions;
+  const dates =
+    repeat && form.start && repeat.until
+      ? weeklyStarts(form.start, repeat, recurring.maxWeeks)
+      : [];
+  const eventsLeft = me ? Math.max(0, me.usage.events.limit - me.usage.events.used) : Infinity;
+  const repeatProblem: string | null = !repeat
+    ? null
+    : dates.length === 0
+      ? t('add.repeat.empty')
+      : dates.length > recurring.maxOccurrences
+        ? t('add.repeat.tooMany', { max: recurring.maxOccurrences })
+        : dates.length > eventsLeft
+          ? t('add.repeat.overQuota', { count: dates.length, left: eventsLeft })
+          : null;
+  function startRepeat() {
+    setRepeat({
+      days: form.start ? [isoWeekday(form.start)] : [],
+      until: form.start ? lastRepeatDay(form.start, Math.min(4, recurring.maxWeeks)) : '',
+    });
+  }
+  function toggleDay(day: number) {
+    setRepeat(
+      (r) =>
+        r && {
+          ...r,
+          days: r.days.includes(day) ? r.days.filter((d) => d !== day) : [...r.days, day].sort(),
+        },
+    );
+  }
   // A prefilled page may give an age the choices lack (6+); offer it too.
   const ageChoices: (number | null)[] =
     form.ageMin !== null && !(AGE_CHOICES as readonly (number | null)[]).includes(form.ageMin)
@@ -456,6 +508,7 @@ export function AddEvent({
     const length = minutesBetween(form.start, form.end);
     setDone(null);
     setForm((f) => ({ ...f, start: '', end: '' }));
+    setRepeat(null);
     setFollow(length);
     setQuick((q) => (q ? 'full' : q));
     setTried(false);
@@ -515,7 +568,7 @@ export function AddEvent({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setTried(true);
-    if (missing(form).size || sending) return;
+    if (missing(form).size || repeatProblem || sending) return;
     setSending(true);
     setError(null);
     const amount = form.amount ? Number(form.amount.replace(',', '.')) : null;
@@ -527,6 +580,7 @@ export function AddEvent({
         body: {
           deviceId: deviceId(),
           regionId: region.id,
+          ...(repeat && { repeat }),
           event: {
             title: form.title.trim(),
             categoryIds: form.categoryIds,
@@ -607,6 +661,7 @@ export function AddEvent({
           <p role="status">
             {done.status === 'published' ? t('add.done.published') : t('add.done.pending')}
           </p>
+          {done.dates && <p>{t('add.done.dates', { count: done.dates.length })}</p>}
           <AfterAdd reward={done.reward ?? null} onOpenAccount={onOpenAccount} />
           <div className="event-card__actions">
             {done.eventId && (
@@ -631,6 +686,7 @@ export function AddEvent({
                 setQuick(null);
                 setFollow(null);
                 setCopied(null);
+                setRepeat(null);
               }}
             >
               {t('add.another')}
@@ -848,6 +904,67 @@ export function AddEvent({
               />
             </label>
           </div>
+        )}
+
+        {!compact && (
+          <fieldset className="field">
+            <legend className="field__label">{t('add.repeat')}</legend>
+            <div className="segmented segmented--2" role="radiogroup">
+              {([false, true] as const).map((weekly) => (
+                <button
+                  key={String(weekly)}
+                  type="button"
+                  role="radio"
+                  aria-checked={(repeat !== null) === weekly}
+                  className={(repeat !== null) === weekly ? 'is-active' : ''}
+                  onClick={() => (weekly ? repeat || startRepeat() : setRepeat(null))}
+                >
+                  {t(weekly ? 'add.repeat.weekly' : 'add.repeat.once')}
+                </button>
+              ))}
+            </div>
+            {repeat && (
+              <>
+                <div className="weekdays" role="group" aria-label={t('add.repeat.days')}>
+                  {[1, 2, 3, 4, 5, 6, 7].map((day) => {
+                    const on = repeat.days.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        className={`weekday${on ? ' is-on' : ''}`}
+                        aria-pressed={on}
+                        onClick={() => toggleDay(day)}
+                      >
+                        {weekdayName(day, lang)}
+                      </button>
+                    );
+                  })}
+                </div>
+                <label className="field">
+                  <span className="field__label">{t('add.repeat.until')}</span>
+                  <input
+                    type="date"
+                    value={repeat.until}
+                    min={form.start.slice(0, 10) || undefined}
+                    max={form.start ? lastRepeatDay(form.start, recurring.maxWeeks) : undefined}
+                    onChange={(e) => setRepeat({ ...repeat, until: e.target.value })}
+                  />
+                </label>
+                <p
+                  className={`field__hint${repeatProblem ? ' is-warn' : ''}`}
+                  role={tried && repeatProblem ? 'alert' : undefined}
+                >
+                  {repeatProblem ??
+                    t('add.repeat.summary', {
+                      count: dates.length,
+                      first: formatDay(`${dates[0]}:00Z`, 'UTC', lang),
+                      last: formatDay(`${dates.at(-1)}:00Z`, 'UTC', lang),
+                    })}
+                </p>
+              </>
+            )}
+          </fieldset>
         )}
 
         <label className="field">

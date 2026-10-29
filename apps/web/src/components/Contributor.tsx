@@ -205,9 +205,45 @@ function eventState(e: MyEvent): EventState {
   return 'live';
 }
 
+/** One row of the list: an event, or a weekly repeat shown by its next date (M12 §4.5). */
+interface Row {
+  e: MyEvent;
+  /** Dates in the series; 1 for a single event. */
+  count: number;
+  /** The series' next date still ahead, if any. */
+  next: string | null;
+  opens: number;
+  days: number;
+}
+
+function rows(events: MyEvent[], now = Date.now()): Row[] {
+  const out: Row[] = [];
+  const series = new Map<string, MyEvent[]>();
+  for (const e of events) {
+    const g = e.seriesId ? series.get(e.seriesId) : undefined;
+    if (g) g.push(e);
+    else if (e.seriesId) series.set(e.seriesId, [e]);
+    if (!g) out.push({ e, count: 1, next: null, opens: e.opens, days: e.days });
+  }
+  return out.map((row) => {
+    const g = row.e.seriesId ? series.get(row.e.seriesId)! : null;
+    if (!g || g.length < 2) return row;
+    const sorted = [...g].sort((a, b) => (a.startAt ?? '').localeCompare(b.startAt ?? ''));
+    const next = sorted.find((x) => x.startAt && Date.parse(x.startAt) >= now) ?? null;
+    return {
+      e: next ?? sorted.at(-1)!,
+      count: g.length,
+      next: next?.startAt ?? null,
+      opens: g.reduce((n, x) => n + x.opens, 0),
+      days: g.reduce((n, x) => n + x.days, 0),
+    };
+  });
+}
+
 /**
  * The account's own events, newest first, with their opens and the days each earned. Any but a
- * rejected or hidden one can be added again for another date (M12 §4.4).
+ * rejected or hidden one can be added again for another date (M12 §4.4); a weekly repeat is one
+ * row with its count and next date.
  */
 function MyEvents({
   events,
@@ -223,19 +259,28 @@ function MyEvents({
     <div className="contrib__events">
       <h4 className="contrib__subtitle">{t('contrib.events')}</h4>
       <ul className="my-events">
-        {events.map((e) => {
+        {rows(events).map(({ e, count, next, opens, days }) => {
           const state = eventState(e);
           const openable = e.eventId && (state === 'live' || state === 'pending');
           const body = (
             <>
               <span className="my-events__title">{e.title}</span>
               <span className="my-events__meta">
-                {e.startAt && `${formatDay(e.startAt, region.timezone, lang)} · `}
+                {count > 1
+                  ? `${
+                      next
+                        ? t('contrib.seriesNext', {
+                            count,
+                            date: formatDay(next, region.timezone, lang),
+                          })
+                        : t('contrib.series', { count })
+                    } · `
+                  : e.startAt && `${formatDay(e.startAt, region.timezone, lang)} · `}
                 <span className={`my-events__state my-events__state--${state}`}>
                   {t(`contrib.state.${state}`)}
                 </span>
-                {state === 'live' && ` · ${t('contrib.opens', { count: e.opens })}`}
-                {e.days > 0 && state === 'live' && ` · ${t('contrib.days', { count: e.days })}`}
+                {state === 'live' && ` · ${t('contrib.opens', { count: opens })}`}
+                {days > 0 && state === 'live' && ` · ${t('contrib.days', { count: days })}`}
               </span>
             </>
           );

@@ -21,9 +21,28 @@ interface QueuedSubmission {
   confidence: number | null;
   event_id: string | null;
   created_at: string;
+  /** The dates of one weekly repeat share it (M12 §4.5). */
+  series_id?: string | null;
   submitter: string | null;
   event: { title: string; startAt: string; timezone?: string; categoryIds?: string[] } | null;
   venue: { name: string; address: string | null } | null;
+}
+
+/** The queue with each weekly repeat as one group, its dates earliest first. */
+function grouped(list: QueuedSubmission[]): QueuedSubmission[][] {
+  const groups: QueuedSubmission[][] = [];
+  const series = new Map<string, QueuedSubmission[]>();
+  for (const s of list) {
+    const g = s.series_id ? series.get(s.series_id) : undefined;
+    if (g) g.push(s);
+    else {
+      groups.push([s]);
+      if (s.series_id) series.set(s.series_id, groups.at(-1)!);
+    }
+  }
+  for (const g of series.values())
+    g.sort((a, b) => (a.event?.startAt ?? '').localeCompare(b.event?.startAt ?? ''));
+  return groups;
 }
 
 interface ReportedEvent {
@@ -124,7 +143,9 @@ export function Moderation({ onClose }: { onClose: () => void }) {
               ...s,
               queue: {
                 ...s.queue,
-                submissions: s.queue.submissions.filter((x) => `s:${x.id}` !== key),
+                submissions: s.queue.submissions.filter(
+                  (x) => `s:${x.id}` !== key && `g:${x.series_id}` !== key,
+                ),
                 reports: s.queue.reports.filter((x) => `r:${x.event_id}` !== key),
                 trusted: s.queue.trusted?.filter((x) => `t:${x.id}` !== key),
               },
@@ -169,15 +190,20 @@ export function Moderation({ onClose }: { onClose: () => void }) {
     );
   else {
     const { queue } = state;
+    const groups = grouped(queue.submissions);
     body = (
       <>
         <StaffBar who={queue.moderator} onRefresh={load} onSignedOut={signedOut} />
 
         <section className="mod-section">
-          <h2>{t('mod.submissions', { count: queue.submissions.length })}</h2>
-          {queue.submissions.length === 0 && <p className="muted">{t('mod.empty')}</p>}
-          {queue.submissions.map((s) => {
-            const key = `s:${s.id}`;
+          <h2>{t('mod.submissions', { count: groups.length })}</h2>
+          {groups.length === 0 && <p className="muted">{t('mod.empty')}</p>}
+          {groups.map((group) => {
+            const s = group[0]!;
+            // A weekly repeat is decided once, for all its dates.
+            const series = group.length > 1 && s.series_id;
+            const key = series ? `g:${series}` : `s:${s.id}`;
+            const path = series ? `series/${series}` : `submissions/${s.id}`;
             return (
               <article key={s.id} className="mod-card">
                 <div className="event-card__cats">
@@ -203,6 +229,16 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                   {s.venue && ` · ${s.venue.name}`}
                   {s.venue?.address && `, ${s.venue.address}`}
                 </p>
+                {series && (
+                  <p className="mod-card__meta">
+                    {t('mod.series', {
+                      count: group.length,
+                      dates: group
+                        .map((x) => x.event && formatDay(x.event.startAt, region.timezone, lang))
+                        .join(', '),
+                    })}
+                  </p>
+                )}
                 {s.url && (
                   <p className="mod-card__meta">
                     <a href={s.url} target="_blank" rel="noreferrer">
@@ -215,7 +251,7 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                     type="button"
                     className="btn btn--primary"
                     disabled={busy === key}
-                    onClick={() => act(`submissions/${s.id}`, 'approve', key)}
+                    onClick={() => act(path, 'approve', key)}
                   >
                     {t('mod.approve')}
                   </button>
@@ -223,7 +259,7 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                     type="button"
                     className="btn"
                     disabled={busy === key}
-                    onClick={() => act(`submissions/${s.id}`, 'reject', key)}
+                    onClick={() => act(path, 'reject', key)}
                   >
                     {t('mod.reject')}
                   </button>

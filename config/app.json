@@ -161,7 +161,8 @@
     "autofillPerHour": 30,
     "reportsPerDayPerDevice": 20,
     "maxDescriptionChars": 600,
-    "quickAdd": { "maxAccuracyM": 100, "roundMin": 5 }
+    "quickAdd": { "maxAccuracyM": 100, "roundMin": 5 },
+    "recurring": { "maxWeeks": 12, "maxOccurrences": 24 }
   },
   "confidence": {
     "trust": { "api": 1, "crawled": 0.95, "community": 0.85 },
