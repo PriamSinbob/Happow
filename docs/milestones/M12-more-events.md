@@ -28,7 +28,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 | K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                              | B     | —      | built   |
 | L     | §4.6      | Calendar feed import for an account                                                                                     | B, E  | waived | built   |
 | M     | §6.1, 6.4 | Places first on the map, and thanks from visitors after GoThere                                                         | E, F  | waived | built   |
-| N     | §6.2–6.3  | District goals in empty states, and season collections                                                                  | A, F  | yes    | planned |
+| N     | §6.2–6.3  | District goals in empty states, and season collections                                                                  | A, F  | waived | built   |
 | O     | §3        | Admin coverage view: events per district and category, today and the week                                               | A, C  | admin  | planned |
 
 B, C, J and K add events with no UI and can ship while the UI slices wait for their mockups. D needs only the add form from M8 G.
@@ -390,6 +390,14 @@ Adding the first event at a place with no event in the past 90 days and none upc
 ### 6.3 Season collections (slice N)
 
 `config/seasons.json`: id, labels, date range, categories and keywords. An event that fits shows in a themed list anyone can open from the list view while the season runs. The adder's account card counts their events in it. No ranking inside the list beyond time and distance.
+
+#### Built (slice N, 2026-10-29)
+
+- **District goals** (§6.2). Only when the reach is empty, the guidance card (on the map and in the list's empty state) adds "Nadodrze has 3 events this weekend: know something on?" with "Add it", which opens the add form (or sign-in first). The district is the one the reach's centre is in, from slice A's district polygons, through the public `district_goal()` (migration 20): a name and a count, nothing about anyone. "This weekend" is Saturday 00:00 to Monday 00:00 in the region, from now on the weekend itself (`weekendWindow` in core). Asked again only after a move of about 100 m; never a notification.
+- **Season collections** (§6.3). `config/seasons.json` (id, labels, inclusive dates, categories, keywords; checked when config loads): Halloween, Christmas and markets, New Year's Eve and the winter break for now. An event fits when it overlaps the dates in the region and has one of the categories and a keyword in its title, without case or diacritics (`fitsSeason` in core; "Msza święta" is no Christmas event). While a season runs and loaded events fit it, the list view shows a chip ("Halloween · 5"); it opens a themed list of those events by time, then distance, nothing else. The account card adds "Halloween: 2 of your events" for each running season (the card's events now carry their end and categories).
+- **No mockup** (owner, 2026-10-28): the goal is a guidance line, the chips follow the filter chips in ink; no new icons.
+- **Tests.** Core: keyword and category matching, the season's last day at midnight in the region, running seasons, config checks, the weekend across the end of summer time. Database (CI): the district count (live only, in the window), anon may ask, none outside every district. Web: the goal in the empty card only and its "Add it", the hook (window, no re-ask on small moves, cleared when the reach fills), season chips and the themed list, the account card's count.
+- **Not checked:** in the browser at 380 px (the chips and the goal line reuse existing styles), signed in on the Cloudflare preview, and Supabase (migration 20 needs "Migrate database"; the districts must be seeded, as slice A already does).
 
 ### 6.4 Thanks from visitors (slice M)
 

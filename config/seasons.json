@@ -1,0 +1,46 @@
+{
+  "seasons": [
+    {
+      "id": "halloween",
+      "labels": { "pl": "Halloween", "en": "Halloween" },
+      "from": "2026-10-24",
+      "to": "2026-11-01",
+      "categories": [],
+      "keywords": ["halloween", "dynia", "dyni", "straszn"]
+    },
+    {
+      "id": "christmas",
+      "labels": { "pl": "Święta i jarmarki", "en": "Christmas and markets" },
+      "from": "2026-11-20",
+      "to": "2026-12-24",
+      "categories": [],
+      "keywords": [
+        "jarmark",
+        "swiateczn",
+        "bozonarodzen",
+        "boze narodzenie",
+        "mikolaj",
+        "koled",
+        "wigili",
+        "choink",
+        "christmas"
+      ]
+    },
+    {
+      "id": "new-year",
+      "labels": { "pl": "Sylwester", "en": "New Year's Eve" },
+      "from": "2026-12-31",
+      "to": "2027-01-01",
+      "categories": [],
+      "keywords": ["sylwest", "nowy rok", "noworoczn", "new year"]
+    },
+    {
+      "id": "winter-break",
+      "labels": { "pl": "Ferie zimowe", "en": "Winter break" },
+      "from": "2027-01-18",
+      "to": "2027-03-01",
+      "categories": ["kids"],
+      "keywords": []
+    }
+  ]
+}

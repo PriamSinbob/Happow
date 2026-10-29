@@ -575,6 +575,16 @@ export const pl: Record<MessageKey, string> = {
     'Od dawna nic się tu nie działo: na Twojej karcie widnieje „dodane przez Ciebie jako pierwsze”.',
   'nav.thanks': 'Dziękuję',
   'nav.thanked': 'Podziękowanie wysłane osobie, która to dodała',
+  // District goals and seasons (M12 slice N)
+  'goal.line':
+    '{district}: {count, plural, =0 {w ten weekend nic} one {# wydarzenie w ten weekend} few {# wydarzenia w ten weekend} many {# wydarzeń w ten weekend} other {# wydarzenia w ten weekend}}. Wiesz o czymś?',
+  'goal.add': 'Dodaj',
+  'season.title': 'Sezony',
+  'season.list':
+    '{season}: {count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} w okolicy',
+  'season.all': 'Wszystkie wydarzenia',
+  'contrib.season':
+    '{season}: {count, plural, one {# Twoje wydarzenie} few {# Twoje wydarzenia} many {# Twoich wydarzeń} other {# Twojego wydarzenia}}',
   'error.photo_unavailable':
     'Czytanie zdjęć jest teraz niedostępne. Spróbuj później albo uzupełnij formularz.',
   'error.photo_too_large': 'To zdjęcie jest za duże. Spróbuj innego.',

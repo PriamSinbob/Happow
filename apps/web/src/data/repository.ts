@@ -10,6 +10,20 @@ export interface EventRepository {
   density(query: DensityQuery, signal?: AbortSignal): Promise<DensityCluster[]>;
   /** "Added by" on a community event: only while its adder has the credit on (M12 §5.5). */
   credit(eventId: string, signal?: AbortSignal): Promise<Credit | null>;
+  /** The district a point is in and its live events from `from` to `to` (M12 §6.2). */
+  districtGoal(
+    regionId: string,
+    at: LatLng,
+    from: Date,
+    to: Date,
+    signal?: AbortSignal,
+  ): Promise<DistrictGoal | null>;
+}
+
+export interface DistrictGoal {
+  id: string;
+  name: string;
+  count: number;
 }
 
 export interface Credit {

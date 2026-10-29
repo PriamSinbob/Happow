@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { activeSeasons, fitsSeason } from '@happow/core';
 import { useAccount } from '../account';
 import {
   levelKey,
@@ -94,9 +95,39 @@ export function ContributorSection({
       <p className="contrib__line">
         {t('contrib.monthDays', { days: c.monthDays, cap: c.premiumDaysPerMonth })}
       </p>
+      <SeasonLines events={c.events} />
       <CreditSetting />
       <MyEvents events={c.events} onOpen={onOpenEvent} onAgain={onAddAgain} />
     </section>
+  );
+}
+
+/** "Halloween: 2 of your events" for each running season the adder's live events fit (M12 §6.3). */
+function SeasonLines({ events }: { events: MyEvent[] }) {
+  const { t, lang } = useI18n();
+  const live = events.filter((e) => e.status !== 'rejected' && !e.hidden && e.startAt && e.endAt);
+  return (
+    <>
+      {activeSeasons(config.seasons, new Date(), region.timezone).map((s) => {
+        const count = live.filter((e) =>
+          fitsSeason(
+            {
+              title: e.title,
+              categoryIds: e.categoryIds ?? [],
+              startAt: e.startAt!,
+              endAt: e.endAt!,
+            },
+            s,
+            region.timezone,
+          ),
+        ).length;
+        return count > 0 ? (
+          <p key={s.id} className="contrib__line">
+            {t('contrib.season', { season: s.labels[lang], count })}
+          </p>
+        ) : null;
+      })}
+    </>
   );
 }
 

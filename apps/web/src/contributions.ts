@@ -12,6 +12,9 @@ export interface MyEvent {
   eventId: string | null;
   title: string;
   startAt: string | null;
+  /** For counting the adder's events in a running season (M12 §6.3). */
+  endAt?: string | null;
+  categoryIds?: string[];
   status: 'pending' | 'approved' | 'rejected';
   trusted: boolean;
   hidden: boolean;

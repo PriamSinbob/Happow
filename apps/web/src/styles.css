@@ -2949,3 +2949,30 @@ button.account-card__plan {
   font-size: 14px;
   color: var(--ink);
 }
+
+/* District goals and seasons (M12 slice N): the goal is a quiet guidance line; season chips follow
+   the filter chips, ink not the live colour. */
+.guide__goal .inline-link {
+  font-weight: 600;
+}
+.seasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px 4px;
+}
+.season-chip {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+}
+.season-chip.is-on {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
