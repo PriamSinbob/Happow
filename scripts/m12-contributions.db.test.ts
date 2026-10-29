@@ -181,4 +181,30 @@ describe.skipIf(!url || !local)('M12 contributions in Postgres', () => {
       code: 'P0001',
     });
   });
+
+  it('reads a submission back only for its owner, never rejected or hidden (add again)', async () => {
+    const form = { title: 'Pchli targ', start: '2026-11-07T10:00' };
+    const sent = async (status: string, eventId: string | null, owner = user) => {
+      const id = randomUUID();
+      await db.query(
+        `insert into submissions (id, kind, status, submitter_hash, user_id, event_id, form_payload)
+         values ($1, 'user', $2::submission_status, $3, $4, $5, $6)`,
+        [id, status, `hash-${tag}`, owner, eventId, form],
+      );
+      return id;
+    };
+    const read = (id: string, who = user) => fn('submission_form($1, $2)', [who, id]);
+    const other = (
+      await db.query<{ id: string }>('insert into auth.users (email) values ($1) returning id', [
+        `ola-${tag}@example.org`,
+      ])
+    ).rows[0]!.id;
+
+    const pending = await sent('pending', null);
+    expect(await read(pending)).toEqual(form);
+    expect(await read(pending, other)).toBeNull();
+    expect(await read(await sent('rejected', null))).toBeNull();
+    // The event the trusted publication above was hidden from.
+    expect(await read(await sent('approved', `${tag}-ev`))).toBeNull();
+  });
 });

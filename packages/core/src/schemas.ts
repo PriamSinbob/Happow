@@ -272,6 +272,14 @@ export const appConfigSchema = z.object({
     autofillPerHour: z.number().int().positive(),
     reportsPerDayPerDevice: z.number().int().positive(),
     maxDescriptionChars: z.number().int().positive(),
+    /**
+     * "Happening here, now" on the add form (M12 §4.3): offered only with a location fix at least
+     * this precise; the start is now, rounded down to `roundMin` minutes.
+     */
+    quickAdd: z.object({
+      maxAccuracyM: z.number().positive(),
+      roundMin: z.number().int().min(1).max(60),
+    }),
   }),
   /** Inputs to scoreConfidence (see confidence.ts); each is a factor between 0 and 1. */
   confidence: z.object({

@@ -22,7 +22,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 | E     | §5        | Contributions on the server: rewards ledger, impact counters, premium days, trusted contributor, levels, credit opt-in  | —     | —      | built   |
 | F     | §5 UI     | Your impact and contributor card: after-add screen, account card, level, credit toggle                                  | E     | waived | built   |
 | G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                             | D     | waived | built   |
-| H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                               | F     | yes    | planned |
+| H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                               | F     | waived | built   |
 | I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                             | H     | yes    | planned |
 | J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                        | C     | —      | planned |
 | K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                              | B     | —      | planned |
@@ -209,6 +209,28 @@ One screen: the pin at your location, the start at now (end from the category's 
 ### 4.4 Add again (slice H)
 
 From your past events (account card and after-add screen): pick one, choose a new date and time, check, send. Each date is its own submission and its own event.
+
+#### Built (slice H, 2026-10-29)
+
+- **Quick add.** A "Happening here, now?" card tops the add form.
+  - It shows only with a location fix within `submissions.quickAdd.maxAccuracyM` (100 m); without one the form is as before.
+  - "Add it here" puts the pin at the fix and the start at now in the region, rounded down to `roundMin` (5) minutes. The end follows the first category's `defaultDurationMin`.
+  - The short form asks for the title, category, place name and free or paid. The place name and price are on it because every event needs them (the server requires a place name, and the card shows the price).
+  - "More details" opens the whole form, already filled in. An end set by hand stops following the start.
+  - It goes to the same `/api/submissions`, with the same quota, moderation, trusted publishing and rewards. The link and photo autofill are hidden while it's open.
+- **Add again.**
+  - "Add again" sits on each of your events in the account card, except rejected or hidden ones. It opens `#/add?again=<submission>`, so Back works.
+  - `GET /api/me/submissions/:id` returns the form the submission was sent with. It is answered only for its owner, never for a rejected submission or a hidden event; otherwise it's 404. The read is `submission_form()` in migration 16.
+  - The form opens with everything copied except the date and time, under a "Copied from …" line. A new start moves the end by the original length.
+  - "Add another date" on the thanks screen does the same from the event just sent, without a server call.
+  - Each date is its own submission and counts once against the month's events.
+- **No mockup** (owner, 2026-10-28). The card reuses the usage card's look; icons already in use (`locate`, `copy`).
+- **Tests.**
+  - API: the owner's form, 404 for others or bad ids, and an account is needed.
+  - Database: owner only, never rejected or hidden.
+  - Web: the card only with a precise fix, the short form and what it sends, "More details", a copy with the same length, the 404 message, another date from the thanks screen, the account card buttons, the route and the time helpers.
+- **Checked** in the dev build at 380 px on a throwaway page with a stubbed `/api` (deleted): the card, the short form and a copied form.
+- **Not checked:** a real GPS fix on a phone. Signed in on the Cloudflare preview isn't possible yet, so add again against Supabase is untested, and migration 16 needs "Migrate database".
 
 ### 4.5 Recurring events by pattern (slice I)
 

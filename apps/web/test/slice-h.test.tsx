@@ -215,7 +215,13 @@ describe('the atlas bar in About (§6)', () => {
   it('sits whole inside About, with the theme and colour settings', () => {
     render(
       <ThemeProvider>
-        <About atlas={stub()} onClose={vi.fn()} onModerate={vi.fn()} onOpenEvent={vi.fn()} />
+        <About
+          atlas={stub()}
+          onClose={vi.fn()}
+          onModerate={vi.fn()}
+          onOpenEvent={vi.fn()}
+          onAddAgain={vi.fn()}
+        />
       </ThemeProvider>,
       { wrapper },
     );

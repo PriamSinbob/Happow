@@ -85,7 +85,13 @@ function renderAbout() {
     </I18nProvider>
   );
   return render(
-    <About atlas={atlas} onClose={vi.fn()} onModerate={vi.fn()} onOpenEvent={vi.fn()} />,
+    <About
+      atlas={atlas}
+      onClose={vi.fn()}
+      onModerate={vi.fn()}
+      onOpenEvent={vi.fn()}
+      onAddAgain={vi.fn()}
+    />,
     {
       wrapper: wrap,
     },

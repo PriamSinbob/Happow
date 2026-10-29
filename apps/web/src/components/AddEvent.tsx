@@ -17,6 +17,7 @@ import { SignInSheet } from './SignIn';
 import { AfterAdd } from './Contributor';
 import type { Reward } from '../contributions';
 import { shrinkPhoto } from '../photo';
+import { minutesBetween, nowInput, shiftInput } from '../formTime';
 
 /** What /api/autofill returns per event found on the page (mirrors packages/api `Prefill`). */
 interface Prefill {
@@ -77,6 +78,45 @@ const EMPTY: Form = {
   entry: null,
   terms: false,
 };
+
+/** A submission's form as the server stored it, read back for "add again" (M12 §4.4). */
+interface SentForm {
+  title: string;
+  categoryIds: string[];
+  venueName: string;
+  address?: string | null;
+  point: LatLng;
+  start: string;
+  end?: string | null;
+  isFree: boolean;
+  priceMin?: number | null;
+  currency?: string | null;
+  url?: string | null;
+  description?: string | null;
+  ageMin?: number | null;
+  family?: boolean | null;
+  entry?: EntryType | null;
+}
+
+/** Everything but the date and time, which the new event needs its own of. */
+function copyOf(s: SentForm): Form {
+  return {
+    ...EMPTY,
+    title: s.title,
+    categoryIds: s.categoryIds.slice(0, MAX_CATEGORIES),
+    venueName: s.venueName,
+    address: s.address ?? '',
+    point: s.point,
+    isFree: s.isFree,
+    amount: !s.isFree && s.priceMin != null ? String(s.priceMin) : '',
+    currency: s.currency ?? region.currency,
+    url: s.url ?? '',
+    description: s.description ?? '',
+    ageMin: s.ageMin ?? null,
+    family: s.family === true,
+    entry: s.entry ?? null,
+  };
+}
 
 /** The photo could not be decoded on the device (an unusual format, or a broken file). */
 class PhotoUnreadable extends Error {}
@@ -196,10 +236,16 @@ function Usage({ me }: { me: Me }) {
  * offers sign-in first (adding needs an account, M8 §2); signed in it shows this month's usage.
  */
 export function AddEvent({
+  again = null,
+  here = null,
   onClose,
   onOpenEvent,
   onOpenAccount,
 }: {
+  /** One of the account's submissions to copy for another date (M12 §4.4). */
+  again?: string | null;
+  /** A precise current location: offers "happening here, now" (M12 §4.3). */
+  here?: LatLng | null;
   onClose: () => void;
   onOpenEvent: (id: string) => void;
   /** The account card in About, with the contributor's impact. */
@@ -221,6 +267,17 @@ export function AddEvent({
   const [premiumOpen, setPremiumOpen] = useState(false);
   // Opened by sharing a page into Happow.
   const [shared, setShared] = useState(false);
+  // "Happening here, now": the short form, or expanded with "More details".
+  const [quick, setQuick] = useState<'compact' | 'full' | null>(null);
+  // The end follows the start: by the category's usual length after quick add, by the copied
+  // event's own length after add again; null once the end is set by hand.
+  const [follow, setFollow] = useState<'category' | number | null>(null);
+  const [copied, setCopied] = useState<
+    | { state: 'loading' }
+    | { state: 'ready'; title: string }
+    | { state: 'error'; message: string }
+    | null
+  >(again ? { state: 'loading' } : null);
   // The submit button turns off under the finger, so the message takes the focus.
   const ranOutAlert = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
@@ -257,6 +314,14 @@ export function AddEvent({
     { categoryIds: form.categoryIds, entry: null, graceMin: null },
     config.categories,
   ).entry;
+  const span =
+    follow === 'category'
+      ? (config.categories.find((c) => c.id === form.categoryIds[0])?.defaultDurationMin ?? null)
+      : follow;
+  useEffect(() => {
+    if (span !== null && form.start) setForm((f) => ({ ...f, end: shiftInput(f.start, span) }));
+  }, [span, form.start]);
+  const compact = quick === 'compact';
   // A prefilled page may give an age the choices lack (6+); offer it too.
   const ageChoices: (number | null)[] =
     form.ageMin !== null && !(AGE_CHOICES as readonly (number | null)[]).includes(form.ageMin)
@@ -342,6 +407,60 @@ export function AddEvent({
     else setForm((f) => ({ ...f, url: s.link ?? f.url, title: f.title || (s.title ?? '') }));
     // Once, when the form becomes ready; fillFrom reads the latest state itself.
   }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Add again (M12 §4.4): the account's own submission, copied but for the date.
+  useEffect(() => {
+    if (!again || !ready) return;
+    let live = true;
+    void (async () => {
+      try {
+        const { form: sent } = await api<{ form: SentForm }>(
+          `me/submissions/${encodeURIComponent(again)}`,
+          { token: await accessToken() },
+        );
+        if (!live) return;
+        setForm(copyOf(sent));
+        setFollow(minutesBetween(sent.start, sent.end ?? null));
+        setCopied({ state: 'ready', title: sent.title });
+      } catch (err) {
+        if (!live) return;
+        setCopied({
+          state: 'error',
+          message:
+            err instanceof ApiError && err.status === 404
+              ? t('add.again.gone')
+              : errorText(t, err, lang),
+        });
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [again, ready]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** "Happening here, now" (M12 §4.3): the pin where you are, starting now. */
+  function startQuick() {
+    if (!here) return;
+    setQuick('compact');
+    setFollow('category');
+    setGeo('idle');
+    setForm((f) => ({
+      ...f,
+      point: here,
+      start: nowInput(region.timezone, submissions.quickAdd.roundMin),
+    }));
+  }
+
+  /** From the thanks screen: the same event again, for another date. */
+  function addAnotherDate() {
+    const length = minutesBetween(form.start, form.end);
+    setDone(null);
+    setForm((f) => ({ ...f, start: '', end: '' }));
+    setFollow(length);
+    setQuick((q) => (q ? 'full' : q));
+    setTried(false);
+    setCopied({ state: 'ready', title: form.title });
+  }
 
   function apply(p: Prefill, index: number) {
     setChosen(index);
@@ -509,11 +628,17 @@ export function AddEvent({
                 setAutofill({ state: 'idle' });
                 setChosen(null);
                 setTried(false);
+                setQuick(null);
+                setFollow(null);
+                setCopied(null);
               }}
             >
               {t('add.another')}
             </button>
           </div>
+          <button type="button" className="inline-link" onClick={addAnotherDate}>
+            {t('add.again')}
+          </button>
         </div>
         {me && <Usage me={me} />}
       </Screen>
@@ -531,7 +656,35 @@ export function AddEvent({
           {t('add.shared')}
         </p>
       )}
-      {autofillOn && (
+      {here && !again && !copied && !quick && (
+        <section className="quick" aria-labelledby="quick-title">
+          <h3 id="quick-title" className="quick__title">
+            {t('add.quick.title')}
+          </h3>
+          <p className="quick__text">{t('add.quick.text')}</p>
+          <button type="button" className="btn btn--primary btn--block" onClick={startQuick}>
+            <Icon name="locate" size={18} />
+            {t('add.quick.start')}
+          </button>
+        </section>
+      )}
+      {copied?.state === 'loading' && (
+        <p className="field__hint" role="status">
+          {t('add.again.loading')}
+        </p>
+      )}
+      {copied?.state === 'error' && (
+        <p className="form-error" role="alert">
+          {copied.message}
+        </p>
+      )}
+      {copied?.state === 'ready' && (
+        <p className="add-shared" role="status">
+          <Icon name="copy" size={15} />
+          {t('add.again.copied', { title: copied.title })}
+        </p>
+      )}
+      {autofillOn && !quick && !copied && (
         <>
           <form className="autofill" onSubmit={fill}>
             <label className="field">
@@ -666,31 +819,36 @@ export function AddEvent({
           </div>
         </fieldset>
 
-        <div className="field-pair">
-          <label className="field">
-            <span className="field__label">
-              {t('add.field.start')} {required('start')}
-            </span>
-            <input
-              type="datetime-local"
-              value={form.start}
-              onChange={(e) => set('start', e.target.value)}
-              aria-invalid={invalid.has('start')}
-            />
-          </label>
-          <label className="field">
-            <span className="field__label">
-              {t('add.field.end')} {required('end')}
-            </span>
-            <input
-              type="datetime-local"
-              value={form.end}
-              min={form.start || undefined}
-              onChange={(e) => set('end', e.target.value)}
-              aria-invalid={invalid.has('end')}
-            />
-          </label>
-        </div>
+        {!compact && (
+          <div className="field-pair">
+            <label className="field">
+              <span className="field__label">
+                {t('add.field.start')} {required('start')}
+              </span>
+              <input
+                type="datetime-local"
+                value={form.start}
+                onChange={(e) => set('start', e.target.value)}
+                aria-invalid={invalid.has('start')}
+              />
+            </label>
+            <label className="field">
+              <span className="field__label">
+                {t('add.field.end')} {required('end')}
+              </span>
+              <input
+                type="datetime-local"
+                value={form.end}
+                min={form.start || undefined}
+                onChange={(e) => {
+                  set('end', e.target.value);
+                  setFollow(null);
+                }}
+                aria-invalid={invalid.has('end')}
+              />
+            </label>
+          </div>
+        )}
 
         <label className="field">
           <span className="field__label">
@@ -703,40 +861,44 @@ export function AddEvent({
             aria-invalid={invalid.has('venueName')}
           />
         </label>
-        <label className="field">
-          <span className="field__label">{t('add.field.address')}</span>
-          <span className="field__row">
-            <input
-              value={form.address}
-              maxLength={200}
-              autoComplete="street-address"
-              onChange={(e) => set('address', e.target.value)}
-            />
-            <button
-              type="button"
-              className="btn btn--inline"
-              disabled={geo === 'loading' || (form.address || form.venueName).trim().length < 3}
-              onClick={() => locate(form.address || form.venueName)}
-            >
-              <Icon name="search" size={16} />
-              {t('add.findOnMap')}
-            </button>
-          </span>
-        </label>
-        <div className="field">
-          <span className="field__label">{required('point')}</span>
-          <PinMap
-            point={form.point}
-            onChange={(p) => {
-              set('point', p);
-              setGeo('idle');
-            }}
-            label={t('add.pinHint')}
-          />
-          <span className={`field__hint${geo === 'notFound' ? ' is-warn' : ''}`}>
-            {geo === 'notFound' ? t('add.notOnMap') : t('add.pinHint')}
-          </span>
-        </div>
+        {!compact && (
+          <>
+            <label className="field">
+              <span className="field__label">{t('add.field.address')}</span>
+              <span className="field__row">
+                <input
+                  value={form.address}
+                  maxLength={200}
+                  autoComplete="street-address"
+                  onChange={(e) => set('address', e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn btn--inline"
+                  disabled={geo === 'loading' || (form.address || form.venueName).trim().length < 3}
+                  onClick={() => locate(form.address || form.venueName)}
+                >
+                  <Icon name="search" size={16} />
+                  {t('add.findOnMap')}
+                </button>
+              </span>
+            </label>
+            <div className="field">
+              <span className="field__label">{required('point')}</span>
+              <PinMap
+                point={form.point}
+                onChange={(p) => {
+                  set('point', p);
+                  setGeo('idle');
+                }}
+                label={t('add.pinHint')}
+              />
+              <span className={`field__hint${geo === 'notFound' ? ' is-warn' : ''}`}>
+                {geo === 'notFound' ? t('add.notOnMap') : t('add.pinHint')}
+              </span>
+            </div>
+          </>
+        )}
 
         <fieldset className="field">
           <legend className="field__label">
@@ -771,73 +933,86 @@ export function AddEvent({
           </label>
         )}
 
-        <fieldset className="field">
-          <legend className="field__label">{t('add.field.entry')}</legend>
-          <div className="segmented segmented--2" role="radiogroup">
-            {ENTRY_TYPES.map((type) => {
-              const on = (form.entry ?? defaultEntry) === type;
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  className={on ? 'is-active' : ''}
-                  onClick={() => set('entry', type)}
-                >
-                  {t(`add.entry.${type}`)}
-                </button>
-              );
-            })}
+        {compact ? (
+          <div className="quick-summary">
+            <p className="field__hint">
+              {t('add.quick.summary', { time: formatTime(`${form.start}:00Z`, 'UTC', lang) })}
+            </p>
+            <button type="button" className="inline-link" onClick={() => setQuick('full')}>
+              {t('add.quick.more')}
+            </button>
           </div>
-          <span className="field__hint">{t('add.entry.hint')}</span>
-        </fieldset>
+        ) : (
+          <>
+            <fieldset className="field">
+              <legend className="field__label">{t('add.field.entry')}</legend>
+              <div className="segmented segmented--2" role="radiogroup">
+                {ENTRY_TYPES.map((type) => {
+                  const on = (form.entry ?? defaultEntry) === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      className={on ? 'is-active' : ''}
+                      onClick={() => set('entry', type)}
+                    >
+                      {t(`add.entry.${type}`)}
+                    </button>
+                  );
+                })}
+              </div>
+              <span className="field__hint">{t('add.entry.hint')}</span>
+            </fieldset>
 
-        <fieldset className="field">
-          <legend className="field__label">{t('add.field.age')}</legend>
-          <div className="segmented segmented--age" role="radiogroup">
-            {ageChoices.map((age) => (
-              <button
-                key={String(age)}
-                type="button"
-                role="radio"
-                aria-checked={form.ageMin === age}
-                className={form.ageMin === age ? 'is-active' : ''}
-                onClick={() => set('ageMin', age)}
-              >
-                {age === null ? t('add.age.none') : `${age}+`}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={form.family}
-            onChange={(e) => set('family', e.target.checked)}
-          />
-          <span>{t('add.field.family')}</span>
-        </label>
+            <fieldset className="field">
+              <legend className="field__label">{t('add.field.age')}</legend>
+              <div className="segmented segmented--age" role="radiogroup">
+                {ageChoices.map((age) => (
+                  <button
+                    key={String(age)}
+                    type="button"
+                    role="radio"
+                    aria-checked={form.ageMin === age}
+                    className={form.ageMin === age ? 'is-active' : ''}
+                    onClick={() => set('ageMin', age)}
+                  >
+                    {age === null ? t('add.age.none') : `${age}+`}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={form.family}
+                onChange={(e) => set('family', e.target.checked)}
+              />
+              <span>{t('add.field.family')}</span>
+            </label>
 
-        <label className="field">
-          <span className="field__label">{t('add.field.url')}</span>
-          <input
-            type="url"
-            inputMode="url"
-            placeholder="https://"
-            value={form.url}
-            onChange={(e) => set('url', e.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span className="field__label">{t('add.field.description')}</span>
-          <textarea
-            rows={3}
-            maxLength={submissions.maxDescriptionChars}
-            value={form.description}
-            onChange={(e) => set('description', e.target.value)}
-          />
-        </label>
+            <label className="field">
+              <span className="field__label">{t('add.field.url')}</span>
+              <input
+                type="url"
+                inputMode="url"
+                placeholder="https://"
+                value={form.url}
+                onChange={(e) => set('url', e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span className="field__label">{t('add.field.description')}</span>
+              <textarea
+                rows={3}
+                maxLength={submissions.maxDescriptionChars}
+                value={form.description}
+                onChange={(e) => set('description', e.target.value)}
+              />
+            </label>
+          </>
+        )}
 
         <p className="notice">
           {submissions.publishBeforeModeration ? t('add.notice') : t('add.noticePending')}

@@ -2854,3 +2854,50 @@ button.account-card__plan {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
+
+/* Quick add and add again (M12 slice H): built from the usage card and add-form styles, no mockup
+   (owner, 2026-10-28). */
+.quick {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.quick__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+.quick__text {
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--quiet);
+}
+.quick-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin: 0 0 12px;
+}
+.quick-summary .field__hint {
+  margin: 0;
+}
+.my-events.my-events li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.my-events__row {
+  flex: 1;
+  min-width: 0;
+}
+.my-events__again {
+  flex: none;
+  font-size: 13px;
+}

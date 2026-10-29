@@ -493,6 +493,18 @@ export const en = {
   'add.photo.reading': 'Reading the poster…',
   'add.photo.notFound': "Couldn't read an event from this photo. Fill in the form below.",
   'add.photo.unreadable': "This photo couldn't be opened. Try another one.",
+  // Quick add and add again (M12 slice H)
+  'add.quick.title': 'Happening here, now?',
+  'add.quick.text': 'Add it in a few taps: the pin goes where you are, and it starts now.',
+  'add.quick.start': 'Add it here',
+  'add.quick.summary': 'Pin at your location · starts {time}',
+  'add.quick.more': 'More details',
+  'add.again': 'Add another date',
+  'add.again.loading': 'Copying your event…',
+  'add.again.copied': 'Copied from “{title}”. Pick the new date and time.',
+  'add.again.gone': "This event can't be added again.",
+  'contrib.again': 'Add again',
+  'contrib.againFor': 'Add “{title}” again',
   'error.photo_unavailable':
     "Reading photos isn't available right now. Try again later, or fill in the form.",
   'error.photo_too_large': 'This photo is too large. Try another one.',

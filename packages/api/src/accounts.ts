@@ -173,6 +173,14 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
         });
       return json(await profile(user));
     }
+    if (req.method === 'GET' && path[0] === 'submissions' && path.length === 2) {
+      // "Add again" (M12 §4.4): the owner's own form, for another date. Anyone else gets 404.
+      const id = path[1]!;
+      if (!uuid.safeParse(id).success) throw new ApiError(404, 'not_found');
+      const form = await db.rpc<object | null>('submission_form', { p_user: user.id, p_id: id });
+      if (!form) throw new ApiError(404, 'not_found');
+      return json({ form }, 200, { 'cache-control': 'private, no-store' });
+    }
     if (req.method === 'GET' && sub === 'export') {
       const data = await db.rpc<object>('account_export', { p_user: user.id });
       const day = now().toISOString().slice(0, 10);

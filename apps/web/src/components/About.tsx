@@ -23,6 +23,7 @@ export function About({
   onClose,
   onModerate,
   onOpenEvent,
+  onAddAgain,
 }: {
   /** The local atlas (§6): its bar sits with the theme and colour settings. */
   atlas: Atlas;
@@ -30,6 +31,8 @@ export function About({
   onModerate: () => void;
   /** One of the account's own events, from the contributor section. */
   onOpenEvent: (id: string) => void;
+  /** Opens the add form copied from one of the account's submissions (M12 §4.4). */
+  onAddAgain: (submissionId: string) => void;
 }) {
   const { t, lang } = useI18n();
   const theme = useTheme();
@@ -63,6 +66,7 @@ export function About({
               onPremium={() => setSheet('premium')}
               onDelete={() => setSheet('delete')}
               onOpenEvent={onOpenEvent}
+              onAddAgain={onAddAgain}
             />
           </>
         )}
