@@ -24,6 +24,7 @@ import { normalize, type RejectReason } from './normalize.js';
 import type { EventStore } from './store.js';
 import type { NormalizedEvent, ParsedEvent, RawEvent, SourceAdapter } from './types.js';
 import { venueJobs, type JobStats } from './venues/jobs.js';
+import { accountFeedsJob } from './feeds.js';
 import { distanceM } from './venues/osm.js';
 
 export interface IngestOptions {
@@ -90,7 +91,9 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
     };
 
     const adapter = adapters[source.adapter];
-    const job = venueJobs[source.adapter];
+    const job =
+      venueJobs[source.adapter] ??
+      (source.adapter === 'account-feeds' ? accountFeedsJob : undefined);
     if (!adapter && !job) {
       // e.g. the manual seed, loaded by `pnpm db:seed`.
       if (opts.sourceIds?.includes(source.id)) skip(`no ingest adapter "${source.adapter}"`);
@@ -123,6 +126,7 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
           fetch: opts.fetch,
           sleep: opts.sleep,
           log,
+          geocoder: opts.geocoder,
         });
         if (runId !== null) await store!.finishRun(runId, 'ok', stats);
         log(`✓ ${source.id}@${region.id}: ${JSON.stringify(stats)}`);

@@ -2924,3 +2924,11 @@ button.account-card__plan {
   background: var(--ink);
   color: var(--paper);
 }
+
+/* Calendar feeds on the account card (M12 slice L): the contributor section's list and fields. */
+.feeds__add {
+  margin-top: 8px;
+}
+.my-events__meta.is-warn {
+  color: var(--warn-ink);
+}

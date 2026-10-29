@@ -17,6 +17,8 @@ export type ApiErrorCode =
   | 'quota_exceeded'
   | 'photo_unavailable'
   | 'photo_too_large'
+  | 'too_many_feeds'
+  | 'feed_stopped'
   | 'account_required'
   | 'auth_failed'
   | 'server_error'

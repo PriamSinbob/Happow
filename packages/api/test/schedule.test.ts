@@ -27,6 +27,7 @@ const allFresh = [
   'osm-venues',
   'venue-probe',
   'venue-sites',
+  'account-feeds',
 ].map((id) => okRow(id));
 
 function fake(rows: unknown[], dispatchStatus = 204) {

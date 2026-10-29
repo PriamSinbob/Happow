@@ -41,6 +41,7 @@ import { normalize } from '@happow/ingest/normalize';
 import { z } from 'zod';
 import { accountRoutes, quotaExceeded } from './accounts.js';
 import { contributionRoutes } from './contributions.js';
+import { feedRoutes } from './feeds.js';
 import { ApiError, body, json, sha256 } from './http.js';
 import { premiumProviders, premiumRoutes, type PremiumProvider } from './premium.js';
 import { dispatchDueIngest, type ScheduleEnv } from './schedule.js';
@@ -250,6 +251,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     requireUser: accounts.requireUser,
     planOf: accounts.planOf,
   });
+
+  const feeds = feedRoutes({ config, need, requireUser: accounts.requireUser, limit });
 
   const regionFor = (id?: string): Region => getRegion(config, id);
   /** The signed-in user when the request carries a token (a bad token is 401), else null. */
@@ -869,8 +872,10 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'moderation') return await moderation(req, rest);
       if (head === 'me' && rest.join('/') === 'contributions' && req.method === 'GET')
         return json(await contributions.mine((await accounts.requireUser(req)).id));
+      if (head === 'me' && rest[0] === 'feeds') return await feeds.mine(req, rest.slice(1));
       if (head === 'me') return await accounts.me(req, rest);
       if (head === 'auth') return await accounts.auth(req, rest);
+      if (head === 'admin' && rest[0] === 'feeds') return await feeds.admin(req, rest.slice(1));
       if (head === 'admin') return await accounts.admin(req, rest);
       if (head === 'premium') return await premium(req, rest);
       if (head === 'area' && req.method === 'GET' && !rest.length) return await area(req);

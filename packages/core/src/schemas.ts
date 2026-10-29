@@ -634,6 +634,8 @@ export const plansConfigSchema = z
         premiumDaysPerMonth: z.number().int().nonnegative(),
         /** Verified events with no rejection after which new events skip the queue. */
         trustedAfter: z.number().int().positive(),
+        /** Calendar feeds an account may import from (M12 §4.6). */
+        feedsPerAccount: z.number().int().min(0).default(2),
         /** Ascending: a level needs both its verified events and opens of the account's events. */
         levels: z
           .array(
