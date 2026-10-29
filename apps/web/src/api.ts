@@ -15,6 +15,8 @@ export type ApiErrorCode =
   | 'already_reviewed'
   | 'not_found'
   | 'quota_exceeded'
+  | 'photo_unavailable'
+  | 'photo_too_large'
   | 'account_required'
   | 'auth_failed'
   | 'server_error'

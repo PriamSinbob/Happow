@@ -4,7 +4,7 @@ Oct 26, 2026
 
 Spec from the scope draft of 2026-10-26 (agreed in direction by the owner the same day) and the owner's answers to its questions (§9). M12 comes right after M8. Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics), C1 (OSM venues, the website check and accepted sites), C2 (the Sources tab), D (share into Happow) and E (contributions on the server), 2026-10-28; F (your impact and the contributor card), 2026-10-29. Slice B is folded into C.
+**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics), C1 (OSM venues, the website check and accepted sites), C2 (the Sources tab), D (share into Happow) and E (contributions on the server), 2026-10-28; F (your impact and the contributor card) and G (poster photo), 2026-10-29. Slice B is folded into C.
 
 Goal: **more events on the map, and more people adding events in the app.** Both halves matter. The reasons to add events (§6) matter most. The brief's rules hold throughout: no streaks, no guilt mechanics, no fake urgency, pull not push, and paid never buys visibility. Every source and provider lives in config, each adapter gets a contract test on recorded fixtures, and CI makes no live API calls.
 
@@ -21,7 +21,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 | D     | §4.1      | Share into Happow: PWA share target opens the add form filling from the link                                            | —     | no     | built   |
 | E     | §5        | Contributions on the server: rewards ledger, impact counters, premium days, trusted contributor, levels, credit opt-in  | —     | —      | built   |
 | F     | §5 UI     | Your impact and contributor card: after-add screen, account card, level, credit toggle                                  | E     | waived | built   |
-| G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                             | D     | yes    | planned |
+| G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                             | D     | waived | built   |
 | H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                               | F     | yes    | planned |
 | I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                             | H     | yes    | planned |
 | J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                        | C     | —      | planned |
@@ -179,6 +179,28 @@ All paths end in the M8 add form and the same server endpoint. Quotas stay as in
 - Counts as one autofill, only when it fills something. Bounded by the global daily cap `extraction.autofillLlmPerDay` (owner, §9.5). Model and limits in config.
 - The photo is not stored and not sent anywhere else; the event gets no image from it (copyright rule).
 - **Tests.** The endpoint with a fake extractor: quota taken only on a useful fill, cap reached, oversize rejected.
+
+#### Built (slice G, 2026-10-29)
+
+- **Form.** "Photo of a poster" (Tabler `camera`, owner OK 2026-10-29) sits under the link field and behaves like it:
+  - it's off when autofill is off or used up;
+  - it shows "Reading the poster…" while working;
+  - several events give the same pick-one list, up to 5;
+  - nothing found says so and leaves the form for manual entry.
+- **On the phone** (`apps/web/src/photo.ts`). The photo is redrawn to `extraction.photo.maxEdge` (1568 px) on its long edge, as a JPEG at `jpegQuality` (0.85), the right way up. The original never leaves the phone. Checked in the browser: 4000 × 3000 became 1568 × 1176, about 20 KB for a simple test image.
+- **Server.** `POST /api/autofill/photo {image, mediaType, regionId}`:
+  - it needs an account, with the same hourly limit and monthly quota as the link (checked first, taken only when it fills something) and the shared daily LLM cap;
+  - over `extraction.photo.maxBytes` (1.5 MB) gives 413, and only JPEG, PNG and WebP are accepted;
+  - no image reader, or today's cap spent, gives 503 `photo_unavailable`, so the form says reading is unavailable, not that nothing was found.
+- **Shared.** The link and the photo now share the quota check and the prefill step.
+- **Extractor.** `ClaudeExtractor.extractImage` sends the image before the text, with a poster prompt (read only what is printed; skip logos, phone numbers and QR codes) and the same rules and strict schema as pages. A page request is unchanged. Links on a poster are kept only when absolute. The photo is not stored, and the event never gets it as its image.
+- **Privacy.** About's privacy list says, whenever autofill is on, that page text or a photo goes to an AI service only to be read and is not kept.
+- **Tests.**
+  - extractor: the image request shape and prompt;
+  - endpoint: a fill, nothing found or failed, cap and no reader, oversize and wrong type, account and quota;
+  - web: the fill, several events, nothing found, unavailable, used up, and the resize sizing.
+- **Checked** in the dev build at 380 px on a throwaway page with a stubbed `/api` (deleted): real shrinking, and picking a photo fills the form.
+- **Not checked:** a real Claude read of a real poster, and the phone camera. The Cloudflare preview can't sign in, and CI makes no live calls.
 
 ### 4.3 "Happening here" quick add (slice H)
 

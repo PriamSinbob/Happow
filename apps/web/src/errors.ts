@@ -15,6 +15,8 @@ export function errorText(t: Translate, err: unknown, lang: Language): string {
     case 'invalid_input':
     case 'unknown_event':
     case 'account_required':
+    case 'photo_unavailable':
+    case 'photo_too_large':
       return t(`error.${code}`);
     case 'outside_region':
       return t('error.outside_region', { region: region.name[lang] });

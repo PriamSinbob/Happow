@@ -509,4 +509,15 @@ export const pl: Record<MessageKey, string> = {
   'admin.trust.confirm': 'Przywróć',
   'admin.trust.done': 'Zaufanie przywrócone dla {email}.',
   'admin.trust.notFound': 'Brak konta z tym adresem.',
+  // M12 slice G: zdjęcie plakatu
+  'add.photo': 'Zdjęcie plakatu',
+  'add.photo.reading': 'Czytam plakat…',
+  'add.photo.notFound':
+    'Nie udało się odczytać wydarzenia z tego zdjęcia. Uzupełnij formularz poniżej.',
+  'add.photo.unreadable': 'Nie udało się otworzyć tego zdjęcia. Spróbuj innego.',
+  'error.photo_unavailable':
+    'Czytanie zdjęć jest teraz niedostępne. Spróbuj później albo uzupełnij formularz.',
+  'error.photo_too_large': 'To zdjęcie jest za duże. Spróbuj innego.',
+  'about.privacy.autofill':
+    'Gdy wypełniasz formularz z linku albo zdjęcia plakatu, tekst strony lub zdjęcie trafia do usługi AI tylko do odczytania. Nie jest przechowywane.',
 };

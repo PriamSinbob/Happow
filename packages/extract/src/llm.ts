@@ -14,21 +14,38 @@ export interface ExtractInput {
   categories: { id: string; label: string }[];
 }
 
+/** A photo of a poster or flyer (M12 §4.2), already shrunk on the device. */
+export interface ImageInput {
+  /** Base64, no data: prefix. */
+  data: string;
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp';
+  today: string;
+  timeZone: string;
+  categories: { id: string; label: string }[];
+}
+
 /** Turns page text into events when a page has no structured data. Swappable behind config. */
 export interface Extractor {
   /** Identifies provider + model, part of the extraction cache key. */
   readonly id: string;
   extract(input: ExtractInput): Promise<ExtractedEvent[]>;
+  /** Reads a poster photo; absent when the provider cannot read images. */
+  extractImage?(input: ImageInput): Promise<ExtractedEvent[]>;
 }
 
 export class ExtractionRefusedError extends Error {}
 
 // Stable across requests so it can be cached; everything that varies goes in the user message.
-const SYSTEM = `You extract real-world events from the text of one web page, for a map of what is happening near the reader.
+const PAGE_INTRO = `You extract real-world events from the text of one web page, for a map of what is happening near the reader.
 
-Return every event on the page that takes place at a physical place and has a date. A listing page can hold many events; an event page usually holds one, plus "similar events" teasers that you should skip unless the page is itself a listing. Skip online-only events unless you mark them as online_only, and skip navigation, ads, newsletters and opening hours that are not events.
+Return every event on the page that takes place at a physical place and has a date. A listing page can hold many events; an event page usually holds one, plus "similar events" teasers that you should skip unless the page is itself a listing. Skip online-only events unless you mark them as online_only, and skip navigation, ads, newsletters and opening hours that are not events.`;
 
-Report only what the page states. Use null when the page does not say (for example no end time or no price); never invent a venue, address, time or price. Dates and times are local to the given time zone: write dates as YYYY-MM-DD and times as HH:MM (24 h). When the page gives a day and month without a year, choose the next such date on or after today.
+const POSTER_INTRO = `You extract real-world events from a photo of a poster, flyer or programme, for a map of what is happening near the reader.
+
+Return every event printed on it that takes place at a physical place and has a date: a poster usually holds one, a programme several. Read only what is printed. Skip sponsor and partner logos, phone numbers, social media handles and QR codes, and anything only half visible or cut off. A poster in a photo of a wall or a window is still the subject; ignore other posters around it unless they are fully readable.`;
+
+// The rules both share; "the page" also means the poster when reading a photo.
+const RULES = `Report only what the page states. Use null when the page does not say (for example no end time or no price); never invent a venue, address, time or price. Dates and times are local to the given time zone: write dates as YYYY-MM-DD and times as HH:MM (24 h). When the page gives a day and month without a year, choose the next such date on or after today.
 
 Keep titles in the page's language and as written, without prices or ticket text. category_ids must come from the given list; pick one, or two if both clearly apply.
 
@@ -37,6 +54,9 @@ Age and audience: age_min is the youngest age let in, as a number. Polish pages 
 entry is "fixed" when the event has a set start that people should be there for (a play, a film, a seated or ticketed concert, a talk, a match, "początek o 19:00", "wpuszczanie do 18:50") and "open" when people come and go while it runs (a club night or DJ set, a fair, a market, an exhibition, a festival day, "wstęp wolny przez cały dzień"). A concert is fixed, a club night is open. Use null when you cannot tell.
 
 confidence is how sure you are about the title, date, start time and place together: about 0.9 when all are stated plainly, 0.6 when one had to be inferred, 0.3 or lower when the page is ambiguous.`;
+
+const SYSTEM = `${PAGE_INTRO}\n\n${RULES}`;
+const POSTER_SYSTEM = `${POSTER_INTRO}\n\n${RULES}`;
 
 // Enums are not enforced by the structured-output schema the SDK derives from zod (they become
 // descriptions), and an unknown value would fail the parse; take plain strings and filter in code.
@@ -68,6 +88,9 @@ function schema(categoryIds: string[]) {
   return z.object({ events: z.array(event) });
 }
 
+const categoryList = (categories: { id: string; label: string }[]) =>
+  categories.map((c) => `${c.id}: ${c.label}`).join('; ');
+
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^\d{2}:\d{2}$/;
 
@@ -76,10 +99,11 @@ function when(date: string | null, time: string | null): string | null {
   return time && TIME.test(time) ? `${date}T${time}` : date;
 }
 
-function safeUrl(s: string | null, base: string): string | null {
+/** http(s) links only; without a base (a poster) only absolute links are kept. */
+function safeUrl(s: string | null, base: string | null): string | null {
   if (!s) return null;
   try {
-    const u = new URL(s, base);
+    const u = new URL(s, base ?? undefined);
     return u.protocol === 'https:' || u.protocol === 'http:' ? u.toString() : null;
   } catch {
     return null;
@@ -111,13 +135,44 @@ export class ClaudeExtractor implements Extractor {
   }
 
   async extract(input: ExtractInput): Promise<ExtractedEvent[]> {
-    const ids = input.categories.map((c) => c.id);
-    if (!ids.length) throw new Error('no categories configured');
     const text = input.text.slice(0, this.opts.maxInputChars);
+    return this.run(SYSTEM, input.categories, input.url, [
+      [
+        `Page URL: ${input.url}`,
+        `Today: ${input.today} (time zone ${input.timeZone})`,
+        `Categories (id: label): ${categoryList(input.categories)}`,
+        '',
+        '<page_text>',
+        text,
+        '</page_text>',
+      ].join('\n'),
+    ]);
+  }
+
+  /** The photo goes before the text, as the API recommends for images. Nothing is kept. */
+  async extractImage(input: ImageInput): Promise<ExtractedEvent[]> {
+    return this.run(POSTER_SYSTEM, input.categories, null, [
+      { type: 'image', source: { type: 'base64', media_type: input.mediaType, data: input.data } },
+      [
+        `Today: ${input.today} (time zone ${input.timeZone})`,
+        `Categories (id: label): ${categoryList(input.categories)}`,
+        'Read the events on this poster.',
+      ].join('\n'),
+    ]);
+  }
+
+  private async run(
+    system: string,
+    categories: { id: string }[],
+    base: string | null,
+    content: (string | Anthropic.ImageBlockParam)[],
+  ): Promise<ExtractedEvent[]> {
+    const ids = categories.map((c) => c.id);
+    if (!ids.length) throw new Error('no categories configured');
     const message = await this.client.messages.parse({
       model: this.opts.model,
       max_tokens: this.opts.maxTokens,
-      system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+      system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
       output_config: {
         effort: this.opts.effort,
         format: zodOutputFormat(schema(ids)),
@@ -125,15 +180,11 @@ export class ClaudeExtractor implements Extractor {
       messages: [
         {
           role: 'user',
-          content: [
-            `Page URL: ${input.url}`,
-            `Today: ${input.today} (time zone ${input.timeZone})`,
-            `Categories (id: label): ${input.categories.map((c) => `${c.id}: ${c.label}`).join('; ')}`,
-            '',
-            '<page_text>',
-            text,
-            '</page_text>',
-          ].join('\n'),
+          // A page is one string, as before; a poster is the image, then the text.
+          content:
+            content.length === 1 && typeof content[0] === 'string'
+              ? content[0]
+              : content.map((c) => (typeof c === 'string' ? { type: 'text', text: c } : c)),
         },
       ],
     });
@@ -143,7 +194,6 @@ export class ClaudeExtractor implements Extractor {
       throw new Error('extraction hit max_tokens; raise extraction.maxTokens or shorten input');
     const out = message.parsed_output;
     if (!out) throw new Error('extraction returned no structured output');
-
     return out.events.flatMap((e): ExtractedEvent[] => {
       const start = when(e.start_date, e.start_time);
       if (!start || !e.title.trim()) return [];
@@ -160,8 +210,8 @@ export class ClaudeExtractor implements Extractor {
           priceMin: e.price_min !== null && e.price_min >= 0 ? e.price_min : null,
           priceMax: e.price_max !== null && e.price_max >= 0 ? e.price_max : null,
           currency: e.currency ? e.currency.toUpperCase().slice(0, 3) : null,
-          url: safeUrl(e.event_url, input.url),
-          ticketUrl: safeUrl(e.ticket_url, input.url),
+          url: safeUrl(e.event_url, base),
+          ticketUrl: safeUrl(e.ticket_url, base),
           imageUrl: null,
           status: e.status,
           ageMin: validAge(e.age_min),
