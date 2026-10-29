@@ -636,6 +636,13 @@ export const plansConfigSchema = z
         trustedAfter: z.number().int().positive(),
         /** Calendar feeds an account may import from (M12 §4.6). */
         feedsPerAccount: z.number().int().min(0).default(2),
+        /**
+         * "First added by you" (M12 §6.1): no other live event within `radiusM` that ended in the
+         * last `quietDays` or is still ahead.
+         */
+        firstPlace: z
+          .object({ radiusM: z.number().positive(), quietDays: z.number().int().positive() })
+          .default({ radiusM: 75, quietDays: 90 }),
         /** Ascending: a level needs both its verified events and opens of the account's events. */
         levels: z
           .array(

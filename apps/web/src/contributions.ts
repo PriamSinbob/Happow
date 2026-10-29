@@ -21,6 +21,9 @@ export interface MyEvent {
   opens: number;
   routes: number;
   arrivals: number;
+  thanks: number;
+  /** Nothing happened at its place lately when it was added (M12 §6.1). */
+  firstPlace: boolean;
 }
 
 /** GET /api/me/contributions. */
@@ -29,6 +32,8 @@ export interface Contributions {
   opens: number;
   routes: number;
   arrivals: number;
+  /** Thanks from visitors who arrived (M12 §6.4); only the adder sees them. */
+  thanks: number;
   trusted: boolean;
   monthDays: number;
   level: string | null;

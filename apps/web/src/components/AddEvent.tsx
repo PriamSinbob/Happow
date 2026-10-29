@@ -147,6 +147,8 @@ type Autofill =
 
 type Done = {
   status: 'published' | 'pending';
+  /** Nothing happened at its place lately: "first added by you" (M12 §6.1). */
+  firstPlace?: boolean;
   /** Every date of a weekly repeat (M12 §4.5). */
   dates?: { id: string; eventId: string | null }[];
   eventId: string | null;
@@ -662,6 +664,7 @@ export function AddEvent({
             {done.status === 'published' ? t('add.done.published') : t('add.done.pending')}
           </p>
           {done.dates && <p>{t('add.done.dates', { count: done.dates.length })}</p>}
+          {done.firstPlace && <p className="after-add__first">{t('add.done.firstPlace')}</p>}
           <AfterAdd reward={done.reward ?? null} onOpenAccount={onOpenAccount} />
           <div className="event-card__actions">
             {done.eventId && (

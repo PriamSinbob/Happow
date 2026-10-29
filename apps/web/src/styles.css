@@ -2932,3 +2932,20 @@ button.account-card__plan {
 .my-events__meta.is-warn {
   color: var(--warn-ink);
 }
+
+/* Places first and thanks (M12 slice M): quiet ink, never the live colour (thanks, not alerts). */
+.impact__stat:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.my-events__first,
+.after-add__first {
+  color: var(--ink);
+}
+.go__thanked {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink);
+}

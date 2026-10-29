@@ -540,6 +540,13 @@ export const en = {
   'mod.feed': 'From a calendar feed: {host}',
   'mod.feedStop': 'Stop this feed',
   'mod.feedStopped': 'Feed stopped',
+  // Places first and thanks (M12 slice M)
+  'contrib.stat.thanks': 'Thanks',
+  'contrib.firstPlace': 'first added by you',
+  'add.done.firstPlace':
+    'Nothing has happened here for a while: on your card it says first added by you.',
+  'nav.thanks': 'Thanks',
+  'nav.thanked': 'Thanks sent to whoever added it',
   'error.photo_unavailable':
     "Reading photos isn't available right now. Try again later, or fill in the form.",
   'error.photo_too_large': 'This photo is too large. Try another one.',

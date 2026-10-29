@@ -43,6 +43,7 @@
     "premiumDaysPerMonth": 30,
     "trustedAfter": 5,
     "feedsPerAccount": 2,
+    "firstPlace": { "radiusM": 75, "quietDays": 90 },
     "levels": [
       {
         "id": "neighbour",

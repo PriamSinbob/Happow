@@ -27,7 +27,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 | J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                        | C     | —      | built   |
 | K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                              | B     | —      | built   |
 | L     | §4.6      | Calendar feed import for an account                                                                                     | B, E  | waived | built   |
-| M     | §6.1, 6.4 | Places first on the map, and thanks from visitors after GoThere                                                         | E, F  | yes    | planned |
+| M     | §6.1, 6.4 | Places first on the map, and thanks from visitors after GoThere                                                         | E, F  | waived | built   |
 | N     | §6.2–6.3  | District goals in empty states, and season collections                                                                  | A, F  | yes    | planned |
 | O     | §3        | Admin coverage view: events per district and category, today and the week                                               | A, C  | admin  | planned |
 
@@ -394,6 +394,14 @@ Adding the first event at a place with no event in the past 90 days and none upc
 ### 6.4 Thanks from visitors (slice M)
 
 After GoThere marks an arrival, a one-tap "Thanks" on the card. Anonymous, one per device per event. The adder sees the total in their impact. Never shown on the public card.
+
+#### Built (slice M, 2026-10-29)
+
+- **Places first** (§6.1). After a signed-in submission is stored, `first_place_mark()` (migration 19) marks it when no other live event within `contributions.firstPlace.radiusM` (75 m, about an H3 r10 cell, and it covers the same venue) ended in the last `quietDays` (90) or is still ahead; its own event and its series' dates don't count. The mark is on the submission, so only the adder sees it: "first added by you" on that event in the account card, and a line on the thanks screen. Nobody else sees anything extra; the place simply lights up by having an event. A failing mark never fails the submission.
+- **Thanks from visitors** (§6.4). When GoThere marks an arrival at an event someone added (`trust: community`), a "Thanks" button sits next to Close. One tap sends `POST /api/thanks {deviceId, eventId}`: anonymous (the hashed device id the counts use, no account), once per device and event (`event_thanks`, `thanks_add()`), with the counts' hourly guard. The device remembers it, so the button becomes "Thanks sent to whoever added it". The card never shows a count; the adder sees the total as a fifth stat in "your impact".
+- **No mockup** (owner, 2026-10-28); no new icons (`check`).
+- **Tests.** API: thanks (hashed device, the guard, 404 for an event nobody added), the mark's radius and days, a failing mark. Database (CI): a quiet place, a near recent event, far and old ones, own event excluded; thanks once per device, community only, the card's totals, no access for anon. Web: the button (sends once, remembered, no account sent, a failed send stays), the card's thanks stat and mark.
+- **Not checked:** a real arrival on a phone (the button was checked in tests, not in a live trip), signed in on the Cloudflare preview, and Supabase (migration 19 needs "Migrate database").
 
 ## 7. Free and paid after M12
 
