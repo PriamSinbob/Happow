@@ -14,7 +14,7 @@ import {
   type NearbyEvent,
   type Region,
 } from '@happow/core';
-import type { EventRepository } from './repository';
+import type { Credit, EventRepository } from './repository';
 
 /** Serves the region's bundled seed file, anchored at app start. Used when no API is configured. */
 export class StaticEventRepository implements EventRepository {
@@ -51,5 +51,10 @@ export class StaticEventRepository implements EventRepository {
   async byId(id: string, from: LatLng): Promise<NearbyEvent | null> {
     const e = (await this.events).find((x) => x.id === id);
     return e ? { ...e, distanceM: distanceM(from, e.point) } : null;
+  }
+
+  /** The bundled seed has no accounts. */
+  async credit(): Promise<Credit | null> {
+    return null;
   }
 }

@@ -14,6 +14,8 @@ import { PinMap } from './PinMap';
 import { PremiumMark, PremiumSheet } from './Premium';
 import { Screen } from './Screen';
 import { SignInSheet } from './SignIn';
+import { AfterAdd } from './Contributor';
+import type { Reward } from '../contributions';
 
 /** What /api/autofill returns per event found on the page (mirrors packages/api `Prefill`). */
 interface Prefill {
@@ -86,7 +88,12 @@ type Autofill =
   | { state: 'error'; message: string }
   | { state: 'found'; events: Prefill[] };
 
-type Done = { status: 'published' | 'pending'; eventId: string | null };
+type Done = {
+  status: 'published' | 'pending';
+  eventId: string | null;
+  /** Given at once to a trusted account's event (M12 §5.3). */
+  reward?: Reward;
+};
 
 function missing(f: Form): Set<keyof Form> {
   const m = new Set<keyof Form>();
@@ -183,9 +190,12 @@ function Usage({ me }: { me: Me }) {
 export function AddEvent({
   onClose,
   onOpenEvent,
+  onOpenAccount,
 }: {
   onClose: () => void;
   onOpenEvent: (id: string) => void;
+  /** The account card in About, with the contributor's impact. */
+  onOpenAccount: () => void;
 }) {
   const { t, lang } = useI18n();
   const [link, setLink] = useState('');
@@ -435,6 +445,7 @@ export function AddEvent({
           <p role="status">
             {done.status === 'published' ? t('add.done.published') : t('add.done.pending')}
           </p>
+          <AfterAdd reward={done.reward ?? null} onOpenAccount={onOpenAccount} />
           <div className="event-card__actions">
             {done.eventId && (
               <button

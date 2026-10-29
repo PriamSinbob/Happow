@@ -457,4 +457,56 @@ export const pl: Record<MessageKey, string> = {
     '{count, plural, one {Dodano # obszar} few {Dodano # obszary} many {Dodano # obszarów} other {Dodano # obszaru}}',
   'atlas.badFile': 'To nie jest plik miejsc Happow',
   'atlas.cleared': 'Miejsca zapomniane',
+  // M12 slice F: strona osoby dodającej
+  'add.done.toEarn':
+    'Po zatwierdzeniu przez moderatora dostajesz {count, plural, one {# dzień premium} other {# dni premium}}.',
+  'add.done.earned':
+    '+{count, plural, one {# dzień premium} other {# dni premium}} za to wydarzenie.',
+  'add.done.earnedFrom':
+    '+{count, plural, one {# dzień premium} other {# dni premium}} za to wydarzenie, liczone od {date}.',
+  'add.done.capReached':
+    'W tym miesiącu masz już {cap} dni premium. Twoje wydarzenia nadal liczą się do Twojego wpływu.',
+  'add.done.duplicate': 'To wydarzenie już było na mapie, więc tym razem bez dni premium.',
+  'add.done.impact': 'Zobacz swój wpływ',
+  'contrib.title': 'Twój wkład',
+  'contrib.next':
+    'Dalej: {level} przy {events, plural, one {# zweryfikowanym wydarzeniu} other {# zweryfikowanych wydarzeniach}} i {opens} otwarciach',
+  'contrib.nextEvents':
+    'Dalej: {level} przy {events, plural, one {# zweryfikowanym wydarzeniu} other {# zweryfikowanych wydarzeniach}}',
+  'contrib.stat.verified': 'Zweryfikowane wydarzenia',
+  'contrib.stat.opens': 'Otwarcia',
+  'contrib.stat.routes': 'Rozpoczęte trasy',
+  'contrib.stat.arrivals': 'Doszli na miejsce',
+  'contrib.trusted': 'Zaufana osoba',
+  'contrib.trustAfter':
+    'Po {count} zatwierdzonych wydarzeniach bez odrzucenia Twoje wydarzenia trafiają na mapę bez czekania na moderację.',
+  'contrib.monthDays': 'Dni premium zdobyte w tym miesiącu: {days} z {cap}',
+  'contrib.showName': 'Pokazuj moje imię przy dodanych wydarzeniach',
+  'contrib.showNameHint': 'Domyślnie wyłączone. Wyłączenie od razu ukrywa imię wszędzie.',
+  'contrib.shownAs': 'Widoczne jako {name}.',
+  'contrib.changeName': 'Zmień',
+  'contrib.name': 'Imię do pokazania',
+  'contrib.saveName': 'Zapisz',
+  'contrib.events': 'Twoje wydarzenia',
+  'contrib.state.live': 'Na mapie',
+  'contrib.state.pending': 'Czeka na moderację',
+  'contrib.state.duplicate': 'Już było na mapie',
+  'contrib.state.hidden': 'Ukryte',
+  'contrib.state.rejected': 'Nieopublikowane',
+  'contrib.opens':
+    '{count, plural, one {# otwarcie} few {# otwarcia} many {# otwarć} other {# otwarcia}}',
+  'contrib.days': '+{count, plural, one {# dzień} other {# dni}}',
+  'level.neighbour': 'Sąsiad',
+  'level.local': 'Tutejszy',
+  'level.guide': 'Przewodnik',
+  'level.cityGuide': 'Przewodnik miejski',
+  'event.addedBy': 'Dodane przez: {name}',
+  'event.addedByLevel': 'Dodane przez: {name} · {level}',
+  'admin.grants.source.contribution': 'za dodane wydarzenia',
+  'admin.trust.restore': 'Przywróć zaufanie',
+  'admin.trust.lead':
+    'Odrzucenie odbiera zaufanie. Po przywróceniu wydarzenia tej osoby znów omijają moderację.',
+  'admin.trust.confirm': 'Przywróć',
+  'admin.trust.done': 'Zaufanie przywrócone dla {email}.',
+  'admin.trust.notFound': 'Brak konta z tym adresem.',
 };

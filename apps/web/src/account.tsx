@@ -29,6 +29,9 @@ export interface Me {
   plan: PlanId;
   planSource: PlanSource | null;
   planEndsAt: string | null;
+  /** "Show my name on events I add" and that name (M12 §5.5). */
+  showName?: boolean;
+  displayName?: string | null;
   entitlements: Entitlements;
   usage: {
     month: string;

@@ -10,7 +10,7 @@ import {
   type NearbyEvent,
   type Trust,
 } from '@happow/core';
-import type { EventRepository } from './repository';
+import type { Credit, EventRepository } from './repository';
 
 const isFlagReason = (r: string): r is EventFlagReason =>
   r === SOURCE_MISSING || (FLAG_REASONS as readonly string[]).includes(r);
@@ -203,5 +203,15 @@ export class SupabaseEventRepository implements EventRepository {
       signal,
     );
     return row ? rowToEvent(row) : null;
+  }
+
+  async credit(eventId: string, signal?: AbortSignal): Promise<Credit | null> {
+    // A function returning one jsonb value: PostgREST sends the value itself (or null).
+    const value = (await this.rpc<unknown>(
+      'event_credit',
+      { p_event: eventId },
+      signal,
+    )) as unknown;
+    return value && typeof value === 'object' && 'name' in value ? (value as Credit) : null;
   }
 }

@@ -236,6 +236,10 @@ export function App() {
   };
   const close = useCallback(() => go(null), [go]);
   const detail = useEventDetail(repo, detailId ?? goId, events, searchCenter);
+  const loadCredit = useCallback(
+    (id: string, signal: AbortSignal) => repo.credit(id, signal),
+    [repo],
+  );
   useEffect(() => trackView(route?.name ?? 'map'), [route?.name]);
   const saved = useSaved();
 
@@ -643,6 +647,7 @@ export function App() {
           onClose={close}
           onReported={addMyReport}
           onGo={() => goThere(detailId)}
+          loadCredit={loadCredit}
         />
       )}
       {goId && (
@@ -659,11 +664,20 @@ export function App() {
         />
       )}
       {route?.name === 'add' && (
-        <AddEvent onClose={close} onOpenEvent={(id) => go({ name: 'event', id }, true)} />
+        <AddEvent
+          onClose={close}
+          onOpenEvent={(id) => go({ name: 'event', id }, true)}
+          onOpenAccount={() => go({ name: 'about' }, true)}
+        />
       )}
       {route?.name === 'moderate' && <Moderation onClose={close} />}
       {route?.name === 'about' && (
-        <About atlas={atlas} onClose={close} onModerate={() => go({ name: 'moderate' }, true)} />
+        <About
+          atlas={atlas}
+          onClose={close}
+          onModerate={() => go({ name: 'moderate' }, true)}
+          onOpenEvent={(id) => go({ name: 'event', id }, true)}
+        />
       )}
       {addGate && (
         <SignInSheet

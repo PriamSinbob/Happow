@@ -84,9 +84,12 @@ function renderAbout() {
       </AccountProvider>
     </I18nProvider>
   );
-  return render(<About atlas={atlas} onClose={vi.fn()} onModerate={vi.fn()} />, {
-    wrapper: wrap,
-  });
+  return render(
+    <About atlas={atlas} onClose={vi.fn()} onModerate={vi.fn()} onOpenEvent={vi.fn()} />,
+    {
+      wrapper: wrap,
+    },
+  );
 }
 
 beforeEach(() => {

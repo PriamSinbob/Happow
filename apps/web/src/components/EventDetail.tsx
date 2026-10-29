@@ -12,6 +12,8 @@ import { Glyph, Icon } from './Icons';
 import { glyphOf } from '../pins';
 import { ReportDialog } from './ReportDialog';
 import { countEvent } from '../counts';
+import type { Credit } from '../data/repository';
+import { levelKey } from '../contributions';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
 
@@ -26,6 +28,8 @@ interface Props {
   onReported: (id: string, reason: FlagReason) => void;
   /** Opens "Going there" (route inside the app). */
   onGo: () => void;
+  /** "Added by" for a community event, read live (M12 §5.5). */
+  loadCredit: (eventId: string, signal: AbortSignal) => Promise<Credit | null>;
 }
 
 /** Wall-clock midnight to midnight: a day-long listing (exhibitions, fairs). */
@@ -49,6 +53,7 @@ export function EventDetail({
   onClose,
   onReported,
   onGo,
+  loadCredit,
 }: Props) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
@@ -93,6 +98,7 @@ export function EventDetail({
           onToggleSave={onToggleSave}
           onReported={onReported}
           onGo={onGo}
+          loadCredit={loadCredit}
         />
       ) : (
         <p className="detail__empty" id="detail-title" aria-live="polite">
@@ -110,6 +116,7 @@ function DetailBody({
   onToggleSave,
   onReported,
   onGo,
+  loadCredit,
 }: {
   ev: NearbyEvent;
   now: Date;
@@ -117,8 +124,10 @@ function DetailBody({
   onToggleSave: () => void;
   onReported: Props['onReported'];
   onGo: () => void;
+  loadCredit: Props['loadCredit'];
 }) {
   const { t, lang } = useI18n();
+  const credit = useCredit(ev, loadCredit);
   const { running, price, distance, walk, categories } = useEventText(ev, now);
   const [toast, setToast] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
@@ -267,6 +276,13 @@ function DetailBody({
         )}
         {ev.endEstimated && <p className="footnote">* {t('event.endEstimated')}</p>}
 
+        {credit && (
+          <p className="detail__credit">
+            {credit.level
+              ? t('event.addedByLevel', { name: credit.name, level: t(levelKey(credit.level)) })
+              : t('event.addedBy', { name: credit.name })}
+          </p>
+        )}
         <p className="detail__source">
           {t('event.verified', {
             source,
@@ -313,4 +329,21 @@ function DetailBody({
       )}
     </div>
   );
+}
+
+/** Who added a community event, when they chose to show it; nothing for other events. */
+function useCredit(ev: NearbyEvent, load: Props['loadCredit']): Credit | null {
+  const [credit, setCredit] = useState<Credit | null>(null);
+  const community = ev.trust === 'community';
+  useEffect(() => {
+    setCredit(null);
+    if (!community) return;
+    const ctrl = new AbortController();
+    load(ev.id, ctrl.signal).then(
+      (c) => !ctrl.signal.aborted && setCredit(c),
+      () => {}, // a missing credit is the same as none
+    );
+    return () => ctrl.abort();
+  }, [ev.id, community, load]);
+  return credit;
 }

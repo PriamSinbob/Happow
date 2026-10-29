@@ -438,6 +438,56 @@ export const en = {
   'atlas.imported': '{count, plural, one {Added # area} other {Added # areas}}',
   'atlas.badFile': 'Not a Happow places file',
   'atlas.cleared': 'Places forgotten',
+  // M12 slice F: the contributor's side
+  'add.done.toEarn':
+    'Once a moderator approves it, you earn {count, plural, one {# premium day} other {# premium days}}.',
+  'add.done.earned': '+{count, plural, one {# premium day} other {# premium days}} for this event.',
+  'add.done.earnedFrom':
+    '+{count, plural, one {# premium day} other {# premium days}} for this event, counting from {date}.',
+  'add.done.capReached':
+    "You've earned this month's {cap} premium days. Your events still count in your impact.",
+  'add.done.duplicate': 'It was already on the map, so no premium days this time.',
+  'add.done.impact': 'See your impact',
+  'contrib.title': 'Your contributions',
+  'contrib.next':
+    'Next: {level} at {events, plural, one {# verified event} other {# verified events}} and {opens} opens',
+  'contrib.nextEvents':
+    'Next: {level} at {events, plural, one {# verified event} other {# verified events}}',
+  'contrib.stat.verified': 'Verified events',
+  'contrib.stat.opens': 'Opens',
+  'contrib.stat.routes': 'Routes started',
+  'contrib.stat.arrivals': 'Walked there',
+  'contrib.trusted': 'Trusted contributor',
+  'contrib.trustAfter':
+    'After {count} approved events with no rejection, your events go live without waiting for review.',
+  'contrib.monthDays': 'Premium days earned this month: {days} of {cap}',
+  'contrib.showName': 'Show my name on events I add',
+  'contrib.showNameHint': 'Off by default. Turning it off hides your name everywhere at once.',
+  'contrib.shownAs': 'Shown as {name}.',
+  'contrib.changeName': 'Change',
+  'contrib.name': 'Name to show',
+  'contrib.saveName': 'Save',
+  'contrib.events': 'Your events',
+  'contrib.state.live': 'On the map',
+  'contrib.state.pending': 'Waiting for review',
+  'contrib.state.duplicate': 'Already listed',
+  'contrib.state.hidden': 'Hidden',
+  'contrib.state.rejected': 'Not published',
+  'contrib.opens': '{count, plural, one {# open} other {# opens}}',
+  'contrib.days': '+{count, plural, one {# day} other {# days}}',
+  'level.neighbour': 'Neighbour',
+  'level.local': 'Local',
+  'level.guide': 'Guide',
+  'level.cityGuide': 'City guide',
+  'event.addedBy': 'Added by {name}',
+  'event.addedByLevel': 'Added by {name} · {level}',
+  'admin.grants.source.contribution': 'for added events',
+  'admin.trust.restore': 'Restore trust',
+  'admin.trust.lead':
+    "A rejection removes a contributor's trust. Restoring it lets their events skip the review again.",
+  'admin.trust.confirm': 'Restore',
+  'admin.trust.done': 'Trust restored for {email}.',
+  'admin.trust.notFound': 'No account with this email.',
 } as const;
 
 export type MessageKey = keyof typeof en;
