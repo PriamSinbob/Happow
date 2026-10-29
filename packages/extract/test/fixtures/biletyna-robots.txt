@@ -1,0 +1,25 @@
+User-agent: *
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+Disallow: /ajax/
+Disallow: /cart/
+Disallow: /event/index/
+Disallow: /event/sector/
+Disallow: /event/view/
+Disallow: /newsletter/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /profile/
+Disallow: /recenzje/
+Disallow: /zrobkabaret/
+
+User-agent: SeekportBot
+Disallow: /
+
+Sitemap: https://biletyna.pl/sitemap/sitemap-artists.xml
+Sitemap: https://biletyna.pl/sitemap/sitemap-categories.xml
+Sitemap: https://biletyna.pl/sitemap/sitemap-cities.xml
+Sitemap: https://biletyna.pl/sitemap/sitemap-events.xml
+Sitemap: https://biletyna.pl/sitemap/sitemap-halls.xml
+Sitemap: https://biletyna.pl/sitemap/sitemap-tags.xml
+Sitemap: https://biletyna.pl/sitemap/sitemap-organizing-companies.xml
+

@@ -25,7 +25,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 | H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                               | F     | waived | built   |
 | I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                             | H     | waived | built   |
 | J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                        | C     | —      | built   |
-| K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                              | B     | —      | planned |
+| K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                              | B     | —      | built   |
 | L     | §4.6      | Calendar feed import for an account                                                                                     | B, E  | yes    | planned |
 | M     | §6.1, 6.4 | Places first on the map, and thanks from visitors after GoThere                                                         | E, F  | yes    | planned |
 | N     | §6.2–6.3  | District goals in empty states, and season collections                                                                  | A, F  | yes    | planned |
@@ -154,6 +154,18 @@ Crawl targets like NFM, or feeds where offered: city culture centres, the public
 ### 2.5 More ticket sites (slice K)
 
 JSON-LD crawl targets where their terms allow it (Biletyna, KupBilecik). Each gets a terms check written into `termsNotes` before it is enabled. Going and Eventim: the owner asks for a partner feed first (to-do in §8); no crawling them until that is answered.
+
+#### Built (slice K, 2026-10-29)
+
+- **Three crawler sources**, all **off** until the owner switches them on, each with its terms check in `termsNotes` (checked 2026-10-29) and listed in the region:
+  - **`biletyna`** (ticket site): its Wrocław listing publishes Event JSON-LD for every show, with venue, address, price and times, so no pages are followed: two requests a day. robots.txt allows the listing and sends `Content-Signal: ai-train=no, search=yes, ai-input=yes`. Its terms page shows no clause on automated reading, but the full terms aren't on the page, so the owner confirms before switching it on. A `categoryMap` maps schema.org types (TheaterEvent, MusicEvent, ChildrensEvent…).
+  - **`mbp-wroclaw`** (the public library network): no feed or JSON-LD (its RSS gives publishing dates), so up to 30 event pages from the listing go through the LLM fallback, cached by content hash. robots.txt allows everything.
+  - **`uwr`** (the University of Wrocław): the same way, up to 20 pages. Its robots.txt answers 403 to our crawler, which the crawler reads as no rules (as for any 4xx); the pages answer normally.
+- **Skipped:**
+  - **KupBilecik:** its city listing isn't reachable without JavaScript (the city URLs answer 404, and the sitemaps list categories, not cities), so there is nothing to crawl yet.
+  - **Culture centres** (CK Zamek, OKiS, Strefa Kultury), the opera and Teatr Polski: their events pages answered 404 at the checked addresses or carry no event data; each needs its own listing address found by hand before it can be a target.
+  - **Going and Eventim:** not crawled; the owner asks them for a partner feed first (§8).
+- **Tests** (`packages/ingest/test/crawl-targets.contract.test.ts`, pages recorded on 29 Oct 2026 in `packages/extract/test/fixtures/`): the sources are off with their terms written; Biletyna read from its JSON-LD alone (two requests, 30+ events, times and categories); the library and the university followed and read with a fake LLM, within `maxFollow`, and robots.txt's 403.
 
 ## 3. Coverage view for the admin (slice O)
 

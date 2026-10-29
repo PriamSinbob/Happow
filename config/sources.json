@@ -193,6 +193,87 @@
       "categoryMap": {}
     },
     {
+      "id": "biletyna",
+      "name": "Biletyna",
+      "adapter": "crawler",
+      "regionIds": ["wroclaw"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "Ticketing site. The city listing (biletyna.pl/Wroclaw) publishes schema.org Event JSON-LD (an ItemList, 36 Wrocław events on 29 Oct 2026), so no event pages are followed. Checked 2026-10-29: robots.txt allows the listing (only cart, order, profile and event view/sector paths are disallowed) and sends Content-Signal ai-train=no, search=yes, ai-input=yes; the terms page (biletyna.pl/static/regulamin) shows no clause on automated reading, but its full text is not on the page. Off until the owner confirms the terms. Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://biletyna.pl/Wroclaw"],
+        "followPattern": null,
+        "maxFollow": 0,
+        "llmFallback": false
+      },
+      "defaultCategories": ["other"],
+      "categoryMap": {
+        "theaterevent": "theatre",
+        "musicevent": "music",
+        "comedyevent": "theatre",
+        "childrensevent": "kids",
+        "festival": "festival",
+        "exhibitionevent": "exhibition",
+        "sportsevent": "sport",
+        "screeningevent": "cinema",
+        "spektakl": "theatre",
+        "koncert": "music",
+        "kabaret": "theatre",
+        "cyrk": "happening"
+      }
+    },
+    {
+      "id": "mbp-wroclaw",
+      "name": "Miejska Biblioteka Publiczna we Wrocławiu",
+      "adapter": "crawler",
+      "regionIds": ["wroclaw"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "The public library network (WordPress; no event feed or JSON-LD: its RSS gives publishing dates). Event pages from the listing go through LLM extraction (cached by content hash). Checked 2026-10-29: robots.txt allows everything. Off until the owner switches it on. Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://biblioteka.wroc.pl/wydarzenia/"],
+        "followPattern": "^https://biblioteka\\.wroc\\.pl/[a-z0-9-]+-\\d{1,2}(-\\d{1,2}){0,2}/$",
+        "maxFollow": 30,
+        "llmFallback": true
+      },
+      "defaultCategories": ["talk"],
+      "categoryMap": {}
+    },
+    {
+      "id": "uwr",
+      "name": "Uniwersytet Wrocławski",
+      "adapter": "crawler",
+      "regionIds": ["wroclaw"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "University events (lectures, open days, concerts). No feed or JSON-LD; event pages go through LLM extraction (cached by content hash). Checked 2026-10-29: robots.txt answers 403 to our crawler (read as none), the events pages answer normally. The listing includes past events, so only upcoming ones are kept. Off until the owner switches it on. Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://uwr.edu.pl/wydarzenia/"],
+        "followPattern": "^https://uwr\\.edu\\.pl/wydarzenia/[a-z0-9-]+/$",
+        "maxFollow": 20,
+        "llmFallback": true
+      },
+      "defaultCategories": ["talk"],
+      "categoryMap": {}
+    },
+    {
       "id": "threads",
       "name": "Threads",
       "adapter": "threads",
