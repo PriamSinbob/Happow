@@ -22,11 +22,14 @@ export function About({
   atlas,
   onClose,
   onModerate,
+  onOpenEvent,
 }: {
   /** The local atlas (§6): its bar sits with the theme and colour settings. */
   atlas: Atlas;
   onClose: () => void;
   onModerate: () => void;
+  /** One of the account's own events, from the contributor section. */
+  onOpenEvent: (id: string) => void;
 }) {
   const { t, lang } = useI18n();
   const theme = useTheme();
@@ -59,6 +62,7 @@ export function About({
               onSignIn={() => setSheet('signIn')}
               onPremium={() => setSheet('premium')}
               onDelete={() => setSheet('delete')}
+              onOpenEvent={onOpenEvent}
             />
           </>
         )}

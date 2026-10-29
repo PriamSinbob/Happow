@@ -117,7 +117,7 @@ function shareThenOpen(search: string, opts: { autofillUsed?: number; events?: u
   render(
     <I18nProvider initial="en">
       <AccountProvider>
-        <AddEvent onClose={vi.fn()} onOpenEvent={vi.fn()} />
+        <AddEvent onClose={vi.fn()} onOpenEvent={vi.fn()} onOpenAccount={vi.fn()} />
       </AccountProvider>
     </I18nProvider>,
   );

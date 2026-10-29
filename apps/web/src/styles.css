@@ -2692,3 +2692,149 @@ button.account-card__plan {
   font-size: 13px;
   color: var(--quiet);
 }
+
+/* ---------- Contributor (M12 slice F): built from the account card and usage styles, no mockup
+   (owner, 2026-10-28); the design pass comes after M12. Ink and line colours, never the live
+   colour: these are thanks, not alerts. ---------- */
+.contrib {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.contrib__title,
+.contrib__subtitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+.contrib__level {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin: 0;
+  font-size: 14px;
+}
+.contrib__next,
+.contrib__line {
+  margin: 0;
+  font-size: 13px;
+  color: var(--quiet);
+}
+.contrib__credit .check {
+  margin-bottom: 4px;
+}
+.contrib__credit .field__hint {
+  display: block;
+}
+.contrib__name {
+  display: grid;
+  gap: 6px;
+}
+.contrib__name-row {
+  display: flex;
+  gap: 8px;
+}
+.contrib__name-row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+}
+.badge--trusted {
+  font-size: 12px;
+  padding: 3px 8px;
+  background: var(--paper-2);
+  color: var(--ink);
+  font-weight: 600;
+}
+.impact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+}
+.impact__stat {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.impact__stat dt {
+  font-size: 12px;
+  color: var(--quiet);
+}
+.impact__stat dd {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* Doubled class: the account card sits in About's .prose, whose list rules would indent it. */
+.my-events.my-events {
+  display: grid;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.my-events.my-events li + li {
+  margin-top: 0;
+  border-top: 1px solid var(--line);
+}
+.my-events__row {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+}
+.my-events__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.my-events__meta {
+  font-size: 12px;
+  color: var(--quiet);
+  font-variant-numeric: tabular-nums;
+}
+.my-events__state--rejected,
+.my-events__state--hidden {
+  color: var(--error-ink);
+}
+.after-add {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.after-add__reward {
+  margin: 0;
+  font-size: 14px;
+  color: var(--quiet);
+}
+.after-add .impact {
+  width: 100%;
+  text-align: left;
+}
+.detail__credit {
+  margin: 24px 0 0;
+  font-size: 13px;
+  color: var(--quiet);
+}
+.detail__credit + .detail__source {
+  margin-top: 10px;
+}

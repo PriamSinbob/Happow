@@ -62,6 +62,9 @@ export const addGrant = (grant: { email: string; endsAt: string | null; note?: s
 export const endGrant = (id: string) =>
   call<void>(`grants/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
+/** Trust back after a rejection (M12 §5.3); 404 when no account has this email. */
+export const restoreTrust = (email: string) => call<{ ok: true }>('trust', { body: { email } });
+
 /**
  * A grant's end from the last day it should work ("2026-12-31"): midnight after it in the region's
  * time zone, as the promotion ends (core `earlyAccessEnd`). `planLastDay` shows it back.

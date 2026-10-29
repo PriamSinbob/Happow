@@ -4,7 +4,7 @@ Oct 26, 2026
 
 Spec from the scope draft of 2026-10-26 (agreed in direction by the owner the same day) and the owner's answers to its questions (§9). M12 comes right after M8. Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics), C1 (OSM venues, the website check and accepted sites), C2 (the Sources tab), D (share into Happow) and E (contributions on the server), 2026-10-28. Slice B is folded into C.
+**Status:** in progress. Spec agreed by the owner (2026-10-26). Built: slice A (metrics), C1 (OSM venues, the website check and accepted sites), C2 (the Sources tab), D (share into Happow) and E (contributions on the server), 2026-10-28; F (your impact and the contributor card), 2026-10-29. Slice B is folded into C.
 
 Goal: **more events on the map, and more people adding events in the app.** Both halves matter. The reasons to add events (§6) matter most. The brief's rules hold throughout: no streaks, no guilt mechanics, no fake urgency, pull not push, and paid never buys visibility. Every source and provider lives in config, each adapter gets a contract test on recorded fixtures, and CI makes no live API calls.
 
@@ -20,7 +20,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 | C2    | §2.2      | Admin tab "Source candidates": samples, accept or reject, paused sites                                                  | C1    | admin  | built   |
 | D     | §4.1      | Share into Happow: PWA share target opens the add form filling from the link                                            | —     | no     | built   |
 | E     | §5        | Contributions on the server: rewards ledger, impact counters, premium days, trusted contributor, levels, credit opt-in  | —     | —      | built   |
-| F     | §5 UI     | Your impact and contributor card: after-add screen, account card, level, credit toggle                                  | E     | yes    | planned |
+| F     | §5 UI     | Your impact and contributor card: after-add screen, account card, level, credit toggle                                  | E     | waived | built   |
 | G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                             | D     | yes    | planned |
 | H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                               | F     | yes    | planned |
 | I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                             | H     | yes    | planned |
@@ -254,11 +254,32 @@ Owner, 2026-10-28: the levels as proposed (Neighbour 1 verified event; Local 5; 
 - **Credit.** `event_credit(event)` (public) gives the name and level only while the adder has the credit on and a name. It's read live, so turning it off hides it everywhere at once. Showing it on the card comes with F.
 - **Export.** It now includes the account's rewards.
 - **Tests.** Core (the cap, joining grants, levels, the config check), API (rewards on approval and trusted publishing, duplicates, revoking, counts, the contributor's side, credit and trust), web (the counts batch, the trusted list), and `scripts/m12-contributions.db.test.ts` in CI. The migration ran on the live data in a rolled-back transaction.
-- **Not checked signed in** on the Cloudflare preview: it still lacks its Supabase settings. Open: the restore-trust button and showing the credit come with slice F.
+- **Not checked signed in** on the Cloudflare preview: it still lacks its Supabase settings. The restore-trust button and showing the credit came with slice F (§5.8). The database test's own helper had a type error, so its first CI run failed after the merge; fixed in #37, where all seven tests pass on Postgres.
 
 ### 5.7 Slice F UI
 
-The after-add screen (what happens next, your impact so far, days earned), and the account card's contributor section: impact totals, level, trusted status, days earned this month, the credit toggle and your past events (for add again). Mockup first.
+The after-add screen (what happens next, your impact so far, days earned), and the account card's contributor section: impact totals, level, trusted status, days earned this month, the credit toggle and your past events (for add again). No mockup (owner, 2026-10-28): built from the account card and usage styles.
+
+### 5.8 Built (slice F, 2026-10-29)
+
+- **After adding.** Under "Thanks!", what the event earns:
+  - waiting for review: the days it earns once approved;
+  - a trusted account's event: the days it got, and from which day when they start after the promotion;
+  - the month's cap reached, or a duplicate: said plainly, without blame.
+- **Impact after adding.** Below the note are the impact totals and "See your impact", which opens the account card. Nothing shows when signed out.
+- **Account card** (`components/Contributor.tsx`). A "Your contributions" section, shown once the account has added an event:
+  - the level, and what the next one needs, worded as information;
+  - verified events, opens, routes started and arrivals;
+  - the trusted badge, or how trust is earned;
+  - this month's premium days, "9 of 30";
+  - the credit switch, then the account's events (newest first, up to 100) with their state, opens and the days each earned. A live or pending event opens its card. "Add again" comes with slice H.
+- **Credit switch.** "Show my name on events I add" is off by default. Turning it on asks for a name first, and nothing is saved until one is given. Turning it off saves at once. Both go through `PUT /api/me`.
+- **"Added by"** on the event card, for community events only. It's read live through the public `event_credit` (the event repositories' `credit()`), not from the cached area, so turning the credit off hides it at once. Lists and the map don't show it.
+- **Admin.** "Restore trust" (email) next to "Give premium". The grants list now labels contribution grants.
+- **Level names** are strings per configured level id. A test checks that every level in config has them in both languages.
+- **Tests.** `apps/web/test/m12-impact.test.tsx` covers the section (levels, states, opening, trusted, empty), the credit switch, the after-add variants, the card credit and restore trust.
+- **Checked** in the dev build at 380 px, in Polish and English, on a throwaway page with a stubbed `/api` (deleted, not committed): no horizontal scroll, and the credit switch saves and shows the name. The account card sits in About's `.prose`, whose list rule indented the events list. Fixed.
+- **Not checked signed in** on the Cloudflare preview, which still lacks its Supabase settings.
 
 ## 6. Reasons to add, on the map and in lists
 

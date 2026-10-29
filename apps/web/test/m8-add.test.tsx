@@ -75,7 +75,7 @@ function renderAdd(onClose = vi.fn()) {
   render(
     <I18nProvider initial="en">
       <AccountProvider>
-        <AddEvent onClose={onClose} onOpenEvent={vi.fn()} />
+        <AddEvent onClose={onClose} onOpenEvent={vi.fn()} onOpenAccount={vi.fn()} />
       </AccountProvider>
     </I18nProvider>,
   );

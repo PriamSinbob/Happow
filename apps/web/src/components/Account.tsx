@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAccount } from '../account';
 import { errorText } from '../errors';
 import { useI18n } from '../i18n';
+import { ContributorSection } from './Contributor';
 import { Icon } from './Icons';
 import { planLastDay, PremiumMark } from './Premium';
 import { Sheet } from './Sheet';
@@ -9,16 +10,18 @@ import { Sheet } from './Sheet';
 /**
  * The account card at the top of About (M8 §2, §4, `docs/design/account.html`): signed out, what
  * a free account gives and the way in; signed in, the email, the plan and its end, export, sign
- * out and delete.
+ * out and delete. M12 slice F adds the contributor's section.
  */
 export function AccountCard({
   onSignIn,
   onPremium,
   onDelete,
+  onOpenEvent,
 }: {
   onSignIn: () => void;
   onPremium: () => void;
   onDelete: () => void;
+  onOpenEvent: (id: string) => void;
 }) {
   const { t, lang } = useI18n();
   const account = useAccount();
@@ -85,6 +88,7 @@ export function AccountCard({
           )}
         </div>
       </div>
+      <ContributorSection onOpenEvent={onOpenEvent} />
       <div className="account-card__actions">
         <button
           type="button"

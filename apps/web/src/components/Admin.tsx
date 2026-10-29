@@ -11,6 +11,7 @@ import {
   listCodeRequests,
   listGrants,
   listSources,
+  restoreTrust,
   sourceLists,
   type CodeRequest,
   type Grant,
@@ -358,6 +359,7 @@ export function Grants({ reload }: { reload: number }) {
   const [grants, setGrants] = useState<Grant[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [giving, setGiving] = useState(false);
+  const [trusting, setTrusting] = useState(false);
   const [ending, setEnding] = useState<Grant | null>(null);
 
   const load = useCallback(async () => {
@@ -419,6 +421,9 @@ export function Grants({ reload }: { reload: number }) {
         <PremiumMark size={16} />
         {t('admin.grants.give')}
       </button>
+      <button type="button" className="btn btn--block admin-give" onClick={() => setTrusting(true)}>
+        {t('admin.trust.restore')}
+      </button>
       {error && (
         <p className="form-error" role="alert">
           {error}
@@ -447,6 +452,7 @@ export function Grants({ reload }: { reload: number }) {
           }}
         />
       )}
+      {trusting && <RestoreTrustSheet onClose={() => setTrusting(false)} />}
       {ending && (
         <EndGrantSheet
           grant={ending}
@@ -507,6 +513,86 @@ function EndGrantSheet({
           {t('admin.end.confirm')}
         </button>
       </div>
+    </Sheet>
+  );
+}
+
+/**
+ * Restore trust (M12 §5.3): a rejection removes a contributor's trust until the admin gives it
+ * back here. Their events then skip the queue again, while they still meet the threshold.
+ */
+export function RestoreTrustSheet({ onClose }: { onClose: () => void }) {
+  const { t, lang } = useI18n();
+  const [email, setEmail] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [restored, setRestored] = useState<string | null>(null);
+  const ready = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  async function restore() {
+    if (!ready || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await restoreTrust(email.trim());
+      setRestored(email.trim());
+      setEmail('');
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status === 404
+          ? t('admin.trust.notFound')
+          : errorText(t, err, lang),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Sheet title={t('admin.trust.restore')} onClose={onClose}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void restore();
+        }}
+        noValidate
+      >
+        <p className="account-sheet__lead">{t('admin.trust.lead')}</p>
+        <div className="field">
+          <label className="field__label" htmlFor="trust-email">
+            {t('admin.give.email')}
+          </label>
+          <input
+            id="trust-email"
+            type="email"
+            inputMode="email"
+            autoComplete="off"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setRestored(null);
+            }}
+          />
+        </div>
+        {restored && (
+          <p className="muted" role="status">
+            {t('admin.trust.done', { email: restored })}
+          </p>
+        )}
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        <div className="account-sheet__foot">
+          <button type="button" className="btn" onClick={onClose}>
+            {restored ? t('add.close') : t('common.cancel')}
+          </button>
+          <button type="submit" className="btn btn--primary" disabled={!ready || busy}>
+            {t('admin.trust.confirm')}
+          </button>
+        </div>
+      </form>
     </Sheet>
   );
 }
