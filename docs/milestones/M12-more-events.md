@@ -1,4 +1,4 @@
-undefinedundefined undefinedbuilt |# Milestone 12 — More events: spec
+# Milestone 12 — More events: spec
 
 Oct 26, 2026
 
