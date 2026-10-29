@@ -28,6 +28,6 @@ Write to the contact address on the app's [About page](https://happow.krasnoroda
 | nfm.wroclaw.pl       | Daily, about 25 pages                                                             |
 | ebilet.pl            | Daily, listing page only, during private testing; consent requested before launch |
 | Venue websites       | Checked about monthly; read daily only after a person accepts the site            |
-| biletyna.pl          | Off; listing page only, once switched on                                          |
-| biblioteka.wroc.pl   | Off; about 30 event pages a day, once switched on                                 |
-| uwr.edu.pl           | Off; about 20 event pages a day, once switched on                                 |
+| biletyna.pl          | Daily, listing page only                                                          |
+| biblioteka.wroc.pl   | Daily, about 30 event pages                                                       |
+| uwr.edu.pl           | Daily, about 20 event pages                                                       |
