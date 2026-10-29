@@ -107,7 +107,8 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
       continue;
     }
     if (!opts.force && store) {
-      if (!isDue(source, await store.lastSuccess(source.id, region.id), now)) {
+      const ahead = config.app.ingest.dispatch.batchAheadHours * 3_600_000;
+      if (!isDue(source, await store.lastSuccess(source.id, region.id), now, ahead)) {
         skip('not due');
         continue;
       }

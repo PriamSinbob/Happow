@@ -142,16 +142,16 @@ The app runs as one **Cloudflare Worker** named `happow`. Cloudflare serves the 
 
 ### 5a. Scheduled ingestion (Cron Trigger)
 
-The Worker has a Cron Trigger every 15 minutes (`triggers.crons` in `wrangler.jsonc`). Each tick reads the latest rows of `source_runs` and starts the GitHub **Ingest sources** workflow only when some source is due. A tick that finds nothing due costs nothing, and GitHub's own schedule is only a fallback every 6 hours. This keeps ingestion on time (GitHub runs its own frequent schedules late or not at all) and within the 2,000 free Actions minutes a private repository gets.
+The Worker has a Cron Trigger every 15 minutes (`triggers.crons` in `wrangler.jsonc`). Each tick reads the latest rows of `source_runs` and starts the GitHub **Ingest sources** workflow only when some source is due. A tick that finds nothing due costs nothing, and GitHub's own schedule is only a fallback once a day. This keeps ingestion on time (GitHub runs its own frequent schedules late or not at all) and within the 2,000 free Actions minutes a private repository gets.
 
 1. GitHub → your avatar → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
    - **Repository access:** Only select repositories → `PriamSinbob/happow`.
    - **Permissions → Repository permissions → Actions:** Read and write. Nothing else.
-   - **Expiration:** pick a date and set yourself a reminder; when it expires, ingestion falls back to every 6 hours.
+   - **Expiration:** pick a date and set yourself a reminder; when it expires, ingestion falls back to once a day.
 2. Cloudflare → the `happow` Worker → **Settings → Runtime variables and secrets → + Add variable**, secret checkbox ticked, name `GITHUB_DISPATCH_TOKEN`, value: the token.
 3. Check: the Worker's **Settings → Triggers** lists the Cron Trigger `*/15 * * * *` (it appears after the first deploy of this change). After the next tick, **Observability → Logs** shows a line like `{"cron":"*/15 * * * *","due":["ticketmaster@wroclaw"],"dispatched":true}`, and GitHub → **Actions** shows a new run started by `workflow_dispatch`.
 
-Sources whose GitHub secrets are missing are recorded as skipped and not retried for 24 hours (`ingest.dispatch` in `config/app.json`), so an unconfigured source never triggers runs on its own. Expected use with today's sources: about 24 hourly runs a day for Ticketmaster (about a minute each, as GitHub bills whole minutes) plus a few minutes a day of crawling, roughly 1,000 minutes a month.
+Sources whose GitHub secrets are missing are recorded as skipped and not retried for 24 hours (`ingest.dispatch` in `config/app.json`), so an unconfigured source never triggers runs on its own. Runs are kept few on purpose (2026-10-30): no source is scheduled more often than every 12 hours (Ticketmaster and account feeds; the rest daily or weekly), a failed source is retried after 6 hours, and a run that starts also takes every source due within the next 6 hours (`batchAheadHours`), so sources settle into one long run a day (about 40 minutes, the city portal alone about 20) and one short one 12 hours later. Expected use: about 45 minutes a day, roughly 1,400 minutes a month plus CI. The job may take up to 60 minutes; it only bills what it uses.
 
 ## 6. GitHub: secrets for the scheduled jobs
 
@@ -163,7 +163,7 @@ Sources whose GitHub secrets are missing are recorded as skipped and not retried
 | `ANTHROPIC_API_KEY`                | Anthropic Console (2.4)          | ingest (NFM crawl) |
 | `TICKETMASTER_API_KEY`, `MEETUP_*` | optional, see README             | ingest             |
 
-**Ingest** is started by the Worker's Cron Trigger whenever a source is due (**5a**), with a fallback schedule every 6 hours. Each source decides whether it is due, so a run fetches only those. To run everything now: **Actions → Ingest sources → Run workflow** with **force** ticked.
+**Ingest** is started by the Worker's Cron Trigger whenever a source is due (**5a**), with a fallback schedule once a day. Each source decides whether it is due, so a run fetches only those. To run everything now: **Actions → Ingest sources → Run workflow** with **force** ticked.
 
 ## 7. Check that it works
 

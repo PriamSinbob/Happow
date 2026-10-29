@@ -9,10 +9,17 @@ import { intervalMs, type HappowConfig, type Region, type Source } from '@happow
 /** Grace so a cron tick that fires a few minutes early still counts as due. */
 export const SCHEDULE_SLACK_MS = 5 * 60_000;
 
-export function isDue(source: Source, lastSuccess: Date | null, now: Date): boolean {
+/**
+ * Whether a source should be fetched now. `aheadMs` lets a run that is starting anyway take a
+ * source that would come due soon (at most half its interval early), so sources settle into a
+ * few shared runs a day instead of one run each (the dispatcher itself asks with no ahead).
+ */
+export function isDue(source: Source, lastSuccess: Date | null, now: Date, aheadMs = 0): boolean {
   if (!source.schedule) return false;
   if (!lastSuccess) return true;
-  return now.getTime() - lastSuccess.getTime() >= intervalMs(source.schedule) - SCHEDULE_SLACK_MS;
+  const interval = intervalMs(source.schedule);
+  const early = Math.max(SCHEDULE_SLACK_MS, Math.min(aheadMs, interval / 2));
+  return now.getTime() - lastSuccess.getTime() >= interval - early;
 }
 
 /** Every (region, source) pair the config enables, in sources.json order. */
