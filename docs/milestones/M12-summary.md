@@ -65,7 +65,7 @@ Left out, with reasons in the spec: RSS feeds (publishing dates, not event times
 
 ## What the owner still needs to do
 
-1. **Merge in order:** #41 (I) → #42 (J) → #43 (K) → #44 (L) → #45 (M) → #46 (N) → the O PR. Each is stacked on the one before it, so after a merge GitHub moves the next one's base to `main` (if it doesn't, change the base by hand).
+1. **Merge in order:** #41 (I) → #42 (J) → #43 (K) → #44 (L) → #45 (M) → #46 (N) → #47 (O). Each is stacked on the one before it, so after a merge GitHub moves the next one's base to `main` (if it doesn't, change the base by hand).
 2. **Run "Migrate database"** for migrations 12–21. 12–15 are from slices A–E if not run yet; 16–21 are add-again, series, account feeds, places and thanks, goals and seasons, and coverage. `pnpm db:seed` loads the districts, if that hasn't been done since slice A.
 3. **Switch sources on** when ready, in `config/sources.json`:
    - `worship-services`, once the OSM venues have loaded;
