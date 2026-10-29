@@ -3,6 +3,7 @@ import categoriesJson from '../../../config/categories.json';
 import mapJson from '../../../config/map.json';
 import plansJson from '../../../config/plans.json';
 import regionsJson from '../../../config/regions.json';
+import seasonsJson from '../../../config/seasons.json';
 import sourcesJson from '../../../config/sources.json';
 import themeJson from '../../../config/theme.json';
 import {
@@ -11,6 +12,7 @@ import {
   mapConfigSchema,
   plansConfigSchema,
   regionsConfigSchema,
+  seasonsConfigSchema,
   sourcesConfigSchema,
   themeConfigSchema,
 } from './schemas.js';
@@ -21,6 +23,7 @@ import type {
   MapConfig,
   PlansConfig,
   Region,
+  Season,
   Source,
   ThemeConfig,
 } from './types.js';
@@ -33,6 +36,7 @@ export interface HappowConfig {
   sources: Source[];
   theme: ThemeConfig;
   plans: PlansConfig;
+  seasons: Season[];
 }
 
 /** Parse and cross-check the JSON files in /config. Throws with a readable message on any mistake. */
@@ -44,11 +48,17 @@ export function loadConfig(): HappowConfig {
   const { sources } = sourcesConfigSchema.parse(sourcesJson);
   const theme = themeConfigSchema.parse(themeJson);
   const plans = plansConfigSchema.parse(plansJson);
+  const { seasons } = seasonsConfigSchema.parse(seasonsJson);
 
   const errors: string[] = [];
   const dupes = (ids: string[]) => ids.filter((id, i) => ids.indexOf(id) !== i);
   for (const d of dupes(categories.map((c) => c.id))) errors.push(`duplicate category "${d}"`);
   for (const d of dupes(regions.map((r) => r.id))) errors.push(`duplicate region "${d}"`);
+  for (const d of dupes(seasons.map((s) => s.id))) errors.push(`duplicate season "${d}"`);
+  const seasonCategories = new Set(categories.map((c) => c.id));
+  for (const s of seasons)
+    for (const c of s.categories)
+      if (!seasonCategories.has(c)) errors.push(`season "${s.id}" has unknown category "${c}"`);
   if (!regions.some((r) => r.id === app.defaultRegion))
     errors.push(`defaultRegion "${app.defaultRegion}" is not in regions.json`);
   const { minM, maxM, defaultM } = app.radius;
@@ -110,7 +120,7 @@ export function loadConfig(): HappowConfig {
   else if (preset.tier !== 'anonymous') errors.push('defaultPreset must be open to everyone');
   errors.push(...checkPlans(plans));
   if (errors.length) throw new Error(`Invalid config:\n- ${errors.join('\n- ')}`);
-  return { app, categories, regions, map, sources, theme, plans };
+  return { app, categories, regions, map, sources, theme, plans, seasons };
 }
 
 export function getRegion(config: HappowConfig, id?: string): Region {

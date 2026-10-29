@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
-import type { Language, NearbyEvent } from '@happow/core';
-import { region } from '../config';
+import { activeSeasons, fitsSeason, type Language, type NearbyEvent } from '@happow/core';
+import { config, region } from '../config';
+import type { DistrictGoal } from '../data/repository';
 import { formatDistance, formatRelativeDay } from '../format';
 import type { Guidance } from '../hooks/useGuidance';
 import { useI18n } from '../i18n';
@@ -24,6 +25,9 @@ interface Props {
   byDay?: boolean;
   /** Events that started earlier are listed from this day on (now, or the picked day). */
   dayFrom?: Date;
+  /** The district goal for an empty reach (M12 §6.2). */
+  goal?: DistrictGoal | null;
+  onAdd?: () => void;
 }
 
 export function Row({
@@ -99,9 +103,56 @@ const AROUND_PAGE = 30;
 export function ListView(props: Props) {
   const { t, lang } = useI18n();
   const [shown, setShown] = useState(AROUND_PAGE);
+  // A season collection (M12 §6.3): the loaded events that fit a running season, by time and
+  // distance only.
+  const [seasonId, setSeasonId] = useState<string | null>(null);
+  const pool = [...props.events, ...props.around];
+  const seasons = activeSeasons(config.seasons, props.now, region.timezone)
+    .map((s) => ({ season: s, events: pool.filter((e) => fitsSeason(e, s, region.timezone)) }))
+    .filter((s) => s.events.length > 0);
+  const open = seasons.find((s) => s.season.id === seasonId) ?? null;
   const around = props.around.slice(0, shown);
+  const chips = seasons.length > 0 && (
+    <div className="seasons" role="group" aria-label={t('season.title')}>
+      {seasons.map(({ season, events }) => (
+        <button
+          key={season.id}
+          type="button"
+          className={`season-chip${open?.season.id === season.id ? ' is-on' : ''}`}
+          aria-pressed={open?.season.id === season.id}
+          onClick={() => setSeasonId(open?.season.id === season.id ? null : season.id)}
+        >
+          {season.labels[lang]} · {events.length}
+        </button>
+      ))}
+    </div>
+  );
+  if (open) {
+    const sorted = [...open.events].sort(
+      (a, b) => Date.parse(a.startAt) - Date.parse(b.startAt) || a.distanceM - b.distanceM,
+    );
+    return (
+      <>
+        {chips}
+        <section className="list-season" aria-labelledby="list-season-title">
+          <h2 id="list-season-title" className="list-around__title">
+            {t('season.list', { season: open.season.labels[lang], count: sorted.length })}
+          </h2>
+          <ul className="list">
+            {sorted.map((ev) => (
+              <Row key={ev.id} ev={ev} now={props.now} onSelect={props.onSelect} />
+            ))}
+          </ul>
+          <button type="button" className="btn list-around__more" onClick={() => setSeasonId(null)}>
+            {t('season.all')}
+          </button>
+        </section>
+      </>
+    );
+  }
   return (
     <>
+      {chips}
       {props.events.length === 0 ? (
         <div className="list list--empty">
           <GuidanceCard
@@ -112,6 +163,8 @@ export function ListView(props: Props) {
             fallbackRadiusM={props.nextRadiusM}
             onExpand={props.onExpand}
             onClearFilters={props.onClearFilters}
+            goal={props.goal}
+            onAdd={props.onAdd}
           />
         </div>
       ) : (

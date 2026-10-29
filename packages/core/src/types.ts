@@ -10,6 +10,7 @@ import type {
   plansConfigSchema,
   regionSchema,
   rulesSchema,
+  seasonSchema,
   seedFileSchema,
   sourceSchema,
   themeConfigSchema,
@@ -144,3 +145,5 @@ export interface DensityQuery extends EventQuery {
   /** Clusters are searched this far around `center`; `radiusM` is the user's own circle. */
   searchRadiusM: number;
 }
+
+export type Season = z.infer<typeof seasonSchema>;

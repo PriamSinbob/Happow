@@ -657,3 +657,26 @@ export const plansConfigSchema = z
       .strict(),
   })
   .strict();
+
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/**
+ * Season collections (M12 §6.3): while a season runs, events that fit it open as a themed list.
+ * An event fits when it overlaps the dates (inclusive, in the region's time zone) and, where given,
+ * has one of the categories and a keyword in its title (lower case, without diacritics).
+ */
+export const seasonSchema = z
+  .object({
+    id: z.string().min(1),
+    labels: z.object({ pl: z.string().min(1), en: z.string().min(1) }),
+    from: isoDay,
+    to: isoDay,
+    categories: z.array(z.string()).default([]),
+    keywords: z.array(z.string().min(2)).default([]),
+  })
+  .refine((s) => s.categories.length > 0 || s.keywords.length > 0, {
+    message: 'a season needs categories or keywords',
+  })
+  .refine((s) => s.from <= s.to, { message: 'a season ends on or after its start' });
+
+export const seasonsConfigSchema = z.object({ seasons: z.array(seasonSchema) });

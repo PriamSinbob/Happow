@@ -10,7 +10,7 @@ import {
   type NearbyEvent,
   type Trust,
 } from '@happow/core';
-import type { Credit, EventRepository } from './repository';
+import type { Credit, DistrictGoal, EventRepository } from './repository';
 
 const isFlagReason = (r: string): r is EventFlagReason =>
   r === SOURCE_MISSING || (FLAG_REASONS as readonly string[]).includes(r);
@@ -213,5 +213,26 @@ export class SupabaseEventRepository implements EventRepository {
       signal,
     )) as unknown;
     return value && typeof value === 'object' && 'name' in value ? (value as Credit) : null;
+  }
+
+  async districtGoal(
+    regionId: string,
+    at: LatLng,
+    from: Date,
+    to: Date,
+    signal?: AbortSignal,
+  ): Promise<DistrictGoal | null> {
+    const value = (await this.rpc<unknown>(
+      'district_goal',
+      {
+        p_region: regionId,
+        p_lat: at.lat,
+        p_lng: at.lng,
+        p_from: from.toISOString(),
+        p_to: to.toISOString(),
+      },
+      signal,
+    )) as unknown;
+    return value && typeof value === 'object' && 'name' in value ? (value as DistrictGoal) : null;
   }
 }

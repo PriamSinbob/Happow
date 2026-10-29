@@ -12,7 +12,7 @@ import {
   type NearbyEvent,
 } from '@happow/core';
 import { config } from '../config';
-import type { Credit, EventRepository } from './repository';
+import type { Credit, DistrictGoal, EventRepository } from './repository';
 import { rowToEvent, type Row, type SupabaseEventRepository } from './supabase';
 
 const { refresh, density } = config.app;
@@ -107,5 +107,16 @@ export class AreaEventRepository implements EventRepository {
   /** Read live, never from the cached area, so turning the credit off hides it at once. */
   credit(eventId: string, signal?: AbortSignal): Promise<Credit | null> {
     return this.db.credit(eventId, signal);
+  }
+
+  /** Live as well: a small count, asked only while the reach is empty. */
+  districtGoal(
+    regionId: string,
+    at: LatLng,
+    from: Date,
+    to: Date,
+    signal?: AbortSignal,
+  ): Promise<DistrictGoal | null> {
+    return this.db.districtGoal(regionId, at, from, to, signal);
   }
 }

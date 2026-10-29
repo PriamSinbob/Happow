@@ -43,6 +43,7 @@ import { EventCard } from './components/EventCard';
 import { EventDetail } from './components/EventDetail';
 import { GoThere } from './components/GoThere';
 import { GuidanceCard } from './components/Guidance';
+import { useDistrictGoal } from './hooks/useDistrictGoal';
 import { Glyph, Icon } from './components/Icons';
 import { ListView } from './components/ListView';
 import { MapView } from './components/MapView';
@@ -243,6 +244,14 @@ export function App() {
     go({ name: 'go', id });
   };
   const close = useCallback(() => go(null), [go]);
+  /** The add form, or sign-in first where adding needs an account. */
+  const startAdd = () => {
+    if (accountStatus === 'signedOut' && config.app.submissions.account === 'required')
+      setAddGate(true);
+    else go({ name: 'add' });
+  };
+  // The district goal, only while the reach is empty (M12 §6.2).
+  const goal = useDistrictGoal(repo, !loading && events.length === 0 ? searchCenter : null, now);
   const detail = useEventDetail(repo, detailId ?? goId, events, searchCenter);
   const loadCredit = useCallback(
     (id: string, signal: AbortSignal) => repo.credit(id, signal),
@@ -544,6 +553,8 @@ export function App() {
             }}
             onExpand={setRadius}
             onClearFilters={filters.clear}
+            goal={goal}
+            onAdd={startAdd}
           />
         </section>
       )}
@@ -597,6 +608,8 @@ export function App() {
                 fallbackRadiusM={nextRadius}
                 onExpand={setRadius}
                 onClearFilters={filters.clear}
+                goal={goal}
+                onAdd={startAdd}
               />
             </div>
           )
@@ -635,9 +648,7 @@ export function App() {
           onClose={() => setSettingsOpen(false)}
           onAdd={() => {
             setSettingsOpen(false);
-            if (accountStatus === 'signedOut' && config.app.submissions.account === 'required')
-              setAddGate(true);
-            else go({ name: 'add' });
+            startAdd();
           }}
           onAbout={() => {
             setSettingsOpen(false);

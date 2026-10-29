@@ -412,3 +412,28 @@ describe('places first and thanks on the account card (M12 slice M)', () => {
     expect(screen.getByText(/first added by you/)).toBeTruthy();
   });
 });
+
+describe('a running season on the account card (M12 slice N)', () => {
+  afterEach(() => vi.useRealTimers());
+  it("counts the adder's live events that fit it", async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-29T12:00:00Z'));
+    const halloween = (n: number, over: Partial<MyEvent> = {}) =>
+      myEvent({
+        submissionId: `h${n}`,
+        title: 'Halloween w bibliotece',
+        startAt: '2026-10-31T16:00:00.000Z',
+        endAt: '2026-10-31T18:00:00.000Z',
+        categoryIds: ['kids'],
+        ...over,
+      });
+    serve(
+      me(),
+      contributions({
+        events: [halloween(1), halloween(2), halloween(3, { status: 'rejected' }), myEvent()],
+      }),
+    );
+    render(<ContributorSection onOpenEvent={vi.fn()} onAddAgain={vi.fn()} />, { wrapper: wrap });
+    expect(await screen.findByText('Halloween: 2 of your events')).toBeTruthy();
+  });
+});

@@ -547,6 +547,14 @@ export const en = {
     'Nothing has happened here for a while: on your card it says first added by you.',
   'nav.thanks': 'Thanks',
   'nav.thanked': 'Thanks sent to whoever added it',
+  // District goals and seasons (M12 slice N)
+  'goal.line':
+    '{district} has {count, plural, =0 {no events} one {# event} other {# events}} this weekend: know something on?',
+  'goal.add': 'Add it',
+  'season.title': 'Seasons',
+  'season.list': '{season}: {count, plural, one {# event} other {# events}} around you',
+  'season.all': 'All events',
+  'contrib.season': '{season}: {count, plural, one {# of your events} other {# of your events}}',
   'error.photo_unavailable':
     "Reading photos isn't available right now. Try again later, or fill in the form.",
   'error.photo_too_large': 'This photo is too large. Try another one.',

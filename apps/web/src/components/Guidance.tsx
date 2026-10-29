@@ -1,6 +1,7 @@
 import { snapRadiusUp } from '@happow/core';
 import { config } from '../config';
 import { formatDistance, navigationUrl } from '../format';
+import type { DistrictGoal } from '../data/repository';
 import type { Guidance as GuidanceData } from '../hooks/useGuidance';
 import { useI18n } from '../i18n';
 import { Icon } from './Icons';
@@ -19,6 +20,9 @@ interface Props {
   onExpand: (radius: number) => void;
   onClearFilters: () => void;
   onClose?: () => void;
+  /** The district the reach is in, with its events this weekend (M12 §6.2): empty mode only. */
+  goal?: DistrictGoal | null;
+  onAdd?: () => void;
 }
 
 /**
@@ -82,6 +86,14 @@ export function GuidanceCard(props: Props) {
         <p className="guide__line">
           <span className="guide__dot" aria-hidden />
           {busiestLine}
+        </p>
+      )}
+      {mode === 'empty' && props.goal && props.onAdd && (
+        <p className="guide__line guide__goal">
+          {t('goal.line', { district: props.goal.name, count: props.goal.count })}{' '}
+          <button type="button" className="inline-link" onClick={props.onAdd}>
+            {t('goal.add')}
+          </button>
         </p>
       )}
       {nothingAround && (
