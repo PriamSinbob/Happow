@@ -40,6 +40,8 @@ function supabase(rpc: Record<string, Rpc> = {}, opts: { userExists?: boolean } 
       const handler = all[path.slice('/rest/v1/rpc/'.length)];
       if (!handler) return new Response('{}', { status: 404 });
       const { status = 200, body: out } = handler(body);
+      // A function returning void: PostgREST answers 204 with no body.
+      if (status === 204) return new Response(null, { status });
       return new Response(JSON.stringify(out), { status });
     }
     if (path === '/auth/v1/user') {
@@ -127,7 +129,7 @@ describe('/api/me', () => {
   });
 
   it('accepts only the current terms version and a known language', async () => {
-    const sb = supabase({ profile_update: () => ({ body: {} }) });
+    const sb = supabase({ profile_update: () => ({ status: 204, body: null }) });
     const a = api(sb);
     const put = (body: unknown) => a(req('me', { method: 'PUT', token: 'user-token', body }));
     expect((await put({ termsVersion: 'old' })).status).toBe(400);
@@ -177,7 +179,7 @@ describe('/api/me', () => {
 
 describe('POST /api/auth/code-request', () => {
   it('files the request with a lowercased email and answers the same whatever the email', async () => {
-    const sb = supabase({ request_code: () => ({ body: null }) });
+    const sb = supabase({ request_code: () => ({ status: 204, body: null }) });
     const a = api(sb);
     const res = await a(
       req('auth/code-request', {
@@ -196,7 +198,7 @@ describe('POST /api/auth/code-request', () => {
 
   it('is rate-limited per client and per email', async () => {
     const sb = supabase({
-      request_code: () => ({ body: null }),
+      request_code: () => ({ status: 204, body: null }),
       rate_limit_hit: (a) => ({ body: a.p_bucket !== 'code-request-email' }),
     });
     const res = await api(sb)(

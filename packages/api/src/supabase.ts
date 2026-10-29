@@ -67,7 +67,10 @@ export class Supabase {
       headers: this.headers(),
       body: JSON.stringify(args),
     });
-    return (await (await this.check(res)).json()) as T;
+    // A function that returns nothing answers 204 with an empty body (PostgREST), so an empty
+    // reply is null rather than a JSON error.
+    const text = await (await this.check(res)).text();
+    return (text ? JSON.parse(text) : null) as T;
   }
 
   /** The signed-in user behind an access token, or null when the token is not valid. */
