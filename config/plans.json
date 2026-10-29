@@ -42,6 +42,7 @@
     "premiumDaysPerEvent": 3,
     "premiumDaysPerMonth": 30,
     "trustedAfter": 5,
+    "feedsPerAccount": 2,
     "levels": [
       {
         "id": "neighbour",

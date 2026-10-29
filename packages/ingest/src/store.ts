@@ -6,6 +6,7 @@ import { decide, type DedupConfig, type Listing, type StoredEvent } from './dedu
 import { h3Neighbourhood } from './geo.js';
 import type { NormalizedEvent, RawEvent } from './types.js';
 import { VenueStore } from './venues/store.js';
+import { FeedStore } from './feeds.js';
 
 export interface ApplyStats {
   inserted: number;
@@ -119,6 +120,11 @@ export function payloadHash(payload: unknown): string {
 /** Postgres side of ingestion. Expects `search_path` to include the PostGIS schema. */
 export class EventStore {
   constructor(private readonly db: pg.ClientBase) {}
+
+  /** Account calendar feeds (M12 §4.6), on the same connection. */
+  feeds(): FeedStore {
+    return new FeedStore(this.db);
+  }
 
   /** OSM venues, links and the website check (M12), on the same connection. */
   venues(): VenueStore {

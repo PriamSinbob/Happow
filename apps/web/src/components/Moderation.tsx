@@ -9,6 +9,7 @@ import { formatDay, formatTime } from '../format';
 import { eventHref } from '../hooks/useHashRoute';
 import { useI18n } from '../i18n';
 import { CodeRequests, Grants, Sources } from './Admin';
+import { feedHost } from './Feeds';
 import { Screen } from './Screen';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
@@ -23,6 +24,10 @@ interface QueuedSubmission {
   created_at: string;
   /** The dates of one weekly repeat share it (M12 §4.5). */
   series_id?: string | null;
+  /** Imported from an account's calendar feed (M12 §4.6). */
+  feed_id?: number | null;
+  feed_url?: string | null;
+  feed_status?: 'active' | 'stopped' | null;
   submitter: string | null;
   event: { title: string; startAt: string; timezone?: string; categoryIds?: string[] } | null;
   venue: { name: string; address: string | null } | null;
@@ -86,6 +91,17 @@ export function Moderation({ onClose }: { onClose: () => void }) {
   const admin = me?.role === 'admin';
   const [state, setState] = useState<State>({ name: 'loading' });
   const [busy, setBusy] = useState<string | null>(null);
+  // Feeds an admin stopped from this queue (M12 §4.6).
+  const [stopped, setStopped] = useState<Set<number>>(new Set());
+  const isAdmin = me?.role === 'admin';
+  async function stopFeed(id: number) {
+    try {
+      await api(`admin/feeds/${id}`, { token: await accessToken(), body: { action: 'stop' } });
+      setStopped((s) => new Set(s).add(id));
+    } catch (err) {
+      setState({ name: 'error', message: errorText(t, err, lang) });
+    }
+  }
   const [tab, setTab] = useState<Tab>('queue');
   // Bumped by Refresh on the admin tabs, which load by themselves.
   const [reload, setReload] = useState(0);
@@ -229,6 +245,26 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                   {s.venue && ` · ${s.venue.name}`}
                   {s.venue?.address && `, ${s.venue.address}`}
                 </p>
+                {s.feed_id && (
+                  <p className="mod-card__meta">
+                    {t('mod.feed', { host: feedHost(s.feed_url ?? '') })}
+                    {isAdmin &&
+                      (s.feed_status === 'stopped' || stopped.has(s.feed_id) ? (
+                        ` · ${t('mod.feedStopped')}`
+                      ) : (
+                        <>
+                          {' · '}
+                          <button
+                            type="button"
+                            className="inline-link"
+                            onClick={() => void stopFeed(s.feed_id!)}
+                          >
+                            {t('mod.feedStop')}
+                          </button>
+                        </>
+                      ))}
+                  </p>
+                )}
                 {series && (
                   <p className="mod-card__meta">
                     {t('mod.series', {

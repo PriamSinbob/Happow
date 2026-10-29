@@ -2,6 +2,7 @@ import { rateLimitIntervalMs, type HappowConfig, type Region, type Source } from
 import { HttpClient } from '../http.js';
 import { overpass } from '../overpass.js';
 import { robotsGate } from '../robots.js';
+import type { Geocoder } from '@happow/extract';
 import type { EventStore } from '../store.js';
 import { linkVenues, parseOsmVenues, venueQuery } from './osm.js';
 import { probeSite } from './probe.js';
@@ -22,6 +23,8 @@ export interface JobContext {
   fetch?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   log: (msg: string) => void;
+  /** For places a job reads without coordinates (account feeds). */
+  geocoder?: Geocoder | null;
 }
 
 export type JobStats = Record<string, number | string>;

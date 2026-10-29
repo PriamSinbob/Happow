@@ -1,4 +1,4 @@
-undefinedundefined undefinedbuilt |undefinedundefined undefinedbuilt |undefinedundefined undefinedbuilt |# Milestone 12 — More events: spec
+undefinedundefined undefinedbuilt |undefinedundefined undefinedbuilt |undefinedundefined undefinedbuilt |undefinedundefined undefinedbuilt |# Milestone 12 — More events: spec
 
 Oct 26, 2026
 
@@ -26,7 +26,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 | I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                             | H     | waived | built   |
 | J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                        | C     | —      | built   |
 | K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                              | B     | —      | built   |
-| L     | §4.6      | Calendar feed import for an account                                                                                     | B, E  | yes    | planned |
+| L     | §4.6      | Calendar feed import for an account                                                                                     | B, E  | waived | built   |
 | M     | §6.1, 6.4 | Places first on the map, and thanks from visitors after GoThere                                                         | E, F  | yes    | planned |
 | N     | §6.2–6.3  | District goals in empty states, and season collections                                                                  | A, F  | yes    | planned |
 | O     | §3        | Admin coverage view: events per district and category, today and the week                                               | A, C  | admin  | planned |
@@ -281,6 +281,18 @@ In the add form, "Repeats": weekly on chosen days at a time, until a date (at mo
 - In the account card: paste an iCal URL once. The server reads it with slice B's adapter on its schedule, and its events come in as the account's submissions.
 - **Ownership:** the first batch goes to moderation; after it is approved, later events follow the account's trust (§5.3). An admin can stop a feed. Imported events count against the monthly quota.
 - At most `contributions.feedsPerAccount` feeds (config, default 2).
+
+#### Built (slice L, 2026-10-29)
+
+- **Account card → "Calendar feeds".** Paste an iCal link (`webcal://` works too); up to `contributions.feedsPerAccount` (2) per account. Each feed shows its host only (a private calendar's address carries a secret) and how it did: not read yet, N events so far and when, "the first ones wait for a moderator", paused for the month's quota, couldn't be read, or stopped by an admin. Remove keeps what it brought. The section stays hidden if the feeds can't be loaded.
+- **Server.** `GET/POST/DELETE /api/me/feeds` (`packages/api/src/feeds.ts`): public http(s) addresses only; too many feeds 409 `too_many_feeds`; a feed an admin stopped can't be added again (409 `feed_stopped`). `POST /api/admin/feeds/:id {stop|resume}`, admin only.
+- **Reading** (`packages/ingest/src/feeds.ts`, source `account-feeds`, every 6 hours, on): one request per feed per run with the iCal reader slice C built (repeats expanded, removed and moved dates respected), 60 days ahead. Each upcoming in-person event with a place name becomes the account's submission through `feed_import()` (migration 18): once per feed event (its link, start and title), against the month's quota (a feed stops for the run when it runs out), places without coordinates geocoded. robots.txt isn't asked: the owner gave the address (`docs/CRAWLER.md`).
+- **Ownership.** The first batch goes to moderation. A trigger marks the feed approved when a moderator approves one of its events; after that, later events follow the account's trust (§5.3). An admin can stop a feed from the moderation queue: feed submissions there say "From a calendar feed: host", with "Stop this feed" for admins.
+- **Rewards:** imported events earn no premium days (`contribution_award` returns nothing for them), so a feed can't farm them; they count in "your impact" like any event.
+- **No mockup** (owner, 2026-10-28); the section uses the contributor section's list and field styles, no new icons.
+- **Tests.** Ingest (recorded Wrocław club feed): imports once, skips past, online, cancelled and unplaced events, the quota stop, a failing feed, a dry run. API: list, add (webcal, the limit, a stopped feed, a private address), remove, admin stop and resume. Database (CI): the limit, a stopped feed, importing once against the quota, the approval trigger, no reward. Web: the section (hosts only, statuses, add, remove, the limit, a refusal) and the queue's stop.
+- **Checked** at 380 px in Polish on a throwaway page with a stubbed `/api` (deleted): no overflow.
+- **Not checked:** signed in on the Cloudflare preview, a real calendar through the ingest job, and Supabase (migration 18 needs "Migrate database").
 
 ## 5. Contributions on the server, and your impact (slices E and F)
 

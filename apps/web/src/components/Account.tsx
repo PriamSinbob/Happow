@@ -3,6 +3,7 @@ import { useAccount } from '../account';
 import { errorText } from '../errors';
 import { useI18n } from '../i18n';
 import { ContributorSection } from './Contributor';
+import { FeedsSection } from './Feeds';
 import { Icon } from './Icons';
 import { planLastDay, PremiumMark } from './Premium';
 import { Sheet } from './Sheet';
@@ -91,6 +92,7 @@ export function AccountCard({
         </div>
       </div>
       <ContributorSection onOpenEvent={onOpenEvent} onAddAgain={onAddAgain} />
+      <FeedsSection />
       <div className="account-card__actions">
         <button
           type="button"

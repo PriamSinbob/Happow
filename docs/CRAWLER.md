@@ -14,6 +14,7 @@ Happow/0.4 (+https://happow.krasnoroda.workers.dev/crawler)
 - Reads schema.org Event data (JSON-LD) when a page has it. For a few pages without it, the page text is sent to an AI model (Claude, by Anthropic) to pull out those same facts. The page text is not stored; only the extracted facts are kept.
 - Keeps events only while they are current, and drops events that are no longer listed.
 - Checks the websites of venues listed in OpenStreetMap (theatres, clubs, libraries, culture centres, places of worship) about **once a month**, with at most five requests per site: the home page, one events page, and any calendar feed (iCal) or events API the site offers. A person then decides whether the site is read. Only sites someone has accepted are read, once a day like the others.
+- Reads calendar feeds (iCal) that signed-in people add for their own events, one request per feed every few hours. These are addresses their owners gave us, so `robots.txt` isn't asked; the events go through moderation like anything else people add.
 
 ## Opting out or asking for changes
 
@@ -27,3 +28,6 @@ Write to the contact address on the app's [About page](https://happow.krasnoroda
 | nfm.wroclaw.pl       | Daily, about 25 pages                                                             |
 | ebilet.pl            | Daily, listing page only, during private testing; consent requested before launch |
 | Venue websites       | Checked about monthly; read daily only after a person accepts the site            |
+| biletyna.pl          | Off; listing page only, once switched on                                          |
+| biblioteka.wroc.pl   | Off; about 30 event pages a day, once switched on                                 |
+| uwr.edu.pl           | Off; about 20 event pages a day, once switched on                                 |

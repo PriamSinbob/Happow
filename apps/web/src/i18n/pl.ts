@@ -547,6 +547,27 @@ export const pl: Record<MessageKey, string> = {
     '{count, plural, one {# termin} few {# terminy} many {# terminów} other {# terminu}}',
   'contrib.seriesNext':
     '{count, plural, one {# termin} few {# terminy} many {# terminów} other {# terminu}} · najbliższy {date}',
+  // Calendar feeds (M12 slice L)
+  'feeds.title': 'Kalendarze',
+  'feeds.intro':
+    'Dodaj raz link iCal swojego kalendarza: jego nadchodzące wydarzenia trafią do Happow jako Twoje i liczą się do miesięcznego limitu. Pierwsze sprawdzi moderator.',
+  'feeds.label': 'Link iCal',
+  'feeds.add': 'Dodaj',
+  'feeds.hint': 'Najwyżej {max}. Czytamy je co kilka godzin.',
+  'feeds.remove': 'Usuń',
+  'feeds.removeFor': 'Usuń kalendarz z {host}',
+  'feeds.waiting': 'Jeszcze nie przeczytany',
+  'feeds.read':
+    '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} · czytany {date}',
+  'feeds.firstReview': 'pierwsze sprawdzi moderator',
+  'feeds.quota': 'Wstrzymany: limit wydarzeń na ten miesiąc wykorzystany',
+  'feeds.failed': 'Ostatnio nie udało się go przeczytać',
+  'feeds.stopped': 'Zatrzymany przez administratora',
+  'error.too_many_feeds': 'Masz już najwięcej kalendarzy, ile można dodać.',
+  'error.feed_stopped': 'Administrator zatrzymał ten kalendarz, więc nie można go dodać ponownie.',
+  'mod.feed': 'Z kalendarza: {host}',
+  'mod.feedStop': 'Zatrzymaj ten kalendarz',
+  'mod.feedStopped': 'Kalendarz zatrzymany',
   'error.photo_unavailable':
     'Czytanie zdjęć jest teraz niedostępne. Spróbuj później albo uzupełnij formularz.',
   'error.photo_too_large': 'To zdjęcie jest za duże. Spróbuj innego.',

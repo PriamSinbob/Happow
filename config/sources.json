@@ -419,6 +419,20 @@
       "defaultCategories": ["religious"]
     },
     {
+      "id": "account-feeds",
+      "name": "Account calendar feeds",
+      "adapter": "account-feeds",
+      "regionIds": ["wroclaw"],
+      "schedule": "6h",
+      "rateLimit": "12/m",
+      "trustLevel": "community",
+      "enabled": true,
+      "termsNotes": "Calendar feeds (iCal) that signed-in accounts add for their own events. Their events come in as that account's submissions: the monthly quota, moderation until the feed's first event is approved, then the account's trust. One request per feed per run; robots.txt is not asked, since the account owner gave the address. An admin can stop a feed from the moderation queue.",
+      "options": {
+        "horizonDays": 60
+      }
+    },
+    {
       "id": "submissions",
       "name": "Happow community",
       "adapter": "user-submission",

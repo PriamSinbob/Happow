@@ -37,6 +37,7 @@
         "venue-probe",
         "venue-sites",
         "worship-services",
+        "account-feeds",
         "submissions"
       ],
       "seedFile": "data/seed/wroclaw.events.json",
