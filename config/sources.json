@@ -317,6 +317,27 @@
       }
     },
     {
+      "id": "worship-services",
+      "name": "Regular services (OpenStreetMap)",
+      "adapter": "worship-services",
+      "regionIds": ["wroclaw"],
+      "schedule": "24h",
+      "rateLimit": null,
+      "trustLevel": "crawled",
+      "enabled": false,
+      "maxCacheAgeHours": 48,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "Service times from OpenStreetMap's service_times tag on places of worship (ODbL, attribution in About), read from the OSM venues already loaded; no requests of its own. Each service is its own event for the next 14 days. Holidays aren't known, so the weekly pattern simply runs; a report from the card removes one. Off until the owner switches it on.",
+      "options": {
+        "horizonDays": 14,
+        "kinds": ["amenity=place_of_worship"],
+        "title": "Nabożeństwo",
+        "confidence": 0.8
+      },
+      "defaultCategories": ["religious"]
+    },
+    {
       "id": "submissions",
       "name": "Happow community",
       "adapter": "user-submission",

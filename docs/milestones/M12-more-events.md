@@ -24,7 +24,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 | G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                             | D     | waived | built   |
 | H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                               | F     | waived | built   |
 | I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                             | H     | waived | built   |
-| J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                        | C     | —      | planned |
+| J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                        | C     | —      | built   |
 | K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                              | B     | —      | planned |
 | L     | §4.6      | Calendar feed import for an account                                                                                     | B, E  | yes    | planned |
 | M     | §6.1, 6.4 | Places first on the map, and thanks from visitors after GoThere                                                         | E, F  | yes    | planned |
@@ -137,6 +137,15 @@ Each source is an adapter plus config with a contract test on recorded fixtures.
 - A generator turns the weekly pattern into **separate events, one per occurrence**, for the next 14 days, in the `religious` category. They are never merged into one card (time-first principle). Holidays: where the source gives none, the pattern simply runs; a report from the card removes one occurrence.
 - `trust: crawled`, `confidence` from the source. Attendance features stay off for religious events (M6 §9).
 - **Tests.** `service_times` parsing (OSM's `opening_hours` grammar, e.g. `Su 08:00,10:00,12:00; Mo-Sa 18:00`), DST weeks, a malformed tag.
+
+#### Built (slice J, 2026-10-29)
+
+- **Source `worship-services`** (adapter of the same name), **off** until the owner switches it on: it puts events on the map without review. Daily, `trust: crawled`, `confidence` 0.8 and the title "Nabożeństwo" from its `options`, the `religious` category from `defaultCategories`. It makes no requests: it reads the OSM venues slice C loads (`options.kinds`: `amenity=place_of_worship`) that have `service_times`.
+- **Reading the tag** (`packages/ingest/src/venues/services.ts`): the plain part of the `opening_hours` grammar: weekdays and ranges (`Mo-Sa`, `Su,We`, `Sa-Mo` across the week's end), start times or time ranges (`08:00,10:00`, `18:00-18:45`, past midnight too), a rule without days meaning every day. A rule with months, weeks, `off`, a comment or only holidays is skipped, not guessed; the rest of the tag still counts. `PH` and `SH` add nothing, since no holiday calendar is known.
+- **One event per service** for the next 14 days (`options.horizonDays`), never merged (time-first). Each has its own id (OSM id and start), the place as its venue and link, free, a fixed start; services already over today are left out. Holidays: the pattern simply runs, and a report from the card removes one date.
+- **Attendance features** stay off for religious events: co-presence (M6 §9) isn't built yet, so there's nothing to switch off today.
+- **Skipped: parish timetable pages.** A free-form page of mass times needs an LLM to read a weekly pattern, not events, so it's left for later. Parish sites that publish a calendar feed or Event JSON-LD already come in through the website check and `venue-sites`.
+- **Tests** (`packages/ingest/test/services.contract.test.ts`, on the recorded Overpass fixture): the grammar, skipped and broken rules, past midnight, two weeks across the end of summer time (25 Oct 2026), normalizing into the category and trust.
 
 ### 2.4 Cultural institutions and universities (slice K)
 

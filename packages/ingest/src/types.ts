@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { Category, HappowEvent, Region, Source } from '@happow/core';
 import type { ExtractedEvent, Extractor, KeyValueCache } from '@happow/extract';
 import type { HttpClient } from './http.js';
+import type { OsmVenue } from './venues/osm.js';
 
 /** One item exactly as a source returned it. Stored unchanged so it can be re-parsed later. */
 export interface RawEvent {
@@ -90,6 +91,8 @@ export interface AdapterServices {
   siteTargets?: SiteTarget[];
   /** Per site after a run: an error, or null and how many events it gave. */
   onSiteResult?: (id: number, error: string | null, events: number) => void;
+  /** OSM places with `service_times` (the `worship-services` source, M12 §2.3). */
+  worshipPlaces?: OsmVenue[];
 }
 
 /** A site an admin accepted from the website check (source_candidates). */

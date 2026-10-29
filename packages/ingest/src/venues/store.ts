@@ -75,6 +75,12 @@ export class VenueStore {
     }));
   }
 
+  /** OSM venues of these kinds ("amenity=place_of_worship") with service times (M12 §2.3). */
+  async servicePlaces(regionId: string, kinds: string[]): Promise<OsmVenue[]> {
+    const all = await this.osmVenues(regionId);
+    return all.filter((v) => v.serviceTimes && (!kinds.length || kinds.includes(v.kind)));
+  }
+
   /** Venues events use, inside the region. */
   async eventVenues(regionId: string): Promise<EventVenue[]> {
     const { rows } = await this.db.query(
