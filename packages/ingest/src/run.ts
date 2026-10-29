@@ -249,6 +249,12 @@ async function runSource(
   const siteTargets =
     source.adapter === 'venue-sites' && venueDb ? await venueDb.siteTargets(region.id) : [];
   const siteResults: { id: number; error: string | null; events: number }[] = [];
+  // OSM places of worship with service times (worship-services).
+  const kinds = source.options.kinds;
+  const worshipPlaces =
+    source.adapter === 'worship-services' && venueDb
+      ? await venueDb.servicePlaces(region.id, Array.isArray(kinds) ? kinds.map(String) : [])
+      : undefined;
   const raws = await adapter.fetch({
     source,
     region,
@@ -264,6 +270,7 @@ async function runSource(
       maxInputChars: extraction.maxInputChars,
       maxPageBytes: extraction.maxPageBytes,
       siteTargets,
+      worshipPlaces,
       onSiteResult: (id, error, events) => siteResults.push({ id, error, events }),
     },
   });
