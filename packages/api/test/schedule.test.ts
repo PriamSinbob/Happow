@@ -28,6 +28,10 @@ const allFresh = [
   'venue-probe',
   'venue-sites',
   'account-feeds',
+  'biletyna',
+  'mbp-wroclaw',
+  'uwr',
+  'worship-services',
 ].map((id) => okRow(id));
 
 function fake(rows: unknown[], dispatchStatus = 204) {

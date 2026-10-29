@@ -6,8 +6,8 @@ import { runIngest } from '../src';
 import { config, noSleep } from './helpers';
 
 /**
- * M12 slice K: more crawl targets, on pages recorded on 29 Oct 2026. They are off in config
- * until the owner switches them on, so each test turns its source on.
+ * M12 slice K: more crawl targets, on pages recorded on 29 Oct 2026. Each test turns its source
+ * on, so the tests hold whether config has it on or off.
  */
 
 const page = (name: string) =>
@@ -81,10 +81,10 @@ const llmEvent = (title: string, start: string, venueName: string): ExtractedEve
 });
 
 describe('more crawl targets (M12 §2.4–2.5)', () => {
-  it('are all off until the owner switches them on, with their terms written down', () => {
+  it('are crawled sources with their terms check written down', () => {
     for (const id of ['biletyna', 'mbp-wroclaw', 'uwr']) {
       const s = config.sources.find((x) => x.id === id)!;
-      expect(s).toMatchObject({ enabled: false, adapter: 'crawler', trustLevel: 'crawled' });
+      expect(s).toMatchObject({ adapter: 'crawler', trustLevel: 'crawled' });
       expect(s.termsNotes).toMatch(/Checked 2026-10-29/);
     }
   });
