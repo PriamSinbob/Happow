@@ -33,6 +33,7 @@
         "osm-venues",
         "venue-probe",
         "venue-sites",
+        "worship-services",
         "submissions"
       ],
       "seedFile": "data/seed/wroclaw.events.json",
