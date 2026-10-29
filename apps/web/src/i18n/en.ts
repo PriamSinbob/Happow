@@ -505,6 +505,21 @@ export const en = {
   'add.again.gone': "This event can't be added again.",
   'contrib.again': 'Add again',
   'contrib.againFor': 'Add “{title}” again',
+  // Recurring events (M12 slice I)
+  'add.repeat': 'Repeats',
+  'add.repeat.once': 'Does not repeat',
+  'add.repeat.weekly': 'Weekly',
+  'add.repeat.days': 'On these days',
+  'add.repeat.until': 'Until',
+  'add.repeat.summary': '{count, plural, one {# date} other {# dates}} · {first} – {last}',
+  'add.repeat.empty': 'No dates yet: pick a day, and an end date after the start.',
+  'add.repeat.tooMany': 'At most {max} dates at once. Pick fewer days or an earlier end date.',
+  'add.repeat.overQuota': 'This adds {count} dates; {left} are left this month.',
+  'add.done.dates':
+    '{count, plural, one {# date added} other {# dates added}}, each its own event.',
+  'mod.series': '{count, plural, one {# date} other {# dates}}: {dates}',
+  'contrib.series': '{count, plural, one {# date} other {# dates}}',
+  'contrib.seriesNext': '{count, plural, one {# date} other {# dates}} · next {date}',
   'error.photo_unavailable':
     "Reading photos isn't available right now. Try again later, or fill in the form.",
   'error.photo_too_large': 'This photo is too large. Try another one.',

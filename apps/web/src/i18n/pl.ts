@@ -527,6 +527,26 @@ export const pl: Record<MessageKey, string> = {
   'add.again.gone': 'Tego wydarzenia nie można dodać ponownie.',
   'contrib.again': 'Dodaj ponownie',
   'contrib.againFor': 'Dodaj ponownie „{title}”',
+  // Recurring events (M12 slice I)
+  'add.repeat': 'Powtarza się',
+  'add.repeat.once': 'Nie powtarza się',
+  'add.repeat.weekly': 'Co tydzień',
+  'add.repeat.days': 'W te dni',
+  'add.repeat.until': 'Do',
+  'add.repeat.summary':
+    '{count, plural, one {# termin} few {# terminy} many {# terminów} other {# terminu}} · {first} – {last}',
+  'add.repeat.empty': 'Brak terminów: wybierz dzień i datę końca po początku.',
+  'add.repeat.tooMany':
+    'Najwyżej {max} terminów naraz. Wybierz mniej dni lub wcześniejszą datę końca.',
+  'add.repeat.overQuota': 'To doda terminów: {count}; w tym miesiącu zostało: {left}.',
+  'add.done.dates':
+    'Dodano: {count, plural, one {# termin} few {# terminy} many {# terminów} other {# terminu}}, każdy jako osobne wydarzenie.',
+  'mod.series':
+    '{count, plural, one {# termin} few {# terminy} many {# terminów} other {# terminu}}: {dates}',
+  'contrib.series':
+    '{count, plural, one {# termin} few {# terminy} many {# terminów} other {# terminu}}',
+  'contrib.seriesNext':
+    '{count, plural, one {# termin} few {# terminy} many {# terminów} other {# terminu}} · najbliższy {date}',
   'error.photo_unavailable':
     'Czytanie zdjęć jest teraz niedostępne. Spróbuj później albo uzupełnij formularz.',
   'error.photo_too_large': 'To zdjęcie jest za duże. Spróbuj innego.',

@@ -19,3 +19,4 @@ export * from './dice.js';
 export * from './atlas.js';
 export * from './plans.js';
 export * from './contributions.js';
+export * from './recurrence.js';

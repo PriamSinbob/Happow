@@ -366,3 +366,36 @@ describe('add again from the account card (M12 slice H)', () => {
     expect(onAgain).toHaveBeenCalledWith(myEvent().submissionId);
   });
 });
+
+describe('a weekly repeat on the account card (M12 slice I)', () => {
+  it('is one row with its count, its next date and the opens of all its dates', async () => {
+    const date = (n: number, startAt: string, opens: number) =>
+      myEvent({
+        submissionId: `d${n}`,
+        eventId: `user:d${n}`,
+        seriesId: 'S',
+        title: 'Pchli targ',
+        startAt,
+        opens,
+        days: n === 1 ? 3 : 0,
+      });
+    serve(
+      me(),
+      contributions({
+        events: [
+          date(1, '2020-11-07T09:00:00.000Z', 10),
+          date(2, '2099-11-14T09:00:00.000Z', 5),
+          date(3, '2099-11-21T09:00:00.000Z', 0),
+          myEvent(),
+        ],
+      }),
+    );
+    const onOpen = vi.fn();
+    render(<ContributorSection onOpenEvent={onOpen} onAddAgain={vi.fn()} />, { wrapper: wrap });
+    await screen.findByText('Your contributions');
+    expect(screen.getAllByText('Pchli targ')).toHaveLength(1);
+    expect(screen.getByText(/3 dates · next .*14.* · 15 opens · \+3 days/)).toBeTruthy();
+    fireEvent.click(screen.getByText('Pchli targ'));
+    expect(onOpen).toHaveBeenCalledWith('user:d2');
+  });
+});

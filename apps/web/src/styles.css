@@ -2901,3 +2901,26 @@ button.account-card__plan {
   flex: none;
   font-size: 13px;
 }
+
+/* Weekly repeats (M12 slice I): the weekday buttons reuse the category chips' look. */
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+.weekday {
+  min-height: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+}
+.weekday.is-on {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}

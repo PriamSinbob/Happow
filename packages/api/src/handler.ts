@@ -10,7 +10,10 @@ import {
   isInBbox,
   loadConfig,
   quota,
+  shiftWall,
   usageMonth,
+  wallMinutes,
+  weeklyStarts,
   type HappowConfig,
   type LatLng,
   type Region,
@@ -109,6 +112,13 @@ const submissionSchema = z.object({
     /** Sent only when the user changes it; otherwise the category default applies. */
     entry: entrySchema.nullable().optional(),
   }),
+  /** Weekly on these ISO weekdays (1 = Monday) until a day, inclusive (M12 §4.5). */
+  repeat: z
+    .object({
+      days: z.array(z.number().int().min(1).max(7)).min(1).max(7),
+      until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    })
+    .optional(),
 });
 
 const reportSchema = z.object({
@@ -483,12 +493,26 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     if (!e.categoryIds.every((c) => known.has(c)))
       throw new ApiError(400, 'invalid_input', 'category');
     if (!isInBbox(e.point, region.bbox)) throw new ApiError(400, 'outside_region');
-    const start = resolveInstant(e.start, region.timezone)?.at;
-    const end = e.end ? resolveInstant(e.end, region.timezone)?.at : null;
+    // A weekly repeat is one event per date (M12 §4.5), each its own length after its start.
+    const { recurring } = limits;
+    if (input.repeat && !user) throw new ApiError(401, 'account_required');
+    const starts = input.repeat
+      ? weeklyStarts(e.start, input.repeat, recurring.maxWeeks)
+      : [e.start];
+    if (!starts.length || starts.length > recurring.maxOccurrences)
+      throw new ApiError(400, 'invalid_input', 'repeat');
+    const length = e.end ? wallMinutes(e.start, e.end) : null;
     const t = now().getTime();
-    if (!start || start.getTime() < t - 86_400_000 || start.getTime() > t + 366 * 86_400_000)
-      throw new ApiError(400, 'invalid_input', 'start');
-    if (end && end.getTime() <= start.getTime()) throw new ApiError(400, 'invalid_input', 'end');
+    const dates = starts.map((wall) => {
+      const start = resolveInstant(wall, region.timezone)?.at;
+      if (!start || start.getTime() < t - 86_400_000 || start.getTime() > t + 366 * 86_400_000)
+        throw new ApiError(400, 'invalid_input', 'start');
+      const endWall = length === null ? null : shiftWall(wall, length);
+      const end = endWall ? resolveInstant(endWall, region.timezone)?.at : null;
+      if (length !== null && (!end || end.getTime() <= start.getTime()))
+        throw new ApiError(400, 'invalid_input', 'end');
+      return { wall, endWall, start, end: end ?? null };
+    });
     if (e.url) {
       try {
         // Same rules as autofill: public http(s) links only.
@@ -513,74 +537,101 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     }
     const usage = usageMonth(now(), accountZone);
 
-    const id = crypto.randomUUID();
-    const res = normalize(
-      {
-        externalId: id,
-        sourceUrl: e.url ?? null,
-        title: e.title,
-        description: e.description ?? null,
-        startAt: start.toISOString(),
-        endAt: end ? end.toISOString() : null,
-        categoryLabels: [],
-        categoryIds: e.categoryIds,
-        venue: {
+    // A series shares one venue row; every date is its own submission and event.
+    const seriesId = input.repeat ? crypto.randomUUID() : null;
+    const items = dates.map((d) => {
+      const id = crypto.randomUUID();
+      const res = normalize(
+        {
           externalId: id,
-          name: e.venueName,
-          address: e.address || null,
+          sourceUrl: e.url ?? null,
+          title: e.title,
+          description: e.description ?? null,
+          startAt: d.start.toISOString(),
+          endAt: d.end ? d.end.toISOString() : null,
+          categoryLabels: [],
+          categoryIds: e.categoryIds,
+          venue: {
+            externalId: seriesId ?? id,
+            name: e.venueName,
+            address: e.address || null,
+            point: e.point,
+            website: null,
+          },
           point: e.point,
-          website: null,
+          isFree: e.isFree,
+          priceMin: e.isFree ? 0 : (e.priceMin ?? null),
+          priceMax: e.isFree ? 0 : (e.priceMin ?? null),
+          currency: e.isFree ? null : (e.currency ?? region.currency),
+          rules: {},
+          ageMin: e.ageMin ?? null,
+          family: e.family ?? null,
+          entry: e.entry ?? null,
+          officialUrl: e.url ?? null,
+          ticketUrl: null,
+          imageUrl: null,
+          status: 'scheduled',
         },
-        point: e.point,
-        isFree: e.isFree,
-        priceMin: e.isFree ? 0 : (e.priceMin ?? null),
-        priceMax: e.isFree ? 0 : (e.priceMin ?? null),
-        currency: e.isFree ? null : (e.currency ?? region.currency),
-        rules: {},
-        ageMin: e.ageMin ?? null,
-        family: e.family ?? null,
-        entry: e.entry ?? null,
-        officialUrl: e.url ?? null,
-        ticketUrl: null,
-        imageUrl: null,
-        status: 'scheduled',
-      },
-      {
-        source: submissionsSource,
-        region,
-        categories: config.categories,
-        h3Resolution: config.app.h3.eventResolution,
-        densityResolution: config.app.h3.densityResolution,
-        descriptionMaxChars: limits.maxDescriptionChars,
-        now: now(),
-      },
-    );
-    if (!res.ok) throw new ApiError(400, 'invalid_input', res.reason);
+        {
+          source: submissionsSource,
+          region,
+          categories: config.categories,
+          h3Resolution: config.app.h3.eventResolution,
+          densityResolution: config.app.h3.densityResolution,
+          descriptionMaxChars: limits.maxDescriptionChars,
+          now: now(),
+        },
+      );
+      if (!res.ok) throw new ApiError(400, 'invalid_input', res.reason);
+      return {
+        id,
+        eventId: res.value.event.id,
+        // Each date keeps its own form, so "add again" copies the date it was opened from.
+        p: {
+          id,
+          form: { ...e, start: d.wall, end: d.endWall, url: e.url ?? null },
+          normalized: res.value,
+        },
+      };
+    });
     const publish = limits.publishBeforeModeration;
+    const common = {
+      p_submitter: submitter,
+      p_region: region.id,
+      p_publish: publish,
+      p_user: user?.id ?? null,
+      p_month: user ? usage.month : null,
+      p_max: quotaMax,
+      p_trusted: trusted,
+    };
     try {
-      await db.rpc('submit_event', {
-        p: { id, form: { ...e, url: e.url ?? null }, normalized: res.value },
-        p_submitter: submitter,
-        p_region: region.id,
-        p_publish: publish,
-        p_user: user?.id ?? null,
-        p_month: user ? usage.month : null,
-        p_max: quotaMax,
-        p_trusted: trusted,
-      });
+      if (seriesId)
+        await db.rpc('submit_series', {
+          p_series: seriesId,
+          p_items: items.map((i) => i.p),
+          ...common,
+        });
+      else await db.rpc('submit_event', { p: items[0]!.p, ...common });
     } catch (err) {
       if (err instanceof SupabaseError && err.code === 'HQ001')
         throw quotaExceeded('events', quotaMax, usage.resetsAt);
       throw err;
     }
     // Published by a trusted account: the reward follows at once, as an approval would give it.
-    const reward = trusted ? await award(id, res.value.event.id) : null;
+    // A series earns as one event, on its first date.
+    const first = items[0]!;
+    const reward = trusted ? await award(first.id, first.eventId) : null;
+    const shown = publish || trusted;
     return json(
       {
-        id,
-        eventId: publish || trusted ? res.value.event.id : null,
-        status: publish || trusted ? 'published' : 'pending',
+        id: first.id,
+        eventId: shown ? first.eventId : null,
+        status: shown ? 'published' : 'pending',
         trusted,
+        ...(seriesId && {
+          seriesId,
+          dates: items.map((i) => ({ id: i.id, eventId: shown ? i.eventId : null })),
+        }),
         ...(reward && { reward }),
       },
       201,
@@ -636,6 +687,18 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         // Rewards come only after moderation (M12 §5).
         const reward = action === 'approve' ? await award(id, done.eventId) : null;
         return json({ ...done, ...(reward && { reward }) });
+      }
+      // A weekly repeat is decided once, for all its pending dates (M12 §4.5). It earns as one
+      // event, on its earliest date.
+      if (kind === 'series' && (action === 'approve' || action === 'reject')) {
+        if (!z.string().uuid().safeParse(id).success) throw new ApiError(404, 'not_found');
+        const dates = await db.rpc<{ id: string; eventId: string | null; action: string }[]>(
+          'moderate_series',
+          { p_series: id, p_action: action, p_note: note ?? null, p_moderator: email },
+        );
+        const first = dates[0]!;
+        const reward = action === 'approve' ? await award(first.id, first.eventId) : null;
+        return json({ seriesId: id, action, dates, ...(reward && { reward }) });
       }
       if (kind === 'trusted' && action === 'reject')
         return json(

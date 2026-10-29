@@ -7,6 +7,8 @@ import type { MessageKey } from './i18n/en';
 /** One of the account's own events in GET /api/me/contributions (M12 §5). */
 export interface MyEvent {
   submissionId: string;
+  /** The dates of one weekly repeat share it (M12 §4.5). */
+  seriesId?: string | null;
   eventId: string | null;
   title: string;
   startAt: string | null;

@@ -23,7 +23,7 @@ One branch and one PR to `main` per slice, as in M6 and M8. The order follows th
 | F     | §5 UI     | Your impact and contributor card: after-add screen, account card, level, credit toggle                                  | E     | waived | built   |
 | G     | §4.2      | Poster photo: Claude Haiku reads a poster into the add form                                                             | D     | waived | built   |
 | H     | §4.3–4.4  | "Happening here" quick add, and add again                                                                               | F     | waived | built   |
-| I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                             | H     | yes    | planned |
+| I     | §4.5      | Recurring events by pattern, stored as separate occurrences                                                             | H     | waived | built   |
 | J     | §2.3      | Regular services at places of worship, from OSM `service_times` and parish pages                                        | C     | —      | planned |
 | K     | §2.4–2.5  | Cultural institutions, universities and more ticket sites as crawl targets                                              | B     | —      | planned |
 | L     | §4.6      | Calendar feed import for an account                                                                                     | B, E  | yes    | planned |
@@ -235,6 +235,25 @@ From your past events (account card and after-add screen): pick one, choose a ne
 ### 4.5 Recurring events by pattern (slice I)
 
 In the add form, "Repeats": weekly on chosen days at a time, until a date (at most 12 weeks ahead). The server stores **one event per occurrence**, linked by a `series_id`. Each occurrence counts against the monthly quota, and moderation approves the series once. Editing or cancelling one occurrence leaves the others.
+
+#### Built (slice I, 2026-10-29)
+
+- **Owner decisions** (2026-10-29, building the rest of M12 without stopping): a series earns premium days like one event, once, on its earliest date; cancelling a single date by its adder is left for later (the per-date storage allows it).
+- **Form.** "Repeats": Does not repeat / Weekly.
+  - Weekly shows the seven weekdays (the start's own day already on) and "Until", four weeks after the start at first and at most `submissions.recurring.maxWeeks` (12).
+  - A line gives the count and the range of dates. It turns into a warning, and sending is held, when there are no dates, more than `maxOccurrences` (24), or more than the month's events left.
+  - Hidden in the quick add short form; add again and "Add another date" start without a repeat.
+  - The thanks screen says how many dates were added, each its own event.
+- **Dates** (`packages/core/src/recurrence.ts`): `weeklyStarts` gives the wall-clock starts, earliest first, so 19:00 stays 19:00 across a change of clocks. The form and the server use the same function, so both count the same dates.
+- **Server.** `POST /api/submissions` takes `repeat: {days, until}` (ISO weekdays). A repeat needs an account. Each date gets its own submission, its own event and its own form (so add again copies that date), with the original length; the series shares one venue row.
+  - `submit_series()` (migration 17) stores every date in one transaction through `submit_event`: each counts once against the month, and if the quota runs out partway nothing is stored (429).
+  - A trusted account's series publishes at once and earns on its first date.
+- **Moderation.** The queue shows a series as one card with its dates; Approve or Reject goes to `POST /api/moderation/series/:id`, `moderate_series()` decides every pending date, earliest first, and the reward goes to the first. After that everything is per date: a report, a cancel or a hide touches one date only.
+- **Account card.** A series is one row: its count, the next date ahead, and the opens and days of all its dates. Opening it opens the next date; "Add again" copies that date as a single event.
+- **No mockup** (owner, 2026-10-28); the weekday buttons follow the category chips. No new icons.
+- **Tests.** Core: weekdays, the until day, the 12-week limit, the change of clocks. API: dates and times per submission, one venue, too many or none, an account needed, the quota, a trusted series rewarded once, series moderation (approve, reject, 409, 404, 403). Database (CI): storing a series, all or nothing on the quota, deciding it once. Web: the form, the quota and empty warnings, back to a single event, the moderation card, the account card row.
+- **Checked** in the dev build at 380 px in Polish on a throwaway page with a stubbed `/api` (deleted): the weekday row fits without overflow.
+- **Not checked:** signed in on the Cloudflare preview, and against Supabase (migration 17 needs "Migrate database").
 
 ### 4.6 Calendar feed import for an account (slice L)
 
