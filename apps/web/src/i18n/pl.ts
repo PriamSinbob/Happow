@@ -515,6 +515,18 @@ export const pl: Record<MessageKey, string> = {
   'add.photo.notFound':
     'Nie udało się odczytać wydarzenia z tego zdjęcia. Uzupełnij formularz poniżej.',
   'add.photo.unreadable': 'Nie udało się otworzyć tego zdjęcia. Spróbuj innego.',
+  // Quick add and add again (M12 slice H)
+  'add.quick.title': 'Dzieje się tu i teraz?',
+  'add.quick.text': 'Dodaj w kilka dotknięć: pinezka tam, gdzie jesteś, początek teraz.',
+  'add.quick.start': 'Dodaj tutaj',
+  'add.quick.summary': 'Pinezka w Twoim miejscu · początek {time}',
+  'add.quick.more': 'Więcej szczegółów',
+  'add.again': 'Dodaj kolejny termin',
+  'add.again.loading': 'Kopiuję Twoje wydarzenie…',
+  'add.again.copied': 'Skopiowano z „{title}”. Wybierz nowy dzień i godzinę.',
+  'add.again.gone': 'Tego wydarzenia nie można dodać ponownie.',
+  'contrib.again': 'Dodaj ponownie',
+  'contrib.againFor': 'Dodaj ponownie „{title}”',
   'error.photo_unavailable':
     'Czytanie zdjęć jest teraz niedostępne. Spróbuj później albo uzupełnij formularz.',
   'error.photo_too_large': 'To zdjęcie jest za duże. Spróbuj innego.',

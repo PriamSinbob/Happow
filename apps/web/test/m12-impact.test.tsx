@@ -143,7 +143,7 @@ describe('the contributor section (M12 slice F)', () => {
       }),
     );
     const onOpen = vi.fn();
-    render(<ContributorSection onOpenEvent={onOpen} />, { wrapper: wrap });
+    render(<ContributorSection onOpenEvent={onOpen} onAddAgain={vi.fn()} />, { wrapper: wrap });
     expect(await screen.findByText('Your contributions')).toBeTruthy();
     expect(screen.getByText('Local')).toBeTruthy();
     expect(screen.getByText('Next: Guide at 20 verified events and 200 opens')).toBeTruthy();
@@ -162,14 +162,16 @@ describe('the contributor section (M12 slice F)', () => {
 
   it('shows the trusted badge, no next level at the top, and nothing before a first event', async () => {
     serve(me(), contributions({ trusted: true, level: 'cityGuide' }));
-    const { unmount } = render(<ContributorSection onOpenEvent={vi.fn()} />, { wrapper: wrap });
+    const { unmount } = render(<ContributorSection onOpenEvent={vi.fn()} onAddAgain={vi.fn()} />, {
+      wrapper: wrap,
+    });
     expect(await screen.findByText('Trusted contributor')).toBeTruthy();
     expect(screen.getByText('City guide')).toBeTruthy();
     expect(screen.queryByText(/^Next:/)).toBeNull();
     unmount();
 
     serve(me(), contributions({ verified: 0, level: null, events: [] }));
-    render(<ContributorSection onOpenEvent={vi.fn()} />, { wrapper: wrap });
+    render(<ContributorSection onOpenEvent={vi.fn()} onAddAgain={vi.fn()} />, { wrapper: wrap });
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith('/api/me/contributions', expect.anything()),
     );
@@ -178,7 +180,7 @@ describe('the contributor section (M12 slice F)', () => {
 
   it('asks for a name before switching the credit on, and switches it off at once', async () => {
     serve(me(), contributions());
-    render(<ContributorSection onOpenEvent={vi.fn()} />, { wrapper: wrap });
+    render(<ContributorSection onOpenEvent={vi.fn()} onAddAgain={vi.fn()} />, { wrapper: wrap });
     const box = (await screen.findByLabelText(/Show my name on events I add/)) as HTMLInputElement;
     expect(box.checked).toBe(false);
     fireEvent.click(box);
@@ -336,5 +338,31 @@ describe('level strings', () => {
       expect(en).toHaveProperty(`level.${id}`);
       expect(pl).toHaveProperty(`level.${id}`);
     }
+  });
+});
+
+describe('add again from the account card (M12 slice H)', () => {
+  it('offers it on every event but a rejected or hidden one', async () => {
+    serve(
+      me(),
+      contributions({
+        events: [
+          myEvent({ submissionId: 's3', title: 'Waiting one', status: 'pending', reward: null }),
+          myEvent({ submissionId: 's2', title: 'Rejected one', status: 'rejected', reward: null }),
+          myEvent({ submissionId: 's4', title: 'Hidden one', hidden: true }),
+          myEvent(),
+        ],
+      }),
+    );
+    const onAgain = vi.fn();
+    render(<ContributorSection onOpenEvent={vi.fn()} onAddAgain={onAgain} />, { wrapper: wrap });
+    await screen.findByText('Your contributions');
+    const again = screen.getAllByRole('button', { name: /^Add “.+” again$/ });
+    expect(again.map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Add “Waiting one” again',
+      'Add “Courtyard jazz” again',
+    ]);
+    fireEvent.click(again[1]!);
+    expect(onAgain).toHaveBeenCalledWith(myEvent().submissionId);
   });
 });

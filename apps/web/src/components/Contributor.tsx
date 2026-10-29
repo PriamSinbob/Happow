@@ -64,7 +64,13 @@ export function LevelLine({ c }: { c: Contributions }) {
 }
 
 /** The section under the account card's plan line; hidden until the account has added an event. */
-export function ContributorSection({ onOpenEvent }: { onOpenEvent: (id: string) => void }) {
+export function ContributorSection({
+  onOpenEvent,
+  onAddAgain,
+}: {
+  onOpenEvent: (id: string) => void;
+  onAddAgain: (submissionId: string) => void;
+}) {
   const { t } = useI18n();
   const account = useAccount();
   const { data: c } = useContributions(account.status === 'signedIn');
@@ -88,7 +94,7 @@ export function ContributorSection({ onOpenEvent }: { onOpenEvent: (id: string) 
         {t('contrib.monthDays', { days: c.monthDays, cap: c.premiumDaysPerMonth })}
       </p>
       <CreditSetting />
-      <MyEvents events={c.events} onOpen={onOpenEvent} />
+      <MyEvents events={c.events} onOpen={onOpenEvent} onAgain={onAddAgain} />
     </section>
   );
 }
@@ -199,8 +205,19 @@ function eventState(e: MyEvent): EventState {
   return 'live';
 }
 
-/** The account's own events, newest first, with their opens and the days each earned. */
-function MyEvents({ events, onOpen }: { events: MyEvent[]; onOpen: (id: string) => void }) {
+/**
+ * The account's own events, newest first, with their opens and the days each earned. Any but a
+ * rejected or hidden one can be added again for another date (M12 §4.4).
+ */
+function MyEvents({
+  events,
+  onOpen,
+  onAgain,
+}: {
+  events: MyEvent[];
+  onOpen: (id: string) => void;
+  onAgain: (submissionId: string) => void;
+}) {
   const { t, lang } = useI18n();
   return (
     <div className="contrib__events">
@@ -230,6 +247,16 @@ function MyEvents({ events, onOpen }: { events: MyEvent[]; onOpen: (id: string) 
                 </button>
               ) : (
                 <div className="my-events__row">{body}</div>
+              )}
+              {state !== 'rejected' && state !== 'hidden' && (
+                <button
+                  type="button"
+                  className="inline-link my-events__again"
+                  aria-label={t('contrib.againFor', { title: e.title })}
+                  onClick={() => onAgain(e.submissionId)}
+                >
+                  {t('contrib.again')}
+                </button>
               )}
             </li>
           );

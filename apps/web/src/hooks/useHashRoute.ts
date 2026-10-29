@@ -4,12 +4,14 @@ import { useCallback, useEffect, useState } from 'react';
 export type Route =
   | { name: 'event'; id: string }
   | { name: 'go'; id: string }
-  | { name: 'add' }
+  /** `again`: one of the account's submissions to add for another date (M12 §4.4). */
+  | { name: 'add'; again?: string }
   | { name: 'moderate' }
   | { name: 'about' };
 
 /** Screens about one event: its detail, and "Going there". */
 const WITH_ID = { event: '#/e/', go: '#/go/' } as const;
+const AGAIN = '#/add?again=';
 
 function read(): Route | null {
   const h = window.location.hash;
@@ -23,12 +25,21 @@ function read(): Route | null {
     }
   }
   if (h === '#/add') return { name: 'add' };
+  if (h.startsWith(AGAIN)) {
+    try {
+      const again = decodeURIComponent(h.slice(AGAIN.length));
+      return again ? { name: 'add', again } : { name: 'add' };
+    } catch {
+      return { name: 'add' };
+    }
+  }
   if (h === '#/moderate') return { name: 'moderate' };
   if (h === '#/about') return { name: 'about' };
   return null;
 }
 
 export function routeHref(route: Route): string {
+  if (route.name === 'add' && route.again) return AGAIN + encodeURIComponent(route.again);
   return 'id' in route
     ? `${WITH_ID[route.name]}${encodeURIComponent(route.id)}`
     : `#/${route.name}`;

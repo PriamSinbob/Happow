@@ -114,6 +114,14 @@ export function App() {
   const [day, setDay] = useState<number | null>(null);
   const [liveOnly, setLiveOnly] = useState(false);
   // Searches move only after ~100 m; labels and windows follow a minute clock, not downloads.
+  // Quick add offers "happening here" only with a precise fix (M12 §4.3).
+  const here =
+    location.status === 'ok' &&
+    location.position &&
+    location.accuracy !== null &&
+    location.accuracy <= config.app.submissions.quickAdd.maxAccuracyM
+      ? location.position
+      : null;
   const userCenter = useStableCenter(location.center, config.app.refresh.moveThresholdM);
   // Auto day/night follows sunrise and sunset where the user is.
   const { setPoint: setThemePoint } = useTheme();
@@ -665,6 +673,9 @@ export function App() {
       )}
       {route?.name === 'add' && (
         <AddEvent
+          key={route.again ?? 'new'}
+          again={route.again ?? null}
+          here={here}
           onClose={close}
           onOpenEvent={(id) => go({ name: 'event', id }, true)}
           onOpenAccount={() => go({ name: 'about' }, true)}
@@ -677,6 +688,7 @@ export function App() {
           onClose={close}
           onModerate={() => go({ name: 'moderate' }, true)}
           onOpenEvent={(id) => go({ name: 'event', id }, true)}
+          onAddAgain={(again) => go({ name: 'add', again }, true)}
         />
       )}
       {addGate && (

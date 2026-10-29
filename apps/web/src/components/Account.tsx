@@ -17,11 +17,13 @@ export function AccountCard({
   onPremium,
   onDelete,
   onOpenEvent,
+  onAddAgain,
 }: {
   onSignIn: () => void;
   onPremium: () => void;
   onDelete: () => void;
   onOpenEvent: (id: string) => void;
+  onAddAgain: (submissionId: string) => void;
 }) {
   const { t, lang } = useI18n();
   const account = useAccount();
@@ -88,7 +90,7 @@ export function AccountCard({
           )}
         </div>
       </div>
-      <ContributorSection onOpenEvent={onOpenEvent} />
+      <ContributorSection onOpenEvent={onOpenEvent} onAddAgain={onAddAgain} />
       <div className="account-card__actions">
         <button
           type="button"

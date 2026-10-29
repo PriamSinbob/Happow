@@ -315,3 +315,37 @@ describe('the contributor’s side of the account', () => {
     expect((await trust('ala@example.org', 'mod-token')).status).toBe(403);
   });
 });
+
+describe('GET /api/me/submissions/:id, add again (M12 §4.4)', () => {
+  const form = {
+    title: 'Pchli targ na Ruskiej',
+    categoryIds: ['market'],
+    venueName: 'Podwórko',
+    start: '2026-11-07T10:00',
+    end: '2026-11-07T14:00',
+  };
+
+  it("returns the owner's own form, and asks the database as that owner", async () => {
+    const b = backend({ submission_form: () => ({ body: form }) });
+    const res = await b.api(req(`me/submissions/${SUB}`, { token: 'user-token' }));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('cache-control')).toBe('private, no-store');
+    expect(await res.json()).toEqual({ form });
+    expect(b.call('submission_form')[0]!.args).toEqual({ p_user: 'u1', p_id: SUB });
+  });
+
+  it("is 404 for someone else's, a rejected or a hidden one (the database gives none), or a bad id", async () => {
+    const b = backend({ submission_form: () => ({ body: null }) });
+    expect((await b.api(req(`me/submissions/${SUB}`, { token: 'user-token' }))).status).toBe(404);
+    expect((await b.api(req('me/submissions/not-a-uuid', { token: 'user-token' }))).status).toBe(
+      404,
+    );
+    expect(b.call('submission_form')).toHaveLength(1);
+  });
+
+  it('needs an account', async () => {
+    const b = backend({ submission_form: () => ({ body: form }) });
+    expect((await b.api(req(`me/submissions/${SUB}`))).status).toBe(401);
+    expect(b.call('submission_form')).toHaveLength(0);
+  });
+});
