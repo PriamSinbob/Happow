@@ -1,0 +1,22 @@
+# Happow — security and optimization tasks
+
+Oct 30, 2026
+
+Things that are set loosely on purpose during development, or that work but could be tighter or faster. Each item says when it has to be done. The ones marked **Before launch** belong to M13 (launch readiness) at the latest. Add new items here as they come up; tick them off with a date and the PR.
+
+## Security
+
+- [ ] **Sign-in code limits: stop resetting them by hand.** _Before launch._ Asking for a sign-in code is limited to 5 requests per hour per network (`auth.codeRequestsPerHourPerClient`) and 3 per day per email address (`auth.codeRequestsPerDayPerEmail`) in `config/app.json`. During development the owner was locked out after testing the Supabase redirect URLs, and both counters were cleared by hand in the live database (`rate_limits`, buckets `code-request` and `code-request-email`, 2026-10-30). The limits themselves weren't changed. Before launch: stop clearing them, check that 5 and 3 still fit real use, and decide whether staff need a way past them.
+- [ ] **Previews use the live database.** _Before launch._ The Worker's **Previews Base** secrets are production's (Supabase URL and service-role key, salt, API keys), so anything done on a preview is real: sign-ins, submissions, approvals. Before launch: give previews their own Supabase project, or keep the service-role key out of previews.
+- [ ] **Sign-in links may return to any preview.** _Before launch._ Supabase → Authentication → URL Configuration → Redirect URLs has `https://*-happow.krasnoroda.workers.dev/**`, so a link can land on any branch's preview. Before launch: narrow it to the final domain (and a preview pattern only if previews keep sign-in), together with the domain switch in M13.
+- [ ] **Sign-in codes are sent by hand.** _Before launch._ `auth.emailDelivery` is `manual`: the admin emails each code. Before launch: an email sender, then `emailDelivery` set to send automatically.
+- [ ] **Biletyna's terms.** _Before launch._ The source was switched on (2026-10-30) after a check of robots.txt and its terms page, which didn't show the full terms. Before launch: read the full terms, or ask Biletyna, and record the answer in its `termsNotes`.
+- [ ] **Account feed addresses are checked only when added.** _Soon._ `POST /api/me/feeds` refuses private addresses (`checkPublicUrl`), but the ingest job fetches the stored address later without checking again, so a name that later points to a private address would be fetched. Also: no size limit on a feed's file. Fix: check the address again before each fetch, and cap the download size, as the crawler does for pages.
+- [ ] **Previews and the cron.** _Check._ Cloudflare doesn't run Cron Triggers on previews, so a preview never ingests or saves metrics. Keep it that way: no `triggers` under `previews` in `wrangler.jsonc`.
+
+## Optimization
+
+- [ ] **Feed import geocodes events it already has.** _Soon._ `packages/ingest/src/feeds.ts` geocodes each feed event before it knows whether `feed_import` will take it, so every run asks the geocoder again for events imported earlier (the cache softens it, but each still costs a lookup). Fix: work out the event's key first and skip known keys, for example by reading the feed's known keys once per run.
+- [ ] **Coverage counts each district twice.** _When regions grow._ `coverage()` (migration 21) checks every live event against every district polygon, once for the totals and again per category. Fine for 48 districts and a few hundred events a week. With more regions or events: count per district once (a join with `st_covers`, grouped), and only then split by category.
+- [ ] **Account card reads every contribution at once.** _When accounts grow._ `contributions_get` sums counts and thanks for up to 200 of an account's events on every opening of the card. For very active accounts: keep running totals, or page the event list.
+- [ ] **The district goal is asked live.** _Check._ `district_goal` runs on every empty reach (after moves of about 100 m), uncached. If it shows in the database's load: cache it at the edge per district and weekend, like the area cache.
