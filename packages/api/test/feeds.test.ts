@@ -159,3 +159,24 @@ describe('POST /api/admin/feeds/:id (M12 §4.6)', () => {
     ).toBe(404);
   });
 });
+
+describe('GET /api/admin/coverage (M12 §3)', () => {
+  it('gives the admin the region’s coverage now, and nobody else', async () => {
+    const body = { now: {}, districts: [], weeks: [] };
+    const b = backend({ coverage: () => ({ body }) });
+    const res = await b.api(req('admin/coverage?region=wroclaw', { token: 'admin-token' }));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('cache-control')).toBe('private, no-store');
+    expect(await res.json()).toEqual(body);
+    expect(b.call('coverage')[0]!.args).toEqual({
+      p_region: 'wroclaw',
+      p_at: now().toISOString(),
+      p_evening_hour: config.app.metrics.eveningFromHour,
+    });
+    expect((await b.api(req('admin/coverage', { token: 'mod-token' }))).status).toBe(403);
+    const unknown = backend({ coverage: fail('P0002') });
+    expect(
+      (await unknown.api(req('admin/coverage?region=x', { token: 'admin-token' }))).status,
+    ).toBe(404);
+  });
+});

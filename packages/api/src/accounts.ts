@@ -303,6 +303,25 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
     const [kind, id, action] = path;
     if (kind === 'grants') return grants(req, path, user);
     if (kind === 'sources') return sources(req, path, user);
+    // Events per district and category, today and the week, with the weekly metrics (M12 §3).
+    if (kind === 'coverage' && req.method === 'GET' && path.length === 1) {
+      const region = new URL(req.url).searchParams.get('region') ?? app.defaultRegion;
+      try {
+        return json(
+          await db.rpc('coverage', {
+            p_region: region,
+            p_at: now().toISOString(),
+            p_evening_hour: app.metrics.eveningFromHour,
+          }),
+          200,
+          { 'cache-control': 'private, no-store' },
+        );
+      } catch (err) {
+        if (err instanceof SupabaseError && err.code === 'P0002')
+          throw new ApiError(404, 'not_found');
+        throw err;
+      }
+    }
     // Trust back after a rejection (M12 §5.3).
     if (kind === 'trust' && req.method === 'POST' && path.length === 1) {
       const { email } = await body(req, trustSchema);

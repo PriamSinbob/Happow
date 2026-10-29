@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Why someone would use Happow over a listings site, a ticket app or Google Maps. Every item is tagged so the list stays honest:
 
-- **Status:** `Live` = in the app today · `M6` / `M7` = specified in [M6-design](milestones/M6-design.md) / [M7-search-follow](milestones/M7-search-follow.md) · `Later` = designed, not scheduled.
+- **Status:** `Live` = in the app today · `M6` / `M7` = specified in [M6-design](milestones/M6-design.md) / [M7-search-follow](milestones/M7-search-follow.md) · `M12` = built in [M12-more-events](milestones/M12-more-events.md), live once merged and migrated · `Later` = designed, not scheduled.
 - **Tier:** see [Free and paid](#free-and-paid) at the end. Unless marked otherwise, an item is free for everyone, with no account.
 
 ## Built around "now"
@@ -103,6 +103,9 @@ Why someone would use Happow over a listings site, a ticket app or Google Maps. 
 
 - **Add an event from a link.** Paste the event's page and the form fills itself (structured data first, AI as fallback); you only confirm. `Live`
 - **Report problems** in two taps. `Live`
+- **Add from anywhere.** Share a page into Happow, snap a poster, or tap "Happening here, now" and give just a title. Add a past event again for a new date, repeat one weekly, or connect your own calendar feed once. `M12`
+- **See what you did, never a streak.** Your events' opens, routes, arrivals and visitors' thanks; levels that never go down; premium days for verified events; trusted contributors skip the queue; "first added by you" where nothing happened lately. `M12`
+- **More of the city.** Venues from OpenStreetMap with their own calendars, regular services at places of worship, the public library, the university and another ticket site, each switched on only after its terms are checked. `M12`
 
 ## Bring people along
 
