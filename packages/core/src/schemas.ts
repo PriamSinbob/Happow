@@ -402,6 +402,11 @@ export const appConfigSchema = z.object({
       skippedBackoffHours: z.number().positive(),
       failedRetryMinutes: z.number().positive(),
       runningTimeoutMinutes: z.number().positive(),
+      /**
+       * A run that starts also takes sources due within this many hours (at most half their
+       * interval early), so they share runs and save Actions minutes.
+       */
+      batchAheadHours: z.number().min(0).default(0),
     }),
   }),
 });

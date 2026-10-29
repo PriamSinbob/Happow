@@ -6,9 +6,9 @@ name: Ingest sources
 # Sources whose secrets are missing are skipped and recorded, so the Worker backs off for a day.
 on:
   schedule:
-    # Fallback only, in case the Worker cannot dispatch (token missing or expired). Kept sparse:
-    # every run of a private repo counts against the Actions minutes.
-    - cron: '17 */6 * * *'
+    # Fallback only, in case the Worker cannot dispatch (token missing or expired). Once a day:
+    # every run of a private repo counts against the Actions minutes, even when nothing is due.
+    - cron: '17 3 * * *'
   workflow_dispatch:
     inputs:
       source:
@@ -27,7 +27,9 @@ concurrency:
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # One run fetches every due source in turn (the city portal alone takes about 20 min), so
+    # 30 left the last sources out. A run only bills the minutes it uses.
+    timeout-minutes: 60
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}

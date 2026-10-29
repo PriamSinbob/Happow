@@ -11,9 +11,11 @@ import {
   type NormalizedEvent,
 } from '../src';
 import { config, region, source } from './helpers';
+import { intervalMs } from '@happow/core';
 
 describe('scheduling', () => {
-  const tm = source('ticketmaster'); // every 60m
+  // The rules on an hourly source; config's own schedules change.
+  const tm = { ...source('ticketmaster'), schedule: '60m' };
   const now = new Date('2026-10-24T12:00:00Z');
 
   it('runs a source when it has never succeeded or its interval has passed', () => {
@@ -22,6 +24,27 @@ describe('scheduling', () => {
     // A cron tick a few minutes early still counts.
     expect(isDue(tm, new Date('2026-10-24T11:03:00Z'), now)).toBe(true);
     expect(isDue(tm, new Date('2026-10-24T11:30:00Z'), now)).toBe(false);
+  });
+
+  it('lets a starting run take a source due soon, at most half its interval early', () => {
+    const daily = { ...source('nfm'), schedule: '24h' };
+    const sixHours = 6 * 3_600_000;
+    // Last read 19 h ago: due in 5 h, so a run starting now takes it along.
+    expect(isDue(daily, new Date('2026-10-23T17:00:00Z'), now)).toBe(false);
+    expect(isDue(daily, new Date('2026-10-23T17:00:00Z'), now, sixHours)).toBe(true);
+    // Due in 7 h: it waits for a later run.
+    expect(isDue(daily, new Date('2026-10-23T19:00:00Z'), now, sixHours)).toBe(false);
+    // An hourly source is never taken more than half an hour early.
+    expect(isDue(tm, new Date('2026-10-24T11:40:00Z'), now, sixHours)).toBe(false);
+    expect(isDue(tm, new Date('2026-10-24T11:30:00Z'), now, sixHours)).toBe(true);
+  });
+
+  it('keeps the dispatcher to a few runs a day: no hourly sources, slow retries', () => {
+    const { dispatch } = config.app.ingest;
+    expect(dispatch.failedRetryMinutes).toBeGreaterThanOrEqual(360);
+    expect(dispatch.batchAheadHours).toBeGreaterThan(0);
+    for (const s of config.sources.filter((x) => x.enabled && x.schedule))
+      expect(intervalMs(s.schedule!)).toBeGreaterThanOrEqual(12 * 3_600_000);
   });
 
   it('never schedules sources without a schedule (the manual seed)', () => {

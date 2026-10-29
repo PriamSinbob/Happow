@@ -107,8 +107,9 @@
       "ref": "main",
       "tokenSecret": "GITHUB_DISPATCH_TOKEN",
       "skippedBackoffHours": 24,
-      "failedRetryMinutes": 60,
-      "runningTimeoutMinutes": 40
+      "failedRetryMinutes": 360,
+      "runningTimeoutMinutes": 70,
+      "batchAheadHours": 6
     }
   },
   "geocoding": {

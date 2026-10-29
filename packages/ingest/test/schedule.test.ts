@@ -36,7 +36,11 @@ describe('dueForDispatch', () => {
 
   it('starts a run when a source has never run or its interval has passed', () => {
     expect(dueForDispatch(config, without('nfm'), now, policy)).toEqual(['nfm@wroclaw']);
-    const stale = [...without('ticketmaster'), run('ticketmaster', at('10:58'), 'ok')];
+    // Every 12 hours: the last success at 23:58 the day before.
+    const stale = [
+      ...without('ticketmaster'),
+      run('ticketmaster', new Date('2026-10-23T23:58:00Z'), 'ok'),
+    ];
     expect(dueForDispatch(config, stale, now, policy)).toEqual(['ticketmaster@wroclaw']);
   });
 
@@ -57,7 +61,7 @@ describe('dueForDispatch', () => {
   it('retries a failed source after the shorter of its interval and the retry delay', () => {
     const failed = [
       ...without('ticketmaster'),
-      run('ticketmaster', at('09:00'), 'ok'),
+      run('ticketmaster', new Date('2026-10-23T23:00:00Z'), 'ok'),
       run('ticketmaster', at('11:30'), 'failed'),
     ];
     expect(dueForDispatch(config, failed, now, policy)).toEqual([]);
