@@ -1,6 +1,7 @@
 import type { NearbyEvent } from '@happow/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { track } from '../analytics';
+import { shareToken } from '../attendance';
 import { useI18n } from '../i18n';
 import { canShareFiles, previewFile, qrPath, shareText } from '../shareEvent';
 import { Icon } from './Icons';
@@ -23,8 +24,22 @@ export function ShareSheet({
   const { t, lang } = useI18n();
   const sheet = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  // The link carries this device's share token, so it can see how many came through it (§5).
+  const [token, setToken] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    shareToken(ev.id)
+      .then((t) => live && setToken(t))
+      .catch(() => {
+        /* offline: share the plain link */
+      });
+    return () => {
+      live = false;
+    };
+  }, [ev.id]);
+  const link = token ? `${url}?s=${token}` : url;
   const text = shareText(ev, lang);
-  const qr = useMemo(() => qrPath(url), [url]);
+  const qr = useMemo(() => qrPath(link), [link]);
   const files = useMemo(canShareFiles, []);
 
   useEffect(() => {
@@ -40,7 +55,7 @@ export function ShareSheet({
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(link);
       onToast(t('event.linkCopied'));
     } catch {
       /* no clipboard: the link is shown under the code */
@@ -51,7 +66,7 @@ export function ShareSheet({
     track('Share', { as: 'link' });
     if (!navigator.share) return copy();
     try {
-      await navigator.share({ title: ev.title, text, url });
+      await navigator.share({ title: ev.title, text, url: link });
       onClose();
     } catch {
       /* the user dismissed the share sheet */
@@ -64,7 +79,7 @@ export function ShareSheet({
     track('Share', { as: 'image' });
     try {
       const file = await previewFile(ev.id);
-      await navigator.share({ files: [file], text: `${text}\n${url}` });
+      await navigator.share({ files: [file], text: `${text}\n${link}` });
       onClose();
     } catch (err) {
       if (!(err instanceof DOMException && err.name === 'AbortError'))
@@ -116,7 +131,7 @@ export function ShareSheet({
           </svg>
           <figcaption>
             {t('share.qr')}
-            <span className="share-sheet__url">{url}</span>
+            <span className="share-sheet__url">{link}</span>
           </figcaption>
         </figure>
       </div>

@@ -1322,6 +1322,32 @@ div.settings-row {
 .detail .event-card__actions {
   margin-top: 18px;
 }
+/* "I'm going" (M9 §5): the toggle, the bucketed count, the sharer's link count. */
+.going {
+  margin-top: 10px;
+}
+.going__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.going__btn {
+  flex: 0 0 auto;
+}
+.going__btn[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--ink) 50%, var(--paper));
+  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+}
+.going__count {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--quiet);
+}
+.going__links {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--quiet);
+}
 .detail__tools {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

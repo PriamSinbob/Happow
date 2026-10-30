@@ -218,6 +218,13 @@
     "pauseAfterFailures": 3
   },
   "counts": { "maxBatch": 50, "perHourPerDevice": 240 },
+  "attendance": {
+    "publicMin": 5,
+    "buckets": [5, 10, 25],
+    "keepAfterEndHours": 24,
+    "perHourPerDevice": 120,
+    "sharesPerHourPerDevice": 30
+  },
   "sharing": {
     "endedNearbyMax": 5,
     "endedLabel": { "pl": "Zakończone", "en": "Ended" }

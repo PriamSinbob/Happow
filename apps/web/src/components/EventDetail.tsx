@@ -7,6 +7,7 @@ import { eventUrl } from '../hooks/useHashRoute';
 import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
+import { Going } from './Going';
 import { NearbyNow } from './NearbyNow';
 import { ShareSheet } from './ShareSheet';
 import { hasRules, RuleList } from './EventCard';
@@ -238,6 +239,7 @@ function DetailBody({
         <div className="event-card__actions">
           <GoButtons ev={ev} onGo={onGo} />
         </div>
+        {!ended && <Going ev={ev} />}
         <div className="event-card__actions event-card__actions--links">
           {ev.ticketUrl && (
             <a className="btn" href={ev.ticketUrl} target="_blank" rel="noreferrer">
