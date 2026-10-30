@@ -4,7 +4,7 @@ Oct 30, 2026
 
 Spec from the brief (Future features → Event links, sharing and attendance, requested 2026-10-22) and M6 §9 (co-presence). M9 comes after M12 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec approved, §9 answered by the owner on 2026-10-30; slices A–E built.
+**Status:** spec approved, §9 answered by the owner on 2026-10-30; slices A–F built.
 
 Goal: **a shared event opens in Happow itself, looks right wherever it's pasted, and shows that people are going, without anyone giving up their privacy.** Sharing is the app's growth loop, so all of M9 is free for everyone, with no account and no install for the person who receives a link. The brief's rules hold throughout: no streaks, no fake urgency, pull not push, paid never buys visibility. No new data sources.
 
@@ -19,7 +19,7 @@ One branch and one PR to `main` per slice, as in M12. Each slice PR updates its 
 | C     | §3   | Sharing: link with a short text, share as image, QR code; the in-app route first, Maps second    | A, B  | built   |
 | D     | §4   | Links that outlive the event: "Ended" plus what's on now near that place                         | A     | built   |
 | E     | §5   | "I'm going" on the card, and the sharer's link-scoped count                                      | A, C  | built   |
-| F     | §6   | Co-presence: looking, on the way, here; counts from 5, off for sensitive categories              | E     | planned |
+| F     | §6   | Co-presence: looking, on the way, here; counts from 5, off for sensitive categories              | E     | built   |
 | G     | §7   | Opening in the app: Android link capture, the iOS "Add to Home Screen" hint                      | A     | planned |
 
 ### Working notes
@@ -132,6 +132,17 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 - **Friends' view (M11, owner 2026-10-30).** With M11's contacts, someone can switch to a private view that shows which of their **friends** (people they invited or who invited them) are going, looking or there, by name, so real acquaintances can check who goes without another app. Both sides opt in; it works for every category, sensitive ones included, because it shows a person to people they already know, never to strangers. Built in M11, not M9; M9 keeps the data model ready for it (one row per device, linkable to an account when signed in).
 - **Separate from M12's counts.** "Your impact" totals (opens, routes, arrivals) stay as they are: daily, per event, for the adder only. Co-presence is live and public, so it is its own short-lived table.
 - **Tests.** Each signal and its window; the threshold and buckets; a religious event showing nothing; dedup per device.
+
+**Built (slice F).**
+
+- **Signals.**
+  - **Looking:** opening a card that hasn't ended sends "looking" for `attendance.lookingMinutes` (30). It's resent at most every 15 minutes per event; if it's refused (rate limit), the card only reads the counts.
+  - **On the way:** "Going there" sends "on the way" when the route starts and takes it back when the screen closes, whether the person arrived, stopped or gave up.
+  - **Here:** always an explicit tap, never sent from location alone. It's offered on arrival in "Going there", and on the card of a live event within `attendance.hereRadiusM` (100 m).
+- **Distance.** The card measures from the map's search centre (the person's location when it's on). Since "here" is a tap and only counts from 5, a wrong offer costs little.
+- **Card line.** Under "I'm going" the card shows "10+ here · 5+ on the way · 25+ looking", each only from the threshold up, and nothing for categories with `publicAttendance: false`.
+- **Storage.** It's the slice E table (migration 23); a short signal expires on its own window (`forSeconds`).
+- **Separate from M12's counts.** "Your impact" is unchanged.
 
 ## 7. Opening in the app (slice G)
 

@@ -78,6 +78,11 @@ export const pl: Record<MessageKey, string> = {
   'going.count': '{count}+ osób idzie',
   'going.fromLinks':
     '{count, plural, one {# osoba z Twojego linku idzie} few {# osoby z Twojego linku idą} many {# osób z Twojego linku idzie} other {# osoby z Twojego linku idą}}',
+  'presence.here': '{count}+ na miejscu',
+  'presence.onway': '{count}+ w drodze',
+  'presence.looking': '{count}+ ogląda',
+  'presence.imHere': 'Jestem tu',
+  'presence.imHereOn': 'Jestem tu ✓',
   'event.verified': 'źródło: {source} · sprawdzono {ago}',
   'event.sourcePage': 'Strona źródła',
   'event.venueWebsite': 'Strona miejsca',

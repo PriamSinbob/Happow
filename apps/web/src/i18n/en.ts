@@ -75,6 +75,11 @@ export const en = {
   'going.count': '{count}+ going',
   'going.fromLinks':
     '{count, plural, one {# person from your link is going} other {# people from your link are going}}',
+  'presence.here': '{count}+ here',
+  'presence.onway': '{count}+ on the way',
+  'presence.looking': '{count}+ looking',
+  'presence.imHere': "I'm here",
+  'presence.imHereOn': "I'm here ✓",
   'event.verified': 'via {source} · checked {ago}',
   'event.sourcePage': 'Source page',
   'event.venueWebsite': 'Venue website',

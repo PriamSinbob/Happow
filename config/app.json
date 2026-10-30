@@ -223,7 +223,9 @@
     "buckets": [5, 10, 25],
     "keepAfterEndHours": 24,
     "perHourPerDevice": 120,
-    "sharesPerHourPerDevice": 30
+    "sharesPerHourPerDevice": 30,
+    "lookingMinutes": 30,
+    "hereRadiusM": 100
   },
   "sharing": {
     "endedNearbyMax": 5,

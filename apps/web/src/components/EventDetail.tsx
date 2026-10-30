@@ -239,7 +239,7 @@ function DetailBody({
         <div className="event-card__actions">
           <GoButtons ev={ev} onGo={onGo} />
         </div>
-        {!ended && <Going ev={ev} />}
+        {!ended && <Going ev={ev} now={now} />}
         <div className="event-card__actions event-card__actions--links">
           {ev.ticketUrl && (
             <a className="btn" href={ev.ticketUrl} target="_blank" rel="noreferrer">
