@@ -1,5 +1,6 @@
 /**
- * Cloudflare Worker for /api/* (same origin as the PWA, so no CORS). Everything else is a static
+ * Cloudflare Worker for /api/* (same origin as the PWA, so no CORS) and for shared event links
+ * /e/<id>, which get the app's index.html with that event's preview tags (M9 §1). Everything else is a static
  * file from apps/web/dist, served by Workers Static Assets without running this code, and
  * cacheable API responses (area snapshots) are served by Workers Caching in front of it (see
  * wrangler.jsonc). Secrets come from the Worker's Variables and Secrets: SUPABASE_URL,
@@ -12,6 +13,7 @@
  */
 import {
   createApi,
+  createEventPage,
   dispatchDueIngest,
   saveWeeklyMetrics,
   type ApiEnv,
@@ -24,11 +26,22 @@ interface ScheduledController {
   readonly scheduledTime: number;
 }
 
+/** The static files (Workers Static Assets binding, `assets.binding` in wrangler.jsonc). */
+interface AssetsEnv {
+  ASSETS: { fetch(request: Request): Promise<Response> };
+}
+
 let api: ReturnType<typeof createApi> | null = null;
+let eventPage: ReturnType<typeof createEventPage> | null = null;
 
 export default {
-  fetch(request: Request, env: ApiEnv): Promise<Response> {
+  async fetch(request: Request, env: ApiEnv & AssetsEnv): Promise<Response> {
     // Config parsing and clients are reused across requests in the same isolate.
+    if (new URL(request.url).pathname.startsWith('/e/')) {
+      eventPage ??= createEventPage(env);
+      const index = await env.ASSETS.fetch(new Request(new URL('/', request.url)));
+      return eventPage(request, await index.text());
+    }
     api ??= createApi(env);
     return api(request);
   },

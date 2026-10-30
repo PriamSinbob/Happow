@@ -49,6 +49,17 @@ export function eventHref(id: string): string {
   return routeHref({ name: 'event', id });
 }
 
+/**
+ * A shared link /e/<id> (M9 §1; the Worker gave crawlers its preview tags) opens as the app's own
+ * event route on the map's address, so closing the card leaves the map at "/". The query (a share
+ * token) is kept. Runs once, before the app reads the URL.
+ */
+export function adoptEventPath(): void {
+  const m = /^\/e\/([^/]+)\/?$/.exec(window.location.pathname);
+  if (!m) return;
+  window.history.replaceState(null, '', `/${window.location.search}${WITH_ID.event}${m[1]}`);
+}
+
 /** Absolute link to an event's detail screen, for sharing. */
 export function eventUrl(id: string): string {
   const { origin, pathname } = window.location;
