@@ -4,7 +4,7 @@ Oct 30, 2026
 
 Spec from the brief (Future features → Event links, sharing and attendance, requested 2026-10-22) and M6 §9 (co-presence). M9 comes after M12 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec approved, §9 answered by the owner on 2026-10-30; slices A–F built.
+**Status:** spec approved, §9 answered by the owner on 2026-10-30; all slices built; what it does: [M9-summary.md](M9-summary.md).
 
 Goal: **a shared event opens in Happow itself, looks right wherever it's pasted, and shows that people are going, without anyone giving up their privacy.** Sharing is the app's growth loop, so all of M9 is free for everyone, with no account and no install for the person who receives a link. The brief's rules hold throughout: no streaks, no fake urgency, pull not push, paid never buys visibility. No new data sources.
 
@@ -12,15 +12,15 @@ Goal: **a shared event opens in Happow itself, looks right wherever it's pasted,
 
 One branch and one PR to `main` per slice, as in M12. Each slice PR updates its row below and the Status line, and adds a short "Built (slice X)" note under its section. UI slices follow the existing screens (no mockups since M12 slice D, owner 2026-10-28); the design studio pass comes after everything is built.
 
-| Slice | Spec | What                                                                                             | Needs | Status  |
-| ----- | ---- | ------------------------------------------------------------------------------------------------ | ----- | ------- |
-| A     | §1   | Clean `/e/<id>` links: the Worker answers them with the event's preview tags; the app opens them | —     | built   |
-| B     | §2   | The generated preview image (1200×630), cached at the edge per event version                     | A     | built   |
-| C     | §3   | Sharing: link with a short text, share as image, QR code; the in-app route first, Maps second    | A, B  | built   |
-| D     | §4   | Links that outlive the event: "Ended" plus what's on now near that place                         | A     | built   |
-| E     | §5   | "I'm going" on the card, and the sharer's link-scoped count                                      | A, C  | built   |
-| F     | §6   | Co-presence: looking, on the way, here; counts from 5, off for sensitive categories              | E     | built   |
-| G     | §7   | Opening in the app: Android link capture, the iOS "Add to Home Screen" hint                      | A     | planned |
+| Slice | Spec | What                                                                                             | Needs | Status |
+| ----- | ---- | ------------------------------------------------------------------------------------------------ | ----- | ------ |
+| A     | §1   | Clean `/e/<id>` links: the Worker answers them with the event's preview tags; the app opens them | —     | built  |
+| B     | §2   | The generated preview image (1200×630), cached at the edge per event version                     | A     | built  |
+| C     | §3   | Sharing: link with a short text, share as image, QR code; the in-app route first, Maps second    | A, B  | built  |
+| D     | §4   | Links that outlive the event: "Ended" plus what's on now near that place                         | A     | built  |
+| E     | §5   | "I'm going" on the card, and the sharer's link-scoped count                                      | A, C  | built  |
+| F     | §6   | Co-presence: looking, on the way, here; counts from 5, off for sensitive categories              | E     | built  |
+| G     | §7   | Opening in the app: Android link capture, the iOS "Add to Home Screen" hint                      | A     | built  |
 
 ### Working notes
 
@@ -150,6 +150,11 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 - **iOS:** Home Screen web apps can't capture links, so the link opens in Safari, where the whole app works without installing. Show a one-line "Add to Home Screen" hint on a shared card, once, dismissible, never again after that.
 - Either way the recipient needs no account and no install.
 - **Tests.** The manifest fields; the hint shown once on iOS Safari and never in the installed app.
+
+**Built (slice G).**
+
+- **Android.** The manifest now has `id` and `scope` "/", which covers `/e/`, plus `handle_links: "preferred"` and `launch_handler` (`navigate-existing`), so an installed Happow opens shared links and reuses its open window. The service worker already serves the app for `/e/<id>` offline, and the app turns the path into the card.
+- **iOS.** A card opened from a shared link in iOS Safari (iPadOS included) shows one line with a close button: "Add Happow to your Home Screen: tap Share, then 'Add to Home Screen'" (`InstallHint.tsx`). It shows once per device, and never in the installed app.
 
 ## 8. Free and paid after M9
 

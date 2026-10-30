@@ -8,6 +8,7 @@ import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
 import { Going } from './Going';
+import { InstallHint } from './InstallHint';
 import { NearbyNow } from './NearbyNow';
 import { ShareSheet } from './ShareSheet';
 import { hasRules, RuleList } from './EventCard';
@@ -183,6 +184,7 @@ function DetailBody({
           )}
         </div>
         <h1 id="detail-title">{ev.title}</h1>
+        <InstallHint />
 
         {ended && <p className="status-banner status-banner--ended">{t('ended.banner')}</p>}
         <FlagNotice ev={ev} now={now} />

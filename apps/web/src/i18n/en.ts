@@ -80,6 +80,7 @@ export const en = {
   'presence.looking': '{count}+ looking',
   'presence.imHere': "I'm here",
   'presence.imHereOn': "I'm here ✓",
+  'install.iosHint': 'Add Happow to your Home Screen: tap Share, then "Add to Home Screen".',
   'event.verified': 'via {source} · checked {ago}',
   'event.sourcePage': 'Source page',
   'event.venueWebsite': 'Venue website',

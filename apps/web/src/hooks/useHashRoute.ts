@@ -49,6 +49,9 @@ export function eventHref(id: string): string {
   return routeHref({ name: 'event', id });
 }
 
+/** This visit started from a shared /e/<id> link (for the iOS install hint, M9 §7). */
+export let openedFromLink = false;
+
 /**
  * A shared link /e/<id> (M9 §1; the Worker gave crawlers its preview tags) opens as the app's own
  * event route on the map's address, so closing the card leaves the map at "/". The query (a share
@@ -57,6 +60,7 @@ export function eventHref(id: string): string {
 export function adoptEventPath(): void {
   const m = /^\/e\/([^/]+)\/?$/.exec(window.location.pathname);
   if (!m) return;
+  openedFromLink = true;
   window.history.replaceState(null, '', `/${window.location.search}${WITH_ID.event}${m[1]}`);
 }
 
