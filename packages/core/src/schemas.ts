@@ -364,6 +364,10 @@ export const appConfigSchema = z.object({
     keepAfterEndHours: z.number().int().min(0),
     perHourPerDevice: z.number().int().positive(),
     sharesPerHourPerDevice: z.number().int().positive(),
+    /** "Looking": opened the card within this many minutes (§6). */
+    lookingMinutes: z.number().int().positive(),
+    /** The card offers "I'm here" within this distance of a live event (§6). */
+    hereRadiusM: z.number().positive(),
   }),
   /** M12 metrics (docs/milestones/M12-more-events.md §1), in the default region's time zone. */
   metrics: z.object({

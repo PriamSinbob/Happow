@@ -91,3 +91,24 @@ export async function shareToken(eventId: string): Promise<string> {
   writeMap(SHARES, { ...readMap(SHARES), [eventId]: token });
   return token;
 }
+
+/** When this device last said it was looking at an event, so a re-opened card doesn't resend it. */
+const lookedAt = new Map<string, number>();
+
+/**
+ * Opening a card: "looking" for the next few minutes (§6), sent at most once per half that window
+ * per event, then the card's view. Falls back to only reading the view.
+ */
+export async function lookAt(eventId: string, minutes: number): Promise<AttendanceView> {
+  const last = lookedAt.get(eventId) ?? 0;
+  if (Date.now() - last < (minutes / 2) * 60_000) return getAttendance(eventId);
+  lookedAt.set(eventId, Date.now());
+  return setAttendance(eventId, 'looking', true, minutes * 60).catch(() => getAttendance(eventId));
+}
+
+/** A signal sent without waiting for it (GoThere's "on the way"); failures are ignored. */
+export function signalQuietly(eventId: string, kind: Signal, on: boolean): void {
+  setAttendance(eventId, kind, on).catch(() => {
+    /* offline: the count just won't include this device */
+  });
+}

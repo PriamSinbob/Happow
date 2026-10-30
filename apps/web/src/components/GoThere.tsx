@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl, { type GeoJSONSource } from 'maplibre-gl';
 import { distanceM, walkingMinutes, type LatLng, type NearbyEvent } from '@happow/core';
 import { api } from '../api';
+import { setAttendance, signalQuietly } from '../attendance';
 import { config } from '../config';
 import { formatDistance, navigationUrl } from '../format';
 import { useLiveLocation } from '../hooks/useLiveLocation';
@@ -116,6 +117,21 @@ export function GoThere({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, ev?.id, refresh]);
 
+  // Co-presence (M9 §6): "on the way" while the route runs, taken back when this screen closes
+  // (arrived, stopped or given up); "here" is the walker's own tap on arrival.
+  const onWay = useRef<string | null>(null);
+  useEffect(() => {
+    if (!ev || phase !== 'going' || onWay.current === ev.id) return;
+    onWay.current = ev.id;
+    signalQuietly(ev.id, 'onway', true);
+  }, [ev, phase]);
+  useEffect(
+    () => () => {
+      if (onWay.current) signalQuietly(onWay.current, 'onway', false);
+    },
+    [],
+  );
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -192,6 +208,7 @@ export function GoThere({
               {t('nav.close')}
             </button>
           )}
+          {ev && phase === 'arrived' && <HereButton eventId={ev.id} />}
           {ev && phase === 'arrived' && ev.trust === 'community' && (
             <ThanksButton eventId={ev.id} />
           )}
@@ -245,6 +262,37 @@ export function ThanksButton({ eventId }: { eventId: string }) {
       }}
     >
       {t('nav.thanks')}
+    </button>
+  );
+}
+
+/** On arrival: "I'm here", an explicit tap, never sent from location alone (M9 §6). */
+export function HereButton({ eventId }: { eventId: string }) {
+  const { t } = useI18n();
+  const [state, setState] = useState<'idle' | 'sending' | 'done'>('idle');
+  if (state === 'done')
+    return (
+      <p className="go__thanked" role="status">
+        <Icon name="check" size={16} />
+        {t('presence.imHereOn')}
+      </p>
+    );
+  return (
+    <button
+      type="button"
+      className="btn"
+      disabled={state === 'sending'}
+      onClick={async () => {
+        setState('sending');
+        try {
+          await setAttendance(eventId, 'here', true);
+          setState('done');
+        } catch {
+          setState('idle');
+        }
+      }}
+    >
+      <Icon name="pin" size={16} /> {t('presence.imHere')}
     </button>
   );
 }

@@ -37,6 +37,8 @@ const ev = rowToEvent({
   distance_m: 300,
 } as unknown as Row);
 
+const NOW = new Date('2026-10-30T12:00:00Z');
+
 const view = (going: number | null, mine: boolean, fromMyLinks: number | null = 0) => ({
   counts: { going, looking: null, onway: null, here: null },
   mine: { going: mine, looking: false, onway: false, here: false },
@@ -88,10 +90,11 @@ describe('arriving through a shared link (M9 slice E)', () => {
 
 describe("I'm going (M9 slice E)", () => {
   it('shows no count below the threshold, and marks and unmarks with one tap', async () => {
-    server((path, body) =>
-      path === 'attendance' ? view(null, false) : view(5, body.on as boolean),
+    // Opening the card says "looking" (slice F); only "going" changes the going count here.
+    server((_path, body) =>
+      body.kind === 'going' ? view(5, body.on as boolean) : view(null, false),
     );
-    ui(<Going ev={ev} />);
+    ui(<Going ev={ev} now={NOW} />);
     const btn = await screen.findByRole('button', { name: "I'm going" });
     expect(btn.getAttribute('aria-pressed')).toBe('false');
     expect(screen.queryByText(/\+ going/)).toBeNull();
@@ -111,7 +114,7 @@ describe("I'm going (M9 slice E)", () => {
     window.history.replaceState(null, '', '/?s=tok_ABCDEFGH#/e/ticketmaster%3AZ7');
     captureArrival();
     server(() => view(null, false));
-    ui(<Going ev={ev} />);
+    ui(<Going ev={ev} now={NOW} />);
     fireEvent.click(await screen.findByRole('button', { name: "I'm going" }));
     await waitFor(() => expect(calls.at(-1)!.path).toBe('attendance/set'));
     expect(calls.at(-1)!.body.token).toBe('tok_ABCDEFGH');
@@ -119,14 +122,14 @@ describe("I'm going (M9 slice E)", () => {
 
   it("tells a sharer how many came through their link, with the language's plural", async () => {
     server(() => view(10, true, 3));
-    ui(<Going ev={ev} />);
+    ui(<Going ev={ev} now={NOW} />);
     expect(await screen.findByText('3 people from your link are going')).toBeTruthy();
     expect(screen.getByText('10+ going')).toBeTruthy();
     cleanup();
     server(() => view(null, false, 1));
     render(
       <I18nProvider initial="pl">
-        <Going ev={ev} />
+        <Going ev={ev} now={NOW} />
       </I18nProvider>,
     );
     expect(await screen.findByText('1 osoba z Twojego linku idzie')).toBeTruthy();
