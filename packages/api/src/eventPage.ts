@@ -1,6 +1,14 @@
-import { isInBbox, loadConfig, type HappowConfig, type Region } from '@happow/core';
+import {
+  isInBbox,
+  loadConfig,
+  type Category,
+  type HappowConfig,
+  type LatLng,
+  type Region,
+} from '@happow/core';
 import { boundFetch } from '@happow/extract';
 import type { ApiDeps, ApiEnv } from './handler.js';
+import { sha256 } from './http.js';
 import { Supabase } from './supabase.js';
 
 /** The event_by_id columns a link preview needs. */
@@ -14,6 +22,31 @@ interface EventRow {
   venue_name: string | null;
   lat: number;
   lng: number;
+}
+
+/** How far around the event the preview image's map reaches, in metres (M9 §2). */
+export const PREVIEW_MAP_RADIUS_M = 1500;
+
+/** A district on the preview map, from district_outlines(). */
+export interface Outline {
+  name: string;
+  /** The district the event is in. */
+  here: boolean;
+  geometry: { type: 'Polygon' | 'MultiPolygon'; coordinates: unknown };
+}
+
+/** Everything the preview image shows; no prices and no counts (M9 §2). */
+export interface PreviewData {
+  title: string;
+  when: string;
+  venue: string | null;
+  category: Category | null;
+  categoryLabel: string | null;
+  lang: string;
+  point: LatLng;
+  outlines: Outline[];
+  /** Short hash of what's drawn; the image URL carries it so an edited event gets a new image. */
+  version: string;
 }
 
 /** How long a shared link's tagged page is cached at the edge (M9 §1). */
@@ -124,40 +157,82 @@ export function createEventPage(env: ApiEnv, deps: Pick<ApiDeps, 'fetch' | 'conf
       },
     });
 
-  return async function eventPage(req: Request, indexHtml: string): Promise<Response> {
-    const url = new URL(req.url);
-    const id = eventIdFromPath(url.pathname);
-    if (!id || !db) return page(indexHtml, id ? 200 : 404, 0);
-
-    let row: EventRow | undefined;
-    try {
-      // event_by_id reads events_public, which leaves out hidden and stale events.
-      [row] = await db.rpc<EventRow[]>('event_by_id', { event_id: id });
-    } catch (err) {
-      console.error(err);
-      return page(indexHtml, 200, 0);
-    }
-    if (!row) return page(indexHtml, 404, MISSING_CACHE_S);
-
+  /** The public event and what both the tags and the image say about it; null when there's none. */
+  async function load(db: Supabase, id: string) {
+    // event_by_id reads events_public, which leaves out hidden and stale events.
+    const [row] = await db.rpc<EventRow[]>('event_by_id', { event_id: id });
+    if (!row) return null;
     const region = regionAt(config, row.lat, row.lng);
     const lang = config.app.languages.includes(region.locale) ? region.locale : fallback;
-    const labels = config.categories.find((c) => row.category_ids.includes(c.id))?.labels as
-      Record<string, string> | undefined;
-    const description = [
-      whenText(row.start_at, row.end_at, row.timezone || region.timezone, lang),
-      row.venue_name,
-      labels?.[lang] ?? labels?.[fallback],
-    ]
-      .filter(Boolean)
-      .join(' · ');
-    const html = withTags(indexHtml, {
-      title: `${row.title} · Happow`,
-      description,
-      url: `${url.origin}/e/${encodeURIComponent(row.id)}`,
-      image: `${url.origin}/icons/icon-512.png`,
-      card: 'summary',
-      lang,
-    });
-    return page(html, 200, EVENT_CACHE_S);
+    const category = config.categories.find((c) => row.category_ids.includes(c.id));
+    const labels = category?.labels as Record<string, string> | undefined;
+    const when = whenText(row.start_at, row.end_at, row.timezone || region.timezone, lang);
+    const categoryLabel = labels?.[lang] ?? labels?.[fallback] ?? null;
+    // Changes exactly when something drawn on the image changes, so edited events get a new one.
+    const version = (
+      await sha256(
+        JSON.stringify([row.title, when, row.venue_name, category?.id, row.lat, row.lng, lang]),
+      )
+    ).slice(0, 12);
+    return { row, lang, category, categoryLabel, when, version };
+  }
+
+  return {
+    async page(req: Request, indexHtml: string): Promise<Response> {
+      const url = new URL(req.url);
+      const id = eventIdFromPath(url.pathname);
+      if (!id || !db) return page(indexHtml, id ? 200 : 404, 0);
+
+      let ev: Awaited<ReturnType<typeof load>>;
+      try {
+        ev = await load(db, id);
+      } catch (err) {
+        console.error(err);
+        return page(indexHtml, 200, 0);
+      }
+      if (!ev) return page(indexHtml, 404, MISSING_CACHE_S);
+
+      const link = `${url.origin}/e/${encodeURIComponent(ev.row.id)}`;
+      const html = withTags(indexHtml, {
+        title: `${ev.row.title} · Happow`,
+        description: [ev.when, ev.row.venue_name, ev.categoryLabel].filter(Boolean).join(' · '),
+        url: link,
+        image: `${link}/preview.png?v=${ev.version}`,
+        card: 'summary_large_image',
+        lang: ev.lang,
+      });
+      return page(html, 200, EVENT_CACHE_S);
+    },
+
+    /**
+     * What the preview image shows (M9 §2), or null for an unknown or hidden event. Districts
+     * that fail to load leave the map plain rather than failing the image.
+     */
+    async preview(id: string): Promise<PreviewData | null> {
+      if (!db) return null;
+      const ev = await load(db, id);
+      if (!ev) return null;
+      const outlines = await db
+        .rpc<Outline[] | null>('district_outlines', {
+          p_lat: ev.row.lat,
+          p_lng: ev.row.lng,
+          p_radius_m: PREVIEW_MAP_RADIUS_M,
+        })
+        .catch((err) => {
+          console.error(err);
+          return null;
+        });
+      return {
+        title: ev.row.title,
+        when: ev.when,
+        venue: ev.row.venue_name,
+        category: ev.category ?? null,
+        categoryLabel: ev.categoryLabel,
+        lang: ev.lang,
+        point: { lat: ev.row.lat, lng: ev.row.lng },
+        outlines: outlines ?? [],
+        version: ev.version,
+      };
+    },
   };
 }

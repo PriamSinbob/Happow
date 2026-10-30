@@ -4,7 +4,7 @@ Oct 30, 2026
 
 Spec from the brief (Future features → Event links, sharing and attendance, requested 2026-10-22) and M6 §9 (co-presence). M9 comes after M12 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec approved, §9 answered by the owner on 2026-10-30; slice A built.
+**Status:** spec approved, §9 answered by the owner on 2026-10-30; slices A and B built.
 
 Goal: **a shared event opens in Happow itself, looks right wherever it's pasted, and shows that people are going, without anyone giving up their privacy.** Sharing is the app's growth loop, so all of M9 is free for everyone, with no account and no install for the person who receives a link. The brief's rules hold throughout: no streaks, no fake urgency, pull not push, paid never buys visibility. No new data sources.
 
@@ -15,7 +15,7 @@ One branch and one PR to `main` per slice, as in M12. Each slice PR updates its 
 | Slice | Spec | What                                                                                             | Needs | Status  |
 | ----- | ---- | ------------------------------------------------------------------------------------------------ | ----- | ------- |
 | A     | §1   | Clean `/e/<id>` links: the Worker answers them with the event's preview tags; the app opens them | —     | built   |
-| B     | §2   | The generated preview image (1200×630), cached at the edge per event version                     | A     | planned |
+| B     | §2   | The generated preview image (1200×630), cached at the edge per event version                     | A     | built   |
 | C     | §3   | Sharing: link with a short text, share as image, QR code; the in-app route first, Maps second    | A, B  | planned |
 | D     | §4   | Links that outlive the event: "Ended" plus what's on now near that place                         | A     | planned |
 | E     | §5   | "I'm going" on the card, and the sharer's link-scoped count                                      | A, C  | planned |
@@ -58,6 +58,14 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 - **Cost.** Rendering runs once per event version and region of the edge; afterwards it's a cache hit.
 - **Budget check.** The renderer and fonts must keep the Worker under its size limit; if they don't, the image moves to a second Worker. The PR reports the bundle size.
 - **Tests.** The SVG for a fake event (text escaped, long titles cut, the glyph present) and that the PNG has the right size.
+
+**Built (slice B).**
+
+- **Image.** `apps/web/worker/preview.ts` draws the SVG with resvg (`@resvg/resvg-wasm`) and bundled Inter Regular and Bold (OFL, credited in `third-party-licenses.txt`). The map is the district outlines within 1.5 km, from the new `district_outlines()` (migration 22, service role only). The event's own district is tinted in the category colour, with its name and "© OpenStreetMap" in the corner. Without districts the map is plain.
+- **Version.** The image URL carries `?v=`, a 12-character hash of what's drawn (title, time, venue, category, point, language), so the image is cached at the edge for a week and an edited event gets a new one. The link tags now use `summary_large_image`.
+- **Budget.** The Worker is 1.65 MB gzipped (was 0.37), under the 3 MB limit, so no second Worker is needed.
+- **CPU.** A render takes about 60 ms of CPU. On the Workers Free plan's 10 ms some first renders will fail; the link then previews without the picture (`docs/HARDENING.md`).
+- **Migration.** Needs migration 22 on the live database; until then the map is plain.
 
 ## 3. Sharing (slice C)
 

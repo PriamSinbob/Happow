@@ -12,9 +12,12 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*", "/e/*"],
   },
+  // The preview-image fonts are bundled as bytes (resvg's .wasm is a compiled module by default).
+  "rules": [{ "type": "Data", "globs": ["**/*.ttf"], "fallthrough": true }],
   // Workers Caching: GET responses marked public (the /api/area snapshots, 5 min, aligned to the
-  // refresh step) are answered from Cloudflare's cache, with request collapsing. Everything else
-  // the API returns is no-store or a POST, so it is never cached.
+  // refresh step; shared-link pages and their preview images) are answered from Cloudflare's
+  // cache, with request collapsing. Everything else the API returns is no-store or a POST, so it
+  // is never cached.
   // Every 15 min the Worker checks source_runs and starts the GitHub ingest workflow only when a
   // source is due (packages/api/src/schedule.ts). Needs the GITHUB_DISPATCH_TOKEN secret.
   "triggers": { "crons": ["*/15 * * * *"] },

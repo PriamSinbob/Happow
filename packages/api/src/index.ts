@@ -3,4 +3,10 @@ export { Supabase, SupabaseError } from './supabase.js';
 export { dispatchDueIngest, type DispatchResult, type ScheduleEnv } from './schedule.js';
 export { saveWeeklyMetrics, type MetricsSaveResult } from './metrics.js';
 export { type GrantChange, type Offer, type PremiumProvider, type UserRef } from './premium.js';
-export { createEventPage, eventIdFromPath } from './eventPage.js';
+export {
+  createEventPage,
+  eventIdFromPath,
+  PREVIEW_MAP_RADIUS_M,
+  type Outline,
+  type PreviewData,
+} from './eventPage.js';

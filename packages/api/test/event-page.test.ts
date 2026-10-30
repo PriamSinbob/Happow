@@ -28,10 +28,32 @@ const EVENT = {
   lng: 17.03,
 };
 
-function backend(rows: unknown[] | 'error') {
+const OUTLINES = [
+  {
+    name: 'Stare Miasto',
+    here: true,
+    geometry: {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [17.02, 51.1],
+          [17.04, 51.1],
+          [17.03, 51.12],
+        ],
+      ],
+    },
+  },
+];
+
+function backend(rows: unknown[] | 'error', outlines: unknown = OUTLINES) {
   return vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
+    const args = JSON.parse(String(init.body));
+    if (String(input) === `${SB}/rest/v1/rpc/district_outlines`) {
+      expect(args).toEqual({ p_lat: EVENT.lat, p_lng: EVENT.lng, p_radius_m: 1500 });
+      return outlines === 'error' ? new Response('{}', { status: 500 }) : Response.json(outlines);
+    }
     expect(String(input)).toBe(`${SB}/rest/v1/rpc/event_by_id`);
-    expect(JSON.parse(String(init.body))).toEqual({ event_id: EVENT.id });
+    expect(args).toEqual({ event_id: EVENT.id });
     if (rows === 'error') return new Response('{}', { status: 500 });
     return Response.json(rows);
   });
@@ -50,7 +72,7 @@ describe('event links (M9 slice A)', () => {
   });
 
   it('fills in the tags for a public event, HTML-escaped, in the region language', async () => {
-    const page = createEventPage(env, { fetch: backend([EVENT]) });
+    const { page } = createEventPage(env, { fetch: backend([EVENT]) });
     const res = await page(get(link), INDEX);
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toBe('public, max-age=300');
@@ -67,8 +89,11 @@ describe('event links (M9 slice A)', () => {
       `<meta property="og:url" content="https://happow.example/e/ticketmaster%3AZ7%20%22x%22" />`,
     );
     expect(html).toContain('<link rel="canonical" href="https://happow.example/e/');
-    expect(html).toContain('og:image" content="https://happow.example/icons/icon-512.png"');
-    expect(html).toContain('<meta name="twitter:card" content="summary" />');
+    // Slice B: the event's own image, its URL carrying a version of what's drawn.
+    expect(html).toMatch(
+      /og:image" content="https:\/\/happow\.example\/e\/ticketmaster%3AZ7%20%22x%22\/preview\.png\?v=[0-9a-f]{12}"/,
+    );
+    expect(html).toContain('<meta name="twitter:card" content="summary_large_image" />');
     // The generic title and description are replaced, not duplicated; the app still loads.
     expect(html.match(/<title>/g)).toHaveLength(1);
     expect(html).not.toContain('Everything happening near you');
@@ -77,14 +102,14 @@ describe('event links (M9 slice A)', () => {
 
   it('gives an unknown or hidden event the generic page with a 404', async () => {
     // event_by_id reads events_public, so a hidden event comes back as no row.
-    const page = createEventPage(env, { fetch: backend([]) });
+    const { page } = createEventPage(env, { fetch: backend([]) });
     const res = await page(get(link), INDEX);
     expect(res.status).toBe(404);
     expect(await res.text()).toBe(INDEX);
   });
 
   it('still serves the app when the database fails, uncached', async () => {
-    const page = createEventPage(env, { fetch: backend('error') });
+    const { page } = createEventPage(env, { fetch: backend('error') });
     const res = await page(get(link), INDEX);
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toBe('no-store');
@@ -110,5 +135,40 @@ describe('event links (M9 slice A)', () => {
       lang: 'en',
     });
     expect(html).toContain('<html lang="en">');
+  });
+});
+
+describe('preview image data (M9 slice B)', () => {
+  it('gives what the image draws, with the districts around the event', async () => {
+    const { preview } = createEventPage(env, { fetch: backend([EVENT]) });
+    const data = await preview(EVENT.id);
+    expect(data).toMatchObject({
+      title: EVENT.title,
+      venue: EVENT.venue_name,
+      categoryLabel: 'Muzyka',
+      lang: 'pl',
+      point: { lat: 51.11, lng: 17.03 },
+      outlines: OUTLINES,
+    });
+    expect(data!.category!.id).toBe('music');
+    expect(data!.when).toMatch(/19:00–21:30$/);
+    expect(data!.version).toMatch(/^[0-9a-f]{12}$/);
+  });
+
+  it('changes the version only when something drawn changes', async () => {
+    const v = async (ev: object) =>
+      (await createEventPage(env, { fetch: backend([ev]) }).preview(EVENT.id))!.version;
+    const base = await v(EVENT);
+    expect(await v({ ...EVENT })).toBe(base);
+    expect(await v({ ...EVENT, title: 'Inny koncert' })).not.toBe(base);
+    expect(await v({ ...EVENT, start_at: '2026-10-31T19:00:00Z' })).not.toBe(base);
+  });
+
+  it('draws a plain map when the districts fail, and nothing for a hidden event', async () => {
+    const plain = await createEventPage(env, { fetch: backend([EVENT], 'error') }).preview(
+      EVENT.id,
+    );
+    expect(plain!.outlines).toEqual([]);
+    expect(await createEventPage(env, { fetch: backend([]) }).preview(EVENT.id)).toBeNull();
   });
 });
