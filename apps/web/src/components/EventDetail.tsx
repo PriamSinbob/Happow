@@ -7,6 +7,7 @@ import { eventUrl } from '../hooks/useHashRoute';
 import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
+import { ShareSheet } from './ShareSheet';
 import { hasRules, RuleList } from './EventCard';
 import { Glyph, Icon } from './Icons';
 import { glyphOf } from '../pins';
@@ -131,6 +132,7 @@ function DetailBody({
   const { running, price, distance, walk, categories } = useEventText(ev, now);
   const [toast, setToast] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const url = eventUrl(ev.id);
   const ended = new Date(ev.endAt) < now;
   const dayLong = isDayLong(ev);
@@ -145,19 +147,6 @@ function DetailBody({
     const id = setTimeout(() => setToast(null), 2200);
     return () => clearTimeout(id);
   }, [toast]);
-
-  async function share() {
-    const data = { title: ev.title, text: `${ev.title} · ${ev.venue?.name ?? ''}`.trim(), url };
-    try {
-      if (navigator.share) await navigator.share(data);
-      else {
-        await navigator.clipboard.writeText(url);
-        setToast(t('event.linkCopied'));
-      }
-    } catch {
-      /* the user dismissed the share sheet */
-    }
-  }
 
   return (
     <div className="detail__scroll">
@@ -252,7 +241,7 @@ function DetailBody({
             <Icon name="calendar" />
             {t('event.addToCalendar')}
           </button>
-          <button type="button" className="tool" onClick={share}>
+          <button type="button" className="tool" onClick={() => setSharing(true)}>
             <Icon name="share" />
             {t('event.share')}
           </button>
@@ -309,6 +298,9 @@ function DetailBody({
           <Icon name="flag" size={16} /> {t('event.report')}
         </button>
       </div>
+      {sharing && (
+        <ShareSheet ev={ev} url={url} onClose={() => setSharing(false)} onToast={setToast} />
+      )}
       {reporting && (
         <ReportDialog
           eventId={ev.id}

@@ -35,3 +35,9 @@ and at https://openfontlicense.org.
 resvg (https://github.com/linebender/resvg), as @resvg/resvg-wasm: draws the preview images
 
 Mozilla Public License 2.0 (https://mozilla.org/MPL/2.0/). Used unmodified.
+
+
+QR Code Generator for JavaScript (qrcode-generator): the QR code in the share sheet
+
+Copyright (c) 2009 Kazuhiko Arase. MIT License (https://opensource.org/licenses/MIT).
+"QR Code" is a registered trademark of DENSO WAVE INCORPORATED.
