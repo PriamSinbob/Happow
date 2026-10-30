@@ -60,10 +60,12 @@ export function adoptEventPath(): void {
   window.history.replaceState(null, '', `/${window.location.search}${WITH_ID.event}${m[1]}`);
 }
 
-/** Absolute link to an event's detail screen, for sharing. */
+/**
+ * Absolute link to an event, for sharing: the clean /e/<id> form, which the Worker answers with
+ * the event's preview tags (M9 §1) and the app opens as the event's card.
+ */
 export function eventUrl(id: string): string {
-  const { origin, pathname } = window.location;
-  return `${origin}${pathname}${eventHref(id)}`;
+  return `${window.location.origin}/e/${encodeURIComponent(id)}`;
 }
 
 /**

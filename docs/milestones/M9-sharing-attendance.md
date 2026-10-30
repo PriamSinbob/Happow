@@ -4,7 +4,7 @@ Oct 30, 2026
 
 Spec from the brief (Future features → Event links, sharing and attendance, requested 2026-10-22) and M6 §9 (co-presence). M9 comes after M12 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec approved, §9 answered by the owner on 2026-10-30; slices A and B built.
+**Status:** spec approved, §9 answered by the owner on 2026-10-30; slices A–C built.
 
 Goal: **a shared event opens in Happow itself, looks right wherever it's pasted, and shows that people are going, without anyone giving up their privacy.** Sharing is the app's growth loop, so all of M9 is free for everyone, with no account and no install for the person who receives a link. The brief's rules hold throughout: no streaks, no fake urgency, pull not push, paid never buys visibility. No new data sources.
 
@@ -16,7 +16,7 @@ One branch and one PR to `main` per slice, as in M12. Each slice PR updates its 
 | ----- | ---- | ------------------------------------------------------------------------------------------------ | ----- | ------- |
 | A     | §1   | Clean `/e/<id>` links: the Worker answers them with the event's preview tags; the app opens them | —     | built   |
 | B     | §2   | The generated preview image (1200×630), cached at the edge per event version                     | A     | built   |
-| C     | §3   | Sharing: link with a short text, share as image, QR code; the in-app route first, Maps second    | A, B  | planned |
+| C     | §3   | Sharing: link with a short text, share as image, QR code; the in-app route first, Maps second    | A, B  | built   |
 | D     | §4   | Links that outlive the event: "Ended" plus what's on now near that place                         | A     | planned |
 | E     | §5   | "I'm going" on the card, and the sharer's link-scoped count                                      | A, C  | planned |
 | F     | §6   | Co-presence: looking, on the way, here; counts from 5, off for sensitive categories              | E     | planned |
@@ -74,6 +74,13 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 - **QR code** on the card ("Show QR code"): the event's link, drawn on the device, big enough to scan from a poster. Useful for organisers' flyers; no server call.
 - **In-app route first.** On the event card and in GoThere, "Going there" (the in-app walking route) is the main button; the Google Maps hand-off becomes a secondary link.
 - **Tests.** Share data (link and text), the copy fallback, the QR code encoding the clean link, button order.
+
+**Built (slice C).**
+
+- **Share sheet.** "Share" on the card opens a small sheet (`ShareSheet.tsx`): **Send link** (the share sheet with title · day and time · venue, or a copy where there is none), **Share as image** (only where the browser can share files), **Copy link**, and the QR code below them, always visible. Three more buttons in the card's tool row didn't fit at 380 px, so they live in this sheet.
+- **QR code.** Drawn on the device with `qrcode-generator` (MIT, medium error correction), white on any theme so it scans from a dark screen.
+- **Clean links.** Links are now `/e/<id>`, in the calendar file too.
+- **Route first.** On the event card and the list cards, "Route in Happow" is the main button and Google Maps the plain one next to it. In GoThere the Maps hand-off is no longer the main button.
 
 ## 4. Links that outlive the event (slice D)
 

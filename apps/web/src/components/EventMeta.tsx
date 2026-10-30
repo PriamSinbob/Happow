@@ -117,19 +117,17 @@ export function GoButtons({ ev, onGo }: { ev: NearbyEvent; onGo: () => void }) {
     <>
       <button
         type="button"
-        className="btn btn--square"
+        className="btn btn--primary"
         onClick={() => {
           track('Directions', { via: 'happow' });
           countEvent(ev.id, 'route');
           onGo();
         }}
-        aria-label={t('nav.inApp')}
-        title={t('nav.inApp')}
       >
-        <Icon name="navigate" size={18} />
+        <Icon name="navigate" size={16} /> {t('nav.inApp')}
       </button>
       <a
-        className="btn btn--primary"
+        className="btn"
         href={navigationUrl(ev.point.lat, ev.point.lng)}
         target="_blank"
         rel="noreferrer"
