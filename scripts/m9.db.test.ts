@@ -80,7 +80,9 @@ describe.skipIf(!url || !local)('M9 in Postgres', () => {
       r: { name: string; here: boolean; geometry: { type: string } }[];
     }>(`select district_outlines(51.205, 16.805, 1500) as r`);
     const mine = rows[0]!.r.find((d) => d.name === 'Testowo');
-    expect(mine).toMatchObject({ here: true, geometry: { type: 'MultiPolygon' } });
+    // Simplifying can turn a one-part MultiPolygon into a Polygon; the image draws either.
+    expect(mine).toMatchObject({ here: true });
+    expect(['Polygon', 'MultiPolygon']).toContain(mine!.geometry.type);
     const far = await db.query<{ r: unknown[] }>(`select district_outlines(10, 10, 1500) as r`);
     expect(far.rows[0]!.r).toEqual([]);
   });
