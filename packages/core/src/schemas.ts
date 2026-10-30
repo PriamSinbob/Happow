@@ -341,6 +341,13 @@ export const appConfigSchema = z.object({
     maxBatch: z.number().int().positive(),
     perHourPerDevice: z.number().int().positive(),
   }),
+  /** Shared event links (M9, docs/milestones/M9-sharing-attendance.md). */
+  sharing: z.object({
+    /** Live events listed under an ended event's card, nearest first (§4). */
+    endedNearbyMax: z.number().int().min(0).max(20),
+    /** Put before an ended event's link-preview description (§4). */
+    endedLabel: labelsSchema,
+  }),
   /** M12 metrics (docs/milestones/M12-more-events.md §1), in the default region's time zone. */
   metrics: z.object({
     /** "Tonight" runs from this hour to midnight. */

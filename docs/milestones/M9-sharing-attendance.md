@@ -4,7 +4,7 @@ Oct 30, 2026
 
 Spec from the brief (Future features → Event links, sharing and attendance, requested 2026-10-22) and M6 §9 (co-presence). M9 comes after M12 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec approved, §9 answered by the owner on 2026-10-30; slices A–C built.
+**Status:** spec approved, §9 answered by the owner on 2026-10-30; slices A–D built.
 
 Goal: **a shared event opens in Happow itself, looks right wherever it's pasted, and shows that people are going, without anyone giving up their privacy.** Sharing is the app's growth loop, so all of M9 is free for everyone, with no account and no install for the person who receives a link. The brief's rules hold throughout: no streaks, no fake urgency, pull not push, paid never buys visibility. No new data sources.
 
@@ -17,7 +17,7 @@ One branch and one PR to `main` per slice, as in M12. Each slice PR updates its 
 | A     | §1   | Clean `/e/<id>` links: the Worker answers them with the event's preview tags; the app opens them | —     | built   |
 | B     | §2   | The generated preview image (1200×630), cached at the edge per event version                     | A     | built   |
 | C     | §3   | Sharing: link with a short text, share as image, QR code; the in-app route first, Maps second    | A, B  | built   |
-| D     | §4   | Links that outlive the event: "Ended" plus what's on now near that place                         | A     | planned |
+| D     | §4   | Links that outlive the event: "Ended" plus what's on now near that place                         | A     | built   |
 | E     | §5   | "I'm going" on the card, and the sharer's link-scoped count                                      | A, C  | planned |
 | F     | §6   | Co-presence: looking, on the way, here; counts from 5, off for sensitive categories              | E     | planned |
 | G     | §7   | Opening in the app: Android link capture, the iOS "Add to Home Screen" hint                      | A     | planned |
@@ -88,6 +88,16 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 - The preview tags of an ended event say "Ended" in the description; the image is kept.
 - An event removed by moderation (hidden) opens as "not found", never with its old details.
 - **Tests.** An ended event's card and its "now nearby" list; a hidden one.
+
+**Built (slice D).**
+
+- **Card.** An ended event's card shows "This event has ended" at the top and, under its buttons, **On now nearby** (`NearbyNow.tsx`): live, not cancelled events within the person's own reach around the event's place, nearest first.
+  - At most `sharing.endedNearbyMax` (5) events, from new config in `config/app.json`.
+  - Tapping one swaps the card.
+  - With none, the section says so.
+- **Preview.** The link's preview description starts with `sharing.endedLabel` ("Zakończone" / "Ended"), and the image stays as it was.
+- **Hidden events.** A hidden event already reads as "no longer listed": `event_by_id` reads `events_public`, both in the app and in the Worker (404).
+- **Retention.** Ended events stay in the database; only sources with a cache limit (`maxCacheAgeHours`) drop out, and their old links read as "no longer listed".
 
 ## 5. "I'm going" and link-scoped counts (slice E)
 
