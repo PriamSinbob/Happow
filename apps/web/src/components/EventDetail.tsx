@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FLAG_REASONS, type FlagReason, type NearbyEvent } from '@happow/core';
+import { FLAG_REASONS, type FlagReason, type LatLng, type NearbyEvent } from '@happow/core';
 import { track } from '../analytics';
 import { config } from '../config';
 import { formatAgo, formatDay, formatTime, isSameDay } from '../format';
@@ -7,6 +7,7 @@ import { eventUrl } from '../hooks/useHashRoute';
 import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
+import { NearbyNow } from './NearbyNow';
 import { ShareSheet } from './ShareSheet';
 import { hasRules, RuleList } from './EventCard';
 import { Glyph, Icon } from './Icons';
@@ -31,6 +32,10 @@ interface Props {
   onGo: () => void;
   /** "Added by" for a community event, read live (M12 §5.5). */
   loadCredit: (eventId: string, signal: AbortSignal) => Promise<Credit | null>;
+  /** Events around a place, for "on now nearby" under an ended event (M9 §4). */
+  loadNearby: (at: LatLng, signal: AbortSignal) => Promise<NearbyEvent[]>;
+  /** Opens another event's card in place of this one. */
+  onOpenEvent: (id: string) => void;
 }
 
 /** Wall-clock midnight to midnight: a day-long listing (exhibitions, fairs). */
@@ -55,6 +60,8 @@ export function EventDetail({
   onReported,
   onGo,
   loadCredit,
+  loadNearby,
+  onOpenEvent,
 }: Props) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
@@ -100,6 +107,8 @@ export function EventDetail({
           onReported={onReported}
           onGo={onGo}
           loadCredit={loadCredit}
+          loadNearby={loadNearby}
+          onOpenEvent={onOpenEvent}
         />
       ) : (
         <p className="detail__empty" id="detail-title" aria-live="polite">
@@ -118,6 +127,8 @@ function DetailBody({
   onReported,
   onGo,
   loadCredit,
+  loadNearby,
+  onOpenEvent,
 }: {
   ev: NearbyEvent;
   now: Date;
@@ -126,6 +137,8 @@ function DetailBody({
   onReported: Props['onReported'];
   onGo: () => void;
   loadCredit: Props['loadCredit'];
+  loadNearby: Props['loadNearby'];
+  onOpenEvent: Props['onOpenEvent'];
 }) {
   const { t, lang } = useI18n();
   const credit = useCredit(ev, loadCredit);
@@ -170,6 +183,7 @@ function DetailBody({
         </div>
         <h1 id="detail-title">{ev.title}</h1>
 
+        {ended && <p className="status-banner status-banner--ended">{t('ended.banner')}</p>}
         <FlagNotice ev={ev} now={now} />
         {ev.status !== 'scheduled' && (
           <p className={`status-banner status-banner--${ev.status}`}>{t(`event.${ev.status}`)}</p>
@@ -251,6 +265,7 @@ function DetailBody({
           </button>
         </div>
 
+        {ended && <NearbyNow ev={ev} now={now} load={loadNearby} onOpen={onOpenEvent} />}
         {ev.description && (
           <section className="detail__section">
             <h2>{t('event.about')}</h2>

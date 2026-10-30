@@ -140,8 +140,9 @@ export function withTags(indexHtml: string, t: PreviewTags): string {
  * event route. An unknown or hidden event gets the generic tags and a 404; a database error still
  * serves the app, so a shared link never breaks.
  */
-export function createEventPage(env: ApiEnv, deps: Pick<ApiDeps, 'fetch' | 'config'> = {}) {
+export function createEventPage(env: ApiEnv, deps: Pick<ApiDeps, 'fetch' | 'config' | 'now'> = {}) {
   const config = deps.config ?? loadConfig();
+  const now = deps.now ?? (() => new Date());
   const db =
     env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
       ? new Supabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, boundFetch(deps.fetch))
@@ -168,13 +169,15 @@ export function createEventPage(env: ApiEnv, deps: Pick<ApiDeps, 'fetch' | 'conf
     const labels = category?.labels as Record<string, string> | undefined;
     const when = whenText(row.start_at, row.end_at, row.timezone || region.timezone, lang);
     const categoryLabel = labels?.[lang] ?? labels?.[fallback] ?? null;
+    // An old link still previews, marked as ended (§4); the image is kept as it was.
+    const ended = new Date(row.end_at) < now();
     // Changes exactly when something drawn on the image changes, so edited events get a new one.
     const version = (
       await sha256(
         JSON.stringify([row.title, when, row.venue_name, category?.id, row.lat, row.lng, lang]),
       )
     ).slice(0, 12);
-    return { row, lang, category, categoryLabel, when, version };
+    return { row, lang, category, categoryLabel, when, version, ended };
   }
 
   return {
@@ -195,7 +198,14 @@ export function createEventPage(env: ApiEnv, deps: Pick<ApiDeps, 'fetch' | 'conf
       const link = `${url.origin}/e/${encodeURIComponent(ev.row.id)}`;
       const html = withTags(indexHtml, {
         title: `${ev.row.title} · Happow`,
-        description: [ev.when, ev.row.venue_name, ev.categoryLabel].filter(Boolean).join(' · '),
+        description: [
+          ev.ended && (config.app.sharing.endedLabel as Record<string, string>)[ev.lang],
+          ev.when,
+          ev.row.venue_name,
+          ev.categoryLabel,
+        ]
+          .filter(Boolean)
+          .join(' · '),
         url: link,
         image: `${link}/preview.png?v=${ev.version}`,
         card: 'summary_large_image',

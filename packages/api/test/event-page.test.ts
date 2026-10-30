@@ -6,6 +6,7 @@ import { whenText, withTags } from '../src/eventPage';
 
 const SB = 'https://proj.supabase.co';
 const env = { SUPABASE_URL: SB, SUPABASE_SERVICE_ROLE_KEY: 'service-key' };
+const now = () => new Date('2026-10-30T12:00:00Z');
 const INDEX = `<!doctype html>
 <html lang="pl">
   <head>
@@ -72,7 +73,7 @@ describe('event links (M9 slice A)', () => {
   });
 
   it('fills in the tags for a public event, HTML-escaped, in the region language', async () => {
-    const { page } = createEventPage(env, { fetch: backend([EVENT]) });
+    const { page } = createEventPage(env, { now, fetch: backend([EVENT]) });
     const res = await page(get(link), INDEX);
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toBe('public, max-age=300');
@@ -102,14 +103,14 @@ describe('event links (M9 slice A)', () => {
 
   it('gives an unknown or hidden event the generic page with a 404', async () => {
     // event_by_id reads events_public, so a hidden event comes back as no row.
-    const { page } = createEventPage(env, { fetch: backend([]) });
+    const { page } = createEventPage(env, { now, fetch: backend([]) });
     const res = await page(get(link), INDEX);
     expect(res.status).toBe(404);
     expect(await res.text()).toBe(INDEX);
   });
 
   it('still serves the app when the database fails, uncached', async () => {
-    const { page } = createEventPage(env, { fetch: backend('error') });
+    const { page } = createEventPage(env, { now, fetch: backend('error') });
     const res = await page(get(link), INDEX);
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toBe('no-store');
@@ -140,7 +141,7 @@ describe('event links (M9 slice A)', () => {
 
 describe('preview image data (M9 slice B)', () => {
   it('gives what the image draws, with the districts around the event', async () => {
-    const { preview } = createEventPage(env, { fetch: backend([EVENT]) });
+    const { preview } = createEventPage(env, { now, fetch: backend([EVENT]) });
     const data = await preview(EVENT.id);
     expect(data).toMatchObject({
       title: EVENT.title,
@@ -157,7 +158,7 @@ describe('preview image data (M9 slice B)', () => {
 
   it('changes the version only when something drawn changes', async () => {
     const v = async (ev: object) =>
-      (await createEventPage(env, { fetch: backend([ev]) }).preview(EVENT.id))!.version;
+      (await createEventPage(env, { now, fetch: backend([ev]) }).preview(EVENT.id))!.version;
     const base = await v(EVENT);
     expect(await v({ ...EVENT })).toBe(base);
     expect(await v({ ...EVENT, title: 'Inny koncert' })).not.toBe(base);
@@ -165,10 +166,22 @@ describe('preview image data (M9 slice B)', () => {
   });
 
   it('draws a plain map when the districts fail, and nothing for a hidden event', async () => {
-    const plain = await createEventPage(env, { fetch: backend([EVENT], 'error') }).preview(
+    const plain = await createEventPage(env, { now, fetch: backend([EVENT], 'error') }).preview(
       EVENT.id,
     );
     expect(plain!.outlines).toEqual([]);
-    expect(await createEventPage(env, { fetch: backend([]) }).preview(EVENT.id)).toBeNull();
+    expect(await createEventPage(env, { now, fetch: backend([]) }).preview(EVENT.id)).toBeNull();
+  });
+});
+
+describe('links that outlive the event (M9 slice D)', () => {
+  it('marks an ended event in the preview text, and keeps its image', async () => {
+    const later = () => new Date('2026-11-02T12:00:00Z');
+    const { page, preview } = createEventPage(env, { now: later, fetch: backend([EVENT]) });
+    const html = await (await page(get(link), INDEX)).text();
+    expect(html).toMatch(/og:description" content="Zakończone · [^"]*19:00–21:30/);
+    expect(html).toMatch(/preview\.png\?v=/);
+    const before = await createEventPage(env, { now, fetch: backend([EVENT]) }).preview(EVENT.id);
+    expect((await preview(EVENT.id))!.version).toBe(before!.version);
   });
 });
