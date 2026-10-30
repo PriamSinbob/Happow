@@ -197,7 +197,7 @@ export function GoThere({
           )}
           {ev && phase !== 'arrived' && (
             <a
-              className="btn btn--primary go-buttons__maps"
+              className="btn go-buttons__maps"
               href={navigationUrl(ev.point.lat, ev.point.lng)}
               target="_blank"
               rel="noreferrer"

@@ -23,3 +23,21 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+Inter (https://rsms.me/inter): the font in shared-link preview images, apps/web/worker/fonts
+
+Copyright 2020 The Inter Project Authors (https://github.com/rsms/inter)
+SIL Open Font License, Version 1.1. The full license is in apps/web/worker/fonts/OFL.txt
+and at https://openfontlicense.org.
+
+
+resvg (https://github.com/linebender/resvg), as @resvg/resvg-wasm: draws the preview images
+
+Mozilla Public License 2.0 (https://mozilla.org/MPL/2.0/). Used unmodified.
+
+
+QR Code Generator for JavaScript (qrcode-generator): the QR code in the share sheet
+
+Copyright (c) 2009 Kazuhiko Arase. MIT License (https://opensource.org/licenses/MIT).
+"QR Code" is a registered trademark of DENSO WAVE INCORPORATED.
