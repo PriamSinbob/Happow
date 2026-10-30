@@ -1286,6 +1286,21 @@ div.settings-row {
 .nearby-now__empty {
   color: var(--quiet);
 }
+/* One-time "Add to Home Screen" line on a shared card in iOS Safari (M9 §7). */
+.install-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 8px 8px 8px 12px;
+  border-radius: 10px;
+  background: var(--sunken);
+  color: var(--quiet);
+  font-size: 13px;
+}
+.install-hint span {
+  flex: 1;
+}
 .facts {
   display: grid;
   gap: 14px;

@@ -83,6 +83,8 @@ export const pl: Record<MessageKey, string> = {
   'presence.looking': '{count}+ ogląda',
   'presence.imHere': 'Jestem tu',
   'presence.imHereOn': 'Jestem tu ✓',
+  'install.iosHint':
+    'Dodaj Happow do ekranu początkowego: stuknij Udostępnij, potem „Do ekranu początkowego”.',
   'event.verified': 'źródło: {source} · sprawdzono {ago}',
   'event.sourcePage': 'Strona źródła',
   'event.venueWebsite': 'Strona miejsca',
