@@ -206,7 +206,8 @@
       "graceMin": 15,
       "icon": "🕯️",
       "glyph": "candle",
-      "color": "#0d9488"
+      "color": "#0d9488",
+      "publicAttendance": false
     },
     {
       "id": "other",

@@ -73,6 +73,11 @@ export const pl: Record<MessageKey, string> = {
   'ended.banner': 'To wydarzenie już się zakończyło',
   'ended.nearbyTitle': 'Teraz w pobliżu',
   'ended.nearbyNone': 'W pobliżu nic teraz nie trwa.',
+  'going.off': 'Idę',
+  'going.on': 'Idę ✓',
+  'going.count': '{count}+ osób idzie',
+  'going.fromLinks':
+    '{count, plural, one {# osoba z Twojego linku idzie} few {# osoby z Twojego linku idą} many {# osób z Twojego linku idzie} other {# osoby z Twojego linku idą}}',
   'event.verified': 'źródło: {source} · sprawdzono {ago}',
   'event.sourcePage': 'Strona źródła',
   'event.venueWebsite': 'Strona miejsca',

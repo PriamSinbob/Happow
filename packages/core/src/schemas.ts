@@ -47,6 +47,12 @@ export const categorySchema = z.object({
     )
     .optional(),
   color: z.string().regex(/^#[0-9a-f]{6}$/i),
+  /**
+   * false: never show public attendance counts (going, co-presence, a sharer's link count) for
+   * this category's events, because they would reveal religion or politics (GDPR Art. 9; M9 §6).
+   * People can still mark themselves, for M11's opt-in friends' view.
+   */
+  publicAttendance: z.boolean().default(true),
 });
 export const categoriesConfigSchema = z.object({ categories: z.array(categorySchema).min(1) });
 
@@ -347,6 +353,17 @@ export const appConfigSchema = z.object({
     endedNearbyMax: z.number().int().min(0).max(20),
     /** Put before an ended event's link-preview description (§4). */
     endedLabel: labelsSchema,
+  }),
+  /** "I'm going" and co-presence (M9 §5, §6). */
+  attendance: z.object({
+    /** Public counts show only from this many people (no "be the first"). */
+    publicMin: z.number().int().min(2),
+    /** Counts are shown as the highest bucket reached, e.g. 5+, 10+, 25+. */
+    buckets: z.array(z.number().int().positive()).min(1),
+    /** A signal is kept this long after its event ends, then deleted. */
+    keepAfterEndHours: z.number().int().min(0),
+    perHourPerDevice: z.number().int().positive(),
+    sharesPerHourPerDevice: z.number().int().positive(),
   }),
   /** M12 metrics (docs/milestones/M12-more-events.md §1), in the default region's time zone. */
   metrics: z.object({

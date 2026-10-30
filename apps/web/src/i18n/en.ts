@@ -70,6 +70,11 @@ export const en = {
   'ended.banner': 'This event has ended',
   'ended.nearbyTitle': 'On now nearby',
   'ended.nearbyNone': 'Nothing is on nearby right now.',
+  'going.off': "I'm going",
+  'going.on': "I'm going ✓",
+  'going.count': '{count}+ going',
+  'going.fromLinks':
+    '{count, plural, one {# person from your link is going} other {# people from your link are going}}',
   'event.verified': 'via {source} · checked {ago}',
   'event.sourcePage': 'Source page',
   'event.venueWebsite': 'Venue website',
