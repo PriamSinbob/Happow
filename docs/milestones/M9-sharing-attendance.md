@@ -4,7 +4,7 @@ Oct 30, 2026
 
 Spec from the brief (Future features → Event links, sharing and attendance, requested 2026-10-22) and M6 §9 (co-presence). M9 comes after M12 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec approved, §9 answered by the owner on 2026-10-30; no slice built yet.
+**Status:** spec approved, §9 answered by the owner on 2026-10-30; slice A built.
 
 Goal: **a shared event opens in Happow itself, looks right wherever it's pasted, and shows that people are going, without anyone giving up their privacy.** Sharing is the app's growth loop, so all of M9 is free for everyone, with no account and no install for the person who receives a link. The brief's rules hold throughout: no streaks, no fake urgency, pull not push, paid never buys visibility. No new data sources.
 
@@ -14,7 +14,7 @@ One branch and one PR to `main` per slice, as in M12. Each slice PR updates its 
 
 | Slice | Spec | What                                                                                             | Needs | Status  |
 | ----- | ---- | ------------------------------------------------------------------------------------------------ | ----- | ------- |
-| A     | §1   | Clean `/e/<id>` links: the Worker answers them with the event's preview tags; the app opens them | —     | planned |
+| A     | §1   | Clean `/e/<id>` links: the Worker answers them with the event's preview tags; the app opens them | —     | built   |
 | B     | §2   | The generated preview image (1200×630), cached at the edge per event version                     | A     | planned |
 | C     | §3   | Sharing: link with a short text, share as image, QR code; the in-app route first, Maps second    | A, B  | planned |
 | D     | §4   | Links that outlive the event: "Ended" plus what's on now near that place                         | A     | planned |
@@ -44,6 +44,8 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 - **Caching.** The tagged HTML is cached at the edge per event for 5 minutes; the event data comes from the same read the API uses.
 - **Private events** (M11) will get the generic tags and no details: the Worker checks the event is public before filling anything in. Until M11 every event is public.
 - **Tests.** The Worker route with a fake event: tags present and HTML-escaped, a hidden event, an unknown id, the hash link still working.
+
+**Built (slice A).** `packages/api/src/eventPage.ts` answers `/e/<id>` (the Worker reads `index.html` through the new `ASSETS` binding). The tags go in by plain string insertion: `index.html` is under 1 KB, so streaming it through HTMLRewriter would add nothing and couldn't be tested in Node. The description reads day, time, venue and category in the language of the region the event is in. A database error still serves the app (uncached), so a link never breaks. In the app, `adoptEventPath` turns `/e/<id>?…` into `/?…#/e/<id>` before anything reads the URL, so the card, Back and closing work as before. Sharing still sends the hash link until slice C.
 
 ## 2. Preview image (slice B)
 
