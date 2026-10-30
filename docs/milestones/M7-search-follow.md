@@ -21,6 +21,7 @@ The PWA is built feature-complete before the native rewrite, the last milestone 
 | E     | §4 nationwide  | Ticketmaster nationwide lookups, `follow_lookups` cache, city in list   | D     | planned |
 | F     | §7             | Meetup public pages through the crawler (config + fixtures)             | —     | planned |
 | G     | §5             | Follows synced per account; new-date alerts (web push, email)           | D, M8 | planned |
+| H     | §4.1           | "My plans" filter: one tap shows only saved events and invitations      | —     | planned |
 | —     | §6             | Last.fm import dropped                                                  | —     | dropped |
 
 ### Slice A: performers and horizon
@@ -145,6 +146,21 @@ Today no performer is stored: the Ticketmaster adapter ignores `_embedded.attrac
   - They appear in the list with the city, not on the map.
   - Budget: one call per distinct artist per day, well inside the 5,000/day key.
 
+### 4.1 "My plans" filter (slice H; owner, 2026-10-30)
+
+- **One tap to see only your plans.** A button in the top-left row on the map, right after the live counter and the family shortcut. When it's on, the map and the list show only:
+  - events you saved (the bookmark on the event card);
+  - events you're invited to, once private events and invitations exist (M11). Until then, saved events only.
+- **Why.** It un-crowds the map down to what you already decided to go to, without touching any other filter. Off again, everything comes back as it was.
+- **Behaviour.**
+  - It works on top of the time window, category, price and family filters, so "this evening" plus "my plans" shows tonight's saved events.
+  - Saved events outside the reach still show on the map (they're yours), and the list puts the nearest first.
+  - With nothing saved, the button says so ("Nothing saved yet: tap the bookmark on an event") instead of showing an empty map.
+  - On or off is remembered on the device, like the family shortcut.
+- **Data.** Saved events live on the device today (`useSaved`, up to 200). M10 (plan ahead) turns them into one agenda together with accepted invitations; this filter reads the same list, so it needs no server change of its own.
+- **Icon.** The bookmark the card already uses; no new icon.
+- **Free** for everyone, no account needed.
+
 ## 5. Alerts (premium, logged in)
 
 Slice G, on M8's accounts (2026-10-24).
@@ -179,6 +195,7 @@ This applies until the Meetup API (Meetup Pro) is decided.
 | Search                                                      | ✓    | ✓       |
 | Follow artists on the device, ★ on their events             | ✓    | ✓       |
 | Followed matches on open, including nationwide Ticketmaster | ✓    | ✓       |
+| "My plans" filter: saved events and invitations only        | ✓    | ✓       |
 | Alerts on new dates (push or email)                         |      | ✓       |
 | Follows synced across devices                               |      | ✓       |
 
