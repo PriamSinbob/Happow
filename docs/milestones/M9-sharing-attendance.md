@@ -4,7 +4,7 @@ Oct 30, 2026
 
 Spec from the brief (Future features → Event links, sharing and attendance, requested 2026-10-22) and M6 §9 (co-presence). M9 comes after M12 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec drafted, waiting for the owner's OK and the answers in §9.
+**Status:** spec approved, §9 answered by the owner on 2026-10-30; no slice built yet.
 
 Goal: **a shared event opens in Happow itself, looks right wherever it's pasted, and shows that people are going, without anyone giving up their privacy.** Sharing is the app's growth loop, so all of M9 is free for everyone, with no account and no install for the person who receives a link. The brief's rules hold throughout: no streaks, no fake urgency, pull not push, paid never buys visibility. No new data sources.
 
@@ -89,7 +89,9 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
   - **here:** an explicit ✓, offered when GoThere arrives (40 m) or on the card within about 100 m of a live event.
 - **Buckets and threshold** as for "I'm going": 5+, 10+, 25+, nothing below 5. Each signal lives until the event ends.
 - **Dedup** with the same salted device token.
-- **Off for sensitive categories:** religious (config) and any category later marked political-demonstration. A category flag in config (`attendance: false`), so it isn't hard-coded; GDPR Art. 9 inference is the reason.
+- **Off for sensitive categories:** religious (config) and any category later marked political-demonstration. A category flag in config (`publicAttendance: false`), so it isn't hard-coded; GDPR Art. 9 inference is the reason.
+- **The flag switches off only the public counts.** It doesn't stop people marking themselves, so M11's private mode can later show friends who's going (below). M9 still stores the signals for these categories but never shows a count.
+- **Friends' view (M11, owner 2026-10-30).** With M11's contacts, someone can switch to a private view that shows which of their **friends** (people they invited or who invited them) are going, looking or there, by name, so real acquaintances can check who goes without another app. Both sides opt in; it works for every category, sensitive ones included, because it shows a person to people they already know, never to strangers. Built in M11, not M9; M9 keeps the data model ready for it (one row per device, linkable to an account when signed in).
 - **Separate from M12's counts.** "Your impact" totals (opens, routes, arrivals) stay as they are: daily, per event, for the adder only. Co-presence is live and public, so it is its own short-lived table.
 - **Tests.** Each signal and its window; the threshold and buckets; a religious event showing nothing; dedup per device.
 
@@ -110,11 +112,13 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 
 Paid never changes where or how an event shows.
 
-## 9. Open questions for the owner
+## 9. Questions for the owner (answered 2026-10-30)
+
+Answers: 1 (a), the map drawn from the district outlines; 2 keep 5; 3 counts only until M11; 4 the flag only on `religious` for now, and it switches off public counts only, so M11 can add the friends' view (§6).
 
 1. **The map on the preview image.** The app's map tiles (OpenFreeMap) are vector tiles that a Worker can't draw into a picture cheaply. Options:
    - **(a) Recommended:** draw a simple map from data we already have: the district outlines (slice A of M12), the river and main streets left out, the pin in the middle, in the app's colours. No tile requests, nothing to license beyond the OSM attribution already shown.
    - **(b)** A real map picture from a static-map service: closer to the app, but a paid or rate-limited provider and a key in config.
 2. **The threshold of 5** for public counts (from M6 §9 and the brief). Keep 5, or another number?
 3. **Names on link counts** wait for M11 (accounts on both sides, the recipient's choice). OK to ship M9 with counts only?
-4. **Political demonstrations** have no category today. Add the `attendance: false` flag only to `religious` for now, and to a protest category if one is ever added?
+4. **Political demonstrations** have no category today. Add the `publicAttendance: false` flag only to `religious` for now, and to a protest category if one is ever added?
