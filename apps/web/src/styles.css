@@ -1243,6 +1243,64 @@ div.settings-row {
   background: var(--warn);
   color: var(--warn-ink);
 }
+.status-banner--ended {
+  background: var(--sunken);
+  color: var(--quiet);
+}
+/* "On now nearby" under an ended event (M9 §4). */
+.nearby-now__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nearby-now__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+}
+.nearby-now__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--quiet);
+}
+.nearby-now__text strong {
+  font-size: 15px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nearby-now__empty {
+  color: var(--quiet);
+}
+/* One-time "Add to Home Screen" line on a shared card in iOS Safari (M9 §7). */
+.install-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 8px 8px 8px 12px;
+  border-radius: 10px;
+  background: var(--sunken);
+  color: var(--quiet);
+  font-size: 13px;
+}
+.install-hint span {
+  flex: 1;
+}
 .facts {
   display: grid;
   gap: 14px;
@@ -1279,6 +1337,32 @@ div.settings-row {
 .detail .event-card__actions {
   margin-top: 18px;
 }
+/* "I'm going" (M9 §5): the toggle, the bucketed count, the sharer's link count. */
+.going {
+  margin-top: 10px;
+}
+.going__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.going__btn {
+  flex: 0 0 auto;
+}
+.going__btn[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--ink) 50%, var(--paper));
+  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+}
+.going__count {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--quiet);
+}
+.going__links {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--quiet);
+}
 .detail__tools {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1301,6 +1385,42 @@ div.settings-row {
   color: var(--ink);
   border-color: color-mix(in srgb, var(--ink) 50%, var(--paper));
   background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+}
+/* Share sheet (M9 §3): link, image, copy; the QR code big enough to scan from a screen. */
+.share-sheet__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.share-sheet__actions .btn {
+  flex: none;
+}
+.share-sheet__qr {
+  margin: 18px 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.share-sheet__qr svg {
+  width: min(240px, 70vw);
+  height: auto;
+  border-radius: 12px;
+}
+.share-sheet__qr figcaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--quiet);
+  text-align: center;
+}
+.share-sheet__url {
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  user-select: all;
 }
 .detail__section {
   margin-top: 22px;

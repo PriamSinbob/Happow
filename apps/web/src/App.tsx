@@ -257,6 +257,14 @@ export function App() {
     (id: string, signal: AbortSignal) => repo.credit(id, signal),
     [repo],
   );
+  // What's on now around an ended event's place, within the map's reach (M9 §4).
+  const loadNearby = useCallback(
+    (at: LatLng, signal: AbortSignal) => {
+      const t = new Date();
+      return repo.near({ center: at, radiusM: radius, from: t, to: t }, signal);
+    },
+    [repo, radius],
+  );
   useEffect(() => trackView(route?.name ?? 'map'), [route?.name]);
   const saved = useSaved();
 
@@ -667,6 +675,8 @@ export function App() {
           onReported={addMyReport}
           onGo={() => goThere(detailId)}
           loadCredit={loadCredit}
+          loadNearby={loadNearby}
+          onOpenEvent={(id) => go({ name: 'event', id }, true)}
         />
       )}
       {goId && (

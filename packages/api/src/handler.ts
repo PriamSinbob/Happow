@@ -40,6 +40,7 @@ import {
 import { normalize } from '@happow/ingest/normalize';
 import { z } from 'zod';
 import { accountRoutes, quotaExceeded } from './accounts.js';
+import { attendanceRoutes } from './attendance.js';
 import { contributionRoutes } from './contributions.js';
 import { feedRoutes } from './feeds.js';
 import { ApiError, body, json, sha256 } from './http.js';
@@ -233,6 +234,15 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     need,
     now,
     limit,
+  });
+  const attendance = attendanceRoutes({
+    config,
+    need,
+    now,
+    limit,
+    // Only when the request carries a sign-in; an anonymous one stays anonymous.
+    userOf: (req) =>
+      req.headers.has('authorization') ? accounts.requireUser(req) : Promise.resolve(null),
   });
   /** A reward that fails must not undo the approval or the submission it follows. */
   const award = async (submissionId: string, eventId: string | null) => {
@@ -881,6 +891,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'admin' && rest[0] === 'feeds') return await feeds.admin(req, rest.slice(1));
       if (head === 'admin') return await accounts.admin(req, rest);
       if (head === 'premium') return await premium(req, rest);
+      if (head === 'attendance' || head === 'share') return await attendance.route(req, head, rest);
       if (head === 'area' && req.method === 'GET' && !rest.length) return await area(req);
       if (head === 'ingest' && req.method === 'GET' && rest.join('/') === 'status')
         return await ingestStatus();

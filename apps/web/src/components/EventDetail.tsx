@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FLAG_REASONS, type FlagReason, type NearbyEvent } from '@happow/core';
+import { FLAG_REASONS, type FlagReason, type LatLng, type NearbyEvent } from '@happow/core';
 import { track } from '../analytics';
 import { config } from '../config';
 import { formatAgo, formatDay, formatTime, isSameDay } from '../format';
@@ -7,6 +7,10 @@ import { eventUrl } from '../hooks/useHashRoute';
 import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
+import { Going } from './Going';
+import { InstallHint } from './InstallHint';
+import { NearbyNow } from './NearbyNow';
+import { ShareSheet } from './ShareSheet';
 import { hasRules, RuleList } from './EventCard';
 import { Glyph, Icon } from './Icons';
 import { glyphOf } from '../pins';
@@ -30,6 +34,10 @@ interface Props {
   onGo: () => void;
   /** "Added by" for a community event, read live (M12 §5.5). */
   loadCredit: (eventId: string, signal: AbortSignal) => Promise<Credit | null>;
+  /** Events around a place, for "on now nearby" under an ended event (M9 §4). */
+  loadNearby: (at: LatLng, signal: AbortSignal) => Promise<NearbyEvent[]>;
+  /** Opens another event's card in place of this one. */
+  onOpenEvent: (id: string) => void;
 }
 
 /** Wall-clock midnight to midnight: a day-long listing (exhibitions, fairs). */
@@ -54,6 +62,8 @@ export function EventDetail({
   onReported,
   onGo,
   loadCredit,
+  loadNearby,
+  onOpenEvent,
 }: Props) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
@@ -99,6 +109,8 @@ export function EventDetail({
           onReported={onReported}
           onGo={onGo}
           loadCredit={loadCredit}
+          loadNearby={loadNearby}
+          onOpenEvent={onOpenEvent}
         />
       ) : (
         <p className="detail__empty" id="detail-title" aria-live="polite">
@@ -117,6 +129,8 @@ function DetailBody({
   onReported,
   onGo,
   loadCredit,
+  loadNearby,
+  onOpenEvent,
 }: {
   ev: NearbyEvent;
   now: Date;
@@ -125,12 +139,15 @@ function DetailBody({
   onReported: Props['onReported'];
   onGo: () => void;
   loadCredit: Props['loadCredit'];
+  loadNearby: Props['loadNearby'];
+  onOpenEvent: Props['onOpenEvent'];
 }) {
   const { t, lang } = useI18n();
   const credit = useCredit(ev, loadCredit);
   const { running, price, distance, walk, categories } = useEventText(ev, now);
   const [toast, setToast] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const url = eventUrl(ev.id);
   const ended = new Date(ev.endAt) < now;
   const dayLong = isDayLong(ev);
@@ -145,19 +162,6 @@ function DetailBody({
     const id = setTimeout(() => setToast(null), 2200);
     return () => clearTimeout(id);
   }, [toast]);
-
-  async function share() {
-    const data = { title: ev.title, text: `${ev.title} · ${ev.venue?.name ?? ''}`.trim(), url };
-    try {
-      if (navigator.share) await navigator.share(data);
-      else {
-        await navigator.clipboard.writeText(url);
-        setToast(t('event.linkCopied'));
-      }
-    } catch {
-      /* the user dismissed the share sheet */
-    }
-  }
 
   return (
     <div className="detail__scroll">
@@ -180,7 +184,9 @@ function DetailBody({
           )}
         </div>
         <h1 id="detail-title">{ev.title}</h1>
+        <InstallHint />
 
+        {ended && <p className="status-banner status-banner--ended">{t('ended.banner')}</p>}
         <FlagNotice ev={ev} now={now} />
         {ev.status !== 'scheduled' && (
           <p className={`status-banner status-banner--${ev.status}`}>{t(`event.${ev.status}`)}</p>
@@ -235,6 +241,7 @@ function DetailBody({
         <div className="event-card__actions">
           <GoButtons ev={ev} onGo={onGo} />
         </div>
+        {!ended && <Going ev={ev} now={now} />}
         <div className="event-card__actions event-card__actions--links">
           {ev.ticketUrl && (
             <a className="btn" href={ev.ticketUrl} target="_blank" rel="noreferrer">
@@ -252,7 +259,7 @@ function DetailBody({
             <Icon name="calendar" />
             {t('event.addToCalendar')}
           </button>
-          <button type="button" className="tool" onClick={share}>
+          <button type="button" className="tool" onClick={() => setSharing(true)}>
             <Icon name="share" />
             {t('event.share')}
           </button>
@@ -262,6 +269,7 @@ function DetailBody({
           </button>
         </div>
 
+        {ended && <NearbyNow ev={ev} now={now} load={loadNearby} onOpen={onOpenEvent} />}
         {ev.description && (
           <section className="detail__section">
             <h2>{t('event.about')}</h2>
@@ -309,6 +317,9 @@ function DetailBody({
           <Icon name="flag" size={16} /> {t('event.report')}
         </button>
       </div>
+      {sharing && (
+        <ShareSheet ev={ev} url={url} onClose={() => setSharing(false)} onToast={setToast} />
+      )}
       {reporting && (
         <ReportDialog
           eventId={ev.id}

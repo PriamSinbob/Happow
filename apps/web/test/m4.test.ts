@@ -119,3 +119,20 @@ describe('community flags', () => {
     expect(visibleFlag(src, mine)).toEqual({ reason: 'moved', count: 1, at: mine.e1.at });
   });
 });
+
+describe('shared event links (M9 slice A)', () => {
+  it('turns /e/<id> into the event route on the map address, keeping the query', async () => {
+    const { adoptEventPath } = await import('../src/hooks/useHashRoute');
+    window.history.replaceState(null, '', '/e/ticketmaster%3AZ7%20x?s=tok');
+    adoptEventPath();
+    expect(window.location.pathname).toBe('/');
+    expect(window.location.search).toBe('?s=tok');
+    expect(window.location.hash).toBe('#/e/ticketmaster%3AZ7%20x');
+    const { result } = renderHook(() => useRoute());
+    expect(result.current[0]).toEqual({ name: 'event', id: 'ticketmaster:Z7 x' });
+    // The old hash links keep working, and other paths are left alone.
+    window.history.replaceState(null, '', '/about-us#/e/a');
+    adoptEventPath();
+    expect(window.location.pathname).toBe('/about-us');
+  });
+});
