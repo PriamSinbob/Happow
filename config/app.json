@@ -227,6 +227,16 @@
     "lookingMinutes": 30,
     "hereRadiusM": 100
   },
+  "agenda": {
+    "views": ["all", "plans", "saved"],
+    "keepPastDays": 30,
+    "keepRemovedDays": 30,
+    "maxSaved": 200,
+    "maxPerRead": 200,
+    "walkRoundMin": 5,
+    "leaveStepMin": 15,
+    "syncPerHour": 120
+  },
   "sharing": {
     "endedNearbyMax": 5,
     "endedLabel": { "pl": "Zakończone", "en": "Ended" }

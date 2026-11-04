@@ -4,7 +4,7 @@ Nov 4, 2026
 
 Spec from the brief (Future features → Plan ahead, requested 2026-10-21) and the M10 line in the milestones list. M10 comes after M9 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec approved, §8 answered by the owner on 2026-11-04; next: slice A's plan.
+**Status:** spec approved, §8 answered by the owner on 2026-11-04. Slices A, B and C built together on 2026-11-04 (owner: one step); next: slice D's plan.
 
 Goal: **what you've decided to go to sits in one place, an evening of several events works out on foot, and the phone reminds you before something starts.** The PoC is about now and today; M10 makes the same app useful for this evening, the weekend and the next two weeks. The brief's rules hold: no streaks, no fake urgency, pull not push (a reminder is something the person set, never something we choose to send), paid never buys visibility. No new data sources.
 
@@ -26,9 +26,9 @@ One branch and one PR to `main` per slice, as in M9 and M12. Each slice PR updat
 
 | Slice | Spec | What                                                                                   | Needs | Status |
 | ----- | ---- | -------------------------------------------------------------------------------------- | ----- | ------ |
-| A     | §1   | Views (everything, plans, saved) and the agenda: your events by day, past ones folded  | —     | —      |
-| B     | §2   | Saved events follow the account across devices (`saved.sync`)                          | A     | —      |
-| C     | §3   | The evening queue: events in a row, walking times between them, overlap and "too late" | A     | —      |
+| A     | §1   | Views (everything, plans, saved) and the agenda: your events by day, past ones folded  | —     | built  |
+| B     | §2   | Saved events follow the account across devices (`saved.sync`)                          | A     | built  |
+| C     | §3   | The evening queue: events in a row, walking times between them, overlap and "too late" | A     | built  |
 | D     | §4   | Web push: subscription, keys, the sender in the Worker (no reminders yet)              | —     | —      |
 | E     | §5   | Reminders before a start, on the agenda's events                                       | A, D  | —      |
 | F     | §6   | Room for M11's accepted invitations in the agenda, and the M10 summary                 | A–E   | —      |
@@ -46,7 +46,7 @@ One branch and one PR to `main` per slice, as in M9 and M12. Each slice PR updat
 - **One list of your plans:** every event you saved or marked "I'm going", once each. **"I'm going" also saves** the event (owner, 2026-11-04); un-saving doesn't take back "going". The agenda shows a small "going" tag on the ones you marked.
 - **Grouped by day** in the region's time zone, with the list's day headers (M6 §13.5): "Today", "Tomorrow", then "Sat 7.11". Within a day, by start time. An event already on sits at the top of Today with its live ring.
 - **Past events** fold into "Past" at the bottom, newest first, kept for 30 days (`agenda.keepPastDays`) and then dropped from the device list. Cancelled or "possibly cancelled" events stay in place, marked as on their cards, so a change of plan is visible rather than silent. Hidden events read as "no longer listed" (as M9 §4).
-- **Beyond the snapshot.** The map's snapshot reaches 14 days; saved events can be further out (crawled events go up to 60 days). The agenda reads its events by id: a new `POST /api/events` taking up to 200 ids and returning the public events among them (one query on `events_public`), cached on the device like the snapshot.
+- **Beyond the snapshot.** The map's snapshot reaches 14 days; saved events can be further out (crawled events go up to 60 days). The agenda reads its events by id: a new database function `events_by_ids` (the app reads events from the database directly, so not a Worker endpoint) taking up to 200 ids and returning the listed events among them (one query on `events_public`).
 - **Views** (owner, 2026-11-04). The bookmark button in the top-left row that M7 §4 places for "My plans" becomes a view switcher, built in M10. One entry point; M7 adds no button of its own.
   - **Everything:** the map and list as today (the default).
   - **My plans:** saved, going and (from M11) accepted invitations.
@@ -58,7 +58,16 @@ One branch and one PR to `main` per slice, as in M9 and M12. Each slice PR updat
 - **Each row** is the list card: glyph, title, time, venue, walk estimate from where you are now, and the bookmark to remove it. Tapping opens the event card.
 - **Calendar.** "Add all to calendar" on a day downloads one `.ics` with that day's events (the existing `ics.ts`, several `VEVENT`s).
 - **Free**, no account.
-- **Tests.** The view switcher (tap, hold, remembered); "going" also saving; merging saved and going without duplicates; day grouping across midnight and the DST change; past folding and the 30-day drop; ids beyond 14 days read through `/api/events`; hidden and cancelled events.
+- **Tests.** The view switcher (tap, hold, remembered); "going" also saving; merging saved and going without duplicates; day grouping across midnight and the DST change; past folding and the 30-day drop; ids beyond 14 days read through `events_by_ids`; hidden and cancelled events.
+
+**Built (slice A).**
+
+- **Views.** A third round button in the top-left row (`useView`): tap switches between Everything and the last view, hold opens the picker (the map shortcut's grid, with the calendar for My plans and the bookmark for Saved). The views come from `agenda.views` in `config/app.json`, so M11 adds `private` there. The choice is remembered on the device.
+- **Map.** In a view, the map shows only your events that fit the time line and the filters, wherever they are; the hotspot hides. With none, a card says "Nothing saved yet…" or "None of your plans at this time" with "Open the list".
+- **The list is the agenda** (`Agenda.tsx`) and shows all your events whatever the time line says: the time line is the map's control, and a plan next week shouldn't vanish from your plans because the map shows today. Days use the list's headers, rows the list card with a bookmark to remove and a "Going" tag; cancelled events are marked; "Past (n)" folds; ended ones leave the list after `agenda.keepPastDays`; ids no longer listed show as one line with "Remove". Tapping a row opens the event's page.
+- **Calendar.** A calendar button per day downloads one `.ics` with that day's events. Fixed on the way: `;` in calendar text was never escaped (RFC 5545 wants `\;`).
+- **Store.** `plans.ts` keeps the list on the device (`happow:plans`), taking over the old saved list. "I'm going" saves; un-saving clears the local "going" tag but not the server's "I'm going". An event marked going before M10 joins the list the next time its card opens, unless it was removed since.
+- **Reading by id.** `events_by_ids` in migration **24**, granted to anon. Until it's applied, the agenda shows the events the map has loaded (the next 14 days in the area).
 
 ## 2. Saved events across devices (slice B)
 
@@ -69,6 +78,13 @@ One branch and one PR to `main` per slice, as in M9 and M12. Each slice PR updat
 - **The 200 cap** stays per account, oldest past events dropped first.
 - **Signing out** keeps the device's list as it is; deleting the account deletes the rows (and M13's GDPR export includes them).
 - **Tests.** The merge rules (union, latest wins, tombstones), the cap, RLS (another account reads nothing), the plan check, sign-out and delete.
+
+**Built (slice B).**
+
+- **Server.** Migration **24** adds `saved_events` (account, event, saved, going, changed at; RLS on, no policies: only the service role reads it, through the API) and `saved_sync`, which merges and returns the account's list. A time from the future counts as now, so a wrong phone clock can't pin an event forever. The account export includes the list; deleting the account deletes it.
+- **API.** `POST /api/me/saved {items}` → `{items}` (`packages/api/src/saved.ts`): needs a sign-in and `saved.sync`, rate-limited per account (`agenda.syncPerHour`). An empty list is a pull.
+- **App.** `usePlanSync` syncs on sign-in, 1.5 s after a change, and every `refresh.dataMinutes`, then keeps the merge of both lists. Signing out leaves the device's list as it is.
+- **The cap** drops the oldest saved first, not the oldest past events: the server doesn't know when events are on, and past ones leave after 30 days anyway.
 
 ## 3. The evening queue (slice C)
 
@@ -84,6 +100,14 @@ One branch and one PR to `main` per slice, as in M9 and M12. Each slice PR updat
 - **Nothing is moved or dropped for you:** the view only shows the warnings; the person decides.
 - **Free**, no account.
 - **Tests.** Overlap, late for fixed, closed for open, the open-event exception, leave-at changing the next verdict, no end time, a leg over the walking limit, rounding up to 5 minutes.
+
+**Built (slice C).**
+
+- **Where.** "Plan the evening" on any agenda day with two or more events opens the queue (`EveningQueue.tsx`, a full screen over the map). The core is `eveningQueue` in `packages/core/src/agenda.ts`.
+- **Verdicts** as specified, plus "Just in time" for an arrival within the grace. An open-entry event that overlaps the next fixed one says "Open entry: leave by 19:20 to make it" instead of a warning. Warnings use the warning colour.
+- **Leave at.** − and + in 15-minute steps (`agenda.leaveStepMin`) between the start and the end, kept on the device (`happow:leaveAt`), not synced.
+- **Long walks** (over 45 min) show "Long walk" and "Transit in Google Maps".
+- **No routing calls**: rounded estimates only (`agenda.walkRoundMin`, 5).
 
 ## 4. Web push (slice D)
 
@@ -111,7 +135,7 @@ Plumbing only; reminders use it in slice E and M7's new-date alerts after that.
 
 ## 6. Accepted invitations and the summary (slice F)
 
-- **Room for M11.** The agenda's source list becomes "saved ∪ going ∪ accepted invitations", with the third empty until M11. The `/api/events` read already respects visibility, so M11 only adds private events the person may see. Accepted invitations are always in the agenda and can't be un-bookmarked; declining removes them.
+- **Room for M11.** The agenda's source list becomes "saved ∪ going ∪ accepted invitations", with the third empty until M11. The `events_by_ids` read already respects visibility, so M11 only adds private events the person may see. Accepted invitations are always in the agenda and can't be un-bookmarked; declining removes them.
 - **M10 summary** (`M10-summary.md`), as for M9 and M12: every feature from the user's side, and what's left for the owner (migrations, the VAPID secret, phone tests).
 - **Tests.** The agenda merging a fake invitation source; nothing else changes until M11.
 

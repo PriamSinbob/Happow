@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAccount } from './account';
 import {
+  agendaDays,
   dayStarts,
   densityClusters,
   diceCategory,
@@ -8,17 +9,22 @@ import {
   familyMatch,
   isOnDay,
   isRunning,
+  matchesFilters,
+  overlaps,
   pinState,
   reachForRoll,
   reweigh,
   rollDice,
   snapRadius,
   topCategories,
+  viewIds,
+  windowRange,
   type DiceSignal,
   type DiceWeights,
   type HappowEvent,
   type LatLng,
   type NearbyEvent,
+  type PlanView,
 } from '@happow/core';
 import { trackView } from './analytics';
 import { useAtlas } from './atlas/useAtlas';
@@ -33,11 +39,16 @@ import { useGeolocation, useStableCenter } from './hooks/useGeolocation';
 import { useMinuteClock } from './hooks/useClock';
 import { useRoute } from './hooks/useHashRoute';
 import { useRadius } from './hooks/useRadius';
-import { useSaved } from './hooks/useSaved';
+import { useMyEvents } from './hooks/useMyEvents';
+import { useView } from './hooks/useView';
+import { plans, usePlans, usePlanSync } from './plans';
+import { formatRelativeDay } from './format';
 import { useLongPress } from './hooks/useLongPress';
 import { useShortcut } from './hooks/useShortcut';
 import { useI18n } from './i18n';
 import { About } from './components/About';
+import { Agenda } from './components/Agenda';
+import { EveningQueue } from './components/EveningQueue';
 import { AddEvent } from './components/AddEvent';
 import { EventCard } from './components/EventCard';
 import { EventDetail } from './components/EventDetail';
@@ -54,6 +65,7 @@ import { PlaceCard } from './components/PlaceCard';
 import { ReachRail } from './components/ReachRail';
 import { SettingsSheet } from './components/SettingsSheet';
 import { TimeLine } from './components/TimeLine';
+import type { IconName } from './components/Icons';
 import type { PinMode } from './pins';
 import { storage } from './storage';
 import { useTheme } from './theme';
@@ -73,6 +85,14 @@ const familyCell = (e: HappowEvent) => {
   const lat = config.app.density.deviceCellM / 111_320;
   const lng = lat / Math.cos((e.point.lat * Math.PI) / 180);
   return `${Math.floor(e.point.lat / lat)}:${Math.floor(e.point.lng / lng)}`;
+};
+
+/** The icon of each view on the switcher (M10 §1); the bookmark and calendar the card uses. */
+const VIEW_ICON: Record<PlanView, IconName> = {
+  all: 'map',
+  plans: 'calendar',
+  saved: 'bookmark',
+  private: 'shield',
 };
 
 function savedWeights(): DiceWeights {
@@ -102,7 +122,13 @@ export function App() {
   const filters = useFilters();
   const shortcut = useShortcut(filters);
   // The grid a hold opens: the shortcut's choices, or the dice's categories.
-  const [grid, setGrid] = useState<'shortcut' | 'dice' | null>(null);
+  const [grid, setGrid] = useState<'shortcut' | 'dice' | 'view' | null>(null);
+  // What the map and list show (M10 §1): everything, your plans, saved.
+  const planView = useView();
+  const inPlans = planView.view !== 'all';
+  const myList = usePlans();
+  usePlanSync();
+  const [queueDay, setQueueDay] = useState<string | null>(null);
   const closeGrid = useCallback(() => setGrid(null), []);
   const [toast, setToast] = useState<string | null>(null);
   useEffect(() => {
@@ -189,8 +215,38 @@ export function App() {
     () => flagged(familyAround.filter(visible)),
     [flagged, familyAround, visible],
   );
+  // Your events (M10 §1), read by id: any day and distance. The map's copies fill in at once.
+  const myIds = useMemo(() => [...(viewIds(myList, planView.view) ?? [])], [myList, planView.view]);
+  const known = useMemo(() => [...loaded.events, ...loaded.around], [loaded.events, loaded.around]);
+  const mine = useMyEvents(repo, myIds, searchCenter, known, inPlans);
+  // On the map, a view keeps the time line and the filters: "this evening" plus "my plans" shows
+  // tonight's plans. Outside the reach they still show: they're yours.
+  const mineOnMap = useMemo(() => {
+    if (!inPlans) return [];
+    const range = windowRange(filters.window, now, region.timezone);
+    return flagged(
+      familyOnly(mine.events).filter(
+        (e) =>
+          e.status !== 'cancelled' &&
+          matchesFilters(e, filters) &&
+          overlaps(e, range.from, range.to) &&
+          visible(e),
+      ),
+    );
+  }, [inPlans, mine.events, filters, now, familyOnly, flagged, visible]);
   // The map shows the reach plus the nearest events beyond it (faded, or edge dots off screen).
-  const mapEvents = useMemo(() => [...events, ...around.slice(0, maxEdgeDots)], [events, around]);
+  const mapEvents = useMemo(
+    () => (inPlans ? mineOnMap : [...events, ...around.slice(0, maxEdgeDots)]),
+    [inPlans, mineOnMap, events, around],
+  );
+  // Ended long ago: off the list (a removal, so the account's other devices drop them too).
+  const myDays = useMemo(
+    () => agendaDays(mine.events, now, region.timezone, config.app.agenda.keepPastDays),
+    [mine.events, now],
+  );
+  useEffect(() => {
+    if (myDays.expired.length) plans.remove(myDays.expired);
+  }, [myDays.expired]);
 
   // ● N: on now, in reach, worth going to (not dashed). Always now, whatever the line shows.
   const liveCount = useMemo(
@@ -202,7 +258,10 @@ export function App() {
     [familyEvents, now, radius],
   );
 
-  const all = useMemo(() => [...events, ...around], [events, around]);
+  const all = useMemo(
+    () => [...events, ...around, ...(inPlans ? mineOnMap : [])],
+    [events, around, inPlans, mineOnMap],
+  );
   const selected = all.find((e) => e.id === selectedId) ?? null;
   // A pin with several events at one place lists them; ids that left the results drop out.
   const [placeIds, setPlaceIds] = useState<string[] | null>(null);
@@ -266,7 +325,6 @@ export function App() {
     [repo, radius],
   );
   useEffect(() => trackView(route?.name ?? 'map'), [route?.name]);
-  const saved = useSaved();
 
   // The time line's height: the map keeps the reach clear of it.
   const timeline = useRef<HTMLDivElement>(null);
@@ -351,6 +409,13 @@ export function App() {
   const shortcutPress = useLongPress(shortcut.toggle, () => setGrid('shortcut'));
   const shortcutCategory = shortcut.id === 'family' ? null : categoriesById.get(shortcut.id);
   const shortcutName = shortcutCategory ? shortcutCategory.labels[lang] : t('family.mode');
+  const viewPress = useLongPress(planView.toggle, () => setGrid('view'));
+  const viewName = (v: PlanView) => t(`view.${v}`);
+  const viewOptions = config.app.agenda.views.map((v) => ({
+    id: v,
+    icon: VIEW_ICON[v],
+    label: viewName(v),
+  }));
   const shortcutOptions = [
     { id: 'family', glyph: 'family', label: t('family.mode') },
     ...config.categories.map((c) => ({ id: c.id, glyph: c.glyph, label: c.labels[lang] })),
@@ -399,7 +464,7 @@ export function App() {
           }}
           bottomInset={timelineHeight}
           recenter={recenter}
-          hotspot={guidance.hotspot}
+          hotspot={inPlans ? null : guidance.hotspot}
           onHotspot={() => {
             setSelectedId(null);
             setHotspotOpen(true);
@@ -437,6 +502,16 @@ export function App() {
         >
           <Glyph id={shortcutCategory ? shortcutCategory.glyph : 'family'} size={20} />
         </button>
+        <button
+          type="button"
+          className="map-btn"
+          data-on={inPlans}
+          aria-pressed={inPlans}
+          aria-label={t('view.label', { name: viewName(inPlans ? planView.view : planView.last) })}
+          {...viewPress}
+        >
+          <Icon name={VIEW_ICON[inPlans ? planView.view : planView.last]} filled={inPlans} />
+        </button>
         {error && (
           <span className="hud-error" role="status">
             {t('summary.error')}
@@ -465,6 +540,19 @@ export function App() {
           current={shortcut.id}
           onPick={(id) => {
             shortcut.choose(id);
+            setGrid(null);
+          }}
+          onClose={closeGrid}
+        />
+      )}
+      {grid === 'view' && (
+        <PickGrid
+          label={t('view.pick')}
+          options={viewOptions}
+          current={planView.view}
+          onPick={(id) => {
+            planView.choose(id as PlanView);
+            clearCards();
             setGrid(null);
           }}
           onClose={closeGrid}
@@ -540,7 +628,21 @@ export function App() {
         </button>
       </div>
 
-      {view === 'list' && (
+      {view === 'list' && inPlans && (
+        <section className="list-overlay" aria-label={viewName(planView.view)}>
+          <Agenda
+            events={flagged(mine.events)}
+            gone={mine.gone}
+            now={now}
+            isGoing={plans.isGoing}
+            onSelect={openDetail}
+            onUnsave={plans.toggle}
+            onRemoveGone={() => plans.remove(mine.gone)}
+            onPlan={setQueueDay}
+          />
+        </section>
+      )}
+      {view === 'list' && !inPlans && (
         <section className="list-overlay" aria-label={t('view.list')}>
           <ListView
             events={events}
@@ -603,6 +705,20 @@ export function App() {
               onClose={() => setHotspotOpen(false)}
             />
           </div>
+        ) : inPlans ? (
+          view === 'map' &&
+          !mine.loading &&
+          mineOnMap.length === 0 && (
+            <div className="sheet__card plan-empty" role="status">
+              <Icon name={VIEW_ICON[planView.view]} />
+              <p>{myIds.length === 0 ? t('agenda.empty') : t('agenda.noneNow')}</p>
+              {myIds.length > 0 && (
+                <button type="button" className="btn" onClick={() => setView('list')}>
+                  {t('agenda.openList')}
+                </button>
+              )}
+            </div>
+          )
         ) : (
           view === 'map' &&
           !loading &&
@@ -669,8 +785,8 @@ export function App() {
           ev={detail.ev && withFlag(detail.ev, myReports)}
           loading={detail.loading}
           now={now}
-          saved={saved.isSaved(detailId)}
-          onToggleSave={() => saved.toggle(detailId)}
+          saved={myList.some((e) => e.id === detailId && e.on)}
+          onToggleSave={() => plans.toggle(detailId)}
           onClose={close}
           onReported={addMyReport}
           onGo={() => goThere(detailId)}
@@ -720,6 +836,31 @@ export function App() {
             setAddGate(false);
             go({ name: 'add' });
           }}
+        />
+      )}
+      {queueDay && (
+        <EveningQueue
+          day={formatRelativeDay(
+            // The day's first event, or now when it's already on.
+            new Date(
+              Math.max(
+                Date.parse(
+                  myDays.days.find((d) => d.day === queueDay)?.events[0]?.startAt ??
+                    `${queueDay}T12:00:00Z`,
+                ),
+                now.getTime(),
+              ),
+            ).toISOString(),
+            now,
+            region.timezone,
+            lang,
+          )}
+          events={myDays.days.find((d) => d.day === queueDay)?.events ?? []}
+          onOpen={(id) => {
+            setQueueDay(null);
+            openDetail(id);
+          }}
+          onClose={() => setQueueDay(null)}
         />
       )}
       {needsTerms && <TermsSheet />}

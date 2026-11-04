@@ -205,6 +205,12 @@ export class SupabaseEventRepository implements EventRepository {
     return row ? rowToEvent(row) : null;
   }
 
+  async byIds(ids: readonly string[], from: LatLng, signal?: AbortSignal): Promise<NearbyEvent[]> {
+    if (!ids.length) return [];
+    const rows = await this.rpc('events_by_ids', { ids, lat: from.lat, lng: from.lng }, signal);
+    return rows.map(rowToEvent);
+  }
+
   async credit(eventId: string, signal?: AbortSignal): Promise<Credit | null> {
     // A function returning one jsonb value: PostgREST sends the value itself (or null).
     const value = (await this.rpc<unknown>(

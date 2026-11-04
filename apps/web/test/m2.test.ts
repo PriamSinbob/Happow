@@ -81,7 +81,7 @@ describe('iCalendar export', () => {
       now,
     );
     expect(ics).toMatch(/^BEGIN:VCALENDAR\r\n/);
-    expect(ics).toContain('SUMMARY:Jazz\\, wine\; and more');
+    expect(ics).toContain('SUMMARY:Jazz\\, wine\\; and more');
     expect(ics).toContain(`DTSTART:${ev!.startAt.replace(/[-:]/g, '').replace('.000', '')}`);
     expect(ics).toContain('DTSTAMP:20261020T140000Z');
     for (const line of ics.split('\r\n'))

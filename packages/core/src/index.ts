@@ -22,3 +22,4 @@ export * from './contributions.js';
 export * from './recurrence.js';
 export * from './seasons.js';
 export * from './attendance.js';
+export * from './agenda.js';

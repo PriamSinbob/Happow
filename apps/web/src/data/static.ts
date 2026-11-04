@@ -53,6 +53,13 @@ export class StaticEventRepository implements EventRepository {
     return e ? { ...e, distanceM: distanceM(from, e.point) } : null;
   }
 
+  async byIds(ids: readonly string[], from: LatLng): Promise<NearbyEvent[]> {
+    const want = new Set(ids);
+    return (await this.events)
+      .filter((e) => want.has(e.id))
+      .map((e) => ({ ...e, distanceM: distanceM(from, e.point) }));
+  }
+
   /** The bundled seed has no accounts. */
   async credit(): Promise<Credit | null> {
     return null;

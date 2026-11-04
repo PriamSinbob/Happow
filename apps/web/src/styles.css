@@ -3140,3 +3140,151 @@ button.account-card__plan {
 .coverage .field select {
   width: 100%;
 }
+
+/* M10 plan ahead: the agenda (§1) and the evening queue (§3). */
+.row-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.row-wrap > .row {
+  flex: 1;
+  min-width: 0;
+}
+.row__unsave {
+  flex: none;
+}
+.badge--going {
+  background: var(--ink);
+  color: var(--paper);
+}
+.agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.agenda__day {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agenda__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.agenda__tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.btn--small {
+  flex: none;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+.agenda__empty,
+.plan-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+.plan-empty {
+  flex-wrap: wrap;
+}
+.plan-empty p {
+  flex: 1;
+  margin: 0;
+}
+.agenda__gone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 0 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.agenda__past summary {
+  padding: 8px 4px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+}
+.queue__note {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.queue__item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.queue__event {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  color: inherit;
+}
+.queue__body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.queue__leave {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 12px;
+  font-size: 13px;
+}
+.queue__time.is-early {
+  font-weight: 650;
+}
+.queue__leg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-left: 22px;
+  padding: 6px 0 6px 14px;
+  border-left: 2px dotted var(--line);
+  font-size: 13px;
+}
+.queue__leg.is-warning strong {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--warn);
+  color: var(--warn-ink);
+}
+.queue__transit {
+  color: inherit;
+}
+.row-wrap .row__when {
+  flex-wrap: wrap;
+}

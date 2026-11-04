@@ -4,6 +4,7 @@ import { track } from '../analytics';
 import { lookAt, setAttendance, type AttendanceView, type Signal } from '../attendance';
 import { config } from '../config';
 import { useI18n } from '../i18n';
+import { plans } from '../plans';
 import { Icon } from './Icons';
 
 const { lookingMinutes, hereRadiusM } = config.app.attendance;
@@ -25,7 +26,12 @@ export function Going({ ev, now }: { ev: NearbyEvent; now: Date }) {
   useEffect(() => {
     let live = true;
     lookAt(ev.id, lookingMinutes)
-      .then((v) => live && setView(v))
+      .then((v) => {
+        if (!live) return;
+        setView(v);
+        // Marked going before M10, or on this device without saving: it joins your plans once.
+        if (v.mine?.going) plans.adoptGoing(ev.id);
+      })
       .catch(() => {
         /* offline or not configured: the buttons still work when the server is back */
       });
@@ -40,6 +46,8 @@ export function Going({ ev, now }: { ev: NearbyEvent; now: Date }) {
     setBusy(true);
     try {
       setView(await setAttendance(ev.id, kind, on));
+      // "I'm going" also saves the event (M10 §1, owner 2026-11-04).
+      if (kind === 'going') plans.setGoing(ev.id, on);
       track(kind === 'going' ? 'Going' : 'Here', { on: String(on) });
     } catch {
       /* stays as it was; the buttons show the real state */

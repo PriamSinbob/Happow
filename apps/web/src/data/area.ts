@@ -104,6 +104,11 @@ export class AreaEventRepository implements EventRepository {
     return this.db.byId(id, from, signal);
   }
 
+  /** Read live: the agenda's events can be anywhere and any day. */
+  byIds(ids: readonly string[], from: LatLng, signal?: AbortSignal): Promise<NearbyEvent[]> {
+    return this.db.byIds(ids, from, signal);
+  }
+
   /** Read live, never from the cached area, so turning the credit off hides it at once. */
   credit(eventId: string, signal?: AbortSignal): Promise<Credit | null> {
     return this.db.credit(eventId, signal);
