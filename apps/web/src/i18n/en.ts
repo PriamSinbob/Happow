@@ -610,6 +610,7 @@ export const en = {
   'agenda.openList': 'Open the list',
   'agenda.past': 'Past ({count})',
   'agenda.going': 'Going',
+  'agenda.invited': 'Invited',
   'agenda.gone':
     '{count, plural, one {# saved event is no longer listed} other {# saved events are no longer listed}}',
   'agenda.removeGone': 'Remove',

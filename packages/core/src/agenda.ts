@@ -62,12 +62,31 @@ export function setPlan(
   return [...list.filter((e) => e.id !== id), next];
 }
 
-/** Event ids a view shows; null for "everything" (§1). */
-export function viewIds(list: readonly PlanEntry[], view: PlanView): Set<string> | null {
+/**
+ * An invitation the person accepted (M11). Until M11 the source is empty; its events are always in
+ * "My plans" and can't be un-bookmarked (declining removes them). `private`: a private event,
+ * shown in the Private view too.
+ */
+export interface AcceptedInvitation {
+  id: string;
+  private: boolean;
+}
+
+/**
+ * Event ids a view shows; null for "everything" (§1, §6). My plans: saved ∪ going ∪ accepted
+ * invitations ("going" always saves); Saved: the bookmarks only; Private: the private events
+ * you're invited to.
+ */
+export function viewIds(
+  list: readonly PlanEntry[],
+  view: PlanView,
+  invited: readonly AcceptedInvitation[] = [],
+): Set<string> | null {
   if (view === 'all') return null;
-  // "plans" will also hold accepted invitations (M11); "private" is M11's own.
-  if (view === 'private') return new Set();
-  return new Set(list.filter((e) => e.on).map((e) => e.id));
+  if (view === 'private') return new Set(invited.filter((i) => i.private).map((i) => i.id));
+  const saved = list.filter((e) => e.on || e.going).map((e) => e.id);
+  if (view === 'saved') return new Set(saved);
+  return new Set([...saved, ...invited.map((i) => i.id)]);
 }
 
 type Timed = Pick<HappowEvent, 'id' | 'startAt' | 'endAt'>;

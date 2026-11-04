@@ -40,6 +40,7 @@ import { useMinuteClock } from './hooks/useClock';
 import { useRoute } from './hooks/useHashRoute';
 import { useRadius } from './hooks/useRadius';
 import { useMyEvents } from './hooks/useMyEvents';
+import { invitations, useAcceptedInvitations } from './invitations';
 import { useView } from './hooks/useView';
 import { plans, usePlans, usePlanSync } from './plans';
 import { reminders } from './reminders';
@@ -217,7 +218,11 @@ export function App() {
     [flagged, familyAround, visible],
   );
   // Your events (M10 §1), read by id: any day and distance. The map's copies fill in at once.
-  const myIds = useMemo(() => [...(viewIds(myList, planView.view) ?? [])], [myList, planView.view]);
+  const invited = useAcceptedInvitations();
+  const myIds = useMemo(
+    () => [...(viewIds(myList, planView.view, invited) ?? [])],
+    [myList, planView.view, invited],
+  );
   const known = useMemo(() => [...loaded.events, ...loaded.around], [loaded.events, loaded.around]);
   const mine = useMyEvents(repo, myIds, searchCenter, known, inPlans);
   // On the map, a view keeps the time line and the filters: "this evening" plus "my plans" shows
@@ -646,6 +651,7 @@ export function App() {
             gone={mine.gone}
             now={now}
             isGoing={plans.isGoing}
+            isInvited={invitations.has}
             onSelect={openDetail}
             onUnsave={plans.toggle}
             onRemoveGone={() => plans.remove(mine.gone)}

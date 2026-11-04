@@ -4,7 +4,7 @@ Nov 4, 2026
 
 Spec from the brief (Future features → Plan ahead, requested 2026-10-21) and the M10 line in the milestones list. M10 comes after M9 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec approved, §8 answered by the owner on 2026-11-04. Slices A, B and C built together on 2026-11-04 (owner: one step), D and E the same day; next: slice F.
+**Status:** spec approved, §8 answered by the owner on 2026-11-04. All slices built on 2026-11-04: A, B and C together (owner: one step), then D and E, then F; the owner approved the deviations in the Built notes (the bell icon, no settings row for the default lead, no walk in the notification, 6 reminders per cron tick) the same day. What it does: [M10-summary.md](M10-summary.md).
 
 Goal: **what you've decided to go to sits in one place, an evening of several events works out on foot, and the phone reminds you before something starts.** The PoC is about now and today; M10 makes the same app useful for this evening, the weekend and the next two weeks. The brief's rules hold: no streaks, no fake urgency, pull not push (a reminder is something the person set, never something we choose to send), paid never buys visibility. No new data sources.
 
@@ -31,7 +31,7 @@ One branch and one PR to `main` per slice, as in M9 and M12. Each slice PR updat
 | C     | §3   | The evening queue: events in a row, walking times between them, overlap and "too late" | A     | built  |
 | D     | §4   | Web push: subscription, keys, the sender in the Worker (no reminders yet)              | —     | built  |
 | E     | §5   | Reminders before a start, on the agenda's events                                       | A, D  | built  |
-| F     | §6   | Room for M11's accepted invitations in the agenda, and the M10 summary                 | A–E   | —      |
+| F     | §6   | Room for M11's accepted invitations in the agenda, and the M10 summary                 | A–E   | built  |
 
 ### Working notes
 
@@ -143,7 +143,7 @@ Plumbing only; reminders use it in slice E and M7's new-date alerts after that.
 
 **Built (slice E).**
 
-- **Bell.** On the event page, next to the bookmark, for saved events that haven't started (`ReminderSheet.tsx`). The leads come from `reminders.leads`. The icon is Tabler's `bell` as published, **waiting for the owner's OK** (the set had no bell).
+- **Bell.** On the event page, next to the bookmark, for saved events that haven't started (`ReminderSheet.tsx`). The leads come from `reminders.leads`. The icon is Tabler's `bell` as published (the set had no bell; owner OK, 2026-11-04).
 - **Default lead.** 60 minutes until the person picks another; after that the last one chosen comes first. There is no settings row for it: the settings sheet's rows are an approved design (M6 §15), so a new row waits for the owner.
 - **Server.** Migration **25** adds `reminders`, one per device and event. With an account it's one per account and event, reaching every subscribed device of that account. The fire time is worked out from the event's current start whenever the cron asks, so a moved event moves its reminder with no ingest hook. A start moved past the reminder time sends it at once with "Time changed: now 19:30".
 - **Cron.** `sendDueReminders` runs on every tick with the ingest check and the metrics. It sends what's due before the next tick (`reminders.cronMinutes`, 15), so a reminder can come up to 15 minutes early and says the real time left ("Za 72 min · Klub"). Cancelled events get "Odwołane: …". Hidden ones send nothing. A push that failed for every device is tried again next tick. At most `reminders.maxPerTick` (6) per tick for the Free plan's CPU (`docs/HARDENING.md`).
@@ -156,6 +156,13 @@ Plumbing only; reminders use it in slice E and M7's new-date alerts after that.
 - **Room for M11.** The agenda's source list becomes "saved ∪ going ∪ accepted invitations", with the third empty until M11. The `events_by_ids` read already respects visibility, so M11 only adds private events the person may see. Accepted invitations are always in the agenda and can't be un-bookmarked; declining removes them.
 - **M10 summary** (`M10-summary.md`), as for M9 and M12: every feature from the user's side, and what's left for the owner (migrations, the VAPID secret, phone tests).
 - **Tests.** The agenda merging a fake invitation source; nothing else changes until M11.
+
+**Built (slice F).**
+
+- **Core.** `viewIds(list, view, invited)` takes the accepted invitations (`AcceptedInvitation {id, private}`): My plans is saved ∪ going ∪ invited, Saved the bookmarks only, Private the private invitations. Without invitations nothing changes.
+- **App.** `invitations.ts` is the source, empty until M11 calls `invitations.set` with what the server returns. The agenda tags an invited event "Invited" and shows no bookmark to remove it; declining (M11) takes it off the source.
+- **M11 still adds:** the `private` view in `agenda.views`, the server read of accepted invitations, and private events in `events_by_ids` for people who may see them.
+- **Summary:** [M10-summary.md](M10-summary.md).
 
 ## 7. Free and paid after M10
 

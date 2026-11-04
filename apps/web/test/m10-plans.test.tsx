@@ -228,6 +228,25 @@ describe('the agenda (§1)', () => {
     expect(onRemoveGone).toHaveBeenCalled();
   });
 
+  it('tags an accepted invitation and offers no way to un-bookmark it (§6)', () => {
+    ui(
+      <Agenda
+        events={list.slice(0, 2)}
+        gone={[]}
+        now={NOW}
+        isGoing={() => false}
+        isInvited={(id) => id === 'later'}
+        onSelect={() => {}}
+        onUnsave={() => {}}
+        onRemoveGone={() => {}}
+        onPlan={() => {}}
+      />,
+    );
+    expect(screen.getByText('Invited')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Remove Event later from saved' })).toBeNull();
+    expect(screen.getByRole('button', { name: /Remove .* from saved/ })).toBeTruthy();
+  });
+
   it('says how to start when nothing is saved', () => {
     ui(
       <Agenda

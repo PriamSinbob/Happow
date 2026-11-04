@@ -17,6 +17,7 @@ export function Agenda({
   gone,
   now,
   isGoing,
+  isInvited = () => false,
   onSelect,
   onUnsave,
   onRemoveGone,
@@ -27,6 +28,8 @@ export function Agenda({
   gone: string[];
   now: Date;
   isGoing: (id: string) => boolean;
+  /** An accepted invitation (M11): tagged, and it can't be un-bookmarked here (§6). */
+  isInvited?: (id: string) => boolean;
   onSelect: (id: string) => void;
   onUnsave: (id: string) => void;
   onRemoveGone: () => void;
@@ -35,16 +38,19 @@ export function Agenda({
 }) {
   const { t, lang } = useI18n();
   const { days, past } = agendaDays(events, now, region.timezone, config.app.agenda.keepPastDays);
-  const row = (ev: NearbyEvent) => (
-    <Row
-      key={ev.id}
-      ev={ev}
-      now={now}
-      onSelect={onSelect}
-      tag={isGoing(ev.id) ? t('agenda.going') : undefined}
-      onUnsave={() => onUnsave(ev.id)}
-    />
-  );
+  const row = (ev: NearbyEvent) => {
+    const invited = isInvited(ev.id);
+    return (
+      <Row
+        key={ev.id}
+        ev={ev}
+        now={now}
+        onSelect={onSelect}
+        tag={isGoing(ev.id) ? t('agenda.going') : invited ? t('agenda.invited') : undefined}
+        onUnsave={invited ? undefined : () => onUnsave(ev.id)}
+      />
+    );
+  };
 
   if (!days.length && !past.length && !gone.length)
     return (

@@ -641,6 +641,7 @@ export const pl: Record<MessageKey, string> = {
   'agenda.openList': 'Otwórz listę',
   'agenda.past': 'Minione ({count})',
   'agenda.going': 'Idę',
+  'agenda.invited': 'Zaproszenie',
   'agenda.gone':
     '{count, plural, one {# zapisane wydarzenie nie jest już dostępne} few {# zapisane wydarzenia nie są już dostępne} many {# zapisanych wydarzeń nie jest już dostępnych} other {# zapisanego wydarzenia nie jest już dostępne}}',
   'agenda.removeGone': 'Usuń',

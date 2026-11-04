@@ -75,6 +75,19 @@ describe('the saved list (§1, §2)', () => {
     expect([...viewIds(list, 'saved')!]).toEqual(['a']);
     expect(viewIds(list, 'private')!.size).toBe(0);
   });
+
+  it('my plans merges accepted invitations; only private ones show in Private (§6)', () => {
+    const list = [entry('a', 1), entry('b', 2, false)];
+    const invited = [
+      { id: 'inv-pub', private: false },
+      { id: 'inv-priv', private: true },
+      { id: 'a', private: false },
+    ];
+    expect([...viewIds(list, 'plans', invited)!].sort()).toEqual(['a', 'inv-priv', 'inv-pub']);
+    expect([...viewIds(list, 'saved', invited)!]).toEqual(['a']);
+    expect([...viewIds(list, 'private', invited)!]).toEqual(['inv-priv']);
+    expect(viewIds(list, 'all', invited)).toBeNull();
+  });
 });
 
 const ev = (id: string, start: string, end: string, over: Partial<HappowEvent> = {}) =>
