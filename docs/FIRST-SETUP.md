@@ -213,6 +213,7 @@ To fix a secret: **Settings → Secrets and variables → Actions → pencil ico
 | `ANTHROPIC_API_KEY`    | console.anthropic.com. Follow [SETUP.md §2](SETUP.md#2-anthropic-claude-api-key) (set a $5 spend limit!) | GitHub secret (same steps as Part 2)   |
 | `TICKETMASTER_API_KEY` | developer.ticketmaster.com → My Apps → Consumer Key                                                      | GitHub secret                          |
 | `ORS_API_KEY`          | account.heigit.org (free Standard plan)                                                                  | Cloudflare secret (step 34) and `.env` |
+| `VAPID_PRIVATE_KEY`    | `pnpm push:keys` (one line of JSON; keep it stable)                                                      | Cloudflare secret (step 34) and `.env` |
 
 After you add ingest keys: **Actions → Ingest sources → Run workflow**, tick **force**, then click **Run workflow**.
 

@@ -43,6 +43,7 @@ import { accountRoutes, quotaExceeded } from './accounts.js';
 import { attendanceRoutes } from './attendance.js';
 import { contributionRoutes } from './contributions.js';
 import { feedRoutes } from './feeds.js';
+import { reminderRoutes } from './reminders.js';
 import { savedRoutes } from './saved.js';
 import { ApiError, body, json, sha256 } from './http.js';
 import { premiumProviders, premiumRoutes, type PremiumProvider } from './premium.js';
@@ -264,6 +265,15 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   });
 
   const feeds = feedRoutes({ config, need, requireUser: accounts.requireUser, limit });
+  const pushSecret = (env as Record<string, unknown>)[config.app.push.secret];
+  const reminders = reminderRoutes({
+    config,
+    need,
+    limit,
+    userOf: (req) =>
+      req.headers.has('authorization') ? accounts.requireUser(req) : Promise.resolve(null),
+    pushSecret: typeof pushSecret === 'string' && pushSecret ? pushSecret : undefined,
+  });
   const saved = savedRoutes({
     config,
     need,
@@ -900,6 +910,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'admin' && rest[0] === 'feeds') return await feeds.admin(req, rest.slice(1));
       if (head === 'admin') return await accounts.admin(req, rest);
       if (head === 'premium') return await premium(req, rest);
+      if (head === 'push') return await reminders.push(req, rest);
+      if (head === 'reminders') return await reminders.reminders(req, rest);
       if (head === 'attendance' || head === 'share') return await attendance.route(req, head, rest);
       if (head === 'area' && req.method === 'GET' && !rest.length) return await area(req);
       if (head === 'ingest' && req.method === 'GET' && rest.join('/') === 'status')

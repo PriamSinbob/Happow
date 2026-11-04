@@ -3288,3 +3288,46 @@ button.account-card__plan {
 .row-wrap .row__when {
   flex-wrap: wrap;
 }
+
+/* M10 reminders (§5): the bell's sheet. */
+.reminder {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.reminder p {
+  margin: 0;
+}
+.reminder__leads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.reminder__lead {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 19px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 600;
+}
+.reminder__lead.is-on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.reminder__actions {
+  display: flex;
+  gap: 8px;
+}
+.reminder__note {
+  font-size: 13px;
+  color: var(--muted);
+}
+.reminder__error {
+  color: var(--error-ink);
+}
+.reminder > .btn {
+  flex: none;
+}

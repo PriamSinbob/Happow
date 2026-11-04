@@ -663,4 +663,22 @@ export const pl: Record<MessageKey, string> = {
   'queue.leave': 'Wyjście o {time}',
   'queue.earlier': 'Wyjdź {minutes} min wcześniej',
   'queue.later': 'Wyjdź {minutes} min później',
+  'reminder.set': 'Przypomnij',
+  'reminder.bell': 'Przypomnienie',
+  'reminder.title': 'Przypomnij przed startem',
+  'reminder.min': '{minutes} min przed',
+  'reminder.hours':
+    '{count, plural, one {# godzinę przed} few {# godziny przed} many {# godzin przed} other {# godziny przed}}',
+  'reminder.dayBefore': 'Dzień wcześniej o {time}',
+  'reminder.off': 'Bez przypomnienia',
+  'reminder.install':
+    'Na iPhonie i iPadzie przypomnienia działają, gdy Happow jest na ekranie początkowym: stuknij Udostępnij, potem „Do ekranu początkowego”. Do tego czasu dodaj wydarzenie do kalendarza.',
+  'reminder.blocked':
+    'Powiadomienia dla Happow są wyłączone. Włącz je w ustawieniach przeglądarki albo dodaj wydarzenie do kalendarza.',
+  'reminder.none': 'Ta przeglądarka nie pokazuje przypomnień. Dodaj wydarzenie do kalendarza.',
+  'reminder.failed': 'Nie udało się ustawić przypomnienia. Spróbuj ponownie.',
+  'reminder.refused': 'To wydarzenie już się zaczęło albo masz już najwięcej przypomnień.',
+  'reminder.note':
+    'Start o {time}. Przypomnienie może przyjść do 15 min wcześniej i podaje faktyczny czas do startu.',
+  'reminder.calendar': 'Dodaj do kalendarza',
 };

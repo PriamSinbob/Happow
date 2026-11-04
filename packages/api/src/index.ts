@@ -2,6 +2,7 @@ export { createApi, localInputValue, type ApiEnv, type ApiDeps, type Prefill } f
 export { Supabase, SupabaseError } from './supabase.js';
 export { dispatchDueIngest, type DispatchResult, type ScheduleEnv } from './schedule.js';
 export { saveWeeklyMetrics, type MetricsSaveResult } from './metrics.js';
+export { sendDueReminders, type ReminderTickResult } from './reminders.js';
 export { type GrantChange, type Offer, type PremiumProvider, type UserRef } from './premium.js';
 export {
   createEventPage,

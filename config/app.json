@@ -237,6 +237,20 @@
     "leaveStepMin": 15,
     "syncPerHour": 120
   },
+  "push": {
+    "secret": "VAPID_PRIVATE_KEY",
+    "ttlSeconds": 3600,
+    "subscribePerHourPerDevice": 20
+  },
+  "reminders": {
+    "leads": ["15", "30", "60", "120", "dayBefore"],
+    "defaultLead": "60",
+    "dayBeforeAt": "18:00",
+    "maxPerDevice": 50,
+    "perHourPerDevice": 60,
+    "cronMinutes": 15,
+    "maxPerTick": 6
+  },
   "sharing": {
     "endedNearbyMax": 5,
     "endedLabel": { "pl": "Zakończone", "en": "Ended" }

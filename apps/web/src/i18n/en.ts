@@ -632,6 +632,23 @@ export const en = {
   'queue.leave': 'Leave at {time}',
   'queue.earlier': 'Leave {minutes} min earlier',
   'queue.later': 'Leave {minutes} min later',
+  'reminder.set': 'Remind me',
+  'reminder.bell': 'Reminder',
+  'reminder.title': 'Remind me before it starts',
+  'reminder.min': '{minutes} min before',
+  'reminder.hours': '{count, plural, one {# hour before} other {# hours before}}',
+  'reminder.dayBefore': 'The evening before, at {time}',
+  'reminder.off': 'No reminder',
+  'reminder.install':
+    'On iPhone and iPad, reminders work once Happow is on your Home Screen: tap Share, then "Add to Home Screen". Until then, add it to your calendar.',
+  'reminder.blocked':
+    'Notifications are off for Happow. Allow them in your browser settings, or add the event to your calendar.',
+  'reminder.none': "This browser can't show reminders. Add the event to your calendar instead.",
+  'reminder.failed': "Couldn't set the reminder. Try again.",
+  'reminder.refused': 'This event has started, or you have the most reminders already.',
+  'reminder.note':
+    'Starts at {time}. The reminder may come up to 15 minutes early and says the real time left.',
+  'reminder.calendar': 'Add to calendar',
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -393,6 +393,29 @@ export const appConfigSchema = z.object({
     /** Sync calls per account per hour (§2). */
     syncPerHour: z.number().int().positive(),
   }),
+  /** Web push (M10 §4). */
+  push: z.object({
+    /** The Worker secret holding the VAPID private key (a P-256 JWK; `pnpm push:keys`). */
+    secret: z.string().min(1),
+    /** How long a push service keeps an undelivered message. */
+    ttlSeconds: z.number().int().min(60).max(86_400),
+    subscribePerHourPerDevice: z.number().int().positive(),
+  }),
+  /** Reminders before a start (M10 §5). */
+  reminders: z.object({
+    /** The choices on the bell: minutes before the start, or "dayBefore" (the evening before). */
+    leads: z.array(z.union([z.string().regex(/^[0-9]{1,4}$/), z.literal('dayBefore')])).min(1),
+    /** Chosen until the person picks another (owner, 2026-11-04: 60 minutes). */
+    defaultLead: z.string(),
+    /** "The day before" fires at this local time. */
+    dayBeforeAt: z.string().regex(/^\d{2}:\d{2}$/),
+    maxPerDevice: z.number().int().positive(),
+    perHourPerDevice: z.number().int().positive(),
+    /** The Cron Trigger's interval: a reminder goes at the last tick before its time. */
+    cronMinutes: z.number().int().positive(),
+    /** Reminders sent in one tick at most; the rest go on the next. */
+    maxPerTick: z.number().int().positive(),
+  }),
   /** M12 metrics (docs/milestones/M12-more-events.md §1), in the default region's time zone. */
   metrics: z.object({
     /** "Tonight" runs from this hour to midnight. */

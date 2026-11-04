@@ -4,7 +4,7 @@ Nov 4, 2026
 
 Spec from the brief (Future features → Plan ahead, requested 2026-10-21) and the M10 line in the milestones list. M10 comes after M9 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec approved, §8 answered by the owner on 2026-11-04. Slices A, B and C built together on 2026-11-04 (owner: one step); next: slice D's plan.
+**Status:** spec approved, §8 answered by the owner on 2026-11-04. Slices A, B and C built together on 2026-11-04 (owner: one step), D and E the same day; next: slice F.
 
 Goal: **what you've decided to go to sits in one place, an evening of several events works out on foot, and the phone reminds you before something starts.** The PoC is about now and today; M10 makes the same app useful for this evening, the weekend and the next two weeks. The brief's rules hold: no streaks, no fake urgency, pull not push (a reminder is something the person set, never something we choose to send), paid never buys visibility. No new data sources.
 
@@ -29,8 +29,8 @@ One branch and one PR to `main` per slice, as in M9 and M12. Each slice PR updat
 | A     | §1   | Views (everything, plans, saved) and the agenda: your events by day, past ones folded  | —     | built  |
 | B     | §2   | Saved events follow the account across devices (`saved.sync`)                          | A     | built  |
 | C     | §3   | The evening queue: events in a row, walking times between them, overlap and "too late" | A     | built  |
-| D     | §4   | Web push: subscription, keys, the sender in the Worker (no reminders yet)              | —     | —      |
-| E     | §5   | Reminders before a start, on the agenda's events                                       | A, D  | —      |
+| D     | §4   | Web push: subscription, keys, the sender in the Worker (no reminders yet)              | —     | built  |
+| E     | §5   | Reminders before a start, on the agenda's events                                       | A, D  | built  |
 | F     | §6   | Room for M11's accepted invitations in the agenda, and the M10 summary                 | A–E   | —      |
 
 ### Working notes
@@ -121,6 +121,14 @@ Plumbing only; reminders use it in slice E and M7's new-date alerts after that.
 - **The service worker** shows the notification and opens the link on tap (the app turns it into the card, as for shared links).
 - **Tests.** Encryption against the RFC 8291 test vectors; the VAPID header; 410 removal; the service worker's click handler opening `/e/<id>`. No live push in CI.
 
+**Built (slice D).**
+
+- **Sender.** `packages/api/src/webpush.ts`: RFC 8291 encryption and RFC 8292 VAPID with WebCrypto. Tested against the RFC 8291 example (same salt, record size, key and ciphertext), by decrypting with Node's own crypto, and by verifying the VAPID signature. About 1.5 ms of CPU per push.
+- **Key.** One secret, `VAPID_PRIVATE_KEY`: a P-256 private key as one line of JSON, made with `pnpm push:keys`. The public key is worked out from it and served at `GET /api/push/key`, so nothing goes into config (the spec had `push.vapidPublicKey`; one secret is simpler to set and can't get out of step). The contact in the signature is `legal.contactEmail`.
+- **Subscriptions.** Migration **25** adds `push_subscriptions` (endpoint, keys, device hash, account, language). `POST /api/push/subscribe` and `/api/push/unsubscribe`. A 404 or 410 from the push service deletes the row.
+- **Service worker.** `public/push-sw.js`, loaded by the generated worker (`importScripts`), shows the notification and opens `/e/<id>` on tap, in an open Happow window if there is one.
+- **Permission** is asked only when someone sets their first reminder. On iPhone in Safari the bell says to add Happow to the Home Screen first; where notifications are blocked or push doesn't exist, it says so. Either way it offers the phone's calendar.
+
 ## 5. Reminders (slice E)
 
 - **On any agenda event:** a bell on the card with the lead times in `reminders.leadMinutes` (config: 15, 30, 60, 120 minutes and "the day before at 18:00"). One reminder per event, chosen per event; a default lead in settings, **60 minutes** (`reminders.defaultLeadMinutes`, owner 2026-11-04).
@@ -132,6 +140,16 @@ Plumbing only; reminders use it in slice E and M7's new-date alerts after that.
 - **Removing** the event from the agenda removes its reminder.
 - **Push only, no email** (owner, 2026-11-04). Without push (an iPhone without the Home Screen install), the bell offers "Add to calendar" instead, so the phone's calendar reminds them.
 - **Tests.** Fire-at from lead and start; the cron picking due rows once; a start change moving it; earlier past the time firing with "Time changed"; cancelled and hidden; the per-device cap.
+
+**Built (slice E).**
+
+- **Bell.** On the event page, next to the bookmark, for saved events that haven't started (`ReminderSheet.tsx`). The leads come from `reminders.leads`. The icon is Tabler's `bell` as published, **waiting for the owner's OK** (the set had no bell).
+- **Default lead.** 60 minutes until the person picks another; after that the last one chosen comes first. There is no settings row for it: the settings sheet's rows are an approved design (M6 §15), so a new row waits for the owner.
+- **Server.** Migration **25** adds `reminders`, one per device and event. With an account it's one per account and event, reaching every subscribed device of that account. The fire time is worked out from the event's current start whenever the cron asks, so a moved event moves its reminder with no ingest hook. A start moved past the reminder time sends it at once with "Time changed: now 19:30".
+- **Cron.** `sendDueReminders` runs on every tick with the ingest check and the metrics. It sends what's due before the next tick (`reminders.cronMinutes`, 15), so a reminder can come up to 15 minutes early and says the real time left ("Za 72 min · Klub"). Cancelled events get "Odwołane: …". Hidden ones send nothing. A push that failed for every device is tried again next tick. At most `reminders.maxPerTick` (6) per tick for the Free plan's CPU (`docs/HARDENING.md`).
+- **Not built: the walk in the text.** "12 min on foot from your last location" would mean storing people's last location on the server. Leaving that out keeps the server free of locations, and the link opens the event card, which shows the walk.
+- **Following your plans.** Removing an event from your plans removes its reminder. The bell's copy on the device refreshes from the server at start and on sign-in, when the subscription is also tied to the account.
+- **Language.** Polish or English, from the app's language when the browser subscribed (sent again when it changes).
 
 ## 6. Accepted invitations and the summary (slice F)
 

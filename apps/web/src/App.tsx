@@ -42,6 +42,7 @@ import { useRadius } from './hooks/useRadius';
 import { useMyEvents } from './hooks/useMyEvents';
 import { useView } from './hooks/useView';
 import { plans, usePlans, usePlanSync } from './plans';
+import { reminders } from './reminders';
 import { formatRelativeDay } from './format';
 import { useLongPress } from './hooks/useLongPress';
 import { useShortcut } from './hooks/useShortcut';
@@ -279,6 +280,16 @@ export function App() {
   const filtered = filters.activeCount > 0;
   const [route, go] = useRoute();
   const { needsTerms, status: accountStatus } = useAccount();
+  // Reminders (M10 §5): the server's pending ones, and the subscription tied to the account.
+  useEffect(() => {
+    if (accountStatus === 'loading') return;
+    void reminders
+      .relink(lang)
+      .then(reminders.refresh)
+      .catch(() => {
+        /* offline: the bell shows this device's copy */
+      });
+  }, [accountStatus, lang]);
   // Adding needs an account (M8 §2): signed out, Add opens a sign-in sheet over the map.
   const [addGate, setAddGate] = useState(false);
   const detailId = route?.name === 'event' ? route.id : null;
