@@ -29,6 +29,12 @@ const accountRpc: Backend['rpc'] = {
   duplicate_candidates: () => ({ body: { title: 'x', others: [] } }),
   contribution_award: () => ({ body: { kind: 'verified', days: 3, startsAt: null } }),
   contribution_revoke_event: () => ({ body: 0 }),
+  // M11: every event public, nobody an organiser, empty organiser queues.
+  event_visibility: () => ({ body: 'public' }),
+  organiser_at: () => ({ body: false }),
+  claims_queue: () => ({ body: [] }),
+  edits_queue: () => ({ body: [] }),
+  post_reports_queue: () => ({ body: [] }),
 };
 
 /** Fake Supabase (PostgREST RPC + GoTrue) and web, recording every call. */
@@ -551,6 +557,9 @@ describe('/api/moderation', () => {
       submissions: [],
       reports: [],
       trusted: [],
+      claims: [],
+      edits: [],
+      posts: [],
     });
   });
 

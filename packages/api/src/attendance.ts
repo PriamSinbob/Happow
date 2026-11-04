@@ -35,6 +35,8 @@ interface Raw {
   counts: Partial<Record<Signal, number>>;
   mine: Signal[];
   fromMyLinks: number;
+  /** A private event (M11): no public counts. */
+  private?: boolean | null;
 }
 
 const deviceId = z.string().min(8).max(100);
@@ -66,7 +68,8 @@ export function attendanceRoutes({ config, need, now, limit, userOf }: Attendanc
 
   /** Raw database counts to what the card may show. */
   function view(raw: Raw): AttendanceView {
-    const off = (raw.categories ?? []).some((c) => hidden.has(c));
+    // Private events (M11 §4) never show public counts, whatever the category.
+    const off = raw.private === true || (raw.categories ?? []).some((c) => hidden.has(c));
     const counts = Object.fromEntries(
       SIGNALS.map((s) => [s, off ? null : attendanceBucket(raw.counts[s] ?? 0, cfg)]),
     ) as AttendanceView['counts'];

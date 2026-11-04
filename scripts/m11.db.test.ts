@@ -183,7 +183,9 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
       await expect(fn('thanks_add($1, $2)', [party, 'dev'])).rejects.toMatchObject({
         code: 'P0002',
       });
-      expect(await fn('counts_add($1, current_date)', [JSON.stringify([{ eventId: party, opens: 1 }])])).toBe(0);
+      expect(
+        await fn('counts_add($1, current_date)', [JSON.stringify([{ eventId: party, opens: 1 }])]),
+      ).toBe(0);
       expect(await fn('share_link_create($1, $2, $3)', [`tok-${tag}-xxxxxxxx`, party, 'dev'])).toBe(
         false,
       );
@@ -201,7 +203,9 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
 
     it('reads for the owner, with nothing for others', async () => {
       const mine = await fn<{ id: string; mine: boolean }[]>('private_events_for($1)', [ala]);
-      expect(mine).toEqual([expect.objectContaining({ id: party, mine: true, visibility: 'private' })]);
+      expect(mine).toEqual([
+        expect.objectContaining({ id: party, mine: true, visibility: 'private' }),
+      ]);
       expect(await fn('private_events_for($1)', [ola])).toEqual([]);
       expect(await fn('private_event_get($1, $2, null)', [ola, party])).toBeNull();
     });
@@ -212,7 +216,10 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
       const token = `link-${tag}-aaaaaaaaaaaa`;
       await fn('contact_link_new($1, $2)', [ala, token]);
       expect(await fn('contact_link_owner($1)', [token])).toEqual({ id: ala, name: 'Ala' });
-      expect(await fn('contact_link_accept($1, $2)', [ola, token])).toEqual({ id: ala, name: 'Ala' });
+      expect(await fn('contact_link_accept($1, $2)', [ola, token])).toEqual({
+        id: ala,
+        name: 'Ala',
+      });
       expect(await fn('contact_mutual($1, $2)', [ala, ola])).toBe(true);
       await expect(fn('contact_link_accept($1, $2)', [ala, token])).rejects.toMatchObject({
         code: 'HQ010',
@@ -222,17 +229,25 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
       expect(await fn('contact_link_owner($1)', [token])).toBeNull();
       // Ewa blocks Ala: Ala's link no longer connects them.
       await fn('contact_change($1, $2, $3)', [ewa, ala, 'block']);
-      await expect(
-        fn('contact_link_accept($1, $2)', [ewa, `${token}-new`]),
-      ).rejects.toMatchObject({ code: 'HQ011' });
-      const list = await fn<{ contacts: { id: string; mutual: boolean }[] }>('contacts_list($1)', [ala]);
-      expect(list.contacts).toEqual([expect.objectContaining({ id: ola, name: 'Ola', mutual: true })]);
-      expect(await asRole('authenticated', ola, 'select owner from contacts')).toEqual([{ owner: ola }]);
+      await expect(fn('contact_link_accept($1, $2)', [ewa, `${token}-new`])).rejects.toMatchObject({
+        code: 'HQ011',
+      });
+      const list = await fn<{ contacts: { id: string; mutual: boolean }[] }>('contacts_list($1)', [
+        ala,
+      ]);
+      expect(list.contacts).toEqual([
+        expect.objectContaining({ id: ola, name: 'Ola', mutual: true }),
+      ]);
+      expect(await asRole('authenticated', ola, 'select owner from contacts')).toEqual([
+        { owner: ola },
+      ]);
     });
 
     it('keeps groups to your own unblocked contacts', async () => {
       const g = await fn<number>('group_save($1, null, $2, $3, 20)', [ala, 'Friends', [ola, ewa]]);
-      const list = await fn<{ groups: { id: number; members: number }[] }>('contacts_list($1)', [ala]);
+      const list = await fn<{ groups: { id: number; members: number }[] }>('contacts_list($1)', [
+        ala,
+      ]);
       expect(list.groups).toEqual([{ id: Number(g), name: 'Friends', members: 1 }]);
       expect(await fn('group_delete($1, $2)', [ola, g])).toBe(false);
     });
@@ -241,9 +256,13 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
   describe('invitations (slice C)', () => {
     it('invites by group and by link; accept, decline, revoke', async () => {
       const groups = await fn<{ groups: { id: number }[] }>('contacts_list($1)', [ala]);
-      expect(await fn('invite_people($1, $2, null, $3, 200)', [ala, party, [groups.groups[0]!.id]])).toBe(1);
+      expect(
+        await fn('invite_people($1, $2, null, $3, 200)', [ala, party, [groups.groups[0]!.id]]),
+      ).toBe(1);
       // Ola now sees it (pending) through the policy and the reader.
-      expect(await asRole('authenticated', ola, `select id from events where id = '${party}'`)).toHaveLength(1);
+      expect(
+        await asRole('authenticated', ola, `select id from events where id = '${party}'`),
+      ).toHaveLength(1);
       const seen = await fn<{ invitation: { status: string } }[]>('private_events_for($1)', [ola]);
       expect(seen[0]!.invitation.status).toBe('pending');
       expect(await fn('invitation_answer($1, $2, true)', [ola, party])).toBe('accepted');
@@ -283,7 +302,9 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
       expect(await fn('private_events_for($1)', [zosia])).toEqual([]);
       expect(await fn('event_visible_to($1, $2)', [party, zosia])).toBe(false);
       // Not your event: refused.
-      await expect(fn('invite_people($1, $2, $3, null, 200)', [ola, party, [ala]])).rejects.toMatchObject({
+      await expect(
+        fn('invite_people($1, $2, $3, null, 200)', [ola, party, [ala]]),
+      ).rejects.toMatchObject({
         code: 'P0002',
       });
     });
@@ -294,15 +315,20 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
       expect(await set(null, `anon-${tag}`)).toBeNull();
       expect(await set(ewa, `ewa-${tag}`)).toBeNull();
       expect(await set(ola, `ola-${tag}`)).toMatchObject({ private: true, mine: ['going'] });
-      expect(await fn('reminder_set($1, $2, $3, $4, 50)', [`anon-${tag}`, null, party, '60'])).toBe(false);
-      expect(await fn('reminder_set($1, $2, $3, $4, 50)', [`ola-${tag}`, ola, party, '60'])).toBe(true);
+      expect(await fn('reminder_set($1, $2, $3, $4, 50)', [`anon-${tag}`, null, party, '60'])).toBe(
+        false,
+      );
+      expect(await fn('reminder_set($1, $2, $3, $4, 50)', [`ola-${tag}`, ola, party, '60'])).toBe(
+        true,
+      );
     });
   });
 
   describe("the friends' view (slice E)", () => {
     it('shows mutual friends who both show themselves, per event overrides included', async () => {
       await set(ala, 'going');
-      const view = () => fn<{ friends: { name: string }[] }>('friends_on_event($1, $2, $3)', [ala, party, 'x']);
+      const view = () =>
+        fn<{ friends: { name: string }[] }>('friends_on_event($1, $2, $3)', [ala, party, 'x']);
       // Nobody has the switch on.
       expect((await view()).friends).toEqual([]);
       await db.query('update profiles set friends_visible = true where user_id = $1', [ala]);
@@ -344,18 +370,17 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
       expect(c.page_url).toBe('https://klub.example');
       claim = c.id;
       // Opening again keeps the same claim and code.
-      const again = await fn<{ id: string; code: string }>('claim_open($1, $2, $3, $4, $5, $6, $7)', [
-        ala,
-        'event',
-        ev,
-        'Klub Ala',
-        'moderator',
-        'happow-claim-BBBB',
-        'I run it',
-      ]);
+      const again = await fn<{ id: string; code: string }>(
+        'claim_open($1, $2, $3, $4, $5, $6, $7)',
+        [ala, 'event', ev, 'Klub Ala', 'moderator', 'happow-claim-BBBB', 'I run it'],
+      );
       expect([again.id, again.code]).toEqual([claim, 'happow-claim-AAAA']);
       await fn('claim_decide($1, $2, $3, null)', [claim, 'approve', 'site']);
-      expect(await fn('event_organiser($1)', [ev])).toEqual({ user: ala, name: 'Klub Ala', kind: 'event' });
+      expect(await fn('event_organiser($1)', [ev])).toEqual({
+        user: ala,
+        name: 'Klub Ala',
+        kind: 'event',
+      });
       const other = await fn<{ id: string }>('claim_open($1, $2, $3, $4, $5, $6, $7)', [
         ola,
         'event',
@@ -365,7 +390,9 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
         'happow-claim-CCCC',
         'mine',
       ]);
-      await expect(fn('claim_decide($1, $2, $3, null)', [other.id, 'approve', 'mod'])).rejects.toMatchObject({
+      await expect(
+        fn('claim_decide($1, $2, $3, null)', [other.id, 'approve', 'mod']),
+      ).rejects.toMatchObject({
         code: 'HQ020',
       });
       const queue = await fn<{ id: string; competing: number }[]>('claims_queue()');
@@ -384,9 +411,15 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
       ]);
       expect(r).toMatchObject({ kind: 'schedule' });
       // A source writes its old time: the organiser's stays, and the source's is noted.
-      await db.query(`update events set start_at = now() + interval '2 hours', title = 'Src' where id = $1`, [ev]);
+      await db.query(
+        `update events set start_at = now() + interval '2 hours', title = 'Src' where id = $1`,
+        [ev],
+      );
       const row = (
-        await db.query('select start_at, title, source_disagrees, changed_at from events where id = $1', [ev])
+        await db.query(
+          'select start_at, title, source_disagrees, changed_at from events where id = $1',
+          [ev],
+        )
       ).rows[0];
       expect(new Date(row.start_at).toISOString()).toBe(start);
       expect(row.title).toBe('Src');
@@ -399,11 +432,13 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
       expect(posts.organiser.name).toBe('Klub Ala');
       expect(posts.posts.map((p) => p.kind)).toEqual(['schedule']);
       await fn('post_add($1, $2, $3, $4, null, 10)', [ala, ev, 'important', 'Bag checks']);
-      expect((await fn<{ posts: { kind: string }[] }>('event_posts_get($1)', [ev])).posts[0]!.kind).toBe(
-        'important',
-      );
+      expect(
+        (await fn<{ posts: { kind: string }[] }>('event_posts_get($1)', [ev])).posts[0]!.kind,
+      ).toBe('important');
       // Not the organiser: refused.
-      await expect(fn('post_add($1, $2, $3, $4, null, 10)', [ola, ev, 'info', 'x'])).rejects.toMatchObject({
+      await expect(
+        fn('post_add($1, $2, $3, $4, null, 10)', [ola, ev, 'info', 'x']),
+      ).rejects.toMatchObject({
         code: 'P0002',
       });
       const queue = await fn<{ disagreements: { eventId: string }[] }>('moderation_queue()');
@@ -411,7 +446,8 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
     });
 
     it('hiding a reported schedule change restores the times', async () => {
-      const before = (await db.query('select start_at from events where id = $1', [ev])).rows[0].start_at;
+      const before = (await db.query('select start_at from events where id = $1', [ev])).rows[0]
+        .start_at;
       const p = await fn<{ id: string }>('post_add($1, $2, $3, $4, $5, 10)', [
         ala,
         ev,
@@ -422,20 +458,27 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
       await fn('post_report($1, $2, $3, null)', [p.id, 'rep', 'wrong_info']);
       expect((await fn<{ id: string }[]>('post_reports_queue()')).map((x) => x.id)).toContain(p.id);
       await fn('post_moderate($1, $2, $3)', [p.id, 'hide', 'mod']);
-      const after = (await db.query('select start_at from events where id = $1', [ev])).rows[0].start_at;
+      const after = (await db.query('select start_at from events where id = $1', [ev])).rows[0]
+        .start_at;
       expect(after.toISOString()).toBe(before.toISOString());
     });
 
     it('edits: organiser at once, untrusted contributor through moderation', async () => {
-      expect(await fn('event_edit($1, $2, $3, false)', [ala, ev, { title: 'Ala live', hidden: true }])).toEqual({
+      expect(
+        await fn('event_edit($1, $2, $3, false)', [ala, ev, { title: 'Ala live', hidden: true }]),
+      ).toEqual({
         status: 'applied',
         role: 'organiser',
       });
-      expect((await db.query('select title, hidden from events where id = $1', [ev])).rows[0]).toEqual({
+      expect(
+        (await db.query('select title, hidden from events where id = $1', [ev])).rows[0],
+      ).toEqual({
         title: 'Ala live',
         hidden: false,
       });
-      await expect(fn('event_edit($1, $2, $3, false)', [ewa, ev, { title: 'x' }])).rejects.toMatchObject({
+      await expect(
+        fn('event_edit($1, $2, $3, false)', [ewa, ev, { title: 'x' }]),
+      ).rejects.toMatchObject({
         code: 'P0002',
       });
       // Ewa added an event (approved): her edit waits.
@@ -452,7 +495,9 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
       const queue = await fn<{ id: number; eventId: string }[]>('edits_queue()');
       const edit = queue.find((q) => q.eventId === mine)!;
       await fn('edit_decide($1, true, $2)', [edit.id, 'mod']);
-      expect((await db.query('select title from events where id = $1', [mine])).rows[0].title).toBe('Better');
+      expect((await db.query('select title from events where id = $1', [mine])).rows[0].title).toBe(
+        'Better',
+      );
       const list = await fn<{ id: string; role: string }[]>('my_events($1)', [ewa]);
       expect(list).toEqual([expect.objectContaining({ id: mine, role: 'contributor' })]);
     });
@@ -461,19 +506,28 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
       await fn('report_event($1, $2, null, $3)', [party, 'wrong_info', 'r1']);
       await fn('report_event($1, $2, null, $3)', [party, 'unlawful', 'r2']);
       await fn('report_event($1, $2, null, $3)', [ev, 'cancelled', 'r3']);
-      const mod = await fn<{ reports: { event_id: string; count: number }[] }>('moderation_queue()');
+      const mod = await fn<{ reports: { event_id: string; count: number }[] }>(
+        'moderation_queue()',
+      );
       expect(mod.reports.find((r) => r.event_id === party)?.count).toBe(1);
       expect(mod.reports.find((r) => r.event_id === ev)?.count).toBe(1);
-      const forAla = await fn<{ id: string; audience: string }[]>('organiser_reports($1, $2)', [ala, party]);
+      const forAla = await fn<{ id: string; audience: string }[]>('organiser_reports($1, $2)', [
+        ala,
+        party,
+      ]);
       expect(forAla.map((r) => r.audience).sort()).toEqual(['moderators', 'organiser']);
-      await expect(fn('organiser_reports($1, $2)', [ola, party])).rejects.toMatchObject({ code: 'P0002' });
+      await expect(fn('organiser_reports($1, $2)', [ola, party])).rejects.toMatchObject({
+        code: 'P0002',
+      });
       const own = forAla.find((r) => r.audience === 'organiser')!;
       await fn('organiser_report_answer($1, $2, $3)', [ala, own.id, 'Fixed']);
       expect(await fn('organiser_reports($1, $2)', [ala, party])).toHaveLength(1);
       // The public event's report: answered, still with the moderators.
       const pub = (await fn<{ id: string }[]>('organiser_reports($1, $2)', [ala, ev]))[0]!;
       await fn('organiser_report_answer($1, $2, $3)', [ala, pub.id, 'On as planned']);
-      const after = await fn<{ reports: { event_id: string; organiser_note: string }[] }>('moderation_queue()');
+      const after = await fn<{ reports: { event_id: string; organiser_note: string }[] }>(
+        'moderation_queue()',
+      );
       expect(after.reports.find((r) => r.event_id === ev)?.organiser_note).toBe('On as planned');
     });
 
@@ -492,8 +546,13 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
         ],
       );
       // Ola is a guest with a reminder; the anonymous device marked nothing.
-      expect(await fn('notice_enqueue($1, $2, $3, $4, 100)', [party, 'schedule', 'Moved', ala])).toBe(1);
-      const due = await fn<{ id: number; endpoint: string; title: string }[]>('notices_due(10, $1)', [party]);
+      expect(
+        await fn('notice_enqueue($1, $2, $3, $4, 100)', [party, 'schedule', 'Moved', ala]),
+      ).toBe(1);
+      const due = await fn<{ id: number; endpoint: string; title: string }[]>(
+        'notices_due(10, $1)',
+        [party],
+      );
       expect(due.map((d) => d.endpoint)).toEqual([`https://push.example/${tag}/ola`]);
       await fn('notices_done($1, $2)', [due.map((d) => d.id), []]);
       expect(await fn('notices_due(10, $1)', [party])).toEqual([]);
@@ -503,7 +562,16 @@ describe.skipIf(!url || !local)('M11 in Postgres', () => {
   describe('export, deletion and retention (slice I)', () => {
     it('exports everything M11 stores, and deleting removes private events', async () => {
       const out = await fn<Record<string, unknown[]>>('account_export($1)', [ala]);
-      for (const k of ['contacts', 'groups', 'contactLinks', 'privateEvents', 'invitationsSent', 'claims', 'posts', 'edits'])
+      for (const k of [
+        'contacts',
+        'groups',
+        'contactLinks',
+        'privateEvents',
+        'invitationsSent',
+        'claims',
+        'posts',
+        'edits',
+      ])
         expect(out[k], k).not.toEqual([]);
       const ola2 = await fn<Record<string, unknown[]>>('account_export($1)', [ola]);
       expect(ola2.invitationsReceived).toHaveLength(1);

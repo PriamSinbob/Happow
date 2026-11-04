@@ -36,7 +36,7 @@ const unsubscribeSchema = z.object({ deviceId, endpoint: z.string().max(1000) })
 const listSchema = z.object({ deviceId });
 
 let keyCache: { secret: string; key: Promise<VapidKey> } | null = null;
-function cachedKey(secret: string): Promise<VapidKey> {
+export function cachedKey(secret: string): Promise<VapidKey> {
   if (keyCache?.secret !== secret) keyCache = { secret, key: vapidKey(secret) };
   return keyCache.key;
 }

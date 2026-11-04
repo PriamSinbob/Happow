@@ -416,6 +416,40 @@ export const appConfigSchema = z.object({
     /** Reminders sent in one tick at most; the rest go on the next. */
     maxPerTick: z.number().int().positive(),
   }),
+  /** Private events, contacts and invitations (M11 §1–§3). */
+  private: z.object({
+    /** Private events and their invitations are deleted this many days after they end (§9). */
+    keepAfterEndDays: z.number().int().min(1),
+    /** Contacts per account, and groups (§2). */
+    maxContacts: z.number().int().positive(),
+    maxGroups: z.number().int().positive(),
+    /** Invitations per event, people and links together (§3). */
+    maxInvitationsPerEvent: z.number().int().positive(),
+    /** Contact, group and invitation changes per account per hour. */
+    perHourPerAccount: z.number().int().positive(),
+  }),
+  /** Organisers: claims, posts and edits (M11 §6–§8). */
+  organiser: z.object({
+    /** Posts per event per organiser per day (§7). */
+    postsPerEventPerDay: z.number().int().positive(),
+    /** Site checks of a claim's code per account per hour (§6). */
+    checksPerHour: z.number().int().positive(),
+    /** Edits per account per hour (§8). */
+    editsPerHour: z.number().int().positive(),
+    /** A new event this close to a claimed venue publishes at once (§8). */
+    venueRadiusM: z.number().positive(),
+    /** Posts are cached at the edge this long (§7). */
+    postsCacheSec: z.number().int().min(0),
+  }),
+  /** Push notices to everyone interested in an event (M11 §7, owner 2026-11-04). */
+  notices: z.object({
+    /** Devices one notice reaches at most. */
+    maxAudience: z.number().int().positive(),
+    /** Sent right away by the request that made the notice; the cron sends the rest. */
+    inline: z.number().int().min(0),
+    /** Sent per cron tick at most (Workers Free CPU, as reminders.maxPerTick). */
+    maxPerTick: z.number().int().positive(),
+  }),
   /** M12 metrics (docs/milestones/M12-more-events.md §1), in the default region's time zone. */
   metrics: z.object({
     /** "Tonight" runs from this hour to midnight. */
@@ -686,6 +720,12 @@ export const entitlementsSchema = z
     'alerts.newDates': z.boolean(),
     'saved.sync': z.boolean(),
     'private.create': z.boolean(),
+    /** Private events a month (M11 §1, owner 2026-11-04: 1 on a free account). */
+    'private.perMonth': quotaSchema,
+    /** Info posts on your events (§7); schedule changes and important posts are always free. */
+    'organiser.infoPosts': z.boolean(),
+    /** Edit your events and publish at a claimed venue at once (§8). */
+    'organiser.publish': z.boolean(),
   })
   .strict();
 

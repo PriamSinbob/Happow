@@ -2275,3 +2275,51 @@ grant execute on function event_visible_to(text, uuid) to anon, authenticated;
 grant select on contacts, contact_groups, contact_group_members, contact_links, invitations,
   friend_overrides, claims to authenticated;
 grant select on event_posts to anon, authenticated;
+
+-- The profile gains the friends' switch (§5) and whether private events are blocked (abuse).
+create or replace function profile_get(p_user uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  p profiles;
+begin
+  insert into profiles (user_id) values (p_user) on conflict (user_id) do nothing;
+  select * into p from profiles where user_id = p_user;
+  return jsonb_build_object(
+    'displayName', p.display_name, 'locale', p.locale, 'termsVersion', p.terms_version,
+    'termsAcceptedAt', p.terms_accepted_at, 'createdAt', p.created_at,
+    'showName', p.show_name, 'level', p.level, 'friendsVisible', p.friends_visible,
+    'privateBlocked', p.private_blocked_at is not null
+  );
+end $$;
+
+create function profile_friends(p_user uuid, p_on boolean)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  insert into profiles (user_id) values (p_user) on conflict (user_id) do nothing;
+  update profiles set friends_visible = p_on where user_id = p_user;
+$$;
+revoke all on function profile_friends(uuid, boolean) from public, anon, authenticated;
+grant execute on function profile_friends(uuid, boolean) to service_role;
+
+-- "Added by" never names anyone on a private event.
+create or replace function event_credit(p_event text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object('name', p.display_name, 'level', p.level)
+  from submissions s join profiles p on p.user_id = s.user_id
+  join events e on e.id = s.event_id and e.visibility = 'public'
+  where s.event_id = p_event and s.kind = 'user' and s.status <> 'rejected'
+    and p.show_name and p.display_name is not null
+  order by s.created_at limit 1
+$$;

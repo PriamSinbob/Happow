@@ -334,7 +334,9 @@ describe.skipIf(!url || !local)('M8 accounts in Postgres', () => {
         'account_export($1)',
         [a],
       );
-      expect(exported.usage).toEqual([{ month: '2026-10', events: 1, autofills: 0, privateEvents: 0 }]);
+      expect(exported.usage).toEqual([
+        { month: '2026-10', events: 1, autofills: 0, privateEvents: 0 },
+      ]);
       expect(exported.submissions).toEqual([
         expect.objectContaining({ id: sid, title: 'Koncert', status: 'pending' }),
       ]);
