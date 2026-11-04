@@ -418,10 +418,11 @@ export class EventStore {
     return rows[0] ? toStored(rows[0]) : null;
   }
 
+  /** Candidates for a merge; private events (M11 §1) never take part, either way. */
   private async nearby(ev: HappowEvent, cfg: ApplyOptions['dedup']): Promise<StoredEvent[]> {
     const { rows } = await this.db.query<EventRow>(
       `select ${EVENT_COLUMNS} from events e left join venues v on v.id = e.venue_id
-       where e.h3_r9 = any($1) and e.start_at between $2::timestamptz - make_interval(mins => $3)
+       where e.visibility = 'public' and e.h3_r9 = any($1) and e.start_at between $2::timestamptz - make_interval(mins => $3)
          and $2::timestamptz + make_interval(mins => $3)`,
       [h3Neighbourhood(ev.h3r9, cfg.h3Ring), ev.startAt, cfg.startToleranceMin],
     );
