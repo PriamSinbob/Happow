@@ -4,7 +4,7 @@ Nov 4, 2026
 
 Spec from the brief (Future features → Plan ahead, requested 2026-10-21) and the M10 line in the milestones list. M10 comes after M9 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** draft, waiting for the owner's answers to §8.
+**Status:** spec approved, §8 answered by the owner on 2026-11-04; next: slice A's plan.
 
 Goal: **what you've decided to go to sits in one place, an evening of several events works out on foot, and the phone reminds you before something starts.** The PoC is about now and today; M10 makes the same app useful for this evening, the weekend and the next two weeks. The brief's rules hold: no streaks, no fake urgency, pull not push (a reminder is something the person set, never something we choose to send), paid never buys visibility. No new data sources.
 
@@ -26,7 +26,7 @@ One branch and one PR to `main` per slice, as in M9 and M12. Each slice PR updat
 
 | Slice | Spec | What                                                                                   | Needs | Status |
 | ----- | ---- | -------------------------------------------------------------------------------------- | ----- | ------ |
-| A     | §1   | The agenda: saved and "going" events in one list by day, with past ones folded away    | —     | —      |
+| A     | §1   | Views (everything, plans, saved) and the agenda: your events by day, past ones folded  | —     | —      |
 | B     | §2   | Saved events follow the account across devices (`saved.sync`)                          | A     | —      |
 | C     | §3   | The evening queue: events in a row, walking times between them, overlap and "too late" | A     | —      |
 | D     | §4   | Web push: subscription, keys, the sender in the Worker (no reminders yet)              | —     | —      |
@@ -43,16 +43,22 @@ One branch and one PR to `main` per slice, as in M9 and M12. Each slice PR updat
 
 ## 1. The agenda (slice A)
 
-- **One list of your plans:** every event you saved or marked "I'm going", once each. Both marks stay separate on the card (saving is private and local; "going" is counted); the agenda shows a small "going" tag on the ones you marked. See §8.2 on whether "I'm going" should also save.
+- **One list of your plans:** every event you saved or marked "I'm going", once each. **"I'm going" also saves** the event (owner, 2026-11-04); un-saving doesn't take back "going". The agenda shows a small "going" tag on the ones you marked.
 - **Grouped by day** in the region's time zone, with the list's day headers (M6 §13.5): "Today", "Tomorrow", then "Sat 7.11". Within a day, by start time. An event already on sits at the top of Today with its live ring.
 - **Past events** fold into "Past" at the bottom, newest first, kept for 30 days (`agenda.keepPastDays`) and then dropped from the device list. Cancelled or "possibly cancelled" events stay in place, marked as on their cards, so a change of plan is visible rather than silent. Hidden events read as "no longer listed" (as M9 §4).
 - **Beyond the snapshot.** The map's snapshot reaches 14 days; saved events can be further out (crawled events go up to 60 days). The agenda reads its events by id: a new `POST /api/events` taking up to 200 ids and returning the public events among them (one query on `events_public`), cached on the device like the snapshot.
-- **Where it opens.** From the bookmark in the top-left row that M7 §4 places for "My plans" (see §8.1). M10 builds that button; tapping it opens the agenda as an overlay list (list style B, as the list view). M7's map filter later becomes a toggle inside the agenda ("show on map"), so there is one entry point, not two.
-- **Empty.** "Nothing saved yet: tap the bookmark on an event" (the wording M7 §4 already set).
+- **Views** (owner, 2026-11-04). The bookmark button in the top-left row that M7 §4 places for "My plans" becomes a view switcher, built in M10. One entry point; M7 adds no button of its own.
+  - **Everything:** the map and list as today (the default).
+  - **My plans:** saved, going and (from M11) accepted invitations.
+  - **Saved:** bookmarked events only.
+  - **Private:** private events you're invited to, added by M11 (the switcher is built so a view is one config entry).
+  - Tap switches between Everything and the last other view; hold opens the picker (as the map shortcut chip does). The chosen view is remembered on the device.
+  - Map and list both follow the view, on top of the time, category, price and family filters (M7 §4's behaviour). Your events outside the reach still show (they're yours). In any view but Everything, the list is the agenda layout described here: by day, past folded.
+- **Empty.** A view with nothing in it says so instead of showing an empty map: "Nothing saved yet: tap the bookmark on an event" (the wording M7 §4 already set).
 - **Each row** is the list card: glyph, title, time, venue, walk estimate from where you are now, and the bookmark to remove it. Tapping opens the event card.
 - **Calendar.** "Add all to calendar" on a day downloads one `.ics` with that day's events (the existing `ics.ts`, several `VEVENT`s).
 - **Free**, no account.
-- **Tests.** Merging saved and going without duplicates; day grouping across midnight and the DST change; past folding and the 30-day drop; ids beyond 14 days read through `/api/events`; hidden and cancelled events.
+- **Tests.** The view switcher (tap, hold, remembered); "going" also saving; merging saved and going without duplicates; day grouping across midnight and the DST change; past folding and the 30-day drop; ids beyond 14 days read through `/api/events`; hidden and cancelled events.
 
 ## 2. Saved events across devices (slice B)
 
@@ -67,7 +73,7 @@ One branch and one PR to `main` per slice, as in M9 and M12. Each slice PR updat
 ## 3. The evening queue (slice C)
 
 - **What it is.** For any day in the agenda with two or more events, a "Plan the evening" view: the events in start order, with the walk between each pair and a verdict.
-- **Walk between two events** from the first one's venue to the next one's, leaving at the first one's end (or its start + `defaultDurationMin` when it has no end). By default the M6 §4.2 estimate (straight line × 1.3 ÷ 80 m/min), no API call. "Show route" on a leg asks openrouteservice once and replaces the estimate with the routed time; it counts against the same per-client limit as "Going there". See §8.4.
+- **Walk between two events** from the first one's venue to the next one's, leaving at the first one's end (or its start + `defaultDurationMin` when it has no end). The M6 §4.2 estimate only (straight line × 1.3 ÷ 80 m/min), rounded up to 5 minutes and shown as "about 15 min on foot" (owner, 2026-11-04: a rounded number is enough). No openrouteservice calls; the event card's "Route in Happow" is there for the actual walk.
 - **Verdicts,** from the entry model the pins already use:
   - **Overlap:** the next one starts before this one ends. Shown as "Overlaps by 40 min".
   - **Too late:** arrival (leave + walk) is after the next one's start + `graceMin` for a **fixed** event, or within 5 minutes of the end for an **open** one. Shown as "You'd arrive 15 min late" or "Closes before you'd get there".
@@ -77,7 +83,7 @@ One branch and one PR to `main` per slice, as in M9 and M12. Each slice PR updat
 - **Over 45 minutes on foot** (`navigation.maxMinutes`) a leg says "Long walk" and offers the Google Maps hand-off for transit, as "Going there" does.
 - **Nothing is moved or dropped for you:** the view only shows the warnings; the person decides.
 - **Free**, no account.
-- **Tests.** Overlap, late for fixed, closed for open, the open-event exception, leave-at changing the next verdict, no end time, a leg over the walking limit, the routed time replacing the estimate.
+- **Tests.** Overlap, late for fixed, closed for open, the open-event exception, leave-at changing the next verdict, no end time, a leg over the walking limit, rounding up to 5 minutes.
 
 ## 4. Web push (slice D)
 
@@ -93,13 +99,14 @@ Plumbing only; reminders use it in slice E and M7's new-date alerts after that.
 
 ## 5. Reminders (slice E)
 
-- **On any agenda event:** a bell on the card with the lead times in `reminders.leadMinutes` (config, proposed 15, 30, 60, 120 minutes and "the day before at 18:00"). One reminder per event, chosen per event; a default lead in settings (proposed 30). See §8.5.
-- **What it says:** "Starting in 30 min: Title · Venue · 12 min on foot from your last location", with the walk only if location is on, from the last position the app saw. Cancelled events get "Cancelled: Title" instead, if we learn of it before the reminder time, and no reminder fires for a hidden event.
-- **Scheduling.** The device sends `(event, lead)` with its push subscription to `POST /api/reminders`; the server stores `reminders` (subscription, event, fire at) and recomputes `fire at` when an event's start changes in ingest. The 15-minute cron sends what's due; see §8.6 on timing precision.
+- **On any agenda event:** a bell on the card with the lead times in `reminders.leadMinutes` (config: 15, 30, 60, 120 minutes and "the day before at 18:00"). One reminder per event, chosen per event; a default lead in settings, **60 minutes** (`reminders.defaultLeadMinutes`, owner 2026-11-04).
+- **What it says:** the real time left when it's sent, not the lead chosen: "Starting in 72 min: Title · Venue · 12 min on foot from your last location", with the walk only if location is on, from the last position the app saw. Cancelled events get "Cancelled: Title" instead, if we learn of it before the reminder time, and no reminder fires for a hidden event.
+- **Scheduling.** The device sends `(event, lead)` with its push subscription to `POST /api/reminders`; the server stores `reminders` (subscription, event, fire at) and recomputes `fire at` when an event's start changes in ingest. The 15-minute cron sends each reminder at the last run before its time, so it arrives up to 15 minutes early (60 or 75 minutes ahead for a 60-minute lead, owner 2026-11-04); the text says the real minutes.
 - **A start that moves** (the source changes it) moves the reminder; a start moved earlier past the reminder fires it at once with "Time changed: now 19:30".
 - **Limits.** At most 50 pending reminders per device (`reminders.maxPerDevice`), rate-limited like the other device endpoints. Rows go after firing or when the event ends.
-- **With an account,** reminders follow the person to their other subscribed devices (one notification per device); without one, they live on the device that set them. See §8.5 on whether reminders need an account.
+- **With an account,** reminders follow the person to their other subscribed devices (one notification per device); without one, they live on the device that set them. **No account needed** (owner, 2026-11-04): a push subscription belongs to a device.
 - **Removing** the event from the agenda removes its reminder.
+- **Push only, no email** (owner, 2026-11-04). Without push (an iPhone without the Home Screen install), the bell offers "Add to calendar" instead, so the phone's calendar reminds them.
 - **Tests.** Fire-at from lead and start; the cron picking due rows once; a start change moving it; earlier past the time firing with "Time changed"; cancelled and hidden; the per-device cap.
 
 ## 6. Accepted invitations and the summary (slice F)
@@ -112,13 +119,15 @@ Plumbing only; reminders use it in slice E and M7's new-date alerts after that.
 
 | Feature                                          | No account | Free account | Premium |
 | ------------------------------------------------ | ---------- | ------------ | ------- |
-| Agenda, evening queue, routed legs               | ✓          | ✓            | ✓       |
+| Views, agenda, evening queue                     | ✓          | ✓            | ✓       |
 | Reminders on the device that set them            | ✓          | ✓            | ✓       |
 | Saved events and reminders across devices (sync) |            | ✓            | ✓       |
 
 `saved.sync` is already set this way in `config/plans.json`. Paid never changes where or how an event shows.
 
-## 8. Questions for the owner
+## 8. Questions for the owner (answered 2026-11-04)
+
+Answers: 1 (a), and the button switches views: everything, my plans, saved, private (§1); 2 (a), "I'm going" also saves; 3 (a), plain rows with RLS; 4 the estimate only, a rounded number is enough (§3); 5 the lead times as proposed, default 60 minutes, no account needed; 6 (a), the notification says the real time left, so 60 or 75 minutes ahead is fine; 7 no email: important events go into the phone's calendar.
 
 1. **Where the agenda opens.** M7 §4 puts a "My plans" bookmark in the top-left row (after the live counter and the family shortcut) as a map filter. Options:
    - **(a) Recommended:** M10 builds that button and it opens the agenda list; M7's "only my plans on the map" becomes a toggle inside it. One entry point.

@@ -148,6 +148,7 @@ Today no performer is stored: the Ticketmaster adapter ignores `_embedded.attrac
 
 ### 4.1 "My plans" filter (slice H; owner, 2026-10-30)
 
+- **Built in M10 as a view switcher** (owner, 2026-11-04): everything, my plans, saved, and private from M11 (`M10-plan-ahead.md` §1). What follows is the "my plans" view's behaviour; M7 adds no button of its own.
 - **One tap to see only your plans.** A button in the top-left row on the map, right after the live counter and the family shortcut. When it's on, the map and the list show only:
   - events you saved (the bookmark on the event card);
   - events you're invited to, once private events and invitations exist (M11). Until then, saved events only.
