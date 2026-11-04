@@ -120,9 +120,7 @@ export async function openClaim(input: {
   return claim;
 }
 
-export async function checkClaim(
-  id: string,
-): Promise<{
+export async function checkClaim(id: string): Promise<{
   result: 'approved' | 'missing' | 'blocked' | 'unavailable' | 'no_page' | string;
   claim: Claim;
 }> {
