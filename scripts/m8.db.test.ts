@@ -266,11 +266,11 @@ describe.skipIf(!url || !local)('M8 accounts in Postgres', () => {
       await submit(id, 2);
       await submit(id, 2);
       await expect(submit(id, 2)).rejects.toMatchObject({ code: 'HQ001' });
-      expect(await usage(id)).toEqual({ events: 2, autofills: 0 });
+      expect(await usage(id)).toEqual({ events: 2, autofills: 0, private: 0 });
       const stored = await db.query('select 1 from submissions where user_id = $1', [id]);
       expect(stored.rowCount).toBe(2);
       // A new month starts from zero; anonymous submissions count nothing.
-      expect(await usage(id, '2026-11-01')).toEqual({ events: 0, autofills: 0 });
+      expect(await usage(id, '2026-11-01')).toEqual({ events: 0, autofills: 0, private: 0 });
       await submit(null, 0);
     });
 
@@ -286,7 +286,7 @@ describe.skipIf(!url || !local)('M8 accounts in Postgres', () => {
           5,
         ]),
       ).rejects.toThrow();
-      expect(await usage(id)).toEqual({ events: 0, autofills: 0 });
+      expect(await usage(id)).toEqual({ events: 0, autofills: 0, private: 0 });
     });
 
     it('lets exactly the limit through when requests arrive at once', async () => {
@@ -309,7 +309,7 @@ describe.skipIf(!url || !local)('M8 accounts in Postgres', () => {
       } finally {
         await Promise.all(clients.map((c) => c.end()));
       }
-      expect(await usage(id)).toEqual({ events: 0, autofills: 3 });
+      expect(await usage(id)).toEqual({ events: 0, autofills: 3, private: 0 });
       expect(await fn('usage_take($1, $2, $3, 0)', [id, '2026-12-01', 'autofills'])).toBe(false);
       await expect(fn('usage_take($1, $2, $3, 5)', [id, month, 'logins'])).rejects.toThrow();
       await expect(fn('usage_take($1, $2, $3, 5)', [id, '2026-10-15', 'events'])).rejects.toThrow();
@@ -334,7 +334,9 @@ describe.skipIf(!url || !local)('M8 accounts in Postgres', () => {
         'account_export($1)',
         [a],
       );
-      expect(exported.usage).toEqual([{ month: '2026-10', events: 1, autofills: 0 }]);
+      expect(exported.usage).toEqual([
+        { month: '2026-10', events: 1, autofills: 0, privateEvents: 0 },
+      ]);
       expect(exported.submissions).toEqual([
         expect.objectContaining({ id: sid, title: 'Koncert', status: 'pending' }),
       ]);

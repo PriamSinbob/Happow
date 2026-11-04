@@ -21,6 +21,14 @@ export type ApiErrorCode =
   | 'feed_stopped'
   | 'account_required'
   | 'auth_failed'
+  // M11
+  | 'name_required'
+  | 'blocked'
+  | 'too_many_invitations'
+  | 'too_many_groups'
+  | 'too_many_contacts'
+  | 'already_claimed'
+  | 'own_item'
   | 'server_error'
   | 'network';
 

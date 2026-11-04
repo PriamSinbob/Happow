@@ -33,8 +33,14 @@ export function spriteIds(): string[] {
     'ring-dotted',
     ...Array.from({ length: RING_STEPS }, (_, i) => `ring-${i + 1}`),
     ...GLYPH_IDS.map((g) => `glyph-${g}`),
+    'pin-lock',
   ];
 }
+
+/** The lock on a private event's pin (M11 §4): Tabler lock, as on the card. */
+const LOCK_PATH =
+  'M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2zM8 11v-4a4 4 0 1 1 8 0v4';
+const LOCK_PX = 13;
 
 function sdfImage(size: number, draw: Draw) {
   const px = Math.ceil(size * RATIO) + 2 * BUFFER;
@@ -69,6 +75,11 @@ export function addPinSprites(m: maplibregl.Map) {
     c.stroke();
   };
   add('pin-outline', PIN_PX, outline(false));
+  add('pin-lock', LOCK_PX, (c) => {
+    c.scale(LOCK_PX / 24, LOCK_PX / 24);
+    c.lineWidth = 2.6;
+    c.stroke(new Path2D(LOCK_PATH));
+  });
   add('pin-outline-dashed', PIN_PX, outline(true));
   const r = RING_PX / 2;
   const ring = (fraction: number, dotted: boolean) => (c: CanvasRenderingContext2D) => {

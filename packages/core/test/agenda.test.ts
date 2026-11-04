@@ -88,6 +88,16 @@ describe('the saved list (§1, §2)', () => {
     expect([...viewIds(list, 'private', invited)!]).toEqual(['inv-priv']);
     expect(viewIds(list, 'all', invited)).toBeNull();
   });
+
+  it('pending invitations are only in Private; your own private events are in both (M11 §4)', () => {
+    const invited = [
+      { id: 'p', private: true, status: 'pending' as const },
+      { id: 'o', private: true, status: 'owner' as const },
+      { id: 'y', private: true, status: 'accepted' as const },
+    ];
+    expect([...viewIds([], 'plans', invited)!].sort()).toEqual(['o', 'y']);
+    expect([...viewIds([], 'private', invited)!].sort()).toEqual(['o', 'p', 'y']);
+  });
 });
 
 const ev = (id: string, start: string, end: string, over: Partial<HappowEvent> = {}) =>

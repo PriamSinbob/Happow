@@ -63,19 +63,24 @@ export function setPlan(
 }
 
 /**
- * An invitation the person accepted (M11). Until M11 the source is empty; its events are always in
- * "My plans" and can't be un-bookmarked (declining removes them). `private`: a private event,
- * shown in the Private view too.
+ * A private event or invitation of the person's (M11 §4). `accepted` and `owner` are in "My
+ * plans" and can't be un-bookmarked (declining removes them); `pending` waits for an answer and
+ * shows only in the Private view (and locked on the map). `private`: a private event, in the
+ * Private view; a public event someone was invited to has `private: false`.
  */
 export interface AcceptedInvitation {
   id: string;
   private: boolean;
+  /** Missing = accepted (the M10 shape). */
+  status?: 'accepted' | 'pending' | 'owner';
 }
+
+const planned = (i: AcceptedInvitation) => (i.status ?? 'accepted') !== 'pending';
 
 /**
  * Event ids a view shows; null for "everything" (§1, §6). My plans: saved ∪ going ∪ accepted
- * invitations ("going" always saves); Saved: the bookmarks only; Private: the private events
- * you're invited to.
+ * invitations and your own private events ("going" always saves); Saved: the bookmarks only;
+ * Private: every private event you own or are invited to, pending ones included (M11 §4).
  */
 export function viewIds(
   list: readonly PlanEntry[],
@@ -86,7 +91,7 @@ export function viewIds(
   if (view === 'private') return new Set(invited.filter((i) => i.private).map((i) => i.id));
   const saved = list.filter((e) => e.on || e.going).map((e) => e.id);
   if (view === 'saved') return new Set(saved);
-  return new Set([...saved, ...invited.map((i) => i.id)]);
+  return new Set([...saved, ...invited.filter(planned).map((i) => i.id)]);
 }
 
 type Timed = Pick<HappowEvent, 'id' | 'startAt' | 'endAt'>;

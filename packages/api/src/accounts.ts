@@ -37,6 +37,8 @@ const meSchema = z
     /** "Show my name on events I add" (M12 §5.5), off by default, and the name it shows. */
     showName: z.boolean().optional(),
     displayName: z.string().trim().min(1).max(60).optional(),
+    /** "Show my friends when I'm going" (M11 §5), off by default. */
+    friendsVisible: z.boolean().optional(),
   })
   .strict();
 const trustSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254) }).strict();
@@ -61,7 +63,11 @@ const sourceActionSchema = z
   .strict();
 
 /** 429 for a used-up monthly quota, with what the add form needs to say so (M8 §5). */
-export const quotaExceeded = (kind: 'events' | 'autofill', limit: number, resetsAt: Date) =>
+export const quotaExceeded = (
+  kind: 'events' | 'autofill' | 'private',
+  limit: number,
+  resetsAt: Date,
+) =>
   new ApiError(429, 'quota_exceeded', undefined, {
     kind,
     limit,
@@ -122,15 +128,19 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
   async function usageOf(user: { id: string }, entitlements: Entitlements) {
     const { db } = need();
     const { month, resetsAt } = usageMonth(now(), timeZone);
-    const used = await db.rpc<{ events: number; autofills: number }>('usage_get', {
-      p_user: user.id,
-      p_month: month,
-    });
+    const used = await db.rpc<{ events: number; autofills: number; private?: number }>(
+      'usage_get',
+      {
+        p_user: user.id,
+        p_month: month,
+      },
+    );
     return {
       month: month.slice(0, 7),
       resetsAt: resetsAt.toISOString(),
       events: { used: used.events, limit: quota(entitlements, 'events.perMonth') },
       autofill: { used: used.autofills, limit: quota(entitlements, 'autofill.perMonth') },
+      private: { used: used.private ?? 0, limit: quota(entitlements, 'private.perMonth') },
     };
   }
 
@@ -157,7 +167,10 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
     const sub = path.join('/');
     if (req.method === 'GET' && sub === '') return json(await profile(user));
     if (req.method === 'PUT' && sub === '') {
-      const { locale, termsVersion, showName, displayName } = await body(req, meSchema);
+      const { locale, termsVersion, showName, displayName, friendsVisible } = await body(
+        req,
+        meSchema,
+      );
       if (termsVersion !== undefined && termsVersion !== legal.termsVersion)
         throw new ApiError(400, 'invalid_input', 'termsVersion');
       await db.rpc('profile_update', {
@@ -171,6 +184,8 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
           p_show_name: showName ?? null,
           p_display_name: displayName ?? null,
         });
+      if (friendsVisible !== undefined)
+        await db.rpc('profile_friends', { p_user: user.id, p_on: friendsVisible });
       return json(await profile(user));
     }
     if (req.method === 'GET' && path[0] === 'submissions' && path.length === 2) {

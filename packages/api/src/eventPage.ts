@@ -1,4 +1,5 @@
 import {
+  getRegion,
   isInBbox,
   loadConfig,
   type Category,
@@ -140,6 +141,12 @@ export function withTags(indexHtml: string, t: PreviewTags): string {
  * event route. An unknown or hidden event gets the generic tags and a 404; a database error still
  * serves the app, so a shared link never breaks.
  */
+const PRIVATE_TITLE = { pl: 'Wydarzenie prywatne', en: 'Private event' };
+const PRIVATE_TEXT = {
+  pl: 'Widoczne tylko dla zaproszonych.',
+  en: 'Visible to invited people only.',
+};
+
 export function createEventPage(env: ApiEnv, deps: Pick<ApiDeps, 'fetch' | 'config' | 'now'> = {}) {
   const config = deps.config ?? loadConfig();
   const now = deps.now ?? (() => new Date());
@@ -193,7 +200,30 @@ export function createEventPage(env: ApiEnv, deps: Pick<ApiDeps, 'fetch' | 'conf
         console.error(err);
         return page(indexHtml, 200, 0);
       }
-      if (!ev) return page(indexHtml, 404, MISSING_CACHE_S);
+      if (!ev) {
+        // A private event (M11 §4): generic tags only, never its title, time or place. The app
+        // opens the card for its invitees.
+        const visibility = await db
+          .rpc<string | null>('event_visibility', { p_event: id })
+          .catch(() => null);
+        if (visibility === 'private') {
+          const lang = getRegion(config).locale;
+          const l = config.app.languages.includes(lang) ? lang : fallback;
+          return page(
+            withTags(indexHtml, {
+              title: `${PRIVATE_TITLE[l === 'en' ? 'en' : 'pl']} · Happow`,
+              description: PRIVATE_TEXT[l === 'en' ? 'en' : 'pl'],
+              url: `${url.origin}/e/${encodeURIComponent(id)}`,
+              image: `${url.origin}/icons/icon-512.png`,
+              card: 'summary',
+              lang: l,
+            }),
+            200,
+            0,
+          );
+        }
+        return page(indexHtml, 404, MISSING_CACHE_S);
+      }
 
       const link = `${url.origin}/e/${encodeURIComponent(ev.row.id)}`;
       const html = withTags(indexHtml, {

@@ -113,6 +113,7 @@ describe('/api/me', () => {
         resetsAt: '2026-10-31T23:00:00.000Z',
         events: { used: 3, limit: 300 },
         autofill: { used: 1, limit: 300 },
+        private: { used: 0, limit: 300 },
       },
     });
     expect(rpcCalls(sb, 'usage_get')[0]!.body).toEqual({ p_user: 'u1', p_month: '2026-10-01' });

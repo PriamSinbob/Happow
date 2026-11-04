@@ -228,7 +228,7 @@
     "hereRadiusM": 100
   },
   "agenda": {
-    "views": ["all", "plans", "saved"],
+    "views": ["all", "plans", "saved", "private"],
     "keepPastDays": 30,
     "keepRemovedDays": 30,
     "maxSaved": 200,
@@ -255,6 +255,21 @@
     "endedNearbyMax": 5,
     "endedLabel": { "pl": "Zakończone", "en": "Ended" }
   },
+  "private": {
+    "keepAfterEndDays": 30,
+    "maxContacts": 500,
+    "maxGroups": 20,
+    "maxInvitationsPerEvent": 200,
+    "perHourPerAccount": 120
+  },
+  "organiser": {
+    "postsPerEventPerDay": 10,
+    "checksPerHour": 10,
+    "editsPerHour": 60,
+    "venueRadiusM": 75,
+    "postsCacheSec": 60
+  },
+  "notices": { "maxAudience": 500, "inline": 3, "maxPerTick": 6 },
   "metrics": {
     "eveningFromHour": 18,
     "weekly": { "weekday": 1, "hour": 8 }
