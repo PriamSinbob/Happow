@@ -267,7 +267,10 @@ function DetailBody({
         <div className="event-card__actions">
           <GoButtons ev={ev} onGo={onGo} />
         </div>
-        {!ended && <Going ev={ev} now={now} />}
+        {/* On a private event, only its owner and accepted guests mark themselves (M11 §4). */}
+        {!ended && (!priv || ev.mine || ev.invitation?.status === 'accepted') && (
+          <Going ev={ev} now={now} />
+        )}
         {!ended && <FriendsLine eventId={ev.id} />}
         <div className="event-card__actions event-card__actions--links">
           {ev.ticketUrl && (

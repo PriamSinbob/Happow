@@ -149,6 +149,10 @@ Map, events, filters, details and navigation are free for everyone, always. Paid
 | Encrypted lit-map sync and backup across devices and phone upgrades |            |              | ✓       |
 | Extended colour presets (Magenta and future ones)                   |            |              | ✓       |
 | Alerts when a followed artist announces a date; follows synced      |            |              | ✓       |
+| Organiser updates on an event, and its organiser's name             | ✓          | ✓            | ✓       |
+| Be invited to private events; contacts, groups, the friends' view   |            | ✓            | ✓       |
+| Private events you create, a month                                  |            | 1            | 300     |
+| Claim events and venues; post updates, edit, publish at your venue  |            | ✓            | ✓       |
 
 Ideas for later paid features, not decided (from the brief):
 

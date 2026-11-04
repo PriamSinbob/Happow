@@ -4,7 +4,7 @@ Nov 4, 2026
 
 Spec from the brief (Future features → Organiser updates on the event page, Private events with invitations, and "Organiser self-service" under More venue and event data) and the friends' view promised in M9 §6. M11 comes after M10 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec approved, §11 answered by the owner on 2026-11-04 (one point on public claims to confirm, §11.3); next: slice A's plan.
+**Status:** spec approved, §11 answered by the owner on 2026-11-04. All slices built on 2026-11-04 in one go on one branch (owner: "go with all the slices at once"), each with a "Built" note below. Open for the owner: the claim check on public events (§11.3), the four new icons, and the points in [M11-summary.md](M11-summary.md).
 
 Goal: **the people who run an event can keep its page right and talk to visitors, and anyone can hold a private event that only their invitees see.** Two halves that share accounts and nothing else: organisers (claims, updates, publishing) work on public events, private events and contacts work for small groups of people who already know each other. The brief's rules hold: no streaks, no fake urgency, pull not push, paid never buys visibility, and browsing public events stays anonymous. No new data sources.
 
@@ -22,19 +22,19 @@ Goal: **the people who run an event can keep its page right and talk to visitors
 
 ## Build plan
 
-One branch and one PR to `main` per slice, as in M9, M10 and M12. Each slice PR updates its row below and the Status line, and adds a short "Built (slice X)" note under its section. UI slices follow the existing screens (no mockups since M12 slice D, owner 2026-10-28); the design studio pass comes after everything is built.
+One branch and one PR to `main` per slice, as in M9, M10 and M12 (for M11 the owner asked for all slices at once: one branch, one PR). Each slice PR updates its row below and the Status line, and adds a short "Built (slice X)" note under its section. UI slices follow the existing screens (no mockups since M12 slice D, owner 2026-10-28); the design studio pass comes after everything is built.
 
 | Slice | Spec | What                                                                                       | Needs | Status |
 | ----- | ---- | ------------------------------------------------------------------------------------------ | ----- | ------ |
-| A     | §1   | Private events: `visibility` and `owner_id`, kept out of every public read; creating one   | —     | —      |
-| B     | §2   | Contacts and groups, and the contact link                                                  | —     | —      |
-| C     | §3   | Invitations: by contact, group or link; accept, decline, revoke; edits reach invitees      | A, B  | —      |
-| D     | §4   | Private events in the app: the Private view, the card, `/e/<id>` for private events        | C     | —      |
-| E     | §5   | The friends' view of who's going (M9 §6), and names on link counts                         | B     | —      |
-| F     | §6   | Organiser claims: an event or a venue, verified by a code on the site or by a moderator    | —     | —      |
-| G     | §7   | Organiser updates on the event page: schedule change, important, info                      | F     | —      |
-| H     | §8   | Organiser self-service: edit and cancel your events, publish at a claimed venue, your list | F     | —      |
-| I     | §9   | GDPR for everything M11 stores (export, delete, retention), the consent text, the summary  | A–H   | —      |
+| A     | §1   | Private events: `visibility` and `owner_id`, kept out of every public read; creating one   | —     | built  |
+| B     | §2   | Contacts and groups, and the contact link                                                  | —     | built  |
+| C     | §3   | Invitations: by contact, group or link; accept, decline, revoke; edits reach invitees      | A, B  | built  |
+| D     | §4   | Private events in the app: the Private view, the card, `/e/<id>` for private events        | C     | built  |
+| E     | §5   | The friends' view of who's going (M9 §6), and names on link counts                         | B     | built  |
+| F     | §6   | Organiser claims: an event or a venue, verified by a code on the site or by a moderator    | —     | built  |
+| G     | §7   | Organiser updates on the event page: schedule change, important, info                      | F     | built  |
+| H     | §8   | Organiser self-service: edit and cancel your events, publish at a claimed venue, your list | F     | built  |
+| I     | §9   | GDPR for everything M11 stores (export, delete, retention), the consent text, the summary  | A–H   | built  |
 
 The two halves are independent: A–E (private) and F–H (organisers) can be built in either order. Recommended order: A, B, C, D, E, then F, G, H, then I.
 
@@ -63,6 +63,14 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 - **Location.** A private event still has a point (the invitees need the place). It's never in `density_cell` counts or `event_counts`.
 - **Tests.** Every public reader excludes a private row; RLS (anon, another account, owner, invitee, revoked invitee); dedup ignoring private events; the add form's switch only with `private.create`; quota counting.
 
+**Built (slice A).**
+
+- **Database** (migration **26**). `events.visibility` and `owner_id`; `events_public` reads public only. The readers that went to `events` directly now skip private rows too: `events_area` (the map snapshot), `m12_metrics`, `coverage`, `district_goal`, `first_place_mark`, `duplicate_candidates` (both sides), `counts_add`, `thanks_add`, `event_credit`, `reminder_set`, `reminders_due`, `attendance_set`; share links already used `events_public`. Ingest dedup (`store.ts`) never pairs a private event with a public one. Row-level security on `events`, `event_sources` and `venues` (a private event's venue is marked private).
+- **Creating one.** `submit_private` takes both quotas in one statement (`private.perMonth`, then `events.perMonth`), stores the submission approved by `private` and publishes it verified, private and owned; no rewards, impact counts or "first place". `POST /api/submissions` takes `private: true` (an account, no repeat; 429 `kind: private` when the month's are used). A moderator's block (`private_block`) stops an account's private events.
+- **Plans.** `private.create` is on for free accounts with `private.perMonth` 1 (premium 300, inside its 300 events); `organiser.infoPosts` and `organiser.publish` on for every account (§11.5).
+- **App.** "Who sees it: Everyone / Only people I invite" on the add form, with how many are left this month and "More with premium" when they're used.
+- **Tests.** `scripts/m11.db.test.ts` runs every public reader against a private row, row-level security for anon, a stranger and the owner, both quotas, dedup; API and web tests below.
+
 ## 2. Contacts and groups (slice B)
 
 - **What a contact is:** another account you've connected with. No address book import, no email lookup, no search for people (brief, Privacy: "no use of contacts for anything else").
@@ -77,6 +85,12 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 - **Screen:** "Contacts" in the account card: the list, groups, your contact link (share, QR as in M9 §3, new link).
 - **Free account** (§10).
 - **Tests.** The contact link both ways, a retired link, blocking, groups, the limits, RLS.
+
+**Built (slice B).**
+
+- **Database.** `contacts` (one row per direction; mutual when both exist and neither blocks), `contact_groups`, `contact_group_members`, `contact_links` (one live link per account; a new one retires the old). Functions: `contact_connect`, `contacts_list`, `contact_link_new`, `contact_link_owner`, `contact_link_accept`, `contact_change` (remove, block, unblock), `group_save`, `group_delete`. Own-rows policies on all four.
+- **API.** `/api/contacts` (list, link, accept, change, groups). Contacts and invitations need a display name first (409 `name_required`); limits from `private.maxContacts`, `maxGroups` and `perHourPerAccount`.
+- **App.** "Contacts" on the account card: the name friends see, "Share my contact link" (share sheet, or copied), "New link", the list with remove and block, groups with members. `/c/<token>` opens "Add a contact", signing in first if needed.
 
 ## 3. Invitations (slice C)
 
@@ -94,6 +108,13 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 - **API:** `POST /api/private/:id/invite` (contacts, groups, or `{ link: true, label }`), `POST /api/invitations/:id/answer`, `POST /api/invitations/accept-link` (token), `DELETE /api/invitations/:id` (revoke), `GET /api/private/:id/guests` (owner only). All signed in, `no-store`, rate-limited per account.
 - **Tests.** Each path; a link used twice; a revoked invitee reading nothing; a blocked person can't be invited; the per-event limit; contacts created on accept; notices to reminder subscribers only.
 
+**Built (slice C).**
+
+- **Database.** `invitations` (person or single-use link token, label, status, `seen_at`); `invite_people` (contacts and expanded groups; blocked people skipped), `invite_link`, `invitation_answer` (accepting connects you with the organiser), `invitation_accept_link` (first account takes it), `invitation_revoke`, `event_guests` (the organiser's full list; accepted guests see who else accepted).
+- **API.** `/api/private/:id/invite`, `/answer`, `/guests`, `/api/invitations/accept`, `DELETE /api/invitations/:id`.
+- **Changes reach invitees.** An owner's edit or schedule post queues a notice for everyone interested (§7's audience: accepted guests, going, reminders, synced saves), only to accounts that may still see the event. The agenda shows "Changed" until the invitee opens the card.
+- **Email invitations** are not built (owner, 2026-11-04: messengers first, email later).
+
 ## 4. Private events in the app (slice D)
 
 - **The Private view** goes into `agenda.views` (`["all", "plans", "saved", "private"]`), shown only when signed in. It holds the private events you own or are invited to, pending ones first with Accept / Decline on the row.
@@ -105,6 +126,14 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
   - otherwise: "Private event. Sign in if you were invited", with sign-in that comes back to the link.
 - **Offline.** Private events are kept in the device cache only while signed in, and cleared on sign-out.
 - **Tests.** The view shown only signed in; pins with the lock; the card for owner, invitee and stranger; the Worker's tags for a private id; sign-in returning to the link; sign-out clearing the cache.
+
+**Built (slice D).**
+
+- **Views.** `private` is in `agenda.views` with the lock icon (it was the shield in M10). `private.ts` reads `GET /api/private` when signed in, every `refresh.dataMinutes`, keeps nothing after sign-out, and feeds `invitations.set`: Private holds every private event you own or are invited to, My plans the accepted ones and your own (`viewIds` in core).
+- **Map.** Private events show in every view (owner, 2026-11-04), on the time line and filters, with a lock at the lower left of the pin (`pin-lock`). Only on that person's map.
+- **Card.** "Private · invited by Ola" (or "your event"), "I'm in" and "Decline", the organiser's Invite sheet (a single-use link per person sent through the share sheet, or contacts and groups) and the guest list with "Send again" and "Revoke". No share button, no public counts, "I'm going" only for the owner and accepted guests.
+- **Links.** The Worker answers `/e/<id>` of a private event with generic tags ("Wydarzenie prywatne · Happow", the app icon, `no-store`). `?i=<token>` is kept per event on the device and opens the card before signing in; "Sign in to accept" takes the link.
+- **Reports.** A private event is reported only by someone who may see it; "Spam or inappropriate" and the new "Unlawful content" go to moderators (who can block the owner's private events), the rest to the organiser only (owner, 2026-11-04).
 
 ## 5. The friends' view of who's going (slice E; M9 §6)
 
@@ -119,6 +148,11 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 - **Private events:** the guest list (§3) is visible to every accepted guest, regardless of the switch, as an invitation implies it; the switch governs public events.
 - **Tests.** The switch both ways, a one-sided friend seeing nothing, a sensitive category showing friends but no public count, signals without an account not named, a removed or blocked contact disappearing.
 
+**Built (slice E).**
+
+- **Two levels** (owner, 2026-11-04): the account switch "Show my friends when I'm going" (`profiles.friends_visible`, in Contacts) and "Show friends I'm going to this" on each card (`friend_overrides`), which overrides the switch either way for that event.
+- `friends_on_event` names mutual contacts who show themselves on the event, to someone who shows themselves too; going, on the way and here (not looking); every category. `fromMyLinks` names friends behind your share links, under the same rules. `POST /api/friends`, `PUT /api/friends`.
+
 ## 6. Organiser claims (slice F)
 
 - **What can be claimed:** an **event** (one event, or a series from the same source) or a **venue** (every current and future event at that venue, whatever its source).
@@ -132,6 +166,13 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 - **Shown** on the event page as "Organiser: Klub Pralnia ✓". Organisers are never ranked or placed differently on the map (paid never buys visibility).
 - **Tables:** `claims (id, user_id, kind event/venue, event_id, venue_id, organiser_name, method site/moderator, code, evidence, status pending/approved/rejected/revoked, reviewed_by, created_at, decided_at)`. An approved claim sets `owner_id` on the claimed events (and on new ones at a claimed venue as they come in).
 - **Tests.** The site check against fixtures (code present, absent, robots-blocked, page gone); moderator approve and reject; a second claim; revoking; a venue claim reaching a new event from ingest.
+
+**Built (slice F).**
+
+- **Database.** `claims` (event or venue, organiser name, method, code, page, evidence, status), one approved organiser per event and per venue; `venue_matches` treats venue rows with the same OSM id as one place; `event_organiser` (event claim, else venue claim, else a private event's owner).
+- **Check on the site.** `POST /api/claims/:id/check` reads robots.txt, fetches the page once through the crawler's fetch and approves when the code is there. A moderator claim waits in the queue. A second claim on a claimed event is refused (409) until a moderator revokes the first.
+- **App.** "I organise this" on a public card: this event or everything at the venue, the organiser's name, then the code to put on the page and "Check", or a note for a moderator. Moderators approve, reject and revoke in the queue.
+- **Open (§11.3).** Public claims keep the code or the moderator; confirm with the owner.
 
 ## 7. Organiser updates on the event page (slice G)
 
@@ -149,6 +190,13 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 - **Table:** `event_posts (id, event_id, user_id, kind schedule/important/info, text, change jsonb, created_at, hidden, report_count)`.
 - **Tests.** Posting as organiser only; a schedule change moving the event and its reminders; the pinned order; the limits; reports and hiding; the cache purge.
 
+**Built (slice G).**
+
+- **Database.** `event_posts` and `post_reports`; `post_add` (organiser or private owner, daily limit; a schedule change applies its fields and logs the edit), `event_posts_get` (important first), `post_delete`, `post_report`, `post_moderate` (hiding a schedule change restores the times). The organiser's fields win over sources through a trigger (`events_keep_owner_fields`); a source that disagrees is kept in `source_disagrees` and shown to moderators (owner, 2026-11-04, §11.4).
+- **Push** (owner, 2026-11-04): `notice_enqueue` picks every device that allowed notifications and is interested (going, on the way, here, a reminder, a synced save, an accepted invitation), except the poster; `notices.inline` (3) go with the request, the cron sends `notices.maxPerTick` (6) per tick. Info posts send nothing. A bookmark kept only on a device without an account is unknown to the server: that device sees the card, no push.
+- **API.** `GET /api/events/:id/posts` (public posts cached at the edge for `organiser.postsCacheSec`; a private event's only for its people), `POST /api/events/:id/posts`, `DELETE /api/posts/:id`, `POST /api/posts/:id/report`.
+- **App.** The organiser's name and the posts on the card (important highlighted, a schedule change with its new start), "Post an update" with the kind, the new time or status and 280 characters; Report on each post. Reports the organiser received, with "Answer" (public: moderators still see them, with the answer) or "Mark as handled" (private, organiser-only): never blocking an edit (owner, 2026-11-04).
+
 ## 8. Organiser self-service publishing (slice H)
 
 - **Edit and cancel your events.** For an event you own (claimed, or private, or one you added once it's published):
@@ -160,6 +208,11 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 - **Sources keep running.** For a claimed event that ingest also reads, the organiser's fields win (§11.4); ingest still updates fields the organiser never touched.
 - **Tests.** Edit by organiser, by trusted and untrusted contributor; the edit log; cancel; a claimed venue publishing at once; ingest not overwriting organiser fields.
 
+**Built (slice H).**
+
+- **Database.** `event_role` (owner, organiser, contributor), `event_edit` (applied at once for owners, organisers and trusted contributors; pending for others), `event_edits` (every change, before and after), `edits_queue` and `edit_decide` for moderators, `my_events`, `organiser_at` (an organiser publishes at once within `organiser.venueRadiusM` of a claimed venue).
+- **App.** "Edit event" on the card for anyone with a role (title, times, status, price, description, links); a contributor's change says it waits for a moderator. "Your events" on the account card: what you organise and your private events, with guests and open reports, and claims waiting.
+
 ## 9. GDPR, consent and the summary (slice I)
 
 - **Export** (`GET /api/me/export`) adds contacts, groups, contact links, invitations sent and received, private events, claims, posts and edits.
@@ -167,6 +220,14 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 - **Retention:** unused invite links go when the event ends; private events and their invitations a set time after they end (`private.keepAfterEndDays`, 30); declined invitations with the event.
 - **Consent.** The interim terms (M8 §2) get a paragraph on contacts, invitations and organiser claims; `legal.termsVersion` moves, so signed-in users accept once more. Claude drafts it in this slice for the owner's OK.
 - **M11 summary** (`M11-summary.md`) as for M9 and M10.
+
+**Built (slice I).**
+
+- **Export** adds contacts, groups, contact links, private events (with their place), invitations sent and received, per-event friend settings, claims, posts and edits, and private events in the monthly usage.
+- **Delete** removes the account's private events (their invitations go with them), clears its claimed events' organiser fields, and cascades contacts, groups, invitations, claims, posts and overrides.
+- **Retention.** The cron runs `private_cleanup`: private events `private.keepAfterEndDays` (30) after they end, unused invite links when the event ends, old notices after a day.
+- **Not done:** the consent paragraph and the new `legal.termsVersion` (they wait for the owner's OK on the text; a draft is in the summary), and the design pass.
+- **Summary:** [M11-summary.md](M11-summary.md).
 
 ## 10. Free and paid after M11
 
@@ -182,6 +243,8 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 Paid never changes where or how an event shows: a claimed event, a verified organiser and a premium account sit on the map exactly like every other event.
 
 ## 11. Questions for the owner (answered 2026-11-04)
+
+Later (owner, 2026-11-04): reports on public events go to the moderators' queue and the organiser sees them too; the organiser can still post and edit while they're open.
 
 Answers: 1 (a), email stays an option for later, links shared through messengers are the main way; 2 one private event a month on a free account, more on premium, one quota for all events; 3 private events aren't checked by a moderator, the organiser creates them and they're live; 4 (a); 5 (a); 6 push to everyone who saved, marked going, on the way or here, and so on; 7 private events show locked in Everything so they aren't missed, in Private, and in My plans when planned; 8 only abuse and unlawful content goes to moderators, the organiser handles the rest; 9 both, an account switch and per event.
 
