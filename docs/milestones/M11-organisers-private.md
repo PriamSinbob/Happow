@@ -4,7 +4,7 @@ Nov 4, 2026
 
 Spec from the brief (Future features → Organiser updates on the event page, Private events with invitations, and "Organiser self-service" under More venue and event data) and the friends' view promised in M9 §6. M11 comes after M10 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** draft, waiting for the owner's answers to §11.
+**Status:** spec approved, §11 answered by the owner on 2026-11-04 (one point on public claims to confirm, §11.3); next: slice A's plan.
 
 Goal: **the people who run an event can keep its page right and talk to visitors, and anyone can hold a private event that only their invitees see.** Two halves that share accounts and nothing else: organisers (claims, updates, publishing) work on public events, private events and contacts work for small groups of people who already know each other. The brief's rules hold: no streaks, no fake urgency, pull not push, paid never buys visibility, and browsing public events stays anonymous. No new data sources.
 
@@ -53,9 +53,10 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 - **Kept out of every public read.** `events_public` gains `and e.visibility = 'public'`, so the map snapshot, `events_near`, `event_by_id`, `events_by_ids`, hotspots, density counts, chevrons, metrics, coverage, seasons, thanks and share previews never see a private event. A test lists every public reader and checks each one against a private row, so a reader added later can't forget it.
 - **RLS on `events`** (the backstop for direct PostgREST access): a row is readable if it's public, or the caller (`auth.uid()`) is its owner or holds a non-revoked invitation to it. Anon reads only public.
 - **Reading private events** goes through the Worker: `GET /api/private` (signed in) returns the private events the account owns or was invited to, with the invitation state, through `private_events_for(p_user)`. Same row shape as the public reads, plus `visibility`, `mine`, `invitation`.
-- **Creating one.** The add form gets a **Private** switch for accounts with `private.create`. A private event:
+- **Creating one.** The add form gets a **Private** switch for every account (owner, 2026-11-04): a free account creates **1 private event a month**, premium more. `private.create` becomes true for free accounts too, with a new `private.perMonth` (account 1, premium unlimited within `events.perMonth`). Past the free one, the switch says so and offers premium. A private event:
   - is written straight to `events` (trust `community`, verified, no moderation queue: only invitees see it);
-  - counts against `events.perMonth` like any added event (see §11.2);
+  - counts against `events.perMonth` like any added event: one quota for all events (owner, 2026-11-04);
+  - is never checked by a moderator: the organiser creates it and it's live (owner, 2026-11-04);
   - earns no contribution rewards, impact counts or "first place" (M12), since nobody else sees it;
   - can't come from autofill of a public listing and stay private by mistake: autofill works, but the event is a new private row, never merged with the public one by dedup (dedup skips private events both ways);
   - can be edited and cancelled by its owner (the edit form of §8, without moderation).
@@ -87,8 +88,7 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 - **Revoke:** the organiser can revoke any invitation, pending or accepted; the event disappears from that person's app at the next read.
 - **Edits and cancellation reach invitees:**
   - the card shows "Changed: start moved to 19:30" or "Cancelled", and the agenda row carries a dot until opened;
-  - invitees who set a reminder on it get M10's "start moved" / "cancelled" push, which already exists;
-  - nobody else gets a push (pull not push, §11.6).
+  - invitees who accepted, saved, marked going, are on the way or here get a push, on devices that already allow notifications (§7's audience, owner 2026-11-04); M10's "start moved" / "cancelled" text is reused.
 - **What the organiser sees:** accepted, pending, declined, per person (by display name), and the used and unused links.
 - **Table:** `invitations (id, event_id, inviter, invitee_user null, token null, label, status pending/accepted/declined/revoked, created_at, answered_at)`, one of `invitee_user` or `token` set. Email invites (`invitee_email`) wait for an email sender (§11.1).
 - **API:** `POST /api/private/:id/invite` (contacts, groups, or `{ link: true, label }`), `POST /api/invitations/:id/answer`, `POST /api/invitations/accept-link` (token), `DELETE /api/invitations/:id` (revoke), `GET /api/private/:id/guests` (owner only). All signed in, `no-store`, rate-limited per account.
@@ -98,8 +98,8 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 
 - **The Private view** goes into `agenda.views` (`["all", "plans", "saved", "private"]`), shown only when signed in. It holds the private events you own or are invited to, pending ones first with Accept / Decline on the row.
 - **My plans** gets accepted invitations through `invitations.set` (built in M10 §6).
-- **On the map in Everything:** accepted private events show for that person with a small lock on the pin; pending ones only in the Private view (§11.7).
-- **The card** of a private event: a lock and "Private · invited by Ania", the guest line (§5 rules for names), and no share button, no QR, no public counts, no report to moderators (a report goes to the organiser as "Something's wrong" instead; moderators get only abuse reports, §11.8).
+- **On the map in Everything** (owner, 2026-11-04): every private event you own or are invited to, pending or accepted, shows with a lock on the pin, so none is missed; declined and revoked ones don't. They show in the Private view too, and in My plans once accepted. Only for that person: nobody else's map changes.
+- **The card** of a private event: a lock and "Private · invited by Ania", the guest line (§5 rules for names), and no share button, no QR, no public counts, reports split (owner, 2026-11-04): "Something's wrong" (wrong time, wrong place, cancelled) goes to the organiser only, as a list on their card; **abuse or unlawful** content goes to moderators, who then see the event and can hide it or block its owner from private events.
 - **Links.** `/e/<id>` for a private event: the Worker sends the generic tags ("Private event · Happow") and the generic preview image, never the title, time or place. In the app:
   - signed in and invited (or carrying a valid `?i=` token): the card;
   - otherwise: "Private event. Sign in if you were invited", with sign-in that comes back to the link.
@@ -109,7 +109,10 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 ## 5. The friends' view of who's going (slice E; M9 §6)
 
 - **Friends** are your contacts (§2), both ways: you're their contact and they're yours.
-- **Opt-in on both sides:** one switch in the account, "Show my friends when I'm going", off by default. Only friends who both have it on see each other.
+- **Opt-in on both sides, two levels** (owner, 2026-11-04):
+  - **an account switch**, "Show my friends when I'm going", off by default;
+  - **per event** on the card, "Show friends I'm going to this", which overrides the account switch either way for that event (on for one event with the switch off, or hidden from one event with it on).
+  - A friend sees you only where you're shown and they also show themselves (their switch or that event's override).
 - **What it shows:** on any event card, public or private, sensitive categories included, a line "Ania and Tomek are going · Ola is here", from the M9 signals (going, on the way, here; not "looking", which is passive). No threshold: it's people you already know (M9 §6).
 - **Only signals made while signed in** count, since only those carry the account (M9 slice E kept `user_id`).
 - **Names on link counts** (M9 §5): "3 people from your link are going" becomes "Ania and 2 others…" when the recipient is signed in, is your contact and has the switch on.
@@ -140,7 +143,7 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 - **Rules:** 280 characters, text only, no links except the event's own, no images (brief, PoC). Up to `organiser.postsPerEventPerDay` (10).
 - **Loaded with the card**, not with the map (brief, battery and data): `GET /api/events/:id/posts`, cached at the edge for a minute and purged on a new post.
 - **People who saved it** see a dot on the agenda row until they open the card (the agenda read returns `last_post_at`; the device keeps when it last opened each event).
-- **Push:** schedule changes and important posts go to devices with a reminder on that event (they asked to be told about it), through M10's sender. Nothing to anyone else (§11.6).
+- **Push** (owner, 2026-11-04): schedule changes and important posts go to everyone who shows interest in the event: saved it (synced accounts), set a reminder, marked going, on the way or here, or accepted an invitation, through M10's sender. Only to devices that already allowed notifications: this never asks for permission. Info posts send nothing. A bookmark kept only on a device without an account is unknown to the server, so that device gets the agenda dot, not a push. One push per post per device.
 - **Reports:** each post can be reported; moderators see post reports in the queue and can hide a post. A hidden schedule change also restores the event's previous times.
 - **Paid:** see §11.5.
 - **Table:** `event_posts (id, event_id, user_id, kind schedule/important/info, text, change jsonb, created_at, hidden, report_count)`.
@@ -172,13 +175,17 @@ The two halves are independent: A–E (private) and F–H (organisers) can be bu
 | See organiser updates on an event                              | ✓          | ✓            | ✓       |
 | Be invited to private events, accept, decline                  |            | ✓            | ✓       |
 | Contacts, groups, the friends' view                            |            | ✓            | ✓       |
-| Create private events and invite people (`private.create`)     |            |              | ✓       |
+| Create private events and invite people                        |            | 1 a month    | ✓       |
 | Claim events and venues, schedule changes, important posts     |            | ✓            | ✓       |
-| Info posts on your events, edit and publish at a claimed venue | see §11.5  | see §11.5    | ✓       |
+| Info posts on your events, edit and publish at a claimed venue |            | ✓            | ✓       |
 
 Paid never changes where or how an event shows: a claimed event, a verified organiser and a premium account sit on the map exactly like every other event.
 
-## 11. Questions for the owner
+## 11. Questions for the owner (answered 2026-11-04)
+
+Answers: 1 (a), email stays an option for later, links shared through messengers are the main way; 2 one private event a month on a free account, more on premium, one quota for all events; 3 private events aren't checked by a moderator, the organiser creates them and they're live; 4 (a); 5 (a); 6 push to everyone who saved, marked going, on the way or here, and so on; 7 private events show locked in Everything so they aren't missed, in Private, and in My plans when planned; 8 only abuse and unlawful content goes to moderators, the organiser handles the rest; 9 both, an account switch and per event.
+
+**To confirm (§11.3):** the answer covers private events. For **claims on public events** (§6) the spec keeps the code on the organiser's site plus moderator review, because a claim changes a public page that other people rely on. Slice F's plan asks again.
 
 1. **Email.** Codes still go out by hand (`auth.emailDelivery: "manual"`), so there's no way to send invitations or claim codes by email. Options:
    - **(a) Recommended:** M11 works without email: invitations by contact, group or a single-use link sent through the phone's share sheet (WhatsApp, Messenger, SMS), and contacts through a contact link. Email invites and email claim codes are built behind a config switch and turned on when the domain and a sender exist (Before public launch).
