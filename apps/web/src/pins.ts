@@ -33,6 +33,8 @@ export interface PinProps {
   flagged: boolean;
   /** "18+" for events with ageMin ≥ 16, '' otherwise. */
   age: string;
+  /** A private event at this place (M11 §4): the lock. */
+  locked: boolean;
   /** symbol-sort-key: higher draws on top (selected > live > soon > later, inside > outside). */
   z: number;
   /** Event ids as a JSON array (GeoJSON properties are flat). */
@@ -131,6 +133,9 @@ export function pinFeatures(
           count: g.events.length,
           flagged: g.kind === 'place' && g.events.length === 1 && !!first.flag,
           age: g.kind === 'place' && age >= AGE_BADGE_MIN ? `${age}+` : '',
+          locked:
+            g.kind === 'place' &&
+            g.events.some((e) => (e as { visibility?: string }).visibility === 'private'),
           z:
             (selected ? 100 : 0) + (s.outside ? 0 : 10) + (2 - RANK[s.kind]) * 2 + (s.late ? 0 : 1),
           ids: JSON.stringify(g.events.map((e) => e.id)),

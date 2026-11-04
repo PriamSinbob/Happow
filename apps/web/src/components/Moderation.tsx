@@ -11,6 +11,11 @@ import { useI18n } from '../i18n';
 import { CodeRequests, Grants, Sources } from './Admin';
 import { Coverage } from './Coverage';
 import { feedHost } from './Feeds';
+import {
+  BlockPrivateButton,
+  OrganiserModeration,
+  type OrganiserQueue,
+} from './ModerationOrganisers';
 import { Screen } from './Screen';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
@@ -61,9 +66,13 @@ interface ReportedEvent {
   count: number;
   reasons: Record<string, number>;
   notes: string[] | null;
+  /** M11: the organiser's answer, and whether the event is private (abuse reports only). */
+  organiser_note?: string | null;
+  organiser?: string | null;
+  visibility?: 'public' | 'private';
 }
 
-interface Queue {
+interface Queue extends OrganiserQueue {
   moderator: string;
   submissions: QueuedSubmission[];
   reports: ReportedEvent[];
@@ -369,6 +378,14 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                     {n}
                   </blockquote>
                 ))}
+                {r.organiser_note && (
+                  <p className="mod-card__meta">
+                    {t('mod.organiserAnswer', {
+                      name: r.organiser ?? t('organiser.section'),
+                      text: r.organiser_note,
+                    })}
+                  </p>
+                )}
                 <div className="event-card__actions">
                   <button
                     type="button"
@@ -394,11 +411,15 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                   >
                     {t('mod.hide')}
                   </button>
+                  {r.visibility === 'private' && (
+                    <BlockPrivateButton eventId={r.event_id} onDone={() => void load()} />
+                  )}
                 </div>
               </article>
             );
           })}
         </section>
+        <OrganiserModeration queue={queue} />
       </>
     );
   }

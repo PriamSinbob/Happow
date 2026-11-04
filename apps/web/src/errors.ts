@@ -19,6 +19,13 @@ export function errorText(t: Translate, err: unknown, lang: Language): string {
     case 'photo_too_large':
     case 'too_many_feeds':
     case 'feed_stopped':
+    case 'name_required':
+    case 'blocked':
+    case 'too_many_invitations':
+    case 'too_many_groups':
+    case 'too_many_contacts':
+    case 'already_claimed':
+    case 'own_item':
       return t(`error.${code}`);
     case 'outside_region':
       return t('error.outside_region', { region: region.name[lang] });

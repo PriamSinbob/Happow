@@ -2,6 +2,7 @@ import { agendaDays, type NearbyEvent } from '@happow/core';
 import { config, region } from '../config';
 import { formatRelativeDay } from '../format';
 import { useI18n } from '../i18n';
+import { hasNews, isPrivate } from '../private';
 import { downloadDayIcs } from '../ics';
 import { eventUrl } from '../hooks/useHashRoute';
 import { Icon } from './Icons';
@@ -40,13 +41,32 @@ export function Agenda({
   const { days, past } = agendaDays(events, now, region.timezone, config.app.agenda.keepPastDays);
   const row = (ev: NearbyEvent) => {
     const invited = isInvited(ev.id);
+    // A private event (M11 §4): yours, waiting for your answer, or accepted; a dot when it changed.
+    const priv = isPrivate(ev) ? ev : null;
+    const privTag = priv
+      ? [
+          t(
+            priv.mine
+              ? 'agenda.yours'
+              : priv.invitation?.status === 'pending'
+                ? 'agenda.pending'
+                : 'agenda.invited',
+          ),
+          hasNews(priv) ? t('agenda.changed') : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : null;
     return (
       <Row
         key={ev.id}
         ev={ev}
         now={now}
         onSelect={onSelect}
-        tag={isGoing(ev.id) ? t('agenda.going') : invited ? t('agenda.invited') : undefined}
+        tag={
+          privTag ??
+          (isGoing(ev.id) ? t('agenda.going') : invited ? t('agenda.invited') : undefined)
+        }
         onUnsave={invited ? undefined : () => onUnsave(ev.id)}
       />
     );

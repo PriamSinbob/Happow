@@ -1,3 +1,4 @@
+import { localToInstant } from '@happow/core';
 /**
  * Wall-clock values of the add form ("2026-11-07T19:30", as <input type="datetime-local"> holds
  * them, in the region's time zone) for quick add and add again (M12 §4.3, §4.4).
@@ -34,4 +35,14 @@ export function minutesBetween(start: string | null, end: string | null): number
   if (!start || !end) return null;
   const m = (asUtc(end) - asUtc(start)) / 60_000;
   return Number.isFinite(m) && m > 0 ? m : null;
+}
+
+/** An instant as the form's wall-clock value in `timeZone` (M11 §8, the edit form). */
+export const toInput = (iso: string, timeZone: string): string =>
+  nowInput(timeZone, 1, new Date(iso));
+
+/** The form's wall-clock value in `timeZone` back to an ISO instant; null when malformed. */
+export function fromInput(value: string, timeZone: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
+  return localToInstant(value.slice(0, 10), value.slice(11), timeZone)?.toISOString() ?? null;
 }

@@ -7,6 +7,8 @@ export type Route =
   /** `again`: one of the account's submissions to add for another date (M12 §4.4). */
   | { name: 'add'; again?: string }
   | { name: 'moderate' }
+  /** Someone's contact link, /c/<token> (M11 §2). */
+  | { name: 'contact'; token: string }
   | { name: 'about' };
 
 /** Screens about one event: its detail, and "Going there". */
@@ -34,12 +36,15 @@ function read(): Route | null {
     }
   }
   if (h === '#/moderate') return { name: 'moderate' };
+  const contact = /^#\/c\/([A-Za-z0-9_-]{16,64})$/.exec(h);
+  if (contact) return { name: 'contact', token: contact[1]! };
   if (h === '#/about') return { name: 'about' };
   return null;
 }
 
 export function routeHref(route: Route): string {
   if (route.name === 'add' && route.again) return AGAIN + encodeURIComponent(route.again);
+  if (route.name === 'contact') return `#/c/${route.token}`;
   return 'id' in route
     ? `${WITH_ID[route.name]}${encodeURIComponent(route.id)}`
     : `#/${route.name}`;
@@ -62,6 +67,13 @@ export function adoptEventPath(): void {
   if (!m) return;
   openedFromLink = true;
   window.history.replaceState(null, '', `/${window.location.search}${WITH_ID.event}${m[1]}`);
+}
+
+/** A contact link /c/<token> (M11 §2) opens as the app's contact route over the map. */
+export function adoptContactPath(): void {
+  const m = /^\/c\/([A-Za-z0-9_-]{16,64})\/?$/.exec(window.location.pathname);
+  if (!m) return;
+  window.history.replaceState(null, '', `/#/c/${m[1]}`);
 }
 
 /**

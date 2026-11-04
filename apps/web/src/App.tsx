@@ -41,6 +41,14 @@ import { useRoute } from './hooks/useHashRoute';
 import { useRadius } from './hooks/useRadius';
 import { useMyEvents } from './hooks/useMyEvents';
 import { invitations, useAcceptedInvitations } from './invitations';
+import {
+  fetchPrivateEvent,
+  refreshPrivate,
+  usePrivateEvents,
+  usePrivateSync,
+  type PrivateEvent,
+} from './private';
+import { ContactLinkSheet } from './components/Contacts';
 import { useView } from './hooks/useView';
 import { plans, usePlans, usePlanSync } from './plans';
 import { reminders } from './reminders';
@@ -94,7 +102,7 @@ const VIEW_ICON: Record<PlanView, IconName> = {
   all: 'map',
   plans: 'calendar',
   saved: 'bookmark',
-  private: 'shield',
+  private: 'lock',
 };
 
 function savedWeights(): DiceWeights {
@@ -219,11 +227,16 @@ export function App() {
   );
   // Your events (M10 §1), read by id: any day and distance. The map's copies fill in at once.
   const invited = useAcceptedInvitations();
+  // Private events you own or are invited to (M11 §4), from the API with your sign-in.
+  const priv = usePrivateEvents();
   const myIds = useMemo(
     () => [...(viewIds(myList, planView.view, invited) ?? [])],
     [myList, planView.view, invited],
   );
-  const known = useMemo(() => [...loaded.events, ...loaded.around], [loaded.events, loaded.around]);
+  const known = useMemo(
+    () => [...loaded.events, ...loaded.around, ...priv],
+    [loaded.events, loaded.around, priv],
+  );
   const mine = useMyEvents(repo, myIds, searchCenter, known, inPlans);
   // On the map, a view keeps the time line and the filters: "this evening" plus "my plans" shows
   // tonight's plans. Outside the reach they still show: they're yours.
@@ -240,11 +253,26 @@ export function App() {
       ),
     );
   }, [inPlans, mine.events, filters, now, familyOnly, flagged, visible]);
+  // Private events show locked in every view, so none is missed (owner, 2026-11-04), on the
+  // time line and the filters like the rest.
+  const privOnMap = useMemo(() => {
+    const range = windowRange(filters.window, now, region.timezone);
+    return flagged(
+      familyOnly([...priv]).filter(
+        (e) =>
+          e.status !== 'cancelled' &&
+          matchesFilters(e, filters) &&
+          overlaps(e, range.from, range.to) &&
+          visible(e),
+      ),
+    );
+  }, [priv, filters, now, familyOnly, flagged, visible]);
   // The map shows the reach plus the nearest events beyond it (faded, or edge dots off screen).
-  const mapEvents = useMemo(
-    () => (inPlans ? mineOnMap : [...events, ...around.slice(0, maxEdgeDots)]),
-    [inPlans, mineOnMap, events, around],
-  );
+  const mapEvents = useMemo(() => {
+    const base = inPlans ? mineOnMap : [...events, ...around.slice(0, maxEdgeDots)];
+    const ids = new Set(base.map((e) => e.id));
+    return [...base, ...privOnMap.filter((e) => !ids.has(e.id))];
+  }, [inPlans, mineOnMap, events, around, privOnMap]);
   // Ended long ago: off the list (a removal, so the account's other devices drop them too).
   const myDays = useMemo(
     () => agendaDays(mine.events, now, region.timezone, config.app.agenda.keepPastDays),
@@ -265,8 +293,8 @@ export function App() {
   );
 
   const all = useMemo(
-    () => [...events, ...around, ...(inPlans ? mineOnMap : [])],
-    [events, around, inPlans, mineOnMap],
+    () => [...events, ...around, ...(inPlans ? mineOnMap : []), ...privOnMap],
+    [events, around, inPlans, mineOnMap, privOnMap],
   );
   const selected = all.find((e) => e.id === selectedId) ?? null;
   // A pin with several events at one place lists them; ids that left the results drop out.
@@ -285,6 +313,7 @@ export function App() {
   const filtered = filters.activeCount > 0;
   const [route, go] = useRoute();
   const { needsTerms, status: accountStatus } = useAccount();
+  usePrivateSync(accountStatus === 'signedIn', searchCenter, config.app.refresh.dataMinutes);
   // Reminders (M10 §5): the server's pending ones, and the subscription tied to the account.
   useEffect(() => {
     if (accountStatus === 'loading') return;
@@ -327,7 +356,42 @@ export function App() {
   };
   // The district goal, only while the reach is empty (M12 §6.2).
   const goal = useDistrictGoal(repo, !loading && events.length === 0 ? searchCenter : null, now);
-  const detail = useEventDetail(repo, detailId ?? goId, events, searchCenter);
+  // An edit or an answer on the card reads the event again (M11 §3, §8).
+  const [detailVersion, setDetailVersion] = useState(0);
+  const detailKnown = useMemo(() => [...events, ...priv], [events, priv]);
+  const publicDetail = useEventDetail(
+    repo,
+    detailId ?? goId,
+    detailKnown,
+    searchCenter,
+    detailVersion,
+  );
+  // Not public and not in your list: a private event through an invite link, or one you were
+  // invited to since the last read (M11 §4).
+  const [linkEv, setLinkEv] = useState<{ id: string; ev: PrivateEvent | null } | null>(null);
+  const wantId = detailId ?? goId;
+  useEffect(() => {
+    if (!wantId || publicDetail.ev || publicDetail.loading) return;
+    let live = true;
+    fetchPrivateEvent(wantId, searchCenter).then(
+      (ev) => live && setLinkEv({ id: wantId, ev }),
+      () => live && setLinkEv({ id: wantId, ev: null }),
+    );
+    return () => {
+      live = false;
+    };
+    // Once per id (and after an answer); the centre moving must not refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantId, publicDetail.ev, publicDetail.loading, detailVersion, accountStatus]);
+  const viaLink = linkEv && linkEv.id === wantId ? linkEv.ev : null;
+  const detail = publicDetail.ev
+    ? publicDetail
+    : viaLink
+      ? { ev: viaLink, loading: false }
+      : {
+          ev: null,
+          loading: publicDetail.loading || (!!wantId && linkEv?.id !== wantId),
+        };
   const loadCredit = useCallback(
     (id: string, signal: AbortSignal) => repo.credit(id, signal),
     [repo],
@@ -810,8 +874,14 @@ export function App() {
           loadCredit={loadCredit}
           loadNearby={loadNearby}
           onOpenEvent={(id) => go({ name: 'event', id }, true)}
+          center={searchCenter}
+          onChanged={() => {
+            setDetailVersion((v) => v + 1);
+            void refreshPrivate(searchCenter).catch(() => {});
+          }}
         />
       )}
+      {route?.name === 'contact' && <ContactLinkSheet token={route.token} onClose={close} />}
       {goId && (
         <GoThere
           key={goId}

@@ -346,6 +346,13 @@ export function AddEvent({
   const compact = quick === 'compact';
   // "Repeats weekly" (M12 §4.5): one event per date, each counting against the month.
   const [repeat, setRepeat] = useState<WeeklyRepeat | null>(null);
+  // Private (M11 §1): only the people you invite see it; it can't repeat. A free account has one
+  // a month (owner, 2026-11-04), and it counts against the month's events too.
+  const [isPrivate, setPrivate] = useState(false);
+  const privateUsage = me?.usage.private;
+  // Unknown (a server from before M11): the server's answer decides.
+  const privateLeft = privateUsage ? Math.max(0, privateUsage.limit - privateUsage.used) : null;
+  const canPrivate = !!me?.entitlements['private.create'] && !me?.privateBlocked;
   const { recurring } = submissions;
   const dates =
     repeat && form.start && repeat.until
@@ -582,7 +589,8 @@ export function AddEvent({
         body: {
           deviceId: deviceId(),
           regionId: region.id,
-          ...(repeat && { repeat }),
+          ...(repeat && !isPrivate && { repeat }),
+          ...(isPrivate && { private: true }),
           event: {
             title: form.title.trim(),
             categoryIds: form.categoryIds,
@@ -909,7 +917,50 @@ export function AddEvent({
           </div>
         )}
 
-        {!compact && (
+        {!compact && canPrivate && (
+          <fieldset className="field">
+            <legend className="field__label">{t('add.visibility')}</legend>
+            <div className="segmented segmented--2" role="radiogroup">
+              {([false, true] as const).map((priv) => (
+                <button
+                  key={String(priv)}
+                  type="button"
+                  role="radio"
+                  aria-checked={isPrivate === priv}
+                  className={isPrivate === priv ? 'is-active' : ''}
+                  disabled={priv && privateLeft === 0}
+                  onClick={() => {
+                    setPrivate(priv);
+                    if (priv) setRepeat(null);
+                  }}
+                >
+                  {priv && <Icon name="lock" size={14} />} {t(priv ? 'add.private' : 'add.public')}
+                </button>
+              ))}
+            </div>
+            <p className="field__hint">
+              {privateLeft === 0
+                ? t('add.privateOut')
+                : isPrivate || privateLeft === null
+                  ? t('add.privateHint')
+                  : t('add.privateLeft', { count: privateLeft })}
+              {privateLeft === 0 && me?.plan !== 'premium' && (
+                <>
+                  {' '}
+                  <button
+                    type="button"
+                    className="inline-link"
+                    onClick={() => setPremiumOpen(true)}
+                  >
+                    {t('add.more')}
+                  </button>
+                </>
+              )}
+            </p>
+          </fieldset>
+        )}
+
+        {!compact && !isPrivate && (
           <fieldset className="field">
             <legend className="field__label">{t('add.repeat')}</legend>
             <div className="segmented segmented--2" role="radiogroup">

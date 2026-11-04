@@ -20,6 +20,10 @@ import { useReminders } from '../reminders';
 import { countEvent } from '../counts';
 import type { Credit } from '../data/repository';
 import { levelKey } from '../contributions';
+import { isPrivate } from '../private';
+import { FriendsLine } from './FriendsLine';
+import { OrganiserPanel } from './OrganiserPanel';
+import { PrivatePanel } from './PrivatePanel';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
 
@@ -40,6 +44,10 @@ interface Props {
   loadNearby: (at: LatLng, signal: AbortSignal) => Promise<NearbyEvent[]>;
   /** Opens another event's card in place of this one. */
   onOpenEvent: (id: string) => void;
+  /** Where distances count from (private events read with it, M11). */
+  center?: LatLng | null;
+  /** An edit or an answer changed the event: read it again (M11 §3, §8). */
+  onChanged?: () => void;
 }
 
 /** Wall-clock midnight to midnight: a day-long listing (exhibitions, fairs). */
@@ -66,6 +74,8 @@ export function EventDetail({
   loadCredit,
   loadNearby,
   onOpenEvent,
+  center = null,
+  onChanged = () => {},
 }: Props) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
@@ -113,6 +123,9 @@ export function EventDetail({
           loadCredit={loadCredit}
           loadNearby={loadNearby}
           onOpenEvent={onOpenEvent}
+          center={center}
+          onChanged={onChanged}
+          onClose={onClose}
         />
       ) : (
         <p className="detail__empty" id="detail-title" aria-live="polite">
@@ -133,6 +146,9 @@ function DetailBody({
   loadCredit,
   loadNearby,
   onOpenEvent,
+  center,
+  onChanged,
+  onClose,
 }: {
   ev: NearbyEvent;
   now: Date;
@@ -143,8 +159,12 @@ function DetailBody({
   loadCredit: Props['loadCredit'];
   loadNearby: Props['loadNearby'];
   onOpenEvent: Props['onOpenEvent'];
+  center: LatLng | null;
+  onChanged: () => void;
+  onClose: () => void;
 }) {
   const { t, lang } = useI18n();
+  const priv = isPrivate(ev);
   const credit = useCredit(ev, loadCredit);
   const { running, price, distance, walk, categories } = useEventText(ev, now);
   const [toast, setToast] = useState<string | null>(null);
@@ -190,6 +210,7 @@ function DetailBody({
         </div>
         <h1 id="detail-title">{ev.title}</h1>
         <InstallHint />
+        {priv && <PrivatePanel ev={ev} center={center} onToast={setToast} onGone={onClose} />}
 
         {ended && <p className="status-banner status-banner--ended">{t('ended.banner')}</p>}
         <FlagNotice ev={ev} now={now} />
@@ -247,6 +268,7 @@ function DetailBody({
           <GoButtons ev={ev} onGo={onGo} />
         </div>
         {!ended && <Going ev={ev} now={now} />}
+        {!ended && <FriendsLine eventId={ev.id} />}
         <div className="event-card__actions event-card__actions--links">
           {ev.ticketUrl && (
             <a className="btn" href={ev.ticketUrl} target="_blank" rel="noreferrer">
@@ -264,10 +286,13 @@ function DetailBody({
             <Icon name="calendar" />
             {t('event.addToCalendar')}
           </button>
-          <button type="button" className="tool" onClick={() => setSharing(true)}>
-            <Icon name="share" />
-            {t('event.share')}
-          </button>
+          {/* A private event is never shared by link, QR or image (M11 §4). */}
+          {!priv && (
+            <button type="button" className="tool" onClick={() => setSharing(true)}>
+              <Icon name="share" />
+              {t('event.share')}
+            </button>
+          )}
           <button type="button" className="tool" aria-pressed={saved} onClick={onToggleSave}>
             <Icon name="bookmark" filled={saved} />
             {saved ? t('event.saved') : t('event.save')}
@@ -286,7 +311,8 @@ function DetailBody({
         </div>
         {reminding && <ReminderSheet ev={ev} onClose={() => setReminding(false)} />}
 
-        {ended && <NearbyNow ev={ev} now={now} load={loadNearby} onOpen={onOpenEvent} />}
+        <OrganiserPanel ev={ev} now={now} onToast={setToast} onChanged={onChanged} />
+        {ended && !priv && <NearbyNow ev={ev} now={now} load={loadNearby} onOpen={onOpenEvent} />}
         {ev.description && (
           <section className="detail__section">
             <h2>{t('event.about')}</h2>

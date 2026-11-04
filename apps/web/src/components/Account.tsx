@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useAccount } from '../account';
 import { errorText } from '../errors';
 import { useI18n } from '../i18n';
+import { ContactsSection } from './Contacts';
 import { ContributorSection } from './Contributor';
 import { FeedsSection } from './Feeds';
 import { Icon } from './Icons';
 import { planLastDay, PremiumMark } from './Premium';
 import { Sheet } from './Sheet';
+import { YourEventsSection } from './YourEvents';
 
 /**
  * The account card at the top of About (M8 §2, §4, `docs/design/account.html`): signed out, what
@@ -91,7 +93,9 @@ export function AccountCard({
           )}
         </div>
       </div>
+      <YourEventsSection onOpenEvent={onOpenEvent} />
       <ContributorSection onOpenEvent={onOpenEvent} onAddAgain={onAddAgain} />
+      <ContactsSection />
       <FeedsSection />
       <div className="account-card__actions">
         <button

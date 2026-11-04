@@ -3331,3 +3331,119 @@ button.account-card__plan {
 .reminder > .btn {
   flex: none;
 }
+
+/* M11: private events, friends, organisers (built from the card's existing pieces; no mockup). */
+.private-panel,
+.organiser,
+.friends-line {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+}
+.private-panel__head,
+.organiser__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.private-panel__answer,
+.organiser__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.friends-line p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+}
+.check--small {
+  margin-bottom: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.guests__actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+}
+.posts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.post {
+  padding: 10px 12px;
+  border: 0.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.post--important {
+  border: 1.5px solid var(--warn-ink);
+  background: var(--warn);
+  color: var(--warn-ink);
+}
+.post--schedule {
+  border-color: var(--ink);
+}
+.post__kind {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.post__body,
+.post__change {
+  margin: 4px 0;
+  font-size: 14px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.post__change {
+  font-weight: 600;
+}
+.post__meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.post--important .post__meta {
+  color: inherit;
+}
+.claim-code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.claim-code code {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--sunken);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+.my-events__open {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+}
+.mod-card__diff {
+  margin: 6px 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
