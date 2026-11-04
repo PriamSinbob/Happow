@@ -24,6 +24,7 @@ export function createRepository(): EventRepository {
     kind: 'static',
     near: async (q) => (await repo).near(q),
     byId: async (id, from) => (await repo).byId(id, from),
+    byIds: async (ids, from) => (await repo).byIds(ids, from),
     density: async (q) => (await repo).density(q),
     credit: async () => (await repo).credit(),
     districtGoal: async () => (await repo).districtGoal(),

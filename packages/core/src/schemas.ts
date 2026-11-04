@@ -369,6 +369,53 @@ export const appConfigSchema = z.object({
     /** The card offers "I'm here" within this distance of a live event (§6). */
     hereRadiusM: z.number().positive(),
   }),
+  /** Plan ahead (M10, docs/milestones/M10-plan-ahead.md). */
+  agenda: z.object({
+    /** The views the bookmark in the top row switches between; "all" is the map as usual (§1). */
+    views: z
+      .array(z.enum(['all', 'plans', 'saved', 'private']))
+      .min(2)
+      .refine((v) => v[0] === 'all' && new Set(v).size === v.length, {
+        message: 'views start with "all" and list each view once',
+      }),
+    /** Ended events stay under "Past" this long, then leave the list (§1). */
+    keepPastDays: z.number().int().min(1),
+    /** A removal is remembered this long, so an offline device doesn't bring it back (§2). */
+    keepRemovedDays: z.number().int().min(1),
+    /** Saved events per device or account; the oldest go first (§2). */
+    maxSaved: z.number().int().min(10).max(1000),
+    /** Saved events read by id in one request (§1). */
+    maxPerRead: z.number().int().min(1).max(500),
+    /** Walks between events are rounded up to this many minutes (§3). */
+    walkRoundMin: z.number().int().min(1).max(15),
+    /** The "leave at" stepper's step (§3). */
+    leaveStepMin: z.number().int().min(5).max(60),
+    /** Sync calls per account per hour (§2). */
+    syncPerHour: z.number().int().positive(),
+  }),
+  /** Web push (M10 §4). */
+  push: z.object({
+    /** The Worker secret holding the VAPID private key (a P-256 JWK; `pnpm push:keys`). */
+    secret: z.string().min(1),
+    /** How long a push service keeps an undelivered message. */
+    ttlSeconds: z.number().int().min(60).max(86_400),
+    subscribePerHourPerDevice: z.number().int().positive(),
+  }),
+  /** Reminders before a start (M10 §5). */
+  reminders: z.object({
+    /** The choices on the bell: minutes before the start, or "dayBefore" (the evening before). */
+    leads: z.array(z.union([z.string().regex(/^[0-9]{1,4}$/), z.literal('dayBefore')])).min(1),
+    /** Chosen until the person picks another (owner, 2026-11-04: 60 minutes). */
+    defaultLead: z.string(),
+    /** "The day before" fires at this local time. */
+    dayBeforeAt: z.string().regex(/^\d{2}:\d{2}$/),
+    maxPerDevice: z.number().int().positive(),
+    perHourPerDevice: z.number().int().positive(),
+    /** The Cron Trigger's interval: a reminder goes at the last tick before its time. */
+    cronMinutes: z.number().int().positive(),
+    /** Reminders sent in one tick at most; the rest go on the next. */
+    maxPerTick: z.number().int().positive(),
+  }),
   /** M12 metrics (docs/milestones/M12-more-events.md §1), in the default region's time zone. */
   metrics: z.object({
     /** "Tonight" runs from this hour to midnight. */

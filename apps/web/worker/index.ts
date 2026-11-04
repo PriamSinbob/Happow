@@ -9,7 +9,8 @@
  *
  * The Cron Trigger (`triggers.crons` in wrangler.jsonc) starts the GitHub ingest workflow when a
  * source is due (packages/api/src/schedule.ts, docs/SETUP.md), and on Mondays it saves the week's
- * M12 metrics row (packages/api/src/metrics.ts).
+ * M12 metrics row (packages/api/src/metrics.ts), and it sends the reminders due before the next tick
+ * (M10 §5, packages/api/src/reminders.ts). VAPID_PRIVATE_KEY signs those pushes.
  */
 import {
   createApi,
@@ -17,6 +18,7 @@ import {
   dispatchDueIngest,
   eventIdFromPath,
   saveWeeklyMetrics,
+  sendDueReminders,
   type ApiEnv,
   type ScheduleEnv,
 } from '@happow/api';
@@ -83,13 +85,21 @@ export default {
   async scheduled(controller: ScheduledController, env: ApiEnv & ScheduleEnv): Promise<void> {
     const now = new Date(controller.scheduledTime);
     // Independent jobs: one failing must not stop the other.
-    const [ingest, metrics] = await Promise.allSettled([
+    const [ingest, metrics, reminders] = await Promise.allSettled([
       dispatchDueIngest(env, now),
       saveWeeklyMetrics(env, now),
+      sendDueReminders(env, now),
     ]);
     const out = (r: PromiseSettledResult<object>) =>
       r.status === 'fulfilled' ? r.value : { error: String(r.reason) };
     // One line per tick in Observability → Logs: what was due and what happened.
-    console.log(JSON.stringify({ cron: controller.cron, ...out(ingest), metrics: out(metrics) }));
+    console.log(
+      JSON.stringify({
+        cron: controller.cron,
+        ...out(ingest),
+        metrics: out(metrics),
+        reminders: out(reminders),
+      }),
+    );
   },
 };

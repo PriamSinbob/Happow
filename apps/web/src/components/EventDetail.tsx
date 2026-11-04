@@ -15,6 +15,8 @@ import { hasRules, RuleList } from './EventCard';
 import { Glyph, Icon } from './Icons';
 import { glyphOf } from '../pins';
 import { ReportDialog } from './ReportDialog';
+import { ReminderSheet, useLeadLabel } from './ReminderSheet';
+import { useReminders } from '../reminders';
 import { countEvent } from '../counts';
 import type { Credit } from '../data/repository';
 import { levelKey } from '../contributions';
@@ -148,6 +150,9 @@ function DetailBody({
   const [toast, setToast] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [reminding, setReminding] = useState(false);
+  const reminder = useReminders()[ev.id] ?? null;
+  const leadLabel = useLeadLabel();
   const url = eventUrl(ev.id);
   const ended = new Date(ev.endAt) < now;
   const dayLong = isDayLong(ev);
@@ -267,7 +272,19 @@ function DetailBody({
             <Icon name="bookmark" filled={saved} />
             {saved ? t('event.saved') : t('event.save')}
           </button>
+          {saved && Date.parse(ev.startAt) > now.getTime() && (
+            <button
+              type="button"
+              className="tool"
+              aria-pressed={!!reminder}
+              onClick={() => setReminding(true)}
+            >
+              <Icon name="bell" filled={!!reminder} />
+              {reminder ? leadLabel(reminder) : t('reminder.bell')}
+            </button>
+          )}
         </div>
+        {reminding && <ReminderSheet ev={ev} onClose={() => setReminding(false)} />}
 
         {ended && <NearbyNow ev={ev} now={now} load={loadNearby} onOpen={onOpenEvent} />}
         {ev.description && (

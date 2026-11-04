@@ -19,6 +19,7 @@
     "districts": "tsx scripts/districts.ts",
     "metrics": "tsx scripts/metrics.ts",
     "venues:probe": "tsx scripts/venues-probe.ts",
+    "push:keys": "tsx scripts/push-keys.ts",
     "test:db": "vitest run --root scripts --no-file-parallelism",
     "ingest": "tsx packages/ingest/src/cli.ts",
     "deploy": "pnpm --filter @happow/web build && wrangler deploy"
