@@ -2,6 +2,7 @@ import {
   eventsFromJsonLd,
   extractJsonLd,
   findLinks,
+  findUrlsInText,
   htmlToText,
   nextDate,
   resolveInstant,
@@ -31,6 +32,8 @@ interface CrawlOptions {
   summaryListing: boolean;
   /** Occurrences further ahead than this are not stored (series can list a year of dates). */
   horizonDays: number;
+  /** Also follow matching URLs found in the page's text (links rendered from embedded JSON). */
+  followInText: boolean;
 }
 
 function options(ctx: AdapterContext): CrawlOptions {
@@ -46,6 +49,7 @@ function options(ctx: AdapterContext): CrawlOptions {
     llmFallback: o.llmFallback === true,
     summaryListing: o.summaryListing === true,
     horizonDays: typeof o.horizonDays === 'number' ? o.horizonDays : 60,
+    followInText: o.followInText === true,
   };
 }
 
@@ -105,7 +109,10 @@ export const crawler: SourceAdapter = {
       const links = opts.summaryListing
         ? listed.flatMap((e) => (e.url && opts.followPattern?.test(e.url) ? [e.url] : []))
         : opts.followPattern
-          ? findLinks(html, start, opts.followPattern)
+          ? [
+              ...findLinks(html, start, opts.followPattern),
+              ...(opts.followInText ? findUrlsInText(html, opts.followPattern) : []),
+            ]
           : [];
       if (!opts.summaryListing) await collect(start, listed);
       for (const link of links)

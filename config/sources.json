@@ -274,6 +274,40 @@
       "categoryMap": {}
     },
     {
+      "id": "meetup-pages",
+      "name": "Meetup (public group pages)",
+      "adapter": "crawler",
+      "regionIds": ["wroclaw"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": true,
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "PRIVATE TESTING ONLY (M7 §7). Meetup's ToS §5.4 forbids scraping for commercial purposes: switch this source off, or move to the Meetup API (Meetup Pro), before monetising. Starts from each listed group's /events/ page (event links are rendered from embedded JSON, hence followInText) and reads schema.org Event JSON-LD on each event page; no geo, so places are geocoded. Checked 2026-11-05: robots.txt allows group and event pages; search (?location=, ?distance=, keywords, …) and the atom/rss/xml event feeds are disallowed and never requested. Organisers (group hosts) are not stored. Store facts only and link back; no descriptions or images are republished. One request every 5 s.",
+      "options": {
+        "startUrls": [
+          "https://www.meetup.com/wroclaw-english-speakers-group/events/",
+          "https://www.meetup.com/meet-js-wroclaw/events/",
+          "https://www.meetup.com/wrocnet/events/",
+          "https://www.meetup.com/gdg-wroclaw/events/",
+          "https://www.meetup.com/aws-ug-wroclaw/events/",
+          "https://www.meetup.com/plssug/events/",
+          "https://www.meetup.com/tech-bytes-ocado-technology-wroclaw/events/",
+          "https://www.meetup.com/content-creators-coffee-wroclaw/events/",
+          "https://www.meetup.com/wroclaw-co-working-meetup-group/events/",
+          "https://www.meetup.com/wydarzenia_it/events/"
+        ],
+        "followPattern": "^https://www\\.meetup\\.com/[A-Za-z0-9_-]+/events/\\d+/$",
+        "followInText": true,
+        "maxFollow": 60,
+        "llmFallback": true
+      },
+      "defaultCategories": ["talk"],
+      "categoryMap": {}
+    },
+    {
       "id": "threads",
       "name": "Threads",
       "adapter": "threads",

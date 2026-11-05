@@ -106,6 +106,19 @@ export function pageMeta(html: string): PageMeta {
   };
 }
 
+/**
+ * Absolute https URLs anywhere in the page text matching `pattern`: for pages that render their
+ * links from embedded JSON (Meetup's group pages), where no `<a href>` exists yet.
+ */
+export function findUrlsInText(html: string, pattern: RegExp): string[] {
+  const out = new Set<string>();
+  for (const m of html.matchAll(/https:\/\/[^\s"'<>\\]+/g)) {
+    const s = m[0].replace(/[),.;]+$/, '');
+    if (pattern.test(s)) out.add(s);
+  }
+  return [...out];
+}
+
 /** Absolute http(s) links on the page whose URL matches `pattern`, without fragments, deduplicated. */
 export function findLinks(html: string, baseUrl: string, pattern: RegExp): string[] {
   const out = new Set<string>();

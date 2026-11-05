@@ -29,3 +29,8 @@ responses. Recorded pages hold real event times, so after re-recording, update t
   real formats: no Wrocław venue site checked so far publishes a feed, and Overpass refused
   this machine when the slice was written. The club, parish and museum are made up; the NFM
   entry uses the real address.
+
+Meetup public pages (M7 slice F): `packages/extract/test/fixtures/meetup-*.html` were recorded on
+2026-11-05 from a Wrocław group's `/events/` page and one of its event pages, then trimmed to the
+JSON-LD as served plus the event URLs from the embedded page data. Member names, photos and RSVPs
+are removed: the repository is public. `meetup-robots.txt` is unchanged.
