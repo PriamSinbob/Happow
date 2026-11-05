@@ -62,6 +62,7 @@ const INHERITED = [
   'eventAttendanceMode',
   'eventStatus',
   'organizer',
+  'performer',
 ] as const;
 
 /** All nodes in a JSON-LD document: arrays, @graph, ItemList elements and nested values. */
@@ -198,6 +199,19 @@ function entry(doorTime: unknown, start: string): ExtractedEvent['entry'] {
   return d && st && d < st ? 'fixed' : null;
 }
 
+/**
+ * Names from `performer` (and the older `performers`): a Person, PerformingGroup, MusicGroup or
+ * any node with a name, a plain string, or an array of them.
+ */
+function performers(node: Node): string[] {
+  const out: string[] = [];
+  for (const p of [...asArray(node.performer as unknown), ...asArray(node.performers as unknown)]) {
+    const name = typeof p === 'string' ? text(p) : isNode(p) ? text(p.name) : null;
+    if (name && name.length <= 120 && !out.includes(name)) out.push(name);
+  }
+  return out;
+}
+
 /** schema.org Events in a page's JSON-LD, mapped to the common extraction shape. */
 export function eventsFromJsonLd(docs: unknown[], pageUrl: string): ExtractedEvent[] {
   const out: ExtractedEvent[] = [];
@@ -234,6 +248,7 @@ export function eventsFromJsonLd(docs: unknown[], pageUrl: string): ExtractedEve
         (loc.virtual && mode !== 'mixedeventattendancemode'),
       categoryHints: ts.filter((t) => t !== 'event'),
       categoryIds: [],
+      performers: performers(node),
       method: 'jsonld',
       // Published structured data: trust the facts, but the place still has to be geocoded.
       confidence: 0.9,

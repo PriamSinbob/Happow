@@ -56,6 +56,8 @@ export interface Row {
   primary_source_id?: string | null;
   source_url?: string | null;
   distance_m: number | null;
+  /** Names only in the area snapshot (≤ 5), names and Ticketmaster ids elsewhere (M7 §1). */
+  performers?: (string | { name: string; externalId?: string | null })[] | null;
 }
 
 const num = (v: number | string | null) => (v === null ? null : Number(v));
@@ -134,6 +136,13 @@ export function rowToEvent(r: Row): NearbyEvent {
         ? { reason: r.flag_reason, count: r.flag_count ?? 0, at: r.flag_at }
         : null,
     distanceM: r.distance_m ?? 0,
+    performers: (r.performers ?? []).map((p) =>
+      typeof p === 'string'
+        ? { name: p }
+        : p.externalId
+          ? { name: p.name, externalId: p.externalId }
+          : { name: p.name },
+    ),
   };
 }
 

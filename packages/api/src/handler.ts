@@ -12,6 +12,7 @@ import {
   loadConfig,
   quota,
   shiftWall,
+  splitPerformers,
   usageMonth,
   wallMinutes,
   weeklyStarts,
@@ -118,6 +119,8 @@ const submissionSchema = z.object({
     family: z.boolean().nullable().optional(),
     /** Sent only when the user changes it; otherwise the category default applies. */
     entry: entrySchema.nullable().optional(),
+    /** "Who's performing" (M7 §1): names separated by commas or new lines. */
+    performers: z.string().trim().max(1000).nullable().optional(),
   }),
   /** Only invitees see it (M11 §1); needs `private.create`, and it can't repeat. */
   private: z.boolean().optional(),
@@ -168,6 +171,8 @@ export interface Prefill {
   ageMin: number | null;
   family: boolean | null;
   entry: 'fixed' | 'open' | null;
+  /** Names as printed, one per line in the form. */
+  performers: string[];
 }
 
 export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
@@ -357,6 +362,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       ageMin: e.ageMin ?? null,
       family: e.family ?? null,
       entry: e.entry ?? null,
+      performers: e.performers ?? [],
     };
   }
 
@@ -645,6 +651,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
           ticketUrl: null,
           imageUrl: null,
           status: 'scheduled',
+          performers: splitPerformers(e.performers ?? ''),
         },
         {
           source: submissionsSource,

@@ -155,4 +155,16 @@ describe('Ticketmaster adapter (contract, recorded fixtures)', () => {
     });
     expect(summary).toMatchObject({ status: 'skipped', reason: 'missing TICKETMASTER_API_KEY' });
   });
+
+  it('reads attractions as performers, with the attraction id (M7 §1)', async () => {
+    const { raws } = await fetchAll();
+    expect(normalized('Z698xZb_Z17a0kA', raws).performers).toEqual([
+      { name: 'Dawid Podsiadło', externalId: 'K8vZ9175Tr0' },
+    ]);
+    expect(normalized('Z698xZb_Z17a0kB', raws).performers?.map((p) => p.name)).toEqual([
+      'Mayday',
+      'Kult',
+    ]);
+    expect(normalized('Z698xZb_Z17a0kC', raws).performers).toEqual([]);
+  });
 });

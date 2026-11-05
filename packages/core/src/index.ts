@@ -23,3 +23,4 @@ export * from './recurrence.js';
 export * from './seasons.js';
 export * from './attendance.js';
 export * from './agenda.js';
+export * from './performers.js';

@@ -1,4 +1,4 @@
-import type { HappowEvent, Source, Trust } from '@happow/core';
+import { mergePerformers, type HappowEvent, type Source, type Trust } from '@happow/core';
 
 export interface DedupConfig {
   startToleranceMin: number;
@@ -142,6 +142,8 @@ export function mergeEvents(primary: HappowEvent, other: HappowEvent): HappowEve
     endEstimated: takeOtherEnd ? false : primary.endEstimated,
     trust: rankTrust(primary.trust) >= rankTrust(other.trust) ? primary.trust : other.trust,
     lastSeenAt: primary.lastSeenAt > other.lastSeenAt ? primary.lastSeenAt : other.lastSeenAt,
+    // Every listing's performers, keyed by name; an external id wins over a bare name.
+    performers: mergePerformers(primary.performers, other.performers),
   };
 }
 

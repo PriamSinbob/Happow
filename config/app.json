@@ -98,7 +98,7 @@
   "ingest": {
     "descriptionMaxChars": 600,
     "lookbackHours": 8,
-    "lookaheadHours": 360,
+    "lookaheadHours": 1440,
     "userAgent": "Happow/0.4 (+https://happow.krasnoroda.workers.dev/crawler)",
     "missedRunsToFlag": 2,
     "dispatch": {

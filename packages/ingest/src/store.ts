@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type pg from 'pg';
-import type { HappowConfig, HappowEvent } from '@happow/core';
+import { mergePerformers, type HappowConfig, type HappowEvent } from '@happow/core';
 import type { ExtractedEvent, GeoResult, KeyValueCache } from '@happow/extract';
 import { decide, type DedupConfig, type Listing, type StoredEvent } from './dedup.js';
 import { h3Neighbourhood } from './geo.js';
@@ -37,7 +37,9 @@ const EVENT_COLUMNS = `
   st_y(e.point::geometry) as lat, st_x(e.point::geometry) as lng, e.h3_r9, e.price_min,
   e.price_max, e.currency, e.is_free, e.rules, e.official_url, e.ticket_url, e.image_url,
   e.status, e.trust, e.confidence, e.last_seen_at, e.primary_source_id, e.primary_external_id,
-  e.entry, e.grace_min, e.age_min, e.family`;
+  e.entry, e.grace_min, e.age_min, e.family,
+  (select coalesce(jsonb_agg(jsonb_build_object('name', p.name, 'externalId', p.external_id)
+     order by p.ord), '[]'::jsonb) from event_performers p where p.event_id = e.id) as performers`;
 
 interface EventRow {
   id: string;
@@ -72,6 +74,7 @@ interface EventRow {
   grace_min: number | null;
   age_min: number | null;
   family: boolean | null;
+  performers: { name: string; externalId: string | null }[] | null;
 }
 
 function toStored(r: EventRow): StoredEvent {
@@ -109,6 +112,9 @@ function toStored(r: EventRow): StoredEvent {
       trust: r.trust,
       confidence: r.confidence,
       lastSeenAt: r.last_seen_at.toISOString(),
+      performers: (r.performers ?? []).map((p) =>
+        p.externalId ? { name: p.name, externalId: p.externalId } : { name: p.name },
+      ),
     },
   };
 }
@@ -494,6 +500,7 @@ export class EventStore {
            $32, $33)`,
         [...values, staleAfter ?? null],
       );
+      await this.writePerformers(e, owner.sourceId);
       return;
     }
     await this.db.query(
@@ -508,6 +515,21 @@ export class EventStore {
          stale_after = case when $33::boolean then $34::timestamptz else stale_after end
        where id = $1`,
       [...values, staleAfter !== undefined, staleAfter ?? null],
+    );
+    await this.writePerformers(e, owner.sourceId);
+  }
+
+  /** The event's performers as merged (M7 §1): the stored list is replaced by the union. */
+  private async writePerformers(e: HappowEvent, sourceId: string) {
+    const list = mergePerformers(e.performers);
+    await this.db.query('delete from event_performers where event_id = $1', [e.id]);
+    if (!list.length) return;
+    await this.db.query(
+      `insert into event_performers (event_id, ord, name, norm, source_id, external_id)
+       select $1, ord::smallint - 1, name, f_norm(name), $2, nullif(ext, '')
+       from unnest($3::text[], $4::text[]) with ordinality as t(name, ext, ord)
+       on conflict (event_id, norm) do nothing`,
+      [e.id, sourceId, list.map((p) => p.name), list.map((p) => p.externalId ?? '')],
     );
   }
 }

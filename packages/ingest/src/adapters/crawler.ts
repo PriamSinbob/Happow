@@ -200,6 +200,7 @@ export const crawler: SourceAdapter = {
         city: e.address.city,
       },
       confidence: e.confidence,
+      performers: (e.performers ?? []).map((name) => ({ name })),
     };
   },
 };

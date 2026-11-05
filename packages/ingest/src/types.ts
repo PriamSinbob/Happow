@@ -69,6 +69,10 @@ export const parsedEventSchema = z.object({
       city: z.string().nullable(),
     })
     .optional(),
+  /** Who performs, as the source names them (M7 §1). */
+  performers: z
+    .array(z.object({ name: z.string().min(1), externalId: z.string().nullable().optional() }))
+    .optional(),
   /** 0–1; defaults to 1 for API sources. */
   confidence: z.number().min(0).max(1).optional(),
 });

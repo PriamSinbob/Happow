@@ -1,5 +1,6 @@
 import {
   isInBbox,
+  mergePerformers,
   resolveEnd,
   type Category,
   type HappowEvent,
@@ -104,6 +105,7 @@ export function normalize(p: ParsedEvent, ctx: NormalizeContext): NormalizeResul
     trust: ctx.source.trustLevel,
     confidence: p.confidence ?? 1,
     lastSeenAt: nowIso,
+    performers: mergePerformers(p.performers),
   };
   const staleAfter = ctx.source.maxCacheAgeHours
     ? new Date(ctx.now.getTime() + ctx.source.maxCacheAgeHours * 3_600_000).toISOString()

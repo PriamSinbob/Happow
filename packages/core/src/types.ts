@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { Performer } from './performers.js';
 import type {
   appConfigSchema,
   categorySchema,
@@ -88,6 +89,8 @@ export interface HappowEvent {
   verified?: boolean;
   /** Open community reports that the event is off or changed, not yet confirmed by a moderator. */
   flag?: EventFlag | null;
+  /** Who performs (M7 §1); the area snapshot carries at most 5 names, without ids. */
+  performers?: Performer[];
 }
 
 /** Report reasons that say an event is off or changed; shown to everyone as a warning. */

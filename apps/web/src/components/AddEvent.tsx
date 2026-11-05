@@ -46,6 +46,8 @@ interface Prefill {
   ageMin: number | null;
   family: boolean | null;
   entry: EntryType | null;
+  /** Older servers leave it out. */
+  performers?: string[];
 }
 
 interface Form {
@@ -66,6 +68,8 @@ interface Form {
   family: boolean;
   /** Null until the user picks one: the category default applies. */
   entry: EntryType | null;
+  /** "Who's performing" (M7 §1), one name per line or comma-separated. */
+  performers: string;
   terms: boolean;
 }
 
@@ -85,6 +89,7 @@ const EMPTY: Form = {
   ageMin: null,
   family: false,
   entry: null,
+  performers: '',
   terms: false,
 };
 
@@ -105,6 +110,7 @@ interface SentForm {
   ageMin?: number | null;
   family?: boolean | null;
   entry?: EntryType | null;
+  performers?: string | null;
 }
 
 /** Everything but the date and time, which the new event needs its own of. */
@@ -124,6 +130,7 @@ function copyOf(s: SentForm): Form {
     ageMin: s.ageMin ?? null,
     family: s.family === true,
     entry: s.entry ?? null,
+    performers: s.performers ?? '',
   };
 }
 
@@ -543,6 +550,7 @@ export function AddEvent({
       ageMin: p.ageMin,
       family: p.family === true,
       entry: p.entry,
+      performers: (p.performers ?? []).join('\n'),
     }));
     if (!p.point && (p.address || p.venueName)) void locate(p.address || p.venueName!);
   }
@@ -607,6 +615,7 @@ export function AddEvent({
             ageMin: form.ageMin,
             family: form.family || null,
             entry,
+            performers: form.performers.trim() || null,
           },
         },
       });
@@ -1180,6 +1189,16 @@ export function AddEvent({
                 maxLength={submissions.maxDescriptionChars}
                 value={form.description}
                 onChange={(e) => set('description', e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span className="field__label">{t('add.field.performers')}</span>
+              <textarea
+                rows={2}
+                maxLength={1000}
+                placeholder={t('add.field.performersHint')}
+                value={form.performers}
+                onChange={(e) => set('performers', e.target.value)}
               />
             </label>
           </>

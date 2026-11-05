@@ -199,6 +199,8 @@ export const pl: Record<MessageKey, string> = {
     'O stałej godzinie: trzeba być na początek (spektakl, koncert). W dowolnej chwili: można wpaść w trakcie (targi, impreza klubowa).',
   'add.field.url': 'Strona lub bilety (opcjonalnie)',
   'add.field.description': 'Krótki opis (opcjonalnie)',
+  'add.field.performers': 'Kto występuje (opcjonalnie)',
+  'add.field.performersHint': 'Jedno nazwisko w wierszu albo po przecinku',
   'add.termsBefore': 'Akceptuję',
   'add.termsLink': 'regulamin',
   'add.notice':

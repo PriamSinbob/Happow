@@ -190,6 +190,8 @@ export const en = {
     'Fixed start: be there when it begins (a play, a concert). Come and go: drop in any time while it runs (a fair, a club night).',
   'add.field.url': 'Website or tickets (optional)',
   'add.field.description': 'Short description (optional)',
+  'add.field.performers': "Who's performing (optional)",
+  'add.field.performersHint': 'One name per line, or separated by commas',
   'add.termsBefore': 'I accept the',
   'add.termsLink': 'terms of use',
   'add.notice': 'New events appear as "Community · Unverified" until a moderator checks them.',
