@@ -6,6 +6,8 @@ What only the owner can do before a public launch (M13 §7). `pnpm launch:check`
 
 ## 1. Domain and email
 
+_Not decided yet (owner, 2026-11-05): the name and domain wait, and with them the contact address, the email sender and codes sent by the app._
+
 1. **Register the domain.** happow.app at Cloudflare Registrar (and happow.pl at a Polish registrar), after the trademark search in the brief's open questions.
 2. **Point it at the Worker.** Cloudflare → the `happow` Worker → **Settings → Domains & Routes → + Add → Custom domain** → `happow.app`.
 3. **A contact address.** Cloudflare → the domain → **Email → Email Routing**: forward `kontakt@happow.app` (or similar) to your mailbox.
@@ -19,6 +21,8 @@ What only the owner can do before a public launch (M13 §7). `pnpm launch:check`
 
 ## 2. The operator and the legal texts
 
+_Owner, 2026-11-05: the owner is personally responsible for Happow, possibly under their business details; the address will be on the future domain. Filled in with the domain._
+
 1. **`legal.operator` and `legal.address`** in `config/app.json`: the person or company that runs Happow, as it should appear in the terms and privacy policy (the controller under GDPR).
 2. **Review the drafts** in `docs/legal/` (Polish and English): ideally with a lawyer. They are built for a free service run from Poland with Supabase, Cloudflare and Anthropic as processors.
 3. **Set the final `legal.termsVersion`** (a date such as `2027-01-15`). Everyone with an account accepts once more on their next visit.
@@ -27,13 +31,13 @@ What only the owner can do before a public launch (M13 §7). `pnpm launch:check`
 
 `launch:check` lists every source with a `beforeLaunch` note while it is on. For each: get the consent and record it in `termsNotes` (then delete `beforeLaunch`), or set `enabled: false`.
 
-| Source        | Before launch                                                    |
-| ------------- | ---------------------------------------------------------------- |
-| eBilet        | Written consent or a partner feed (email them).                  |
-| wroclaw.pl/go | ARAW: consent or a feed.                                         |
-| Biletyna      | Read the full terms (biletyna.pl/static/regulamin), or ask them. |
-| Meetup pages  | Switch off, or move to the Meetup API (Meetup Pro). ToS §5.4.    |
-| NFM           | A courtesy email (not blocking).                                 |
+| Source        | Before launch (decided by the owner, 2026-11-05)                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| eBilet        | Kept on; the owner emails eBilet for written consent or a feed before launch. Small yield, but events found nowhere else.            |
+| wroclaw.pl/go | Kept on; the owner contacts ARAW. Their terms forbid reuse without written consent, so without it the source goes off before launch. |
+| Biletyna      | Cleared: the full terms (28 Aug 2026) don't restrict visitors. No longer a blocker.                                                  |
+| Meetup pages  | Kept until the PoC closes; then off, or the Meetup API (Meetup Pro). ToS §5.4.                                                       |
+| NFM           | A courtesy email (not blocking).                                                                                                     |
 
 ## 4. Cloudflare and Supabase
 
