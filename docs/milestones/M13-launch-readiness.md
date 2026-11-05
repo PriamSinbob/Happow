@@ -90,7 +90,7 @@ Closed in code:
 - **Coverage** counts per district once and splits by category from that.
 - **District goal** is cached at the edge per district and weekend.
 - **Previews never run the cron:** a test checks `wrangler.jsonc` has no `triggers` under `previews`.
-- **Sign-in code limits:** kept at 5 per hour per network and 3 per day per address; staff get no bypass (an admin can still generate a code from the panel). Documented as decided, pending the owner's word.
+- **Sign-in code limits:** 10 per hour per network and 20 per day per address (owner, 2026-11-05); staff get no bypass (an admin can still generate a code from the panel).
 - **Preview image fonts:** subset to Latin and Polish, which cuts about half a megabyte from the Worker.
 
 Left to the owner (in §7): previews' own database, Supabase redirect URLs, Workers Paid (reminders per tick, preview images), Biletyna's full terms, measuring the daily ingest run.

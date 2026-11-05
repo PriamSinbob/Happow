@@ -33,7 +33,6 @@ M13 has one goal: **everything the code can do for a public launch is done, and 
 
 1. **Apply migration 28** (Actions → Database migrate + seed), with migration 27 from M7.
 2. **Work through [docs/LAUNCH.md](../LAUNCH.md)**: the domain and contact address, the email sender, Supabase redirect URLs, the operator's name and address, a review of the legal drafts, the four sources with a `beforeLaunch` note, previews' own database, and Workers Paid when traffic needs it. `pnpm launch:check` shows what's left; today it lists 11 blockers, all of them settings or decisions.
-3. **Confirm** the sign-in code limits stay at 5 per hour per network and 3 per day per address, with no staff bypass.
 
 ## Not built, on purpose
 

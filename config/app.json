@@ -323,8 +323,8 @@
   "auth": {
     "emailDelivery": "manual",
     "providers": [],
-    "codeRequestsPerHourPerClient": 5,
-    "codeRequestsPerDayPerEmail": 3,
+    "codeRequestsPerHourPerClient": 10,
+    "codeRequestsPerDayPerEmail": 20,
     "codeRequestRetentionDays": 7,
     "codeValidHours": 24,
     "userCacheSec": 300,

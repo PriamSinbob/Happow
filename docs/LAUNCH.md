@@ -39,7 +39,7 @@ What only the owner can do before a public launch (M13 §7). `pnpm launch:check`
 
 1. **Previews' own database** (HARDENING): create a second Supabase project for previews, and in the Worker → **Settings → Variables and Secrets → Previews**, set its URL and service-role key instead of production's.
 2. **Workers Paid** ($5/month) when reminders, follow alerts or link previews are used widely: then raise `reminders.maxPerTick` and `notices.maxPerTick` to 200 and `follows.alerts.maxPerTick` to 50 (HARDENING: Free-plan CPU).
-3. **Sign-in code limits:** 5 requests per hour per network and 3 per day per address stay (M13 §6). Stop clearing `rate_limits` by hand.
+3. **Sign-in code limits:** 10 requests per hour per network and 20 per day per address (owner, 2026-11-05). Stop clearing `rate_limits` by hand.
 
 ## 5. Last
 
