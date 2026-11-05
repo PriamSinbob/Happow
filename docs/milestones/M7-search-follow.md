@@ -4,7 +4,7 @@ Oct 22, 2026
 
 Spec agreed with the owner on 2026-10-22, to be built after M6 (it uses M6's list overlay, icon set and pin badges). Moved by the owner on 2026-10-24: built after M12, just before M13, as the hyper-local milestones 8–12 matter more. It then builds on M8's accounts. Build it in the usual way: plan, show the plan, build, then replace the "Status" line with the report.
 
-**Status:** spec, not built. Build plan below (2026-10-24); each slice's detailed plan goes to the owner before building.
+**Status:** built on 2026-11-05, all slices in one go on one branch (owner: "plan and execute both milestones with all slices at once", with M13). Each slice has a "Built" note below. Waiting for merge, "Migrate database" (migration 27) and the Worker secret `TICKETMASTER_API_KEY`. Open for the owner: the two new icons (♡ and ★) and the points in [M7-summary.md](M7-summary.md).
 
 ## Build plan
 
@@ -12,17 +12,17 @@ Written on 2026-10-24. As in M6, M7 ships as slices, one branch and one PR to `m
 
 The PWA is built feature-complete before the native rewrite, the last milestone (brief, 2026-10-24). So every slice is built in full, UI included, and the web UI becomes the reference for the native app. The server side (tables, RPCs, `/api/search`, `/api/follows/match`) stays as it is, so it is shaped for a native client to use unchanged. Speed is not tested on the web build.
 
-| Slice | Spec           | What                                                                    | Needs | Status  |
-| ----- | -------------- | ----------------------------------------------------------------------- | ----- | ------- |
-| A     | §1, §3         | Performers in the data from every source; 60-day ingest for API sources | —     | planned |
-| B     | §2 API, §9     | `f_unaccent`, trigram indexes, `search_events` RPC, `GET /api/search`   | A     | planned |
-| C     | §2 UI, §4 chip | Mockup first; search in the list overlay, performer chips on the card   | B     | planned |
-| D     | §4             | Follows on the device, `POST /api/follows/match`, ★ on pins and cards   | B, C  | planned |
-| E     | §4 nationwide  | Ticketmaster nationwide lookups, `follow_lookups` cache, city in list   | D     | planned |
-| F     | §7             | Meetup public pages through the crawler (config + fixtures)             | —     | planned |
-| G     | §5             | Follows synced per account; new-date alerts (web push, email)           | D, M8 | planned |
-| H     | §4.1           | "My plans" filter: one tap shows only saved events and invitations      | —     | planned |
-| —     | §6             | Last.fm import dropped                                                  | —     | dropped |
+| Slice | Spec           | What                                                                    | Needs | Status      |
+| ----- | -------------- | ----------------------------------------------------------------------- | ----- | ----------- |
+| A     | §1, §3         | Performers in the data from every source; 60-day ingest for API sources | —     | built       |
+| B     | §2 API, §9     | `f_unaccent`, trigram indexes, `search_events` RPC, `GET /api/search`   | A     | built       |
+| C     | §2 UI, §4 chip | Mockup first; search in the list overlay, performer chips on the card   | B     | built       |
+| D     | §4             | Follows on the device, `POST /api/follows/match`, ★ on pins and cards   | B, C  | built       |
+| E     | §4 nationwide  | Ticketmaster nationwide lookups, `follow_lookups` cache, city in list   | D     | built       |
+| F     | §7             | Meetup public pages through the crawler (config + fixtures)             | —     | built       |
+| G     | §5             | Follows synced per account; new-date alerts (web push, email)           | D, M8 | built       |
+| H     | §4.1           | "My plans" filter: one tap shows only saved events and invitations      | —     | built (M10) |
+| —     | §6             | Last.fm import dropped                                                  | —     | dropped     |
 
 ### Slice A: performers and horizon
 
@@ -70,6 +70,17 @@ The PWA is built feature-complete before the native rewrite, the last milestone 
 - A `meetup-pages` crawler source in `config/sources.json`: `startUrls` are each listed group's `/events/` page, following event pages only, with JSON-LD read and the LLM fallback. robots.txt is respected (search and feed URLs stay blocked). It is marked private testing only (ToS §5.4) and switched off before monetising.
 - Check on the first run that JSON-LD is present, then record a fixture for the contract test.
 - Independent of A–E, so it can go at any point.
+
+### Built (2026-11-05)
+
+- **Slice A.** Migration 27 adds `event_performers` (with `ord` for the source's order) and `publish_event` writes performers from submissions. `normName` and `mergePerformers` in core (≤ 30 per event, external id wins); the SQL `f_norm` matches `normName` (DB test). Ticketmaster reads `_embedded.attractions` with ids, schema.org reads `performer`/`performers` in every shape, the Claude extractor has a `performers` field and prompt rule (organisers, venues and Meetup hosts left out), the add form has "Kto występuje / Who's performing". Merges keep the union. The area snapshot carries ≤ 5 names; `event_by_id` and `events_by_ids` carry names and ids. `ingest.lookaheadHours` is 1440. Skipped: re-recorded Ticketmaster fixtures (the attractions were added to the illustrative fixture by hand, like the rest of it; re-record once a key is set up).
+- **Slice B.** `pg_trgm` and `unaccent`, immutable `f_unaccent` and `f_norm`, `events.search_text` (title + venue, kept by triggers on events and venues, since a generated column can't read the venue), GIN trigram indexes, and `search_events` (exact performer, similar performer, title/venue; similarity and word similarity, thresholds in `search`). `GET /api/search` (2–80 characters, per-client hourly limit, 60 s cache, nothing logged). The DB test covers the §10 cases including two typos, ranking, ended and private events, and checks with `explain` on 20,000 synthetic names that the trigram indexes serve (on a handful of rows the planner rightly scans).
+- **Slice C.** No mockup first: since M12 slice D new screens follow the existing ones (owner, 2026-10-28) and the design-review subagent is paused. A magnifier above locate and list opens the list with the search field focused. Results are grouped by day, with distance and the city; typing is debounced (300 ms) and a newer query cancels the older. A tap on a result in the snapshot returns to the map with its card and flies there; otherwise it opens the event page. Performer chips with ♡ on the card and the event page. Plausible gets "Search" without the text.
+- **Slice D.** Follows on the device (`follows.ts`: ≤ 200, tombstones for sync, never throws), the Followed screen from the ♡ beside the search field (type, paste a list, remove), `POST /api/follows/match` (validated, rate-limited, no writes: the test fails on any table access), asked on open and at most hourly, the answer kept for the hour across reloads. ★ on pins (a sprite at the upper left, like the lock), cards and the event page; "Followed" tops the list.
+- **Slice E.** `follow_lookups` (attraction id, time, events; no user link). Lookups older than 24 h are refreshed with one Discovery call each (`attractionId`, `countryCode=PL`), at most 10 per request and `follows.nationwide.perDay` (1,000) a day for everyone. Dates inside the region are left to ingestion; others show in Followed with the city and a link to Ticketmaster, never on the map. Contract test on a recorded-shape response.
+- **Slice F.** `meetup-pages` crawler source over ten Wrocław groups found on Meetup's city page. Group pages render their event links from embedded JSON, so the crawler gained `followInText`. Checked on 2026-11-05: event pages carry JSON-LD `Event` (no geo: geocoded); robots.txt allows them and the source asks for nothing it disallows. Fixtures are trimmed recordings (member data removed, the repository is public). Marked "PRIVATE TESTING ONLY" in `termsNotes`.
+- **Slice G.** `account_follows` (last writer wins, tombstones 60 days, cap), `follow_settings`, `follow_alerts`. `POST /api/me/follows` (premium `follows.sync`, a new entitlement) and `GET/PUT /api/me/follows/alerts` (premium `alerts.newDates`; switching off is always allowed). The Worker's cron queues alerts for public events first stored after both the follow and the switch-on, and sends ≤ 3 per tick by web push to the account's devices. Export includes follows, the alert setting and sent alerts; deletion cascades with the user. Email waits for the app's sender (M13).
+- **Slice H.** Built in M10 as the "My plans" view (`agenda.views`), as §4.1 says. Nothing more in M7.
 
 ### Alerts and dropped
 

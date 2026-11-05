@@ -31,3 +31,4 @@ Write to the contact address on the app's [About page](https://happow.krasnoroda
 | biletyna.pl          | Daily, listing page only                                                          |
 | biblioteka.wroc.pl   | Daily, about 30 event pages                                                       |
 | uwr.edu.pl           | Daily, about 20 event pages                                                       |
+| meetup.com           | Daily, listed Wrocław groups' event pages only, during private testing            |

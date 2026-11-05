@@ -164,6 +164,8 @@ Sources whose GitHub secrets are missing are recorded as skipped and not retried
 | `ANTHROPIC_API_KEY`                | Anthropic Console (2.4)          | ingest (NFM crawl) |
 | `TICKETMASTER_API_KEY`, `MEETUP_*` | optional, see README             | ingest             |
 
+The Worker also needs `TICKETMASTER_API_KEY` (Settings → Variables and Secrets, the same key) for followed artists' dates in other Polish cities (M7 §4). Without it, follows still match the region's events.
+
 **Ingest** is started by the Worker's Cron Trigger whenever a source is due (**5a**), with a fallback schedule once a day. Each source decides whether it is due, so a run fetches only those. To run everything now: **Actions → Ingest sources → Run workflow** with **force** ticked.
 
 ## 7. Check that it works
