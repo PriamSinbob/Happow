@@ -165,7 +165,7 @@ Ruled out: featured or sponsored pins, paid ranking, banner ads, selling locatio
 
 ## Milestones and build-agent instructions
 
-Build in increments, each deployable and demoable on a phone in Wrocław. Build order: 1–6 and 8 (done), 12, 9, 10, 11, 7, 13, then the native app. M7 keeps its number but comes after M11 (owner, 2026-10-24). M12 moved up to come right after M8 (owner, 2026-10-26): more events on the map, and people adding them in the app, matter most now. Changed by the owner on 2026-10-24: the PWA is built feature-complete, so the native rewrite can focus on rewriting, with no feature discussions. Every feature below is decided; the native milestone comes last and has no number.
+Build in increments, each deployable and demoable on a phone in Wrocław. Build order: 1–6 and 8 (done), 12, 9, 10, 11, 7, 13 (built; M7 and M13 on 2026-11-05, in one go at the owner's request), then the native app. M7 keeps its number but comes after M11 (owner, 2026-10-24). M12 moved up to come right after M8 (owner, 2026-10-26): more events on the map, and people adding them in the app, matter most now. Changed by the owner on 2026-10-24: the PWA is built feature-complete, so the native rewrite can focus on rewriting, with no feature discussions. Every feature below is decided; the native milestone comes last and has no number.
 
 - **M1 Skeleton.** Monorepo, PWA shell, MapLibre map with OSM tiles, geolocation, radius slider, list toggle, Postgres + PostGIS + H3, seed data for 20 hand-entered Wrocław events.
 - **M2 Official APIs.** Ticketmaster and Meetup adapters, normalizer, dedup, scheduler, time-window and category filters, event detail screen.
@@ -316,11 +316,11 @@ Requested 2026-10-20. An organiser can mark an event as **private**: it is visib
 - [ ] Contact Wrocław city (ARAW) about an events feed or partnership?
 - [ ] Is Facebook public-page crawling in scope at all, after a legal opinion under Polish/EU law?
 - [ ] Brand name: search HAPPOW / HAPPO / HAPOW in TMview (EUIPO + UPRP), WIPO Brand DB and IP Australia; consider filing "Happow" (classes 9, 35, 41, 42). happow.com is an Australian youth eLearning company (HAPPOW PTY LTD); a US "HAPPOW" mark exists in class 28 only.
-- [ ] Domain and email: register happow.app (Cloudflare Registrar) and happow.pl (Polish registrar), forward a contact address with Cloudflare Email Routing, replace the interim `legal.contactEmail` (the owner's personal address, set 2026-10-22) and the crawler User-Agent URL (`ingest.userAgent`).
+- [ ] Domain and email (steps in [docs/LAUNCH.md](LAUNCH.md) §1; the code is ready since M13, config only): register happow.app (Cloudflare Registrar) and happow.pl (Polish registrar), forward a contact address with Cloudflare Email Routing, replace the interim `legal.contactEmail` (the owner's personal address, set 2026-10-22) and the crawler User-Agent URL (`ingest.userAgent`).
 
 ## Before public launch (to-do)
 
-- [ ] **Legal texts** (Claude to draft when the app is feature-complete): terms of use, privacy policy (GDPR: hashed device ids, performer/organiser names under legitimate interest, art. 14 notice), takedown procedure, cookie/storage note. Replace the draft bullets on the About page.
+- [ ] **Legal texts** (Claude to draft when the app is feature-complete): terms of use, privacy policy (GDPR: hashed device ids, performer/organiser names under legitimate interest, art. 14 notice), takedown procedure, cookie/storage note. Replace the draft bullets on the About page. _Drafted in M13 (2026-11-05): `docs/legal/`, served at `/legal/*`, linked from About and the terms sheet. Left: the operator's name and address, and a review ([LAUNCH.md](LAUNCH.md) §2)._
 - [ ] **Crawl permissions:** email eBilet for written consent or a partner feed (owner decision 2026-10-22: keep crawling its listing page during private testing; consent is needed before launch); email ARAW (wroclaw.pl/go) for consent or a feed; courtesy email to NFM. The crawler policy (`docs/CRAWLER.md`) is published at `/crawler` on the app, which the crawler's User-Agent links to.
-- [ ] **Crawler politeness:** conditional requests (ETag / If-Modified-Since), skip unchanged detail pages, respect TDM reservations (`/.well-known/tdmrep.json`, `tdm-reservation` meta) before sending page text to the LLM, add the contact email to the User-Agent.
+- [x] **Crawler politeness** (M13 slice C, 2026-11-05): conditional requests (ETag / If-Modified-Since), skip unchanged detail pages, respect TDM reservations (`/.well-known/tdmrep.json`, `tdm-reservation` meta) before sending page text to the LLM, add the contact email to the User-Agent.
 - [ ] Under the Plumbi umbrella or standalone?

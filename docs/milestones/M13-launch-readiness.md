@@ -43,12 +43,16 @@ One branch with M7 (owner, 2026-11-05). Each slice adds a "Built" note under its
 - **In the app:** About keeps a one-line summary per section with a link to the page in the current language; the draft line goes. The terms sheet links the terms and privacy pages.
 - **Consent:** `legal.termsVersion` moves to a new version, so every account accepts once more (M11's and M7's paragraphs are folded into the privacy policy).
 
+**Built (slice A).** Eight drafts in `docs/legal/` (terms, privacy with the art. 13 and art. 14 notices, takedown, storage; Polish and English), rendered by the same build step as `/crawler` (`apps/web/build/crawlerPage.ts`) at `/legal/<name>` and `/legal/<name>.en`, with `{{…}}` values from config; an unknown placeholder fails the build. About keeps its short bullets and links the four pages; the terms sheet after sign-in links them too. `legal.termsVersion` is now `2026-11-05-draft`, so every account accepts once more; M11's and M7's consent paragraphs are folded into the privacy policy. Two claims were checked against the code and corrected in the drafts: one report already shows the warning (`flagThreshold` 1), and repeat offenders lose trusted status (there is no general "blocked from adding"). Open: the operator's name and address, and a lawyer's read.
+
 ## 2. Domain, contact and operator
 
 - **`site` in `config/app.json`:** `url` (the public origin), `name`. `legal` gains `operator` and `address` (null until the owner fills them). `legal.contactEmail` stays the one contact.
 - **Built from config:** the crawler's User-Agent becomes a template (`Happow/{version} (+{siteUrl}/crawler; {contactEmail})`), the push senders' VAPID subject uses the contact email or the site URL, the legal pages and the crawler page read the same values.
 - **A test fails** when a domain or email address appears in code outside config, docs and fixtures.
 - Changing domain is then: register it, point it at the Worker, set `site.url` and `legal.contactEmail`, update Supabase's redirect URLs (§6).
+
+**Built (slice B).** `site` (`url`, `name`) and `legal.operator`, `legal.address` in `config/app.json`. The User-Agent is the template `Happow/0.5 (+{siteUrl}/crawler; {contactEmail})`, filled by `siteTemplate` in core (and a copy in the build step, which Vite can't load core for; a test checks they agree). The push senders' fallback subject is `site.url`. A core test fails when a domain or a personal mailbox appears in code.
 
 ## 3. Crawler politeness
 
@@ -58,11 +62,15 @@ One branch with M7 (owner, 2026-11-05). Each slice adds a "Built" note under its
 - **Contact in the User-Agent** (§2).
 - Contract tests with recorded responses: a 304 path, an unchanged body, a tdmrep.json reservation, a meta reservation.
 
+**Built (slice C).** Migration 28 adds `page_cache`; `HttpClient.page()` sends the validators and returns 304s. The crawler reuses a page's last extraction on 304 or an identical body, skips event pages read within `ingest.politeness.revisitHours` (72) whose events are all more than `revisitFarDays` (7) ahead, and checks TDM reservations (header, meta, `tdmrep.json` once per origin) only when a page would go to the LLM, so JSON-LD sources make no extra request. Counters go to the run's stats as `polite`. Contract tests cover the 304, the unchanged body, the revisit skip and the three reservation forms; `docs/CRAWLER.md` says what the crawler now does.
+
 ## 4. GDPR across every account feature
 
 - **Export completeness.** A DB test lists every column that references `auth.users` and fails unless its table is in `account_export` (or listed as derived, with a reason). Gaps found get added: push subscriptions (as devices and dates, no keys), reminders, attendance with an account, account feeds, organiser report answers, follow alerts.
 - **Deletion.** The same test deletes a user with data in every such table and checks nothing personal is left (rows gone, or the user reference nulled where the row is someone else's, such as a report).
 - **Retention** stays as built (code requests 7 days, private events 30 days after they end, follow alerts 30 days); the privacy page lists each.
+
+**Built (slice D).** Five gaps were found and added to `account_export` (migration 28): account feeds, reminders, push devices (dates and language, no keys), attendance and reports made with the account. `scripts/m13.db.test.ts` lists every foreign key to `auth.users`, fails on a table missing from its export map, checks every export key exists, and deletes a user with data to check nothing refers to it afterwards.
 
 ## 5. Email sender
 
@@ -70,6 +78,8 @@ One branch with M7 (owner, 2026-11-05). Each slice adds a "Built" note under its
 - **Sign-in codes:** `auth.emailDelivery` gains `"app"`: the Worker creates the code and emails it at once. `"manual"` stays the default until the owner has the domain and a verified sender.
 - **Follow alerts by email** (M7 §5): an "Also by email" switch beside the alerts when a sender is configured. Same queue; an alert goes by email when the account asked for it.
 - **Contract tests** against Resend's documented request and response, faked.
+
+**Built (slice E).** `packages/api/src/email.ts` (Resend; `email` in config, secret `RESEND_API_KEY`). `auth.emailDelivery: "app"` makes the code and emails it at once from `/api/auth/code-request` (503 without a sender, 502 when sending fails); `"manual"` stays the default. Follow alerts gain `follow_settings.email` and "Also by email" (shown only when a provider is set); the cron sends the email in the account's language with the link and how to stop, and an alert counts as delivered when either channel worked. Contract tests on Resend's documented request and error.
 
 ## 6. HARDENING items
 
@@ -85,10 +95,14 @@ Closed in code:
 
 Left to the owner (in §7): previews' own database, Supabase redirect URLs, Workers Paid (reminders per tick, preview images), Biletyna's full terms, measuring the daily ingest run.
 
+**Built (slice F).** Feeds: `fetchPublicText` checks every fetch and redirect and caps at 2 MB (`account-feeds` option `maxBytes`); known keys are read once per feed and skipped before geocoding. Coverage: one pass per district (migration 28); it also stopped counting private events, which it did before. District goal: kept in the app per ~100 m and weekend for one data step, instead of an edge cache (the app reads it straight from PostgREST, so an edge cache would need a new Worker route; revisit if the database shows load). Previews: a test fails if `wrangler.jsonc` gives previews triggers. Fonts: Inter subset to Latin, Latin Extended-A and punctuation, 680 KB → 127 KB (OFL, no reserved name). `docs/HARDENING.md` is updated item by item.
+
 ## 7. Launch check and the owner's list
 
 - **`pnpm launch:check`** reads config and prints what blocks a public launch: operator and address missing, contact on a personal domain, `site.url` on `workers.dev`, `auth.emailDelivery` manual, email provider none, sources marked private-testing-only still on (Meetup pages, eBilet), `earlyAccess` running, `legal.termsVersion` still interim. Exit code 1 while anything blocks; CI runs it in report-only mode.
 - **[docs/LAUNCH.md](../LAUNCH.md):** the owner's steps in order, each with where to click: register the domain and email routing, verify the sender with the email provider, Supabase redirect URLs and previews' database, Cloudflare plan, the consents (eBilet, ARAW, NFM courtesy), Biletyna's terms, Meetup off, the lawyer's read of the legal texts, the trademark search.
+
+**Built (slice G).** `launchItems` in core and `pnpm launch:check` (exit 1 while anything blocks; `--report` in CI). Sources carry an optional `beforeLaunch` note (eBilet, wroclaw.pl/go, Biletyna, Meetup pages). Today it lists 11 blockers, all config or owner steps, and two checks (early access, analytics). [docs/LAUNCH.md](../LAUNCH.md) is the owner's list.
 
 ## Working notes
 

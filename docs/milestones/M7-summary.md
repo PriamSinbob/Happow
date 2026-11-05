@@ -44,6 +44,6 @@ Searches are never stored; Plausible counts that a search happened, without the 
 
 ## Not built, on purpose
 
-- **Email alerts** wait for the app's own email sender (M13 builds the sender; the alerts use web push until then).
+- **Email alerts** come with the app's email sender (M13 slice E): "Also by email" appears beside the alerts once `email.provider` is set; until then, web push only.
 - **Last.fm import** (dropped, §6) and Spotify import (not viable).
 - **Speed testing**: no timing runs on the web build (brief, 2026-10-24); the DB test checks the index plans instead.
