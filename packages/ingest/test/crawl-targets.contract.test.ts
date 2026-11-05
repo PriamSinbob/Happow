@@ -129,8 +129,10 @@ describe('more crawl targets (M12 §2.4–2.5)', () => {
       extractionCache: new MemoryCache<ExtractedEvent[]>(),
     });
     expect(s).toMatchObject({ status: 'ok' });
-    // robots.txt, the listing, and at most options.maxFollow (30) event pages.
-    expect(web.requested.length).toBeLessThanOrEqual(32);
+    // robots.txt, the listing, at most options.maxFollow (30) event pages, and tdmrep.json once
+    // (its pages go to the LLM, M13 §3).
+    expect(web.requested.length).toBeLessThanOrEqual(33);
+    expect(web.requested).toContain('https://biblioteka.wroc.pl/.well-known/tdmrep.json');
     expect(web.requested).toContain('https://biblioteka.wroc.pl/co-i-jak-czytal-rozewicz-4-11/');
     expect(web.requested.every((u) => !u.includes('/katalog/') && !u.includes('/filie/'))).toBe(
       true,

@@ -552,6 +552,17 @@ export const appConfigSchema = z.object({
      * from `site.url` and `legal.contactEmail` (M13 §2); see `siteTemplate`.
      */
     userAgent: z.string().min(1),
+    /** Crawler politeness (M13 §3). */
+    politeness: z.object({
+      /** Send If-None-Match / If-Modified-Since with the validators of the last read. */
+      conditionalRequests: z.boolean(),
+      /** Honour TDM reservations: a reserved page is never sent to the LLM. */
+      respectTdm: z.boolean(),
+      /** An event page read this recently is not fetched again… */
+      revisitHours: z.number().min(0),
+      /** …when every event it gave starts at least this many days ahead. */
+      revisitFarDays: z.number().min(0),
+    }),
     /** Runs in a row a complete-listing source must miss an event before it is "possibly cancelled". */
     missedRunsToFlag: z.number().int().min(1),
     /**

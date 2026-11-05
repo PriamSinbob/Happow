@@ -5,12 +5,17 @@ import {
   findUrlsInText,
   htmlToText,
   nextDate,
+  parseTdmRep,
+  reservedByHeader,
+  reservedByMeta,
+  reservedByRules,
   resolveInstant,
   type ExtractedEvent,
+  type TdmRule,
 } from '@happow/extract';
 import { HttpError, isTimeout } from '../http.js';
 import { robotsGate } from '../robots.js';
-import type { AdapterContext, ParsedEvent, RawEvent, SourceAdapter } from '../types.js';
+import type { AdapterContext, PageEntry, ParsedEvent, RawEvent, SourceAdapter } from '../types.js';
 import { inRegion, llmExtract, localDate, sha256 } from './extraction.js';
 
 /** What a crawled item carries into raw_payloads: the page it came from and the extraction. */
@@ -69,16 +74,6 @@ export const crawler: SourceAdapter = {
     const fetchedAt = ctx.now.toISOString();
     const today = localDate(ctx.now, ctx.region.timezone);
 
-    const extract = async (url: string, html: string): Promise<ExtractedEvent[]> => {
-      const found = eventsFromJsonLd(extractJsonLd(html), url);
-      if (found.length || !opts.llmFallback) return found;
-      return llmExtract(services, ctx, {
-        url,
-        text: htmlToText(html, services.maxInputChars),
-        today,
-      });
-    };
-
     const earliest = ctx.window.from.getTime() - 24 * 3_600_000;
     const latest = ctx.now.getTime() + opts.horizonDays * 24 * 3_600_000;
     const collect = async (url: string, events: ExtractedEvent[]) => {
@@ -101,19 +96,114 @@ export const crawler: SourceAdapter = {
       }
     };
 
+    // Politeness (M13 §3): validators and content hashes per page, TDM reservations per origin.
+    const pages = services.pages;
+    const polite = services.politeness;
+    const tdmRules = new Map<string, Promise<TdmRule[]>>();
+    const rulesFor = (origin: string) => {
+      let r = tdmRules.get(origin);
+      if (!r) {
+        r = ctx.http
+          .text(`${origin}/.well-known/tdmrep.json`)
+          .then(parseTdmRep)
+          .catch(() => []);
+        tdmRules.set(origin, r);
+      }
+      return r;
+    };
+    const reserved = async (url: string, headers: Headers, html: string) => {
+      if (!polite?.respectTdm) return false;
+      const u = new URL(url);
+      return (
+        reservedByHeader(headers) ||
+        reservedByMeta(html) ||
+        reservedByRules(await rulesFor(u.origin), u.pathname)
+      );
+    };
+    /** JSON-LD first; the LLM only when the page has none, allows it and reserves no TDM rights. */
+    const extract = async (
+      url: string,
+      html: string,
+      headers: Headers = new Headers(),
+    ): Promise<ExtractedEvent[]> => {
+      const found = eventsFromJsonLd(extractJsonLd(html), url);
+      if (found.length || !opts.llmFallback) return found;
+      if (await reserved(url, headers, html)) {
+        if (polite) polite.stats.tdmReserved++;
+        return found;
+      }
+      return llmExtract(services, ctx, {
+        url,
+        text: htmlToText(html, services.maxInputChars),
+        today,
+      });
+    };
+    const farAhead = (events: ExtractedEvent[]) => {
+      const min = ctx.now.getTime() + (polite?.revisitFarDays ?? 0) * 86_400_000;
+      return events.every(
+        (e) => (resolveInstant(e.start, ctx.region.timezone)?.at.getTime() ?? 0) >= min,
+      );
+    };
+    /** One page's events and links, from the network or, when nothing changed, the cache. */
+    const read = async (
+      url: string,
+      linksOf: (html: string, events: ExtractedEvent[]) => string[],
+      follow: boolean,
+    ): Promise<Pick<PageEntry, 'events' | 'links'>> => {
+      const cached = pages ? await pages.get(url) : undefined;
+      const stats = polite?.stats;
+      if (
+        cached &&
+        follow &&
+        polite &&
+        ctx.now.getTime() - Date.parse(cached.fetchedAt) < polite.revisitHours * 3_600_000 &&
+        cached.events.length > 0 &&
+        farAhead(cached.events)
+      ) {
+        if (stats) stats.revisitSkipped++;
+        return cached;
+      }
+      const r = await ctx.http.page(
+        url,
+        cached && polite?.conditionalRequests ? cached : undefined,
+      );
+      const keep = async (entry: PageEntry) => {
+        if (pages) await pages.set(url, entry);
+        return entry;
+      };
+      if (r.status === 304 && cached) {
+        if (stats) stats.notModified++;
+        return keep({ ...cached, fetchedAt });
+      }
+      if (r.status === 304) return { events: [], links: [] };
+      const hash = await sha256(r.body);
+      const meta = { etag: r.etag, lastModified: r.lastModified, hash, fetchedAt };
+      if (cached && cached.hash === hash) {
+        if (stats) stats.unchanged++;
+        return keep({ ...cached, ...meta });
+      }
+      const events = await extract(url, r.body, r.headers);
+      return keep({ ...meta, events, links: linksOf(r.body, events) });
+    };
+
     const follow: string[] = [];
     for (const start of opts.startUrls) {
       if (!(await allowed(start))) continue;
-      const html = await ctx.http.text(start);
-      const listed = await extract(start, html);
-      const links = opts.summaryListing
-        ? listed.flatMap((e) => (e.url && opts.followPattern?.test(e.url) ? [e.url] : []))
-        : opts.followPattern
-          ? [
-              ...findLinks(html, start, opts.followPattern),
-              ...(opts.followInText ? findUrlsInText(html, opts.followPattern) : []),
-            ]
-          : [];
+      const { events: listed, links } = await read(
+        start,
+        (html, found) =>
+          opts.summaryListing
+            ? found.flatMap((e) => (e.url && opts.followPattern?.test(e.url) ? [e.url] : []))
+            : opts.followPattern
+              ? [
+                  ...new Set([
+                    ...findLinks(html, start, opts.followPattern),
+                    ...(opts.followInText ? findUrlsInText(html, opts.followPattern) : []),
+                  ]),
+                ]
+              : [],
+        false,
+      );
       if (!opts.summaryListing) await collect(start, listed);
       for (const link of links)
         if (!follow.includes(link) && !opts.startUrls.includes(link)) follow.push(link);
@@ -121,8 +211,7 @@ export const crawler: SourceAdapter = {
     for (const link of follow.slice(0, opts.maxFollow)) {
       if (!(await allowed(link))) continue;
       try {
-        const html = await ctx.http.text(link);
-        await collect(link, await extract(link, html));
+        await collect(link, (await read(link, () => [], true)).events);
       } catch (err) {
         // One broken or slow event page must not lose the rest of the crawl.
         if (err instanceof HttpError && err.status >= 400 && err.status < 500) continue;

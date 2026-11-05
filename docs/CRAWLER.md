@@ -9,9 +9,11 @@ Happow is a free map of events happening near you (concerts, markets, talks), st
 ## What it does
 
 - Reads public event listing pages, at most **once a day** per site, with at least **5 seconds** between requests and one request at a time.
-- Obeys `robots.txt`. To block it, add `User-agent: Happow` and `Disallow: /`.
+- Obeys `robots.txt`. To block it, add `User-agent: Happow` and `Disallow: /`. Its User-Agent carries a contact address.
 - Takes only facts: title, date and time, venue, address, price and the link. It does **not** copy descriptions or images. Every event in the app links back to the page it came from.
 - Reads schema.org Event data (JSON-LD) when a page has it. For a few pages without it, the page text is sent to an AI model (Claude, by Anthropic) to pull out those same facts. The page text is not stored; only the extracted facts are kept.
+- Asks with `If-None-Match` / `If-Modified-Since` when it has read a page before, and treats an unchanged page as read: nothing is parsed or sent anywhere. An event page read in the last three days whose events are all more than a week ahead isn't fetched again.
+- Honours **text and data mining reservations** (EU DSM Directive art. 4, [TDMRep](https://www.w3.org/community/reports/tdmrep/CG-FINAL-tdmrep-20240202/)): a page reserved by `/.well-known/tdmrep.json`, a `tdm-reservation: 1` header or `<meta name="tdm-reservation" content="1">` is never sent to the AI model. Its published structured data (schema.org facts) is still read, as any visitor's browser would.
 - Keeps events only while they are current, and drops events that are no longer listed.
 - Checks the websites of venues listed in OpenStreetMap (theatres, clubs, libraries, culture centres, places of worship) about **once a month**, with at most five requests per site: the home page, one events page, and any calendar feed (iCal) or events API the site offers. A person then decides whether the site is read. Only sites someone has accepted are read, once a day like the others.
 - Reads calendar feeds (iCal) that signed-in people add for their own events, one request per feed every few hours. These are addresses their owners gave us, so `robots.txt` isn't asked; the events go through moderation like anything else people add.

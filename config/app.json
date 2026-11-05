@@ -100,6 +100,12 @@
     "lookbackHours": 8,
     "lookaheadHours": 1440,
     "userAgent": "Happow/0.5 (+{siteUrl}/crawler; {contactEmail})",
+    "politeness": {
+      "conditionalRequests": true,
+      "respectTdm": true,
+      "revisitHours": 72,
+      "revisitFarDays": 7
+    },
     "missedRunsToFlag": 2,
     "dispatch": {
       "repo": "PriamSinbob/happow",

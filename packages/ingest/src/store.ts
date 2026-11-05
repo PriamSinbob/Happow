@@ -4,7 +4,7 @@ import { mergePerformers, type HappowConfig, type HappowEvent } from '@happow/co
 import type { ExtractedEvent, GeoResult, KeyValueCache } from '@happow/extract';
 import { decide, type DedupConfig, type Listing, type StoredEvent } from './dedup.js';
 import { h3Neighbourhood } from './geo.js';
-import type { NormalizedEvent, RawEvent } from './types.js';
+import type { NormalizedEvent, PageCache, PageEntry, RawEvent } from './types.js';
 import { VenueStore } from './venues/store.js';
 import { FeedStore } from './feeds.js';
 
@@ -354,6 +354,64 @@ export class EventStore {
         ],
       );
     }
+  }
+
+  /** Crawled pages as last read (M13 §3); pages unread for 30 days are dropped. */
+  pageCache(sourceId: string): PageCache {
+    let pruned = false;
+    return {
+      get: async (url) => {
+        if (!pruned) {
+          pruned = true;
+          await this.db.query(
+            `delete from page_cache where source_id = $1 and fetched_at < now() - interval '30 days'`,
+            [sourceId],
+          );
+        }
+        const { rows } = await this.db.query<{
+          etag: string | null;
+          last_modified: string | null;
+          content_hash: string;
+          events: PageEntry['events'];
+          links: string[];
+          fetched_at: Date;
+        }>(
+          `select etag, last_modified, content_hash, events, links, fetched_at from page_cache
+           where source_id = $1 and url = $2`,
+          [sourceId, url],
+        );
+        const r = rows[0];
+        return r
+          ? {
+              etag: r.etag,
+              lastModified: r.last_modified,
+              hash: r.content_hash,
+              events: r.events,
+              links: r.links,
+              fetchedAt: r.fetched_at.toISOString(),
+            }
+          : undefined;
+      },
+      set: async (url, e) => {
+        await this.db.query(
+          `insert into page_cache (source_id, url, etag, last_modified, content_hash, events, links, fetched_at)
+           values ($1, $2, $3, $4, $5, $6, $7, $8)
+           on conflict (source_id, url) do update set etag = excluded.etag,
+             last_modified = excluded.last_modified, content_hash = excluded.content_hash,
+             events = excluded.events, links = excluded.links, fetched_at = excluded.fetched_at`,
+          [
+            sourceId,
+            url,
+            e.etag,
+            e.lastModified,
+            e.hash,
+            JSON.stringify(e.events),
+            JSON.stringify(e.links),
+            e.fetchedAt,
+          ],
+        );
+      },
+    };
   }
 
   /** LLM results by content hash (see the crawler); kept until the page text changes. */
