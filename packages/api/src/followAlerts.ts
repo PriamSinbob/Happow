@@ -83,9 +83,7 @@ export async function sendFollowAlerts(
   });
   if (!due.length) return { ...none, queued };
   const key = await cachedKey(secret);
-  const subject = app.legal.contactEmail
-    ? `mailto:${app.legal.contactEmail}`
-    : app.site.url;
+  const subject = app.legal.contactEmail ? `mailto:${app.legal.contactEmail}` : app.site.url;
   const done: number[] = [];
   const sentTo: string[] = [];
   const gone: string[] = [];

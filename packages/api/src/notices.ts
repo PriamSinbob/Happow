@@ -77,9 +77,7 @@ export async function sendNotices(
   const due = await db.rpc<DueNotice[]>('notices_due', { p_limit: max, p_event: eventId });
   if (!due.length) return none;
   const key = await cachedKey(secret);
-  const subject = app.legal.contactEmail
-    ? `mailto:${app.legal.contactEmail}`
-    : app.site.url;
+  const subject = app.legal.contactEmail ? `mailto:${app.legal.contactEmail}` : app.site.url;
   const done: number[] = [];
   const gone: string[] = [];
   let sent = 0;

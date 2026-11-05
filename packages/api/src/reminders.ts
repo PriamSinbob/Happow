@@ -226,9 +226,7 @@ export async function sendDueReminders(
   });
   if (!due.length) return none;
   const key = await cachedKey(secret);
-  const subject = app.legal.contactEmail
-    ? `mailto:${app.legal.contactEmail}`
-    : app.site.url;
+  const subject = app.legal.contactEmail ? `mailto:${app.legal.contactEmail}` : app.site.url;
   const done: number[] = [];
   const sentTo: string[] = [];
   const gone: string[] = [];
