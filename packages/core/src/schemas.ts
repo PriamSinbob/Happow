@@ -520,13 +520,23 @@ export const appConfigSchema = z.object({
     /** The operator's postal address, for the legal pages. */
     address: z.string().min(1).nullable(),
   }),
+  /** The app's own email (M13 §5): sign-in codes with `auth.emailDelivery: "app"`, alerts. */
+  email: z.object({
+    provider: z.enum(['none', 'resend']),
+    /** "Happow <hello@example.org>"; a sender verified with the provider. Null = no email. */
+    from: z.string().min(3).nullable(),
+    /** The Worker secret holding the provider's key. */
+    secret: z.string().min(1),
+    endpoint: z.string().url(),
+  }),
   /** User accounts (M8 §2). */
   auth: z.object({
     /**
      * How sign-in codes reach people: "manual" = the app files a request and the admin sends the
-     * code by hand from the admin panel; "supabase" = Supabase Auth emails it (custom SMTP).
+     * code by hand from the admin panel; "supabase" = Supabase Auth emails it (custom SMTP);
+     * "app" = the Worker makes the code and sends it with the app's email sender (M13 §5).
      */
-    emailDelivery: z.enum(['manual', 'supabase']),
+    emailDelivery: z.enum(['manual', 'supabase', 'app']),
     /** Sign-in providers besides the email code, once set up in Supabase (docs/SETUP.md). */
     providers: z.array(z.enum(['google'])),
     codeRequestsPerHourPerClient: z.number().int().positive(),

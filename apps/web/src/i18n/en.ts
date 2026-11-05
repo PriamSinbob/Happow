@@ -221,6 +221,7 @@ export const en = {
   'follow.alerts': 'Tell me when a new date is announced',
   'follow.alertsNote':
     'A notification on the phones where you allowed them. Your list is then kept with your account.',
+  'follow.alertsEmail': 'Also by email',
   'follow.alertsSignIn': 'Sign in (premium) for an alert when a new date is announced.',
   'follow.alertsPremium': 'Alerts on new dates come with premium.',
   'follow.alertsError': "Couldn't change the alerts. Try again.",

@@ -49,6 +49,7 @@ import { organiserRoutes } from './organisers.js';
 import { privateRoutes } from './private.js';
 import { reminderRoutes } from './reminders.js';
 import { followRoutes } from './follows.js';
+import { emailSender, type EmailSender } from './email.js';
 import { savedRoutes } from './saved.js';
 import { ApiError, body, json, sha256 } from './http.js';
 import { premiumProviders, premiumRoutes, type PremiumProvider } from './premium.js';
@@ -75,6 +76,8 @@ export interface ApiDeps {
   extractor?: Extractor | null;
   /** Instead of the providers named in config (premium.providers). */
   premiumProviders?: PremiumProvider[];
+  /** Instead of the sender named in config (email.provider); null = email off. */
+  email?: EmailSender | null;
 }
 
 /** "2026-10-24T19:00" in the region's time zone, for <input type="datetime-local">. */
@@ -233,7 +236,12 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
 
   // Quotas count per calendar month, and the promotion ends, in the default region's time zone.
   const accountZone = getRegion(config).timezone;
+  const email =
+    deps.email !== undefined
+      ? deps.email
+      : emailSender(config.app.email, env as Record<string, unknown>, doFetch);
   const accounts = accountRoutes({
+    email,
     app: config.app,
     plans: config.plans,
     timeZone: accountZone,

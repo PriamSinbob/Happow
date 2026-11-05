@@ -230,6 +230,7 @@ export const pl: Record<MessageKey, string> = {
   'follow.alerts': 'Daj znać, gdy pojawi się nowy termin',
   'follow.alertsNote':
     'Powiadomienie na telefonach, na których je włączono. Lista jest wtedy przechowywana z kontem.',
+  'follow.alertsEmail': 'Także e-mailem',
   'follow.alertsSignIn': 'Zaloguj się (premium), by dostać powiadomienie o nowym terminie.',
   'follow.alertsPremium': 'Powiadomienia o nowych terminach są w premium.',
   'follow.alertsError': 'Nie udało się zmienić powiadomień. Spróbuj ponownie.',

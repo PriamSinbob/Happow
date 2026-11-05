@@ -1,4 +1,6 @@
 import appJson from '../../../config/app.json';
+import type { AppConfig } from '@happow/core';
+import { emailSender, type EmailSender } from './email.js';
 import { cachedKey } from './reminders.js';
 import type { ScheduleEnv } from './schedule.js';
 import { Supabase } from './supabase.js';
@@ -21,6 +23,9 @@ export interface DueAlert {
   timezone: string;
   hidden: boolean;
   status: string;
+  /** The account's address when it asked for alerts by email (M13 §5). */
+  email?: string | null;
+  locale?: string;
   subscriptions: { endpoint: string; p256dh: string; auth: string; lang: string }[];
 }
 
@@ -59,7 +64,20 @@ export interface AlertTickResult {
 
 export interface AlertTickDeps {
   fetch?: typeof fetch;
-  app?: Pick<typeof appJson, 'push' | 'follows' | 'legal' | 'site'>;
+  app?: Pick<typeof appJson, 'push' | 'follows' | 'legal' | 'site' | 'email'>;
+  /** Instead of the sender named in config. */
+  email?: EmailSender | null;
+}
+
+/** The same alert as an email: the push text, the link, and how to stop. */
+export function alertEmail(a: DueAlert, siteUrl: string) {
+  const lang = a.locale === 'en' ? 'en' : 'pl';
+  const m = alertMessage(a, lang);
+  const stop =
+    lang === 'en'
+      ? 'You get this because you follow this artist and asked for new dates by email. Switch it off in Happow: list → ♡ → alerts.'
+      : 'Dostajesz tę wiadomość, bo obserwujesz tego artystę i prosisz o nowe terminy e-mailem. Wyłączysz to w Happow: lista → ♡ → powiadomienia.';
+  return { subject: m.title, text: `${m.body}\n\n${siteUrl}${m.url}\n\n${stop}\n` };
 }
 
 export async function sendFollowAlerts(
@@ -75,6 +93,10 @@ export async function sendFollowAlerts(
   if (typeof secret !== 'string' || !secret)
     return { ...none, reason: `${app.push.secret} not set` };
   const db = new Supabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, deps.fetch);
+  const mail =
+    deps.email !== undefined
+      ? deps.email
+      : emailSender(app.email as AppConfig['email'], env, deps.fetch);
   const queued = await db.rpc<number>('follow_alerts_queue', {
     p_lookback_hours: app.follows.alerts.lookbackHours,
   });
@@ -89,9 +111,20 @@ export async function sendFollowAlerts(
   const gone: string[] = [];
   let failed = 0;
   for (const a of due) {
-    if (a.hidden || a.status === 'cancelled' || !a.subscriptions.length) {
+    const byEmail = !!(a.email && mail);
+    if (a.hidden || a.status === 'cancelled' || (!a.subscriptions.length && !byEmail)) {
       done.push(a.id);
       continue;
+    }
+    let emailed = false;
+    if (byEmail) {
+      try {
+        const m = alertEmail(a, app.site.url);
+        await mail!.send({ to: a.email!, subject: m.subject, text: m.text });
+        emailed = true;
+      } catch {
+        failed++;
+      }
     }
     const outcomes = await Promise.all(
       a.subscriptions.map(async (s): Promise<[string, PushOutcome]> => {
@@ -115,7 +148,7 @@ export async function sendFollowAlerts(
       else if (o === 'gone') gone.push(endpoint);
       else failed++;
     }
-    if (outcomes.some(([, o]) => o !== 'failed')) done.push(a.id);
+    if (emailed || outcomes.some(([, o]) => o !== 'failed')) done.push(a.id);
   }
   await db.rpc('follow_alerts_done', {
     p_ids: done,

@@ -331,11 +331,16 @@ export function followRoutes(deps: FollowDeps) {
       if (req.method === 'GET')
         return json(await db.rpc('follow_settings_get', { p_user: user.id }));
       if (req.method !== 'PUT') throw new ApiError(404, 'not_found');
-      const { on } = await body(req, z.object({ on: z.boolean() }));
-      if (on && !can(entitlements, 'alerts.newDates'))
+      const input = await body(req, z.object({ on: z.boolean(), email: z.boolean().optional() }));
+      if ((input.on || input.email) && !can(entitlements, 'alerts.newDates'))
         throw new ApiError(403, 'forbidden', 'alerts.newDates is not in this plan');
-      await db.rpc('follow_alerts_set', { p_user: user.id, p_on: on });
-      return json({ alerts: on });
+      // Email needs the app's sender (M13 §5).
+      if (input.email && config.app.email.provider === 'none')
+        throw new ApiError(503, 'not_configured');
+      await db.rpc('follow_alerts_set', { p_user: user.id, p_on: input.on });
+      if (input.email !== undefined)
+        await db.rpc('follow_alerts_email', { p_user: user.id, p_on: input.email });
+      return json({ alerts: input.on, ...(input.email !== undefined && { email: input.email }) });
     }
     if (req.method !== 'POST' || path.length) throw new ApiError(404, 'not_found');
     if (!can(entitlements, 'follows.sync'))

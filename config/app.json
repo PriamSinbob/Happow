@@ -314,6 +314,12 @@
     "operator": null,
     "address": null
   },
+  "email": {
+    "provider": "none",
+    "from": null,
+    "secret": "RESEND_API_KEY",
+    "endpoint": "https://api.resend.com/emails"
+  },
   "auth": {
     "emailDelivery": "manual",
     "providers": [],

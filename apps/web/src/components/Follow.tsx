@@ -3,7 +3,7 @@ import { can, normName, type LatLng, type NearbyEvent, type Performer } from '@h
 import { useAccount } from '../account';
 import { api, ApiError } from '../api';
 import { accessToken } from '../auth';
-import { region } from '../config';
+import { config, region } from '../config';
 import { formatDistance, formatRelativeDay, formatTime } from '../format';
 import {
   follows,
@@ -422,7 +422,10 @@ function AlertsRow() {
   const { t, lang } = useI18n();
   const { status, entitlements } = useAccount();
   const [on, setOn] = useState<boolean | null>(null);
+  const [byEmail, setByEmail] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Email alerts once the app has a sender (M13 §5).
+  const emailOn = config.app.email.provider !== 'none';
   const [error, setError] = useState<string | null>(null);
   const allowed = status === 'signedIn' && can(entitlements, 'alerts.newDates');
   useEffect(() => {
@@ -430,10 +433,13 @@ function AlertsRow() {
     let stop = false;
     void (async () => {
       try {
-        const r = await api<{ alerts: boolean }>('me/follows/alerts', {
+        const r = await api<{ alerts: boolean; email?: boolean }>('me/follows/alerts', {
           token: await accessToken(),
         });
-        if (!stop) setOn(r.alerts);
+        if (!stop) {
+          setOn(r.alerts);
+          setByEmail(!!r.email);
+        }
       } catch {
         if (!stop) setOn(false);
       }
@@ -445,19 +451,20 @@ function AlertsRow() {
   if (status !== 'signedIn') return <p className="muted">{t('follow.alertsSignIn')}</p>;
   if (!can(entitlements, 'alerts.newDates'))
     return <p className="muted">{t('follow.alertsPremium')}</p>;
-  const toggle = async () => {
+  const toggle = async (email?: boolean) => {
     setError(null);
     setBusy(true);
     try {
-      const next = !on;
-      // Push first: alerts reach the account's devices that allowed notifications.
-      if (next) await ensurePush(lang);
+      const next = email === undefined ? !on : true;
+      // Push first (unless only email changes): alerts reach the devices that allowed them.
+      if (next && !on && email === undefined) await ensurePush(lang);
       await api('me/follows/alerts', {
         token: await accessToken(),
         method: 'PUT',
-        body: { on: next },
+        body: { on: next, ...(email !== undefined && { email }) },
       });
       setOn(next);
+      if (email !== undefined) setByEmail(email);
     } catch (err) {
       setError(err instanceof ApiError ? t('follow.alertsError') : t('follow.alertsPush'));
     } finally {
@@ -467,9 +474,25 @@ function AlertsRow() {
   return (
     <div className="followed-alerts">
       <label className="check">
-        <input type="checkbox" checked={!!on} disabled={busy || on === null} onChange={toggle} />
+        <input
+          type="checkbox"
+          checked={!!on}
+          disabled={busy || on === null}
+          onChange={() => void toggle()}
+        />
         <span>{t('follow.alerts')}</span>
       </label>
+      {emailOn && on && (
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={byEmail}
+            disabled={busy}
+            onChange={() => void toggle(!byEmail)}
+          />
+          <span>{t('follow.alertsEmail')}</span>
+        </label>
+      )}
       <p className="footnote">{t('follow.alertsNote')}</p>
       {error && (
         <p className="form-error" role="alert">

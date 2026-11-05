@@ -143,4 +143,33 @@ describe.skipIf(!url || !local)('M13 in Postgres', () => {
     );
     expect(anon.rows[0]!.ok).toBe(false);
   });
+
+  it('gives due alerts the account address only when it asked for email (slice E)', async () => {
+    const u = (
+      await db.query<{ id: string }>('insert into auth.users (email) values ($1) returning id', [
+        `mail-${tag}@example.org`,
+      ])
+    ).rows[0]!.id;
+    const ev = (
+      await db.query<{ id: string }>(`select id from events where visibility = 'public' limit 1`)
+    ).rows[0]!.id;
+    await db.query(
+      `insert into follow_alerts (user_id, event_id, performer) values ($1, $2, 'X')`,
+      [u, ev],
+    );
+    const due = async () =>
+      (
+        await db.query<{ r: { email: string | null; eventId: string }[] }>(
+          'select follow_alerts_due(500) as r',
+        )
+      ).rows[0]!.r.find((a) => a.eventId === ev && a.email !== undefined);
+    await db.query('select follow_alerts_set($1, true)', [u]);
+    expect((await due())?.email ?? null).toBeNull();
+    await db.query('select follow_alerts_email($1, true)', [u]);
+    expect((await due())?.email).toBe(`mail-${tag}@example.org`);
+    expect((await db.query('select follow_settings_get($1) as r', [u])).rows[0].r).toEqual({
+      alerts: true,
+      email: true,
+    });
+  });
 });
