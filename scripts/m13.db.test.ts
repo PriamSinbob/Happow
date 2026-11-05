@@ -172,4 +172,40 @@ describe.skipIf(!url || !local)('M13 in Postgres', () => {
       email: true,
     });
   });
+
+  it('coverage counts public events only, each in its district once (slice F)', async () => {
+    const owner = (
+      await db.query<{ id: string }>('insert into auth.users (email) values ($1) returning id', [
+        `cov-${tag}@example.org`,
+      ])
+    ).rows[0]!.id;
+    const district = (
+      await db.query<{ id: string; lat: number; lng: number }>(
+        `select id, st_y(st_pointonsurface(polygon)) as lat, st_x(st_pointonsurface(polygon)) as lng
+         from districts where region_id = 'wroclaw' limit 1`,
+      )
+    ).rows[0]!;
+    const week = async () =>
+      (
+        await db.query<{ r: { districts: { id: string; week: number }[] } }>(
+          `select coverage('wroclaw', now()) as r`,
+        )
+      ).rows[0]!.r.districts.find((d) => d.id === district.id)!.week;
+    const before = await week();
+    for (const [id, vis] of [
+      [`${tag}-pub`, 'public'],
+      [`${tag}-priv`, 'private'],
+    ] as const)
+      await db.query(
+        `insert into events (id, region_id, title, category_ids, start_at, end_at, timezone, point,
+           h3_r9, trust, visibility, owner_id)
+         values ($1, 'wroclaw', 'T', '{music,talk}', now() + interval '1 hour',
+           now() + interval '3 hours', 'Europe/Warsaw', st_point($2, $3)::geography, 'x',
+           'community', $4, $5)`,
+        [id, district.lng, district.lat, vis, vis === 'private' ? owner : null],
+      );
+    // Two categories, one event: counted once.
+    expect(await week()).toBe(before + 1);
+    await db.query('delete from events where id like $1', [`${tag}-%`]);
+  });
 });

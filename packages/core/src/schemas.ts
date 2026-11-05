@@ -704,6 +704,11 @@ export const sourceSchema = z.object({
   trustLevel: trustSchema,
   enabled: z.boolean(),
   termsNotes: z.string(),
+  /**
+   * What must happen before a public launch while this source is on (consent, a switch-off);
+   * `pnpm launch:check` lists it (M13 §7).
+   */
+  beforeLaunch: z.string().optional(),
   /** Names of environment variables the adapter needs; the source is skipped when any is missing. */
   secrets: z.array(z.string().regex(/^[A-Z][A-Z0-9_]*$/)).default([]),
   /** Longest time an event may be shown after this source last confirmed it (API terms). */

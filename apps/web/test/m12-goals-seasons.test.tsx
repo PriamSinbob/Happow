@@ -4,7 +4,7 @@ import type { NearbyEvent } from '@happow/core';
 import { GuidanceCard } from '../src/components/Guidance';
 import { ListView } from '../src/components/ListView';
 import type { EventRepository } from '../src/data/repository';
-import { useDistrictGoal } from '../src/hooks/useDistrictGoal';
+import { clearGoalCache, useDistrictGoal } from '../src/hooks/useDistrictGoal';
 import { I18nProvider } from '../src/i18n';
 
 /** M12 slice N: district goals in empty states, and season collections in the list. */
@@ -86,6 +86,7 @@ describe('district goals (M12 §6.2)', () => {
   });
 
   it("asks for this weekend's count only while the reach is empty", async () => {
+    clearGoalCache();
     const districtGoal = vi.fn(async () => ({ id: 'r1', name: 'Nadodrze', count: 0 }));
     const repo = { districtGoal } as unknown as EventRepository;
     const now = new Date('2026-10-29T12:00:00Z');
@@ -111,6 +112,10 @@ describe('district goals (M12 §6.2)', () => {
     expect(districtGoal).toHaveBeenCalledTimes(1);
     rerender({ at: null });
     expect(result.current).toBeNull();
+    // Back on the same spot within the data step: the kept answer, no new request (M13 §6).
+    rerender({ at: { lat: 51.12, lng: 17.04 } });
+    await waitFor(() => expect(result.current).toMatchObject({ name: 'Nadodrze' }));
+    expect(districtGoal).toHaveBeenCalledTimes(1);
   });
 });
 

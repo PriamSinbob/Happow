@@ -1,7 +1,19 @@
 import { useEffect, useState } from 'react';
 import { weekendWindow, type LatLng } from '@happow/core';
-import { region } from '../config';
+import { config, region } from '../config';
 import type { DistrictGoal, EventRepository } from '../data/repository';
+
+/**
+ * Answers kept per ~100 m cell and weekend for one data step (M13 §6, HARDENING "The district
+ * goal is asked live"): walking back and forth, or reopening the list, asks the database once.
+ */
+const cache = new Map<string, { at: number; goal: DistrictGoal | null }>();
+const fresh = (key: string) => {
+  const hit = cache.get(key);
+  return hit && Date.now() - hit.at < config.app.refresh.dataMinutes * 60_000 ? hit : null;
+};
+/** Tests. */
+export const clearGoalCache = () => cache.clear();
 
 /**
  * The district goal for an empty reach (M12 §6.2): the district `at` is in, and how many events it
@@ -21,10 +33,18 @@ export function useDistrictGoal(
       setGoal(null);
       return;
     }
+    const kept = fresh(key!);
+    if (kept) {
+      setGoal(kept.goal);
+      return;
+    }
     const ctl = new AbortController();
     repo
       .districtGoal(region.id, at, from, to, ctl.signal)
-      .then((g) => !ctl.signal.aborted && setGoal(g))
+      .then((g) => {
+        cache.set(key!, { at: Date.now(), goal: g });
+        if (!ctl.signal.aborted) setGoal(g);
+      })
       .catch(() => !ctl.signal.aborted && setGoal(null));
     return () => ctl.abort();
     // `key` stands for at, from and to.

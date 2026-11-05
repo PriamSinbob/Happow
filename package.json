@@ -18,6 +18,7 @@
     "db:reset": "tsx scripts/migrate.ts --reset && tsx scripts/seed.ts",
     "districts": "tsx scripts/districts.ts",
     "metrics": "tsx scripts/metrics.ts",
+    "launch:check": "tsx scripts/launch-check.ts",
     "venues:probe": "tsx scripts/venues-probe.ts",
     "push:keys": "tsx scripts/push-keys.ts",
     "test:db": "vitest run --root scripts --no-file-parallelism",

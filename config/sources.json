@@ -110,6 +110,7 @@
       "republishDescription": false,
       "republishImages": false,
       "termsNotes": "Ticketing site; the city listing publishes schema.org Event JSON-LD (ItemList). Crawled page. Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; 1 request/s.",
+      "beforeLaunch": "eBilet's written consent or a partner feed (owner, 2026-10-22: crawl during private testing only).",
       "options": {
         "startUrls": ["https://www.ebilet.pl/miasto/wroclaw"],
         "followPattern": "^https://www\\.ebilet\\.pl/[a-z0-9-]+/[a-z0-9-]+/[a-z0-9-]+$",
@@ -145,6 +146,7 @@
       "republishDescription": false,
       "republishImages": false,
       "termsNotes": "City portal events; no public API or feed (brief: ask ARAW for one). Event pages publish schema.org Event JSON-LD. Crawled page. Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; 1 request/s.",
+      "beforeLaunch": "ARAW (wroclaw.pl/go): consent or a feed (brief, Before public launch).",
       "options": {
         "startUrls": ["https://www.wroclaw.pl/go/"],
         "followPattern": "^https://www\\.wroclaw\\.pl/go/wydarzenia/[a-z0-9-]+/\\d+-",
@@ -205,6 +207,7 @@
       "republishDescription": false,
       "republishImages": false,
       "termsNotes": "Ticketing site. The city listing (biletyna.pl/Wroclaw) publishes schema.org Event JSON-LD (an ItemList, 36 Wrocław events on 29 Oct 2026), so no event pages are followed. Checked 2026-10-29: robots.txt allows the listing (only cart, order, profile and event view/sector paths are disallowed) and sends Content-Signal ai-train=no, search=yes, ai-input=yes; the terms page (biletyna.pl/static/regulamin) shows no clause on automated reading, but its full text is not on the page. Switched on by the owner on 2026-10-30. Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "beforeLaunch": "Read Biletyna's full terms, or ask them, and record the answer in termsNotes (HARDENING).",
       "options": {
         "startUrls": ["https://biletyna.pl/Wroclaw"],
         "followPattern": null,
@@ -286,6 +289,7 @@
       "republishDescription": false,
       "republishImages": false,
       "termsNotes": "PRIVATE TESTING ONLY (M7 §7). Meetup's ToS §5.4 forbids scraping for commercial purposes: switch this source off, or move to the Meetup API (Meetup Pro), before monetising. Starts from each listed group's /events/ page (event links are rendered from embedded JSON, hence followInText) and reads schema.org Event JSON-LD on each event page; no geo, so places are geocoded. Checked 2026-11-05: robots.txt allows group and event pages; search (?location=, ?distance=, keywords, …) and the atom/rss/xml event feeds are disallowed and never requested. Organisers (group hosts) are not stored. Store facts only and link back; no descriptions or images are republished. One request every 5 s.",
+      "beforeLaunch": "Switch off, or move to the Meetup API (Meetup Pro): ToS §5.4 forbids scraping for commercial purposes (M7 §7).",
       "options": {
         "startUrls": [
           "https://www.meetup.com/wroclaw-english-speakers-group/events/",

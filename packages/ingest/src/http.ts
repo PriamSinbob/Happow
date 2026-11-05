@@ -49,6 +49,11 @@ export class HttpClient {
     this.next = Math.max(Date.now(), this.next) + (this.opts.minIntervalMs ?? 0);
   }
 
+  /** Waits for this client's turn, for requests made by other means (a capped fetch). */
+  async wait(): Promise<void> {
+    await this.throttle();
+  }
+
   async text(url: string, init: RequestInit = {}): Promise<string> {
     return (await this.send(url, init)).body;
   }
