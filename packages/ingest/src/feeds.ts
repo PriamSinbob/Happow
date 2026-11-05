@@ -9,7 +9,7 @@ import {
   usageMonth,
   type PlanGrant,
 } from '@happow/core';
-import { resolveInstant, type ExtractedEvent } from '@happow/extract';
+import { fetchPublicText, resolveInstant, type ExtractedEvent } from '@happow/extract';
 import { sha256 } from './adapters/extraction.js';
 import { HttpClient } from './http.js';
 import { normalize } from './normalize.js';
@@ -73,6 +73,15 @@ export class FeedStore {
     return rows[0]!.r;
   }
 
+  /** The keys of events this feed already imported (M13 §6: skip them before geocoding). */
+  async knownKeys(feed: number): Promise<Set<string>> {
+    const { rows } = await this.db.query<{ k: string }>(
+      'select feed_key as k from submissions where feed_id = $1 and feed_key is not null',
+      [feed],
+    );
+    return new Set(rows.map((r) => r.k));
+  }
+
   async record(feed: number, error: string | null, events: number): Promise<void> {
     await this.db.query('select feed_record($1, $2, $3)', [feed, error, events]);
   }
@@ -115,7 +124,14 @@ export const accountFeedsJob: VenueJob = async (ctx) => {
   for (const f of feeds) {
     let events: ExtractedEvent[];
     try {
-      events = readIcal(await http.text(f.url), f.url, {
+      // Checked again on every fetch, and capped (M13 §6): the address was checked only when added.
+      await http.wait();
+      const text = await fetchPublicText(f.url, {
+        userAgent: config.app.ingest.userAgent,
+        fetch: ctx.fetch,
+        maxBytes: num(ctx.source.options.maxBytes, 2_000_000),
+      });
+      events = readIcal(text, f.url, {
         timeZone: region.timezone,
         from: now,
         to,
@@ -136,11 +152,18 @@ export const accountFeedsJob: VenueJob = async (ctx) => {
     const submitter = await sha256(`feed:${f.id}`);
     let imported = 0;
     let error: string | null = null;
+    // Events imported in earlier runs are skipped before geocoding (M13 §6).
+    const known = await db.knownKeys(f.id);
     for (const e of events) {
       const start = resolveInstant(e.start, region.timezone)?.at;
       // Upcoming, in person, with a place: the rest isn't an event the map can show.
       if (!start || start < now || e.online) {
         count('skipped');
+        continue;
+      }
+      const key = (await sha256(`${e.url ?? ''}|${e.start}|${e.title}`)).slice(0, 32);
+      if (known.has(key)) {
+        count('known');
         continue;
       }
       let point = e.point;
@@ -227,7 +250,7 @@ export const accountFeedsJob: VenueJob = async (ctx) => {
       try {
         const done = await db.import({
           feed: f.id,
-          key: (await sha256(`${e.url ?? ''}|${e.start}|${e.title}`)).slice(0, 32),
+          key,
           payload: { id, form, normalized: res.value },
           submitter,
           publish: config.app.submissions.publishBeforeModeration,

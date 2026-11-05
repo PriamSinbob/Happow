@@ -34,8 +34,14 @@ export function spriteIds(): string[] {
     ...Array.from({ length: RING_STEPS }, (_, i) => `ring-${i + 1}`),
     ...GLYPH_IDS.map((g) => `glyph-${g}`),
     'pin-lock',
+    'pin-star',
   ];
 }
+
+/** The star on a followed artist's pin (M7 §4): Tabler star, as on the card. */
+const STAR_PATH =
+  'M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z';
+const STAR_PX = 13;
 
 /** The lock on a private event's pin (M11 §4): Tabler lock, as on the card. */
 const LOCK_PATH =
@@ -79,6 +85,10 @@ export function addPinSprites(m: maplibregl.Map) {
     c.scale(LOCK_PX / 24, LOCK_PX / 24);
     c.lineWidth = 2.6;
     c.stroke(new Path2D(LOCK_PATH));
+  });
+  add('pin-star', STAR_PX, (c) => {
+    c.scale(STAR_PX / 24, STAR_PX / 24);
+    c.fill(new Path2D(STAR_PATH));
   });
   add('pin-outline-dashed', PIN_PX, outline(true));
   const r = RING_PX / 2;

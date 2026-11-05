@@ -129,8 +129,10 @@ describe('more crawl targets (M12 §2.4–2.5)', () => {
       extractionCache: new MemoryCache<ExtractedEvent[]>(),
     });
     expect(s).toMatchObject({ status: 'ok' });
-    // robots.txt, the listing, and at most options.maxFollow (30) event pages.
-    expect(web.requested.length).toBeLessThanOrEqual(32);
+    // robots.txt, the listing, at most options.maxFollow (30) event pages, and tdmrep.json once
+    // (its pages go to the LLM, M13 §3).
+    expect(web.requested.length).toBeLessThanOrEqual(33);
+    expect(web.requested).toContain('https://biblioteka.wroc.pl/.well-known/tdmrep.json');
     expect(web.requested).toContain('https://biblioteka.wroc.pl/co-i-jak-czytal-rozewicz-4-11/');
     expect(web.requested.every((u) => !u.includes('/katalog/') && !u.includes('/filie/'))).toBe(
       true,
@@ -158,5 +160,57 @@ describe('more crawl targets (M12 §2.4–2.5)', () => {
     expect(s).toMatchObject({ status: 'ok' });
     expect(web.requested.length).toBeLessThanOrEqual(22);
     expect(s!.events!.map(({ event }) => event.title)).toContain('Szewskie czwartki: wykład');
+  });
+
+  it('Meetup public pages (M7 §7): follows event links from the group page’s JSON, reads JSON-LD', async () => {
+    const group = 'https://www.meetup.com/wroclaw-english-speakers-group/events/';
+    const event = 'https://www.meetup.com/wroclaw-english-speakers-group/events/316633001/';
+    const src = config.sources.find((x) => x.id === 'meetup-pages')!;
+    expect(src.termsNotes).toMatch(/PRIVATE TESTING ONLY/);
+    expect(src.secrets).toEqual([]);
+    const web = site({
+      'https://www.meetup.com/robots.txt': page('meetup-robots.txt'),
+      [group]: page('meetup-listing.html'),
+      [event]: page('meetup-event.html'),
+    });
+    const one = {
+      ...src,
+      options: { ...src.options, startUrls: [group] },
+    };
+    const cfg = { ...config, sources: config.sources.map((x) => (x.id === src.id ? one : x)) };
+    const [s] = await runIngest({
+      config: cfg,
+      env: {},
+      now: new Date('2026-11-05T08:00:00Z'),
+      store: null,
+      force: true,
+      sleep: noSleep,
+      log: () => {},
+      sourceIds: [src.id],
+      fetch: web.fetch,
+      geocoder,
+      extractor: null,
+    });
+    expect(s).toMatchObject({ status: 'ok' });
+    // The group page lists its events only in embedded JSON; each is followed, and nothing
+    // robots.txt disallows (search, feeds) is asked for.
+    const followed = web.requested.filter((u) => /\/events\/\d+\/$/.test(u));
+    expect(followed.length).toBeGreaterThanOrEqual(5);
+    expect(followed.length).toBeLessThanOrEqual(src.options.maxFollow as number);
+    expect(
+      web.requested.some((u) => /[?&](location|distance|keywords)=|\/(atom|rss|xml)\//.test(u)),
+    ).toBe(false);
+    const coffee = s!.events!.find(({ event: e }) => e.title.startsWith('CHAT IN ENGLISH'))!;
+    expect(coffee.event).toMatchObject({
+      startAt: '2026-11-06T16:00:00.000Z', // 17:00 Warsaw time
+      endAt: '2026-11-06T19:00:00.000Z',
+      categoryIds: ['talk'],
+      trust: 'crawled',
+      description: null,
+      imageUrl: null,
+      // The group that organises it is not a performer.
+      performers: [],
+    });
+    expect(coffee.venue?.name).toBe('komar cafe');
   });
 });

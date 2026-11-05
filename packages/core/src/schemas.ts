@@ -442,6 +442,48 @@ export const appConfigSchema = z.object({
     postsCacheSec: z.number().int().min(0),
   }),
   /** Push notices to everyone interested in an event (M11 §7, owner 2026-11-04). */
+  /** M7 search (docs/milestones/M7-search-follow.md §2). */
+  search: z.object({
+    /** Trigram similarity a match needs (pg_trgm `%`), about 0.3. */
+    minSimilarity: z.number().min(0).max(1),
+    /** Word similarity for a query inside a longer name (pg_trgm `<%`), "podsiadlo" in "dawid podsiadlo". */
+    minWordSimilarity: z.number().min(0).max(1),
+    minChars: z.number().int().min(1),
+    maxChars: z.number().int().min(2),
+    maxResults: z.number().int().positive().max(100),
+    perHourPerClient: z.number().int().positive(),
+    /** Answers are cached this long at the edge and in the browser. */
+    cacheSeconds: z.number().int().min(0),
+    /** The app waits this long after the last keystroke before asking. */
+    debounceMs: z.number().int().min(0),
+  }),
+  /** M7 follows (§4, §5). */
+  follows: z.object({
+    /** Names per device or account. */
+    max: z.number().int().positive().max(500),
+    /** Match requests per client and hour. */
+    matchPerHourPerClient: z.number().int().positive(),
+    /** The app asks again at most this often (§4: on open, then hourly). */
+    matchEveryMinutes: z.number().int().positive(),
+    /** Nationwide Ticketmaster lookups (slice E). */
+    nationwide: z.object({
+      enabled: z.boolean(),
+      /** The source in sources.json whose endpoint and secrets are used. */
+      sourceId: z.string(),
+      /** A cached lookup is used for this long. */
+      maxAgeHours: z.number().positive(),
+      /** New lookups per day across everyone, well inside the API key's 5,000. */
+      perDay: z.number().int().min(0),
+      /** New lookups one match request may make; the rest wait for the next. */
+      perRequest: z.number().int().min(0),
+      countryCode: z.string().length(2),
+    }),
+    /** New-date alerts (slice G): sent per cron tick at most, and how far back a new event counts. */
+    alerts: z.object({
+      maxPerTick: z.number().int().positive(),
+      lookbackHours: z.number().int().positive(),
+    }),
+  }),
   notices: z.object({
     /** Devices one notice reaches at most. */
     maxAudience: z.number().int().positive(),
@@ -460,19 +502,41 @@ export const appConfigSchema = z.object({
       hour: z.number().int().min(0).max(23),
     }),
   }),
+  /** The public site (M13 §2): its origin is the one place the domain is written. */
+  site: z.object({
+    url: z
+      .string()
+      .url()
+      .refine((u) => u.startsWith('https://') && !u.endsWith('/'), 'https, no trailing slash'),
+    name: z.string().min(1),
+  }),
   legal: z.object({
-    /** Takedown / DSA notice contact shown on the About page. */
+    /** Takedown / DSA notice contact shown on the About page, the legal pages and the crawler's UA. */
     contactEmail: z.string().email().nullable(),
     /** Version of the terms and privacy notice an account accepts at sign-up (M8 §2). */
     termsVersion: z.string().min(1),
+    /** The controller named in the terms and privacy policy (M13 §1); null until the owner sets it. */
+    operator: z.string().min(1).nullable(),
+    /** The operator's postal address, for the legal pages. */
+    address: z.string().min(1).nullable(),
+  }),
+  /** The app's own email (M13 §5): sign-in codes with `auth.emailDelivery: "app"`, alerts. */
+  email: z.object({
+    provider: z.enum(['none', 'resend']),
+    /** "Happow <hello@example.org>"; a sender verified with the provider. Null = no email. */
+    from: z.string().min(3).nullable(),
+    /** The Worker secret holding the provider's key. */
+    secret: z.string().min(1),
+    endpoint: z.string().url(),
   }),
   /** User accounts (M8 §2). */
   auth: z.object({
     /**
      * How sign-in codes reach people: "manual" = the app files a request and the admin sends the
-     * code by hand from the admin panel; "supabase" = Supabase Auth emails it (custom SMTP).
+     * code by hand from the admin panel; "supabase" = Supabase Auth emails it (custom SMTP);
+     * "app" = the Worker makes the code and sends it with the app's email sender (M13 §5).
      */
-    emailDelivery: z.enum(['manual', 'supabase']),
+    emailDelivery: z.enum(['manual', 'supabase', 'app']),
     /** Sign-in providers besides the email code, once set up in Supabase (docs/SETUP.md). */
     providers: z.array(z.enum(['google'])),
     codeRequestsPerHourPerClient: z.number().int().positive(),
@@ -493,8 +557,22 @@ export const appConfigSchema = z.object({
     /** Fetch from this long ago, so events that started earlier and still run are kept. */
     lookbackHours: z.number().nonnegative(),
     lookaheadHours: z.number().positive(),
-    /** Identifies our crawler/API client to providers. */
+    /**
+     * Identifies our crawler/API client to providers. `{siteUrl}` and `{contactEmail}` are filled
+     * from `site.url` and `legal.contactEmail` (M13 §2); see `siteTemplate`.
+     */
     userAgent: z.string().min(1),
+    /** Crawler politeness (M13 §3). */
+    politeness: z.object({
+      /** Send If-None-Match / If-Modified-Since with the validators of the last read. */
+      conditionalRequests: z.boolean(),
+      /** Honour TDM reservations: a reserved page is never sent to the LLM. */
+      respectTdm: z.boolean(),
+      /** An event page read this recently is not fetched again… */
+      revisitHours: z.number().min(0),
+      /** …when every event it gave starts at least this many days ahead. */
+      revisitFarDays: z.number().min(0),
+    }),
     /** Runs in a row a complete-listing source must miss an event before it is "possibly cancelled". */
     missedRunsToFlag: z.number().int().min(1),
     /**
@@ -626,6 +704,11 @@ export const sourceSchema = z.object({
   trustLevel: trustSchema,
   enabled: z.boolean(),
   termsNotes: z.string(),
+  /**
+   * What must happen before a public launch while this source is on (consent, a switch-off);
+   * `pnpm launch:check` lists it (M13 §7).
+   */
+  beforeLaunch: z.string().optional(),
   /** Names of environment variables the adapter needs; the source is skipped when any is missing. */
   secrets: z.array(z.string().regex(/^[A-Z][A-Z0-9_]*$/)).default([]),
   /** Longest time an event may be shown after this source last confirmed it (API terms). */
@@ -718,6 +801,8 @@ export const entitlementsSchema = z
     'atlas.export': z.boolean(),
     'atlas.sync': z.boolean(),
     'alerts.newDates': z.boolean(),
+    /** Followed artists synced across the account's devices (M7 §5). */
+    'follows.sync': z.boolean(),
     'saved.sync': z.boolean(),
     'private.create': z.boolean(),
     /** Private events a month (M11 §1, owner 2026-11-04: 1 on a free account). */

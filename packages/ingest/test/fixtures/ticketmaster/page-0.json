@@ -74,6 +74,7 @@
         "ageRestrictions": { "legalAgeEnforced": false },
         "accessibility": { "info": "Miejsca dla osób na wózkach dostępne w sektorze A." },
         "_embedded": {
+          "attractions": [{ "name": "Dawid Podsiadło", "type": "attraction", "id": "K8vZ9175Tr0" }],
           "venues": [
             {
               "name": "Hala Stulecia",
@@ -127,6 +128,10 @@
         "priceRanges": [{ "type": "standard", "currency": "PLN", "min": 60.0, "max": 120.0 }],
         "ageRestrictions": { "legalAgeEnforced": true },
         "_embedded": {
+          "attractions": [
+            { "name": "Mayday", "type": "attraction", "id": "K8vZ9171o-f" },
+            { "name": "Kult", "type": "attraction", "id": "K8vZ917_Kult" }
+          ],
           "venues": [
             {
               "name": "Teatr Muzyczny Capitol",

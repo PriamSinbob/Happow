@@ -36,6 +36,8 @@ export interface ExtractedEvent {
   categoryHints: string[];
   /** Category ids chosen directly from our taxonomy (LLM path). */
   categoryIds: string[];
+  /** Who performs, names as printed (M7 §1); absent in extractions cached before M7. */
+  performers?: string[];
   method: 'jsonld' | 'llm';
   /** 0–1: how sure the extraction is about title, time and place. */
   confidence: number;

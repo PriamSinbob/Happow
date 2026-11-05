@@ -98,8 +98,14 @@
   "ingest": {
     "descriptionMaxChars": 600,
     "lookbackHours": 8,
-    "lookaheadHours": 360,
-    "userAgent": "Happow/0.4 (+https://happow.krasnoroda.workers.dev/crawler)",
+    "lookaheadHours": 1440,
+    "userAgent": "Happow/0.5 (+{siteUrl}/crawler; {contactEmail})",
+    "politeness": {
+      "conditionalRequests": true,
+      "respectTdm": true,
+      "revisitHours": 72,
+      "revisitFarDays": 7
+    },
     "missedRunsToFlag": 2,
     "dispatch": {
       "repo": "PriamSinbob/happow",
@@ -270,19 +276,55 @@
     "postsCacheSec": 60
   },
   "notices": { "maxAudience": 500, "inline": 3, "maxPerTick": 6 },
+  "search": {
+    "minSimilarity": 0.3,
+    "minWordSimilarity": 0.6,
+    "minChars": 2,
+    "maxChars": 80,
+    "maxResults": 40,
+    "perHourPerClient": 300,
+    "cacheSeconds": 60,
+    "debounceMs": 300
+  },
+  "follows": {
+    "max": 200,
+    "matchPerHourPerClient": 30,
+    "matchEveryMinutes": 60,
+    "nationwide": {
+      "enabled": true,
+      "sourceId": "ticketmaster",
+      "maxAgeHours": 24,
+      "perDay": 1000,
+      "perRequest": 10,
+      "countryCode": "PL"
+    },
+    "alerts": { "maxPerTick": 3, "lookbackHours": 48 }
+  },
   "metrics": {
     "eveningFromHour": 18,
     "weekly": { "weekday": 1, "hour": 8 }
   },
+  "site": {
+    "url": "https://happow.krasnoroda.workers.dev",
+    "name": "Happow"
+  },
   "legal": {
     "contactEmail": "krasnoroda@gmail.com",
-    "termsVersion": "2026-10-24-interim"
+    "termsVersion": "2026-11-05-draft",
+    "operator": null,
+    "address": null
+  },
+  "email": {
+    "provider": "none",
+    "from": null,
+    "secret": "RESEND_API_KEY",
+    "endpoint": "https://api.resend.com/emails"
   },
   "auth": {
     "emailDelivery": "manual",
     "providers": [],
-    "codeRequestsPerHourPerClient": 5,
-    "codeRequestsPerDayPerEmail": 3,
+    "codeRequestsPerHourPerClient": 10,
+    "codeRequestsPerDayPerEmail": 20,
     "codeRequestRetentionDays": 7,
     "codeValidHours": 24,
     "userCacheSec": 300,

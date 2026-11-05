@@ -47,6 +47,7 @@ const nfmEvent = {
   age_min: null,
   family: true,
   entry: 'fixed',
+  performers: ['Orkiestra Leopoldinum', ' Orkiestra  Leopoldinum', 'X'],
   confidence: 0.92,
 };
 
@@ -89,6 +90,8 @@ describe('ClaudeExtractor', () => {
       ageMin: null,
       family: true,
       entry: 'fixed',
+      // Names as printed, whitespace tidied, repeats and one-letter noise dropped.
+      performers: ['Orkiestra Leopoldinum'],
       method: 'llm',
       confidence: 0.92,
     });
@@ -106,6 +109,8 @@ describe('ClaudeExtractor', () => {
     expect(body.messages[0].content).toContain('Today: 2026-10-20');
     expect(body.messages[0].content).toContain('Pustynne portato');
     expect(body).not.toHaveProperty('temperature');
+    expect(JSON.stringify(body.output_config.format.schema)).toContain('performers');
+    expect(body.system[0].text).toContain('performers lists who performs');
     // Age and entry fields, prompted with the Polish cues.
     const schemaText = JSON.stringify(body.output_config.format.schema);
     for (const f of ['age_min', 'family', 'entry']) expect(schemaText).toContain(f);

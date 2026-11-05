@@ -26,6 +26,7 @@ function fakeStore(opts: { known?: Set<string>; quotaAfter?: number; feeds?: Due
   const feeds: Partial<FeedStore> = {
     due: async () => opts.feeds ?? [FEED],
     grants: async () => [],
+    knownKeys: async () => new Set(known),
     import: async (a) => {
       if (opts.quotaAfter !== undefined && imported.length >= opts.quotaAfter)
         throw Object.assign(new Error('events quota used up'), { code: 'HQ001' });
@@ -91,10 +92,14 @@ describe('account feeds job (M12 §4.6)', () => {
     expect(stats).toMatchObject({ feeds: 1, imported: s.imported.length, failed: 0 });
     expect(s.records).toEqual([{ feed: 7, error: null, events: s.imported.length }]);
 
-    // The next run finds them all known.
+    // The next run finds them all known, before asking the geocoder about any (M13 §6).
     const again = fakeStore({ known: s.known });
-    const second = await run(again.store, web(fixture('venues/wroclaw-club.ics')));
+    const asked = vi.fn(geocoder.geocode);
+    const second = await run(again.store, web(fixture('venues/wroclaw-club.ics')), {
+      geocode: asked,
+    });
     expect(second).toMatchObject({ imported: 0, known: s.imported.length });
+    expect(asked).not.toHaveBeenCalled();
   });
 
   it('stops a feed for this run when the month’s events are used up', async () => {
@@ -120,6 +125,31 @@ describe('account feeds job (M12 §4.6)', () => {
     await run(s.store, web(fixture('venues/wroclaw-club.ics')), null);
     // The events with a place name have no coordinates; the one with GEO has no name.
     expect(s.imported).toEqual([]);
+  });
+
+  it('checks the address again on every fetch, redirects included, and caps the size (M13 §6)', async () => {
+    const privateFeed = { ...FEED, id: 9, url: 'http://192.168.1.10/cal.ics' };
+    const s = fakeStore({ feeds: [privateFeed] });
+    const f = web(fixture('venues/wroclaw-club.ics'));
+    await run(s.store, f);
+    expect(f).not.toHaveBeenCalled();
+    expect(s.records[0]).toMatchObject({ feed: 9, events: 0 });
+    expect(s.records[0]!.error).toMatch(/not allowed/);
+
+    const moved = fakeStore();
+    const redirect = vi.fn(
+      async () =>
+        new Response(null, { status: 302, headers: { location: 'http://10.0.0.5/cal.ics' } }),
+    ) as unknown as typeof fetch;
+    await run(moved.store, redirect);
+    expect(moved.records[0]!.error).toMatch(/not allowed/);
+
+    const big = fakeStore();
+    const huge = vi.fn(
+      async () => new Response('x'.repeat(2_000_001), { status: 200 }),
+    ) as unknown as typeof fetch;
+    await run(big.store, huge);
+    expect(big.records[0]!.error).toMatch(/too large/);
   });
 
   it('writes nothing on a dry run', async () => {

@@ -1,10 +1,10 @@
 import { createHash } from 'node:crypto';
 import type pg from 'pg';
-import type { HappowConfig, HappowEvent } from '@happow/core';
+import { mergePerformers, type HappowConfig, type HappowEvent } from '@happow/core';
 import type { ExtractedEvent, GeoResult, KeyValueCache } from '@happow/extract';
 import { decide, type DedupConfig, type Listing, type StoredEvent } from './dedup.js';
 import { h3Neighbourhood } from './geo.js';
-import type { NormalizedEvent, RawEvent } from './types.js';
+import type { NormalizedEvent, PageCache, PageEntry, RawEvent } from './types.js';
 import { VenueStore } from './venues/store.js';
 import { FeedStore } from './feeds.js';
 
@@ -37,7 +37,9 @@ const EVENT_COLUMNS = `
   st_y(e.point::geometry) as lat, st_x(e.point::geometry) as lng, e.h3_r9, e.price_min,
   e.price_max, e.currency, e.is_free, e.rules, e.official_url, e.ticket_url, e.image_url,
   e.status, e.trust, e.confidence, e.last_seen_at, e.primary_source_id, e.primary_external_id,
-  e.entry, e.grace_min, e.age_min, e.family`;
+  e.entry, e.grace_min, e.age_min, e.family,
+  (select coalesce(jsonb_agg(jsonb_build_object('name', p.name, 'externalId', p.external_id)
+     order by p.ord), '[]'::jsonb) from event_performers p where p.event_id = e.id) as performers`;
 
 interface EventRow {
   id: string;
@@ -72,6 +74,7 @@ interface EventRow {
   grace_min: number | null;
   age_min: number | null;
   family: boolean | null;
+  performers: { name: string; externalId: string | null }[] | null;
 }
 
 function toStored(r: EventRow): StoredEvent {
@@ -109,6 +112,9 @@ function toStored(r: EventRow): StoredEvent {
       trust: r.trust,
       confidence: r.confidence,
       lastSeenAt: r.last_seen_at.toISOString(),
+      performers: (r.performers ?? []).map((p) =>
+        p.externalId ? { name: p.name, externalId: p.externalId } : { name: p.name },
+      ),
     },
   };
 }
@@ -350,6 +356,64 @@ export class EventStore {
     }
   }
 
+  /** Crawled pages as last read (M13 §3); pages unread for 30 days are dropped. */
+  pageCache(sourceId: string): PageCache {
+    let pruned = false;
+    return {
+      get: async (url) => {
+        if (!pruned) {
+          pruned = true;
+          await this.db.query(
+            `delete from page_cache where source_id = $1 and fetched_at < now() - interval '30 days'`,
+            [sourceId],
+          );
+        }
+        const { rows } = await this.db.query<{
+          etag: string | null;
+          last_modified: string | null;
+          content_hash: string;
+          events: PageEntry['events'];
+          links: string[];
+          fetched_at: Date;
+        }>(
+          `select etag, last_modified, content_hash, events, links, fetched_at from page_cache
+           where source_id = $1 and url = $2`,
+          [sourceId, url],
+        );
+        const r = rows[0];
+        return r
+          ? {
+              etag: r.etag,
+              lastModified: r.last_modified,
+              hash: r.content_hash,
+              events: r.events,
+              links: r.links,
+              fetchedAt: r.fetched_at.toISOString(),
+            }
+          : undefined;
+      },
+      set: async (url, e) => {
+        await this.db.query(
+          `insert into page_cache (source_id, url, etag, last_modified, content_hash, events, links, fetched_at)
+           values ($1, $2, $3, $4, $5, $6, $7, $8)
+           on conflict (source_id, url) do update set etag = excluded.etag,
+             last_modified = excluded.last_modified, content_hash = excluded.content_hash,
+             events = excluded.events, links = excluded.links, fetched_at = excluded.fetched_at`,
+          [
+            sourceId,
+            url,
+            e.etag,
+            e.lastModified,
+            e.hash,
+            JSON.stringify(e.events),
+            JSON.stringify(e.links),
+            e.fetchedAt,
+          ],
+        );
+      },
+    };
+  }
+
   /** LLM results by content hash (see the crawler); kept until the page text changes. */
   extractionCache(extractorId: string): KeyValueCache<ExtractedEvent[]> {
     return {
@@ -494,6 +558,7 @@ export class EventStore {
            $32, $33)`,
         [...values, staleAfter ?? null],
       );
+      await this.writePerformers(e, owner.sourceId);
       return;
     }
     await this.db.query(
@@ -508,6 +573,21 @@ export class EventStore {
          stale_after = case when $33::boolean then $34::timestamptz else stale_after end
        where id = $1`,
       [...values, staleAfter !== undefined, staleAfter ?? null],
+    );
+    await this.writePerformers(e, owner.sourceId);
+  }
+
+  /** The event's performers as merged (M7 §1): the stored list is replaced by the union. */
+  private async writePerformers(e: HappowEvent, sourceId: string) {
+    const list = mergePerformers(e.performers);
+    await this.db.query('delete from event_performers where event_id = $1', [e.id]);
+    if (!list.length) return;
+    await this.db.query(
+      `insert into event_performers (event_id, ord, name, norm, source_id, external_id)
+       select $1, ord::smallint - 1, name, f_norm(name), $2, nullif(ext, '')
+       from unnest($3::text[], $4::text[]) with ordinality as t(name, ext, ord)
+       on conflict (event_id, norm) do nothing`,
+      [e.id, sourceId, list.map((p) => p.name), list.map((p) => p.externalId ?? '')],
     );
   }
 }

@@ -19,6 +19,7 @@ import {
   eventIdFromPath,
   saveWeeklyMetrics,
   sendDueNotices,
+  sendFollowAlerts,
   sendDueReminders,
   type ApiEnv,
   type ScheduleEnv,
@@ -86,12 +87,14 @@ export default {
   async scheduled(controller: ScheduledController, env: ApiEnv & ScheduleEnv): Promise<void> {
     const now = new Date(controller.scheduledTime);
     // Independent jobs: one failing must not stop the other.
-    const [ingest, metrics, reminders, notices] = await Promise.allSettled([
+    const [ingest, metrics, reminders, notices, follows] = await Promise.allSettled([
       dispatchDueIngest(env, now),
       saveWeeklyMetrics(env, now),
       sendDueReminders(env, now),
       // Organisers' notices and the private events' retention (M11 §7, §9).
       sendDueNotices(env, now),
+      // New dates of followed artists (M7 §5).
+      sendFollowAlerts(env, now),
     ]);
     const out = (r: PromiseSettledResult<object>) =>
       r.status === 'fulfilled' ? r.value : { error: String(r.reason) };
@@ -103,6 +106,7 @@ export default {
         metrics: out(metrics),
         reminders: out(reminders),
         notices: out(notices),
+        follows: out(follows),
       }),
     );
   },

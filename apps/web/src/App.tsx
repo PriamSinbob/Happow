@@ -67,6 +67,8 @@ import { GuidanceCard } from './components/Guidance';
 import { useDistrictGoal } from './hooks/useDistrictGoal';
 import { Glyph, Icon } from './components/Icons';
 import { ListView } from './components/ListView';
+import { FollowedGroup, FollowedScreen, SearchPanel } from './components/Follow';
+import { useFollowMatches, useFollowSync } from './follows';
 import { MapView } from './components/MapView';
 import { Moderation } from './components/Moderation';
 import { SignInSheet, TermsSheet } from './components/SignIn';
@@ -138,6 +140,7 @@ export function App() {
   const inPlans = planView.view !== 'all';
   const myList = usePlans();
   usePlanSync();
+  useFollowSync();
   const [queueDay, setQueueDay] = useState<string | null>(null);
   const closeGrid = useCallback(() => setGrid(null), []);
   const [toast, setToast] = useState<string | null>(null);
@@ -167,6 +170,16 @@ export function App() {
   // walking times then count from it. The locate button returns to the user.
   const [point, setPoint] = useState<LatLng | null>(null);
   const searchCenter = point ?? userCenter;
+  // Followed artists (M7 §4): matches on open and hourly; their events get the ★.
+  const followMatches = useFollowMatches(searchCenter);
+  const followedIds = useMemo(
+    () => new Set(followMatches.matches.map((m) => m.id)),
+    [followMatches.matches],
+  );
+  // The list's search field (§2) and the Followed screen; the magnifier opens the list focused.
+  const [searchFocus, setSearchFocus] = useState(0);
+  const [followedOpen, setFollowedOpen] = useState(false);
+  const [flyTo, setFlyTo] = useState<{ point: LatLng; seq: number } | null>(null);
   const clock = useMinuteClock();
   const loaded = useEvents(
     repo,
@@ -271,8 +284,12 @@ export function App() {
   const mapEvents = useMemo(() => {
     const base = inPlans ? mineOnMap : [...events, ...around.slice(0, maxEdgeDots)];
     const ids = new Set(base.map((e) => e.id));
-    return [...base, ...privOnMap.filter((e) => !ids.has(e.id))];
-  }, [inPlans, mineOnMap, events, around, privOnMap]);
+    const out = [...base, ...privOnMap.filter((e) => !ids.has(e.id))];
+    // ★ on a followed artist's pin (M7 §4).
+    return followedIds.size
+      ? out.map((e) => (followedIds.has(e.id) ? { ...e, followed: true } : e))
+      : out;
+  }, [inPlans, mineOnMap, events, around, privOnMap, followedIds]);
   // Ended long ago: off the list (a removal, so the account's other devices drop them too).
   const myDays = useMemo(
     () => agendaDays(mine.events, now, region.timezone, config.app.agenda.keepPastDays),
@@ -544,6 +561,7 @@ export function App() {
           }}
           bottomInset={timelineHeight}
           recenter={recenter}
+          flyTo={flyTo}
           hotspot={inPlans ? null : guidance.hotspot}
           onHotspot={() => {
             setSelectedId(null);
@@ -687,6 +705,19 @@ export function App() {
         <button
           type="button"
           className="map-btn"
+          aria-label={t('search.open')}
+          onClick={() => {
+            clearCards();
+            setFollowedOpen(false);
+            setView('list');
+            setSearchFocus((n) => n + 1);
+          }}
+        >
+          <Icon name="search" />
+        </button>
+        <button
+          type="button"
+          className="map-btn"
           onClick={locate}
           aria-label={t(point ? 'point.back' : 'header.locate')}
           data-status={location.status}
@@ -701,6 +732,7 @@ export function App() {
           aria-pressed={view === 'list'}
           onClick={() => {
             clearCards();
+            setFollowedOpen(false);
             setView(view === 'list' ? 'map' : 'list');
           }}
         >
@@ -723,30 +755,65 @@ export function App() {
           />
         </section>
       )}
-      {view === 'list' && !inPlans && (
+      {view === 'list' && !inPlans && followedOpen && (
+        <section className="list-overlay" aria-label={t('follow.title')}>
+          <FollowedScreen onClose={() => setFollowedOpen(false)} />
+        </section>
+      )}
+      {view === 'list' && !inPlans && !followedOpen && (
         <section className="list-overlay" aria-label={t('view.list')}>
-          <ListView
-            events={events}
+          <SearchPanel
+            key={searchFocus}
+            center={searchCenter}
             now={now}
-            radiusM={radius}
-            nextRadiusM={nextRadius}
-            around={around}
-            guidance={guidance}
-            filtered={filtered}
-            byDay={days > 0}
-            dayFrom={days && day !== null ? starts[day]! : now}
-            // A row returns to the map with its pin selected (§5, list style B).
-            onSelect={(id) => {
-              setView('map');
-              setPlaceIds(null);
-              setHotspotOpen(false);
-              setSelectedId(id);
+            autoFocus={searchFocus > 0}
+            onFollowed={() => setFollowedOpen(true)}
+            onOpen={(hit) => {
+              // In the loaded snapshot: back to the map with its card, flying there; otherwise
+              // the event's page (§2).
+              if (all.some((e) => e.id === hit.id)) {
+                setView('map');
+                setPlaceIds(null);
+                setHotspotOpen(false);
+                setSelectedId(hit.id);
+                setFlyTo((f) => ({ point: hit.point, seq: (f?.seq ?? 0) + 1 }));
+              } else openDetail(hit.id);
             }}
-            onExpand={setRadius}
-            onClearFilters={filters.clear}
-            goal={goal}
-            onAdd={startAdd}
-          />
+          >
+            <FollowedGroup
+              matches={followMatches}
+              now={now}
+              onOpen={(m) => {
+                if (all.some((e) => e.id === m.id)) {
+                  setView('map');
+                  setSelectedId(m.id);
+                  setFlyTo((f) => ({ point: m.point, seq: (f?.seq ?? 0) + 1 }));
+                } else openDetail(m.id);
+              }}
+            />
+            <ListView
+              events={events}
+              now={now}
+              radiusM={radius}
+              nextRadiusM={nextRadius}
+              around={around}
+              guidance={guidance}
+              filtered={filtered}
+              byDay={days > 0}
+              dayFrom={days && day !== null ? starts[day]! : now}
+              // A row returns to the map with its pin selected (§5, list style B).
+              onSelect={(id) => {
+                setView('map');
+                setPlaceIds(null);
+                setHotspotOpen(false);
+                setSelectedId(id);
+              }}
+              onExpand={setRadius}
+              onClearFilters={filters.clear}
+              goal={goal}
+              onAdd={startAdd}
+            />
+          </SearchPanel>
         </section>
       )}
 
@@ -756,6 +823,7 @@ export function App() {
             <EventCard
               ev={selected}
               now={now}
+              followed={followedIds.has(selected.id)}
               onClose={() => setSelectedId(null)}
               onDetails={() => openDetail(selected.id)}
               onGo={() => goThere(selected.id)}

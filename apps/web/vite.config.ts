@@ -115,7 +115,7 @@ export default defineConfig(({ mode }) => {
           // Reminders (M10 §4): the push and notification-click handlers.
           importScripts: ['push-sw.js'],
           // Server-rendered pages and the API are never answered with the app shell.
-          navigateFallbackDenylist: [/^\/crawler/, /^\/api\//],
+          navigateFallbackDenylist: [/^\/crawler/, /^\/legal\//, /^\/api\//],
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
           runtimeCaching: [
             {

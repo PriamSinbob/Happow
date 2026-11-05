@@ -12,6 +12,7 @@ import {
   loadConfig,
   quota,
   shiftWall,
+  splitPerformers,
   usageMonth,
   wallMinutes,
   weeklyStarts,
@@ -47,6 +48,8 @@ import { feedRoutes } from './feeds.js';
 import { organiserRoutes } from './organisers.js';
 import { privateRoutes } from './private.js';
 import { reminderRoutes } from './reminders.js';
+import { followRoutes } from './follows.js';
+import { emailSender, type EmailSender } from './email.js';
 import { savedRoutes } from './saved.js';
 import { ApiError, body, json, sha256 } from './http.js';
 import { premiumProviders, premiumRoutes, type PremiumProvider } from './premium.js';
@@ -73,6 +76,8 @@ export interface ApiDeps {
   extractor?: Extractor | null;
   /** Instead of the providers named in config (premium.providers). */
   premiumProviders?: PremiumProvider[];
+  /** Instead of the sender named in config (email.provider); null = email off. */
+  email?: EmailSender | null;
 }
 
 /** "2026-10-24T19:00" in the region's time zone, for <input type="datetime-local">. */
@@ -118,6 +123,8 @@ const submissionSchema = z.object({
     family: z.boolean().nullable().optional(),
     /** Sent only when the user changes it; otherwise the category default applies. */
     entry: entrySchema.nullable().optional(),
+    /** "Who's performing" (M7 §1): names separated by commas or new lines. */
+    performers: z.string().trim().max(1000).nullable().optional(),
   }),
   /** Only invitees see it (M11 §1); needs `private.create`, and it can't repeat. */
   private: z.boolean().optional(),
@@ -168,6 +175,8 @@ export interface Prefill {
   ageMin: number | null;
   family: boolean | null;
   entry: 'fixed' | 'open' | null;
+  /** Names as printed, one per line in the form. */
+  performers: string[];
 }
 
 export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
@@ -227,7 +236,12 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
 
   // Quotas count per calendar month, and the promotion ends, in the default region's time zone.
   const accountZone = getRegion(config).timezone;
+  const email =
+    deps.email !== undefined
+      ? deps.email
+      : emailSender(config.app.email, env as Record<string, unknown>, doFetch);
   const accounts = accountRoutes({
+    email,
     app: config.app,
     plans: config.plans,
     timeZone: accountZone,
@@ -286,6 +300,18 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     requireUser: accounts.requireUser,
     planOf: accounts.planOf,
     limit,
+  });
+
+  const follows = followRoutes({
+    config,
+    env: env as Record<string, string | undefined>,
+    need,
+    limit,
+    clientHash,
+    requireUser: accounts.requireUser,
+    planOf: accounts.planOf,
+    now,
+    fetch: doFetch,
   });
 
   const privateApi = privateRoutes({ config, need, requireUser: accounts.requireUser, limit });
@@ -357,6 +383,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       ageMin: e.ageMin ?? null,
       family: e.family ?? null,
       entry: e.entry ?? null,
+      performers: e.performers ?? [],
     };
   }
 
@@ -645,6 +672,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
           ticketUrl: null,
           imageUrl: null,
           status: 'scheduled',
+          performers: splitPerformers(e.performers ?? ''),
         },
         {
           source: submissionsSource,
@@ -1003,6 +1031,11 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         return json(await contributions.mine((await accounts.requireUser(req)).id));
       if (head === 'me' && rest[0] === 'feeds') return await feeds.mine(req, rest.slice(1));
       if (head === 'me' && rest[0] === 'saved') return await saved(req, rest.slice(1));
+      if (head === 'me' && rest[0] === 'follows') return await follows.mine(req, rest.slice(1));
+      if (head === 'search' && req.method === 'GET' && !rest.length)
+        return await follows.search(req);
+      if (head === 'follows' && req.method === 'POST' && rest.join('/') === 'match')
+        return await follows.match(req);
       if (head === 'me' && rest.length === 1 && (rest[0] === 'claims' || rest[0] === 'events'))
         return await organisers.mine(req, rest[0]);
       if (head === 'private') return await privateApi.privateEvents(req, rest);

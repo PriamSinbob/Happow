@@ -158,6 +158,7 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
         dropped: result.dropped,
         geocoded: result.geocoded,
         rejected: result.rejected,
+        ...(result.polite && { polite: result.polite }),
         ...applied,
       };
       if (runId !== null) await store!.finishRun(runId, 'ok', stats);
@@ -236,6 +237,8 @@ async function runSource(
   dropped: number;
   geocoded: number;
   rejected: Partial<Record<RejectReason, number>>;
+  /** Crawler politeness counters, for crawled sources that saved something. */
+  polite?: Record<string, number>;
 }> {
   const { ingest, h3, extraction } = config.app;
   const http = new HttpClient({
@@ -260,6 +263,12 @@ async function runSource(
     source.adapter === 'worship-services' && venueDb
       ? await venueDb.servicePlaces(region.id, Array.isArray(kinds) ? kinds.map(String) : [])
       : undefined;
+  // Crawler politeness (M13 §3): the page cache lives with the store; without one, each run
+  // reads every page (tests, dry runs).
+  const politeness = {
+    ...ingest.politeness,
+    stats: { notModified: 0, unchanged: 0, revisitSkipped: 0, tdmReserved: 0 },
+  };
   const raws = await adapter.fetch({
     source,
     region,
@@ -277,6 +286,8 @@ async function runSource(
       siteTargets,
       worshipPlaces,
       onSiteResult: (id, error, events) => siteResults.push({ id, error, events }),
+      pages: opts.store?.pageCache(source.id),
+      politeness,
     },
   });
   if (venueDb && siteResults.length)
@@ -353,7 +364,16 @@ async function runSource(
     if (res.ok) events.push(atOsmPin(res.value, pins, config));
     else rejected[res.reason] = (rejected[res.reason] ?? 0) + 1;
   }
-  return { raws, window, events, dropped, geocoded, rejected };
+  const saved = Object.fromEntries(Object.entries(politeness.stats).filter(([, n]) => n > 0));
+  return {
+    raws,
+    window,
+    events,
+    dropped,
+    geocoded,
+    rejected,
+    ...(Object.keys(saved).length > 0 && { polite: saved }),
+  };
 }
 
 /** An event at a venue whose pin moved to its OSM point takes that point, if it is at the venue. */

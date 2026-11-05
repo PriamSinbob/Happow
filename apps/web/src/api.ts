@@ -21,6 +21,7 @@ export type ApiErrorCode =
   | 'feed_stopped'
   | 'account_required'
   | 'auth_failed'
+  | 'email_failed'
   // M11
   | 'name_required'
   | 'blocked'

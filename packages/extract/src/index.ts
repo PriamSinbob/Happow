@@ -6,3 +6,4 @@ export * from './fetch.js';
 export * from './geocode.js';
 export * from './llm.js';
 export * from './timing.js';
+export * from './tdm.js';

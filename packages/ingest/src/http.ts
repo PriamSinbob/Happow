@@ -49,7 +49,51 @@ export class HttpClient {
     this.next = Math.max(Date.now(), this.next) + (this.opts.minIntervalMs ?? 0);
   }
 
+  /** Waits for this client's turn, for requests made by other means (a capped fetch). */
+  async wait(): Promise<void> {
+    await this.throttle();
+  }
+
   async text(url: string, init: RequestInit = {}): Promise<string> {
+    return (await this.send(url, init)).body;
+  }
+
+  /**
+   * A page with its validators (M13 §3): sends If-None-Match / If-Modified-Since when given, and
+   * answers `{ status: 304 }` when the server says nothing changed.
+   */
+  async page(
+    url: string,
+    since?: { etag: string | null; lastModified: string | null },
+  ): Promise<
+    | { status: 304 }
+    | {
+        status: 200;
+        body: string;
+        etag: string | null;
+        lastModified: string | null;
+        headers: Headers;
+      }
+  > {
+    const headers: Record<string, string> = {};
+    if (since?.etag) headers['If-None-Match'] = since.etag;
+    if (since?.lastModified) headers['If-Modified-Since'] = since.lastModified;
+    const r = await this.send(url, { headers }, true);
+    if (r.status === 304) return { status: 304 };
+    return {
+      status: 200,
+      body: r.body,
+      etag: r.headers.get('etag'),
+      lastModified: r.headers.get('last-modified'),
+      headers: r.headers,
+    };
+  }
+
+  private async send(
+    url: string,
+    init: RequestInit,
+    allowNotModified = false,
+  ): Promise<{ status: number; body: string; headers: Headers }> {
     const retries = this.opts.retries ?? 3;
     for (let attempt = 0; ; attempt++) {
       await this.throttle();
@@ -65,10 +109,12 @@ export class HttpClient {
         await this.sleep(backoff(attempt));
         continue;
       }
+      if (allowNotModified && res.status === 304)
+        return { status: 304, body: '', headers: res.headers };
       const body = await res.text();
       if (res.ok) {
         this.opts.onResponse?.(url, body);
-        return body;
+        return { status: res.status, body, headers: res.headers };
       }
       const retryable = res.status === 429 || res.status >= 500;
       if (!retryable || attempt >= retries) throw new HttpError(res.status, url, body);
