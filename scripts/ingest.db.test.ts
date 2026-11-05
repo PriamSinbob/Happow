@@ -105,6 +105,25 @@ describe.skipIf(!url)('ingestion into Postgres', () => {
     expect(cells.rows[0].n).toBe(0);
   });
 
+  it('stores Ticketmaster attractions as performers, with their ids (M7 §1)', async () => {
+    const { rows } = await db.query(
+      `select p.name, p.norm, p.external_id, p.source_id from event_performers p
+       join events e on e.id = p.event_id where e.title in ('Dawid Podsiadło', 'Mayday')
+         and e.primary_source_id = 'ticketmaster'
+       order by e.title, p.ord`,
+    );
+    expect(rows).toEqual([
+      {
+        name: 'Dawid Podsiadło',
+        norm: 'dawid podsiadlo',
+        external_id: 'K8vZ9175Tr0',
+        source_id: 'ticketmaster',
+      },
+      { name: 'Mayday', norm: 'mayday', external_id: 'K8vZ9171o-f', source_id: 'ticketmaster' },
+      { name: 'Kult', norm: 'kult', external_id: 'K8vZ917_Kult', source_id: 'ticketmaster' },
+    ]);
+  });
+
   it('is idempotent: a second run updates instead of duplicating', async () => {
     const before = (await db.query('select count(*)::int as n from events')).rows[0].n;
     const [s] = await ingest('ticketmaster', TM);

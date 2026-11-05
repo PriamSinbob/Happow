@@ -48,6 +48,7 @@ import { feedRoutes } from './feeds.js';
 import { organiserRoutes } from './organisers.js';
 import { privateRoutes } from './private.js';
 import { reminderRoutes } from './reminders.js';
+import { followRoutes } from './follows.js';
 import { savedRoutes } from './saved.js';
 import { ApiError, body, json, sha256 } from './http.js';
 import { premiumProviders, premiumRoutes, type PremiumProvider } from './premium.js';
@@ -291,6 +292,18 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     requireUser: accounts.requireUser,
     planOf: accounts.planOf,
     limit,
+  });
+
+  const follows = followRoutes({
+    config,
+    env: env as Record<string, string | undefined>,
+    need,
+    limit,
+    clientHash,
+    requireUser: accounts.requireUser,
+    planOf: accounts.planOf,
+    now,
+    fetch: doFetch,
   });
 
   const privateApi = privateRoutes({ config, need, requireUser: accounts.requireUser, limit });
@@ -1010,6 +1023,11 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         return json(await contributions.mine((await accounts.requireUser(req)).id));
       if (head === 'me' && rest[0] === 'feeds') return await feeds.mine(req, rest.slice(1));
       if (head === 'me' && rest[0] === 'saved') return await saved(req, rest.slice(1));
+      if (head === 'me' && rest[0] === 'follows') return await follows.mine(req, rest.slice(1));
+      if (head === 'search' && req.method === 'GET' && !rest.length)
+        return await follows.search(req);
+      if (head === 'follows' && req.method === 'POST' && rest.join('/') === 'match')
+        return await follows.match(req);
       if (head === 'me' && rest.length === 1 && (rest[0] === 'claims' || rest[0] === 'events'))
         return await organisers.mine(req, rest[0]);
       if (head === 'private') return await privateApi.privateEvents(req, rest);

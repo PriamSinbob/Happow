@@ -442,6 +442,48 @@ export const appConfigSchema = z.object({
     postsCacheSec: z.number().int().min(0),
   }),
   /** Push notices to everyone interested in an event (M11 §7, owner 2026-11-04). */
+  /** M7 search (docs/milestones/M7-search-follow.md §2). */
+  search: z.object({
+    /** Trigram similarity a match needs (pg_trgm `%`), about 0.3. */
+    minSimilarity: z.number().min(0).max(1),
+    /** Word similarity for a query inside a longer name (pg_trgm `<%`), "podsiadlo" in "dawid podsiadlo". */
+    minWordSimilarity: z.number().min(0).max(1),
+    minChars: z.number().int().min(1),
+    maxChars: z.number().int().min(2),
+    maxResults: z.number().int().positive().max(100),
+    perHourPerClient: z.number().int().positive(),
+    /** Answers are cached this long at the edge and in the browser. */
+    cacheSeconds: z.number().int().min(0),
+    /** The app waits this long after the last keystroke before asking. */
+    debounceMs: z.number().int().min(0),
+  }),
+  /** M7 follows (§4, §5). */
+  follows: z.object({
+    /** Names per device or account. */
+    max: z.number().int().positive().max(500),
+    /** Match requests per client and hour. */
+    matchPerHourPerClient: z.number().int().positive(),
+    /** The app asks again at most this often (§4: on open, then hourly). */
+    matchEveryMinutes: z.number().int().positive(),
+    /** Nationwide Ticketmaster lookups (slice E). */
+    nationwide: z.object({
+      enabled: z.boolean(),
+      /** The source in sources.json whose endpoint and secrets are used. */
+      sourceId: z.string(),
+      /** A cached lookup is used for this long. */
+      maxAgeHours: z.number().positive(),
+      /** New lookups per day across everyone, well inside the API key's 5,000. */
+      perDay: z.number().int().min(0),
+      /** New lookups one match request may make; the rest wait for the next. */
+      perRequest: z.number().int().min(0),
+      countryCode: z.string().length(2),
+    }),
+    /** New-date alerts (slice G): sent per cron tick at most, and how far back a new event counts. */
+    alerts: z.object({
+      maxPerTick: z.number().int().positive(),
+      lookbackHours: z.number().int().positive(),
+    }),
+  }),
   notices: z.object({
     /** Devices one notice reaches at most. */
     maxAudience: z.number().int().positive(),
@@ -718,6 +760,8 @@ export const entitlementsSchema = z
     'atlas.export': z.boolean(),
     'atlas.sync': z.boolean(),
     'alerts.newDates': z.boolean(),
+    /** Followed artists synced across the account's devices (M7 §5). */
+    'follows.sync': z.boolean(),
     'saved.sync': z.boolean(),
     'private.create': z.boolean(),
     /** Private events a month (M11 §1, owner 2026-11-04: 1 on a free account). */

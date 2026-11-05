@@ -12,3 +12,4 @@ export {
   type Outline,
   type PreviewData,
 } from './eventPage.js';
+export { sendFollowAlerts, type AlertTickResult } from './followAlerts.js';

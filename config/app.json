@@ -270,6 +270,30 @@
     "postsCacheSec": 60
   },
   "notices": { "maxAudience": 500, "inline": 3, "maxPerTick": 6 },
+  "search": {
+    "minSimilarity": 0.3,
+    "minWordSimilarity": 0.6,
+    "minChars": 2,
+    "maxChars": 80,
+    "maxResults": 40,
+    "perHourPerClient": 300,
+    "cacheSeconds": 60,
+    "debounceMs": 300
+  },
+  "follows": {
+    "max": 200,
+    "matchPerHourPerClient": 30,
+    "matchEveryMinutes": 60,
+    "nationwide": {
+      "enabled": true,
+      "sourceId": "ticketmaster",
+      "maxAgeHours": 24,
+      "perDay": 1000,
+      "perRequest": 10,
+      "countryCode": "PL"
+    },
+    "alerts": { "maxPerTick": 3, "lookbackHours": 48 }
+  },
   "metrics": {
     "eveningFromHour": 18,
     "weekly": { "weekday": 1, "hour": 8 }
