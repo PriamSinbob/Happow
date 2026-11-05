@@ -25,7 +25,9 @@ describe('schema.org performer (M7 §1)', () => {
   it('reads a plain string, an array, and the older plural "performers"', () => {
     expect(names({ performer: 'Mela Koteluk' })).toEqual(['Mela Koteluk']);
     expect(
-      names({ performer: [{ '@type': 'Person', name: 'A B' }, 'C D', { '@type': 'Person' }, 'C D'] }),
+      names({
+        performer: [{ '@type': 'Person', name: 'A B' }, 'C D', { '@type': 'Person' }, 'C D'],
+      }),
     ).toEqual(['A B', 'C D']);
     expect(names({ performers: { '@type': 'MusicGroup', name: 'Hey' } })).toEqual(['Hey']);
   });
