@@ -411,7 +411,7 @@ export const en = {
   'signIn.changeEmail': 'Change email',
   'terms.title': 'Welcome to Happow',
   'terms.lead': 'One more thing: accept the account terms.',
-  'terms.show': 'Account terms (interim version)',
+  'terms.show': 'Account terms in short',
   'terms.1':
     'An account stores your email, language, when you accepted the terms, the events you add, and your monthly usage counts.',
   'terms.2':
@@ -464,7 +464,11 @@ export const en = {
   'about.contactBody': 'To report illegal content or ask for removal, write to {email}.',
   'about.contactFallback':
     'Use "Report a problem" on any event. A contact address for formal notices will be published here.',
-  'about.draft': 'Draft text for the pilot. It will be reviewed before the public launch.',
+  'about.draft': 'The legal texts are drafts, to be reviewed before the public launch.',
+  'legal.terms': 'Terms of use',
+  'legal.privacy': 'Privacy policy',
+  'legal.takedown': 'Reports and takedown',
+  'legal.storage': 'Device storage, no cookies',
   'about.licenses': 'Third-party licences',
   'about.attribution':
     'Map, district and venue data © OpenStreetMap contributors (ODbL), tiles by OpenFreeMap. Event details © their organisers and sources.',

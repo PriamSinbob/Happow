@@ -39,9 +39,24 @@ export interface HappowConfig {
   seasons: Season[];
 }
 
+/**
+ * Fills `{siteUrl}` and `{contactEmail}` (M13 §2). A missing contact drops its part with the
+ * separator before it ("; {contactEmail}"), so the User-Agent stays well-formed.
+ */
+export function siteTemplate(
+  s: string,
+  app: { site: { url: string }; legal: { contactEmail: string | null } },
+): string {
+  const email = app.legal.contactEmail;
+  return s
+    .replace(/[;,]?\s*\{contactEmail\}/g, (m) => (email ? m.replace('{contactEmail}', email) : ''))
+    .replaceAll('{siteUrl}', app.site.url);
+}
+
 /** Parse and cross-check the JSON files in /config. Throws with a readable message on any mistake. */
 export function loadConfig(): HappowConfig {
   const app = appConfigSchema.parse(appJson);
+  app.ingest.userAgent = siteTemplate(app.ingest.userAgent, app);
   const { categories } = categoriesConfigSchema.parse(categoriesJson);
   const { regions } = regionsConfigSchema.parse(regionsJson);
   const map = mapConfigSchema.parse(mapJson);

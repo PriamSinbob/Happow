@@ -198,7 +198,7 @@ export interface ReminderTickResult {
 
 export interface ReminderTickDeps {
   fetch?: typeof fetch;
-  app?: Pick<typeof appJson, 'push' | 'reminders' | 'legal'>;
+  app?: Pick<typeof appJson, 'push' | 'reminders' | 'legal' | 'site'>;
 }
 
 /**
@@ -228,7 +228,7 @@ export async function sendDueReminders(
   const key = await cachedKey(secret);
   const subject = app.legal.contactEmail
     ? `mailto:${app.legal.contactEmail}`
-    : 'https://happow.app';
+    : app.site.url;
   const done: number[] = [];
   const sentTo: string[] = [];
   const gone: string[] = [];

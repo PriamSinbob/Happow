@@ -3596,3 +3596,14 @@ a.row {
 .followed-screen .btn {
   flex: none;
 }
+
+/* M13 legal texts: links to the full pages under the summaries. */
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}

@@ -428,7 +428,7 @@ export const pl: Record<MessageKey, string> = {
   'signIn.changeEmail': 'Zmień e-mail',
   'terms.title': 'Witaj w Happow',
   'terms.lead': 'Jeszcze jedno: zaakceptuj zasady konta.',
-  'terms.show': 'Zasady konta (wersja tymczasowa)',
+  'terms.show': 'Warunki konta w skrócie',
   'terms.1':
     'Konto przechowuje Twój e-mail, język, datę akceptacji zasad, wydarzenia, które dodajesz, i liczniki miesięcznych limitów.',
   'terms.2':
@@ -482,7 +482,11 @@ export const pl: Record<MessageKey, string> = {
   'about.contactBody': 'Aby zgłosić nielegalne treści lub poprosić o usunięcie, napisz na {email}.',
   'about.contactFallback':
     'Użyj „Zgłoś problem” przy wydarzeniu. Adres do formalnych zgłoszeń opublikujemy tutaj.',
-  'about.draft': 'Wersja robocza na czas pilotażu. Zostanie sprawdzona przed publicznym startem.',
+  'about.draft': 'Teksty prawne są projektami do przeglądu przed publicznym startem.',
+  'legal.terms': 'Regulamin',
+  'legal.privacy': 'Polityka prywatności',
+  'legal.takedown': 'Zgłoszenia i usuwanie treści',
+  'legal.storage': 'Pamięć urządzenia, bez ciasteczek',
   'about.licenses': 'Licencje zewnętrzne',
   'about.attribution':
     'Dane mapy, dzielnic i miejsc © współtwórcy OpenStreetMap (ODbL), kafelki OpenFreeMap. Informacje o wydarzeniach © ich organizatorzy i źródła.',

@@ -59,7 +59,7 @@ export interface AlertTickResult {
 
 export interface AlertTickDeps {
   fetch?: typeof fetch;
-  app?: Pick<typeof appJson, 'push' | 'follows' | 'legal'>;
+  app?: Pick<typeof appJson, 'push' | 'follows' | 'legal' | 'site'>;
 }
 
 export async function sendFollowAlerts(
@@ -85,7 +85,7 @@ export async function sendFollowAlerts(
   const key = await cachedKey(secret);
   const subject = app.legal.contactEmail
     ? `mailto:${app.legal.contactEmail}`
-    : 'https://happow.app';
+    : app.site.url;
   const done: number[] = [];
   const sentTo: string[] = [];
   const gone: string[] = [];

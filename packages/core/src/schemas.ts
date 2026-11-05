@@ -502,11 +502,23 @@ export const appConfigSchema = z.object({
       hour: z.number().int().min(0).max(23),
     }),
   }),
+  /** The public site (M13 §2): its origin is the one place the domain is written. */
+  site: z.object({
+    url: z
+      .string()
+      .url()
+      .refine((u) => u.startsWith('https://') && !u.endsWith('/'), 'https, no trailing slash'),
+    name: z.string().min(1),
+  }),
   legal: z.object({
-    /** Takedown / DSA notice contact shown on the About page. */
+    /** Takedown / DSA notice contact shown on the About page, the legal pages and the crawler's UA. */
     contactEmail: z.string().email().nullable(),
     /** Version of the terms and privacy notice an account accepts at sign-up (M8 §2). */
     termsVersion: z.string().min(1),
+    /** The controller named in the terms and privacy policy (M13 §1); null until the owner sets it. */
+    operator: z.string().min(1).nullable(),
+    /** The operator's postal address, for the legal pages. */
+    address: z.string().min(1).nullable(),
   }),
   /** User accounts (M8 §2). */
   auth: z.object({
@@ -535,7 +547,10 @@ export const appConfigSchema = z.object({
     /** Fetch from this long ago, so events that started earlier and still run are kept. */
     lookbackHours: z.number().nonnegative(),
     lookaheadHours: z.number().positive(),
-    /** Identifies our crawler/API client to providers. */
+    /**
+     * Identifies our crawler/API client to providers. `{siteUrl}` and `{contactEmail}` are filled
+     * from `site.url` and `legal.contactEmail` (M13 §2); see `siteTemplate`.
+     */
     userAgent: z.string().min(1),
     /** Runs in a row a complete-listing source must miss an event before it is "possibly cancelled". */
     missedRunsToFlag: z.number().int().min(1),

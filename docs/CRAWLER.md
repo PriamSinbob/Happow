@@ -3,7 +3,7 @@
 Happow is a free map of events happening near you (concerts, markets, talks), starting in Wrocław, Poland. Its crawler identifies itself as:
 
 ```
-Happow/0.4 (+https://happow.krasnoroda.workers.dev/crawler)
+{{userAgent}}
 ```
 
 ## What it does
@@ -18,7 +18,7 @@ Happow/0.4 (+https://happow.krasnoroda.workers.dev/crawler)
 
 ## Opting out or asking for changes
 
-Write to the contact address on the app's [About page](https://happow.krasnoroda.workers.dev/#/about). We stop crawling a site within 48 hours of a request and remove its events from the app.
+Write to the contact address on the app's [About page]({{siteUrl}}/#/about). We stop crawling a site within 48 hours of a request and remove its events from the app.
 
 ## Sources
 

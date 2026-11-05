@@ -58,6 +58,7 @@ interface App {
   push: { secret: string; ttlSeconds: number };
   notices: { maxPerTick: number };
   legal: { contactEmail: string | null };
+  site: { url: string };
 }
 
 /** Sends up to `max` queued notices (one event's only, when given). */
@@ -78,7 +79,7 @@ export async function sendNotices(
   const key = await cachedKey(secret);
   const subject = app.legal.contactEmail
     ? `mailto:${app.legal.contactEmail}`
-    : 'https://happow.app';
+    : app.site.url;
   const done: number[] = [];
   const gone: string[] = [];
   let sent = 0;

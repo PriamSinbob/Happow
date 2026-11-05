@@ -99,7 +99,7 @@
     "descriptionMaxChars": 600,
     "lookbackHours": 8,
     "lookaheadHours": 1440,
-    "userAgent": "Happow/0.4 (+https://happow.krasnoroda.workers.dev/crawler)",
+    "userAgent": "Happow/0.5 (+{siteUrl}/crawler; {contactEmail})",
     "missedRunsToFlag": 2,
     "dispatch": {
       "repo": "PriamSinbob/happow",
@@ -298,9 +298,15 @@
     "eveningFromHour": 18,
     "weekly": { "weekday": 1, "hour": 8 }
   },
+  "site": {
+    "url": "https://happow.krasnoroda.workers.dev",
+    "name": "Happow"
+  },
   "legal": {
     "contactEmail": "krasnoroda@gmail.com",
-    "termsVersion": "2026-10-24-interim"
+    "termsVersion": "2026-11-05-draft",
+    "operator": null,
+    "address": null
   },
   "auth": {
     "emailDelivery": "manual",

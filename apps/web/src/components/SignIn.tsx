@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { earlyAccessEnd, entitlementsFor, quota } from '@happow/core';
 import { useAccount } from '../account';
+import { LegalLinks } from './Legal';
 import { requestCode, signInWithGoogle, verifyCode } from '../auth';
 import { config, region } from '../config';
 import { errorText } from '../errors';
@@ -245,6 +246,7 @@ export function TermsSheet() {
             <li>{t('terms.4')}</li>
             <li>{t('terms.5')}</li>
           </ul>
+          <LegalLinks />
         </details>
         <label className="check">
           <input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} />
