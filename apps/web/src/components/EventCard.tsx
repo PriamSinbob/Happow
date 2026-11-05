@@ -4,6 +4,7 @@ import { categoriesById } from '../config';
 import { useI18n, type MessageKey } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
 import { Glyph } from './Icons';
+import { FollowStar, PerformerChips } from './Follow';
 import { en as RULE_KEYS } from '../i18n/en';
 
 const RULE_ICONS: Record<string, string> = {
@@ -86,9 +87,12 @@ export function EventCard({
   onClose,
   onDetails,
   onGo,
+  followed = false,
 }: {
   ev: NearbyEvent;
   now: Date;
+  /** A followed artist performs (M7 §4): the ★. */
+  followed?: boolean;
   onClose: () => void;
   onDetails: () => void;
   /** Opens "Going there" (route inside the app). */
@@ -108,6 +112,7 @@ export function EventCard({
             {ev.verified === false && (
               <span className="badge badge--unverified">{t('event.unverified')}</span>
             )}
+            {followed && <FollowStar />}
           </div>
           <h2 id={`ev-${ev.id}`}>
             <button type="button" className="link-btn" onClick={onDetails}>
@@ -135,6 +140,7 @@ export function EventCard({
       <p className="event-card__distance">
         {distance} · {walk}
       </p>
+      <PerformerChips performers={ev.performers} />
       <RuleList ev={ev} />
       {ev.endEstimated && <p className="footnote">* {t('event.endEstimated')}</p>}
 

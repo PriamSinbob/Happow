@@ -45,6 +45,8 @@ interface Props {
   bottomInset: number;
   /** Incremented by the locate button: fit the view to the reach again even after panning. */
   recenter: number;
+  /** A search result picked from the list (M7 §2): the map flies there once per `seq`. */
+  flyTo?: { point: LatLng; seq: number } | null;
   hidden?: boolean;
   hotspot: Guidance['hotspot'];
   onHotspot: () => void;
@@ -474,6 +476,19 @@ export function MapView(props: Props) {
     props.recenter,
     props.previewRadiusM,
   ]);
+
+  // A search result opened from the list: fly to it, keeping the zoom unless far out.
+  useEffect(() => {
+    const m = map.current;
+    const f = props.flyTo;
+    if (!m || !f) return;
+    userMoved.current = true;
+    m.easeTo({
+      center: [f.point.lng, f.point.lat],
+      zoom: Math.max(m.getZoom(), 15),
+      duration: 700,
+    });
+  }, [props.flyTo?.seq]);
 
   // A pinned search point gets its own marker, so it's clear what distances count from.
   useEffect(() => {

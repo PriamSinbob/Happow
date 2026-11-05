@@ -12,6 +12,8 @@ import { InstallHint } from './InstallHint';
 import { NearbyNow } from './NearbyNow';
 import { ShareSheet } from './ShareSheet';
 import { hasRules, RuleList } from './EventCard';
+import { FollowStar, PerformerChips } from './Follow';
+import { follows, useFollows } from '../follows';
 import { Glyph, Icon } from './Icons';
 import { glyphOf } from '../pins';
 import { ReportDialog } from './ReportDialog';
@@ -181,6 +183,8 @@ function DetailBody({
   const sameDay = isSameDay(ev.startAt, new Date(new Date(ev.endAt).getTime() - 1), ev.timezone);
   const minutesToStart = Math.round((new Date(ev.startAt).getTime() - now.getTime()) / 60_000);
   const source = (ev.sourceId && sourceNames.get(ev.sourceId)) || t(`event.source.${ev.trust}`);
+  useFollows();
+  const followed = (ev.performers ?? []).some((p) => follows.isFollowed(p.name));
 
   useEffect(() => {
     if (!toast) return;
@@ -207,6 +211,7 @@ function DetailBody({
           {ev.verified === false && (
             <span className="badge badge--unverified">{t('event.unverified')}</span>
           )}
+          {followed && <FollowStar />}
         </div>
         <h1 id="detail-title">{ev.title}</h1>
         <InstallHint />
@@ -217,6 +222,7 @@ function DetailBody({
         {ev.status !== 'scheduled' && (
           <p className={`status-banner status-banner--${ev.status}`}>{t(`event.${ev.status}`)}</p>
         )}
+        <PerformerChips performers={ev.performers} />
 
         <ul className="facts">
           <li>

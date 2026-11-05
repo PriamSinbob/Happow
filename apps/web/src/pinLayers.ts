@@ -119,6 +119,13 @@ export function addPinLayers(m: maplibregl.Map) {
     layout: { ...common, 'icon-image': 'pin-lock', 'icon-offset': [-13, 11] },
     paint: { 'icon-opacity': opacity, 'icon-halo-width': 2 },
   });
+  // M7 §4: a followed artist's event carries a star at the upper left.
+  layer({
+    id: 'pin-star',
+    filter: ['all', notCluster, get('starred')],
+    layout: { ...common, 'icon-image': 'pin-star', 'icon-offset': [-13, -11] },
+    paint: { 'icon-opacity': opacity, 'icon-halo-width': 2 },
+  });
   // §4.4: "16+" / "18+" at the upper right. Numerals only, no translation.
   layer({
     id: 'pin-age',
@@ -161,6 +168,8 @@ export function pinPaint(
     ['pin-flag', 'text-halo-color', t.warn],
     ['pin-lock', 'icon-color', t.ink],
     ['pin-lock', 'icon-halo-color', t.paper],
+    ['pin-star', 'icon-color', t.ink],
+    ['pin-star', 'icon-halo-color', t.paper],
     ['pin-age', 'text-color', t.ink],
     ['pin-age', 'text-halo-color', t.paper],
   ];
