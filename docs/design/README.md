@@ -44,6 +44,19 @@ Visual source of truth for the M6 and M7 UI. Where the milestone specs describe 
 - **Map shortcut chip** (`map-shortcut.html`): 38 px round chip right of a fixed-width counter (dot and number centred); on = `ink` fill, off = `paper`; hold opens a grid with family mode first, then the categories. Family mode has its own glyph (adult and child), distinct from the kids horse.
 - **Touch-first: no hover styles** (owner, 2026-10-23).
 
+## Visual pass (owner, 2026-11-08)
+
+Applies across the app on top of the mockups above; where a mockup's look differs, this wins. Layout, sizes, positions, icons and the normative rules above are unchanged.
+
+- **Typeface: Geist** (OFL), bundled from `@fontsource-variable/geist` (latin, latin-ext, cyrillic; ~61 KB, precached for offline). Headings tight (−0.02 to −0.03 em, weight 650), uppercase labels 11 px at 0.08 em, tabular numerals for times, counts and prices. Notice in `apps/web/public/third-party-licenses.txt`.
+- **Graphite night** (M6 §3.1): neutral near-black surfaces and a near-monochrome basemap. The mockups still show the old slate night.
+- **Glass chrome, subtle:** everything floating over the map (counter, map buttons, rail thumb and pill, time pill, list overlay, event card, pick grid, Going-there panels) is paper at 72–90 % with a 24 px backdrop blur, a hairline border and a thin top highlight.
+- **Tokens in `apps/web/src/styles.css` `:root`**, all derived from the theme colours: `--hair` / `--hair-strong` (ink hairlines), `--fill` / `--fill-strong` (quiet ink fills for tiles, chips, secondary buttons), `--glass` / `--glass-solid`, `--rim`, `--shadow-sm` / `--shadow-lg` / `--lift`, `--live-glow`, radii 12 / 18 / 26 px, `--ease-out`.
+- **Shapes:** buttons are pills; sheets have 28 px top corners; the list overlay is one surface with hairlines between rows instead of a stack of cards.
+- **Live colour** still only means "on now": the Now pill, the counter's dot and the filled counter get a soft live glow. Nothing animates at idle.
+- **Motion:** sheets and cards rise with `--ease-out` (0.3–0.4 s); a pressed control shrinks slightly (`:active`, no hover styles); reduced motion turns all of it off.
+- **Detail page without a poster:** a neutral dot grid with a soft floor glow, ink only.
+
 ## Illustrative: don't copy
 
 - The street grid, river, parks and sample events. The app draws the MapLibre basemap and real data.
