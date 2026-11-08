@@ -10,6 +10,7 @@ import {
   type PlansConfig,
 } from '@happow/core';
 import { z } from 'zod';
+import type { EmailSender } from './email.js';
 import { ApiError, body, json, sha256 } from './http.js';
 import { SupabaseError, type AuthUser, type Supabase } from './supabase.js';
 
@@ -28,6 +29,8 @@ export interface AccountDeps {
   now: () => Date;
   limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
   clientHash: (req: Request, salt: string) => Promise<string>;
+  /** The app's email sender (M13 §5), null while email is off. */
+  email?: EmailSender | null;
 }
 
 const meSchema = z
@@ -37,6 +40,8 @@ const meSchema = z
     /** "Show my name on events I add" (M12 §5.5), off by default, and the name it shows. */
     showName: z.boolean().optional(),
     displayName: z.string().trim().min(1).max(60).optional(),
+    /** "Show my friends when I'm going" (M11 §5), off by default. */
+    friendsVisible: z.boolean().optional(),
   })
   .strict();
 const trustSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254) }).strict();
@@ -61,7 +66,11 @@ const sourceActionSchema = z
   .strict();
 
 /** 429 for a used-up monthly quota, with what the add form needs to say so (M8 §5). */
-export const quotaExceeded = (kind: 'events' | 'autofill', limit: number, resetsAt: Date) =>
+export const quotaExceeded = (
+  kind: 'events' | 'autofill' | 'private',
+  limit: number,
+  resetsAt: Date,
+) =>
   new ApiError(429, 'quota_exceeded', undefined, {
     kind,
     limit,
@@ -69,7 +78,16 @@ export const quotaExceeded = (kind: 'events' | 'autofill', limit: number, resets
   });
 
 /** Account endpoints (M8 §2–§5): /api/me, /api/auth/*, /api/admin/*. */
-export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHash }: AccountDeps) {
+export function accountRoutes({
+  app,
+  plans,
+  timeZone,
+  need,
+  now,
+  limit,
+  clientHash,
+  email: sender = null,
+}: AccountDeps) {
   const { auth, legal } = app;
   /** Checked tokens, so a burst of requests asks Supabase once. Per isolate, short-lived. */
   const cache = new Map<string, { user: User; until: number }>();
@@ -122,15 +140,19 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
   async function usageOf(user: { id: string }, entitlements: Entitlements) {
     const { db } = need();
     const { month, resetsAt } = usageMonth(now(), timeZone);
-    const used = await db.rpc<{ events: number; autofills: number }>('usage_get', {
-      p_user: user.id,
-      p_month: month,
-    });
+    const used = await db.rpc<{ events: number; autofills: number; private?: number }>(
+      'usage_get',
+      {
+        p_user: user.id,
+        p_month: month,
+      },
+    );
     return {
       month: month.slice(0, 7),
       resetsAt: resetsAt.toISOString(),
       events: { used: used.events, limit: quota(entitlements, 'events.perMonth') },
       autofill: { used: used.autofills, limit: quota(entitlements, 'autofill.perMonth') },
+      private: { used: used.private ?? 0, limit: quota(entitlements, 'private.perMonth') },
     };
   }
 
@@ -157,7 +179,10 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
     const sub = path.join('/');
     if (req.method === 'GET' && sub === '') return json(await profile(user));
     if (req.method === 'PUT' && sub === '') {
-      const { locale, termsVersion, showName, displayName } = await body(req, meSchema);
+      const { locale, termsVersion, showName, displayName, friendsVisible } = await body(
+        req,
+        meSchema,
+      );
       if (termsVersion !== undefined && termsVersion !== legal.termsVersion)
         throw new ApiError(400, 'invalid_input', 'termsVersion');
       await db.rpc('profile_update', {
@@ -171,6 +196,8 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
           p_show_name: showName ?? null,
           p_display_name: displayName ?? null,
         });
+      if (friendsVisible !== undefined)
+        await db.rpc('profile_friends', { p_user: user.id, p_on: friendsVisible });
       return json(await profile(user));
     }
     if (req.method === 'GET' && path[0] === 'submissions' && path.length === 2) {
@@ -203,16 +230,18 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
   }
 
   /**
-   * POST /api/auth/code-request {email, locale}: files a request for a sign-in code that the
-   * admin sends by hand. Always the same answer, so it never tells whether an account exists.
+   * POST /api/auth/code-request {email, locale}: with manual delivery, files a request for a
+   * sign-in code that the admin sends by hand; with "app" delivery (M13 §5), makes the code and
+   * emails it at once. Always the same answer, so it never tells whether an account exists.
    */
   async function authRoutes(req: Request, path: string[]): Promise<Response> {
     if (
       req.method !== 'POST' ||
       path.join('/') !== 'code-request' ||
-      auth.emailDelivery !== 'manual'
+      (auth.emailDelivery !== 'manual' && auth.emailDelivery !== 'app')
     )
       throw new ApiError(404, 'not_found');
+    if (auth.emailDelivery === 'app' && !sender) throw new ApiError(503, 'not_configured');
     const { db, salt } = need();
     const { email, locale } = await body(req, codeRequestSchema);
     const client = await clientHash(req, salt);
@@ -223,6 +252,24 @@ export function accountRoutes({ app, plans, timeZone, need, now, limit, clientHa
       86_400,
       auth.codeRequestsPerDayPerEmail,
     );
+    if (auth.emailDelivery === 'app') {
+      await db.ensureUser(email);
+      let code: { code: string; link: string };
+      try {
+        code = await db.signInCode(email, `${app.site.url}/`);
+      } catch (err) {
+        if (err instanceof SupabaseError) throw new ApiError(502, 'auth_failed', err.message);
+        throw err;
+      }
+      const mail = codeEmail(locale, code.code, code.link);
+      try {
+        await sender!.send({ to: email, subject: mail.subject, text: mail.body });
+      } catch (err) {
+        console.error(JSON.stringify({ email: 'code', error: String(err) }));
+        throw new ApiError(502, 'email_failed');
+      }
+      return json({ ok: true }, 202);
+    }
     await db.rpc('request_code', { p_email: email, p_locale: locale, p_client: client });
     return json({ ok: true }, 202);
   }

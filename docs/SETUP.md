@@ -136,6 +136,7 @@ The app runs as one **Cloudflare Worker** named `happow`. Cloudflare serves the 
    - `SUBMITTER_SALT`: a long random string you create once, for example the output of `openssl rand -hex 32` or 40 random characters from a password manager. It makes stored device and IP hashes unlinkable. Keep it stable: changing it resets rate limits and breaks "one report per device".
    - `GITHUB_DISPATCH_TOKEN`: lets the Worker's schedule start the ingest workflow (see **5a**).
    - `ORS_API_KEY` (optional): walking routes for "Route in Happow". Sign up at account.heigit.org (openrouteservice by HeiGIT); the free **Standard** plan gives 2,000 routes a day and 40 a minute. Copy the API key from the dashboard. Without it, or when the daily quota runs out, the in-app route is drawn as a direct line, and the Google Maps button works as always.
+   - `VAPID_PRIVATE_KEY` (for reminders, M10): signs web push messages. Make it once with `pnpm push:keys` (it prints one line starting `{"kty":"EC"`) and paste that whole line as the value. Without it, reminders can't be set. Keep it stable: a new key ends every existing push subscription. Previews read the same secrets (**Previews Base**), so set it there too to test reminders on a preview.
 6. **Deployments → Retry** (or push to `main`). The app is then at `https://happow.<your-subdomain>.workers.dev`, shown on the Worker's overview page. A custom domain is added later under **Settings → Domains & Routes**.
 
 **Logs:** errors from `/api` appear under the Worker's **Observability → Logs**, and failed builds under **Deployments → View build**.
@@ -162,6 +163,8 @@ Sources whose GitHub secrets are missing are recorded as skipped and not retried
 | `DATABASE_URL`                     | Supabase connection string (1.2) | migrate, ingest    |
 | `ANTHROPIC_API_KEY`                | Anthropic Console (2.4)          | ingest (NFM crawl) |
 | `TICKETMASTER_API_KEY`, `MEETUP_*` | optional, see README             | ingest             |
+
+The Worker also needs `TICKETMASTER_API_KEY` (Settings → Variables and Secrets, the same key) for followed artists' dates in other Polish cities (M7 §4). Without it, follows still match the region's events.
 
 **Ingest** is started by the Worker's Cron Trigger whenever a source is due (**5a**), with a fallback schedule once a day. Each source decides whether it is due, so a run fetches only those. To run everything now: **Actions → Ingest sources → Run workflow** with **force** ticked.
 

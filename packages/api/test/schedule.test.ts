@@ -31,6 +31,7 @@ const allFresh = [
   'biletyna',
   'mbp-wroclaw',
   'uwr',
+  'meetup-pages',
   'worship-services',
 ].map((id) => okRow(id));
 

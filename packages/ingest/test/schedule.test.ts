@@ -25,6 +25,7 @@ const fresh: RunRecord[] = [
   'biletyna',
   'mbp-wroclaw',
   'uwr',
+  'meetup-pages',
   'worship-services',
 ].map((id) => run(id, at('11:50'), 'ok'));
 const without = (id: string) => fresh.filter((r) => r.sourceId !== id);

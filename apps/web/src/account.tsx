@@ -32,12 +32,17 @@ export interface Me {
   /** "Show my name on events I add" and that name (M12 §5.5). */
   showName?: boolean;
   displayName?: string | null;
+  /** "Show my friends when I'm going" (M11 §5), and a moderator's stop on private events. */
+  friendsVisible?: boolean;
+  privateBlocked?: boolean;
   entitlements: Entitlements;
   usage: {
     month: string;
     resetsAt: string;
     events: { used: number; limit: number };
     autofill: { used: number; limit: number };
+    /** Private events this month (M11 §1); missing from servers before M11. */
+    private?: { used: number; limit: number };
   };
 }
 

@@ -84,7 +84,14 @@ export default defineConfig(({ mode }) => {
           background_color: themeConfig.themes.day.paper,
           display: 'standalone',
           orientation: 'portrait',
+          id: '/',
           start_url: '/',
+          // Shared event links (/e/<id>, M9 §7) are inside the scope, so an installed Happow on
+          // Android opens them itself; handle_links asks Chrome to prefer the app, and
+          // launch_handler reuses an open window instead of stacking new ones.
+          scope: '/',
+          handle_links: 'preferred',
+          launch_handler: { client_mode: ['navigate-existing', 'auto'] },
           // Share into Happow (M12 slice D): the installed app shows in Android's share sheet;
           // a share opens /share, which the app turns into the add form (src/share.ts).
           share_target: {
@@ -105,8 +112,10 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+          // Reminders (M10 §4): the push and notification-click handlers.
+          importScripts: ['push-sw.js'],
           // Server-rendered pages and the API are never answered with the app shell.
-          navigateFallbackDenylist: [/^\/crawler/, /^\/api\//],
+          navigateFallbackDenylist: [/^\/crawler/, /^\/legal\//, /^\/api\//],
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
           runtimeCaching: [
             {

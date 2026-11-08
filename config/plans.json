@@ -8,8 +8,12 @@
       "atlas.export": false,
       "atlas.sync": false,
       "alerts.newDates": false,
+      "follows.sync": false,
       "saved.sync": false,
-      "private.create": false
+      "private.create": false,
+      "private.perMonth": 0,
+      "organiser.infoPosts": false,
+      "organiser.publish": false
     },
     "account": {
       "events.perMonth": 15,
@@ -19,8 +23,12 @@
       "atlas.export": true,
       "atlas.sync": false,
       "alerts.newDates": false,
+      "follows.sync": false,
       "saved.sync": true,
-      "private.create": false
+      "private.create": true,
+      "private.perMonth": 1,
+      "organiser.infoPosts": true,
+      "organiser.publish": true
     },
     "premium": {
       "events.perMonth": 300,
@@ -30,8 +38,12 @@
       "atlas.export": true,
       "atlas.sync": false,
       "alerts.newDates": true,
+      "follows.sync": true,
       "saved.sync": true,
-      "private.create": true
+      "private.create": true,
+      "private.perMonth": 300,
+      "organiser.infoPosts": true,
+      "organiser.publish": true
     }
   },
   "earlyAccess": {

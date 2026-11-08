@@ -93,11 +93,12 @@ async function gotrue(path: string, body: unknown): Promise<Response> {
 const appUrl = () => `${window.location.origin}${window.location.pathname}`;
 
 /**
- * Asks for a sign-in code. With manual delivery (until the app has an email sender) the Worker
- * files the request and the owner emails the code by hand; otherwise Supabase sends it.
+ * Asks for a sign-in code. With manual delivery the Worker files the request and the owner emails
+ * the code by hand; with "app" delivery the Worker emails it; with "supabase", Supabase does.
  */
 export async function requestCode(email: string, locale: string): Promise<void> {
-  if (config.app.auth.emailDelivery === 'manual') {
+  // "app" (M13 §5): the Worker makes the code and emails it itself.
+  if (config.app.auth.emailDelivery === 'manual' || config.app.auth.emailDelivery === 'app') {
     await api('auth/code-request', { body: { email, locale } });
     return;
   }

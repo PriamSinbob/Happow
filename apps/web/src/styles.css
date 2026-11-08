@@ -1433,6 +1433,64 @@ div.settings-row {
   background: var(--warn);
   color: var(--warn-ink);
 }
+.status-banner--ended {
+  background: var(--sunken);
+  color: var(--quiet);
+}
+/* "On now nearby" under an ended event (M9 §4). */
+.nearby-now__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nearby-now__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+}
+.nearby-now__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--quiet);
+}
+.nearby-now__text strong {
+  font-size: 15px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nearby-now__empty {
+  color: var(--quiet);
+}
+/* One-time "Add to Home Screen" line on a shared card in iOS Safari (M9 §7). */
+.install-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 8px 8px 8px 12px;
+  border-radius: 10px;
+  background: var(--sunken);
+  color: var(--quiet);
+  font-size: 13px;
+}
+.install-hint span {
+  flex: 1;
+}
 .facts {
   display: grid;
   gap: 16px;
@@ -1472,6 +1530,32 @@ div.settings-row {
 .detail .event-card__actions {
   margin-top: 18px;
 }
+/* "I'm going" (M9 §5): the toggle, the bucketed count, the sharer's link count. */
+.going {
+  margin-top: 10px;
+}
+.going__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.going__btn {
+  flex: 0 0 auto;
+}
+.going__btn[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--ink) 50%, var(--paper));
+  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+}
+.going__count {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--quiet);
+}
+.going__links {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--quiet);
+}
 .detail__tools {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1495,6 +1579,42 @@ div.settings-row {
   border-color: var(--ink);
   background: var(--fill-strong);
   box-shadow: inset 0 0 0 0.5px var(--ink);
+}
+/* Share sheet (M9 §3): link, image, copy; the QR code big enough to scan from a screen. */
+.share-sheet__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.share-sheet__actions .btn {
+  flex: none;
+}
+.share-sheet__qr {
+  margin: 18px 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.share-sheet__qr svg {
+  width: min(240px, 70vw);
+  height: auto;
+  border-radius: 12px;
+}
+.share-sheet__qr figcaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--quiet);
+  text-align: center;
+}
+.share-sheet__url {
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  user-select: all;
 }
 .detail__section {
   margin-top: 22px;
@@ -3247,4 +3367,471 @@ button.account-card__plan {
 }
 .coverage .field select {
   width: 100%;
+}
+
+/* M10 plan ahead: the agenda (§1) and the evening queue (§3). */
+.row-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.row-wrap > .row {
+  flex: 1;
+  min-width: 0;
+}
+.row__unsave {
+  flex: none;
+}
+.badge--going {
+  background: var(--ink);
+  color: var(--paper);
+}
+.agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.agenda__day {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agenda__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.agenda__tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.btn--small {
+  flex: none;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+.agenda__empty,
+.plan-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+.plan-empty {
+  flex-wrap: wrap;
+}
+.plan-empty p {
+  flex: 1;
+  margin: 0;
+}
+.agenda__gone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 0 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.agenda__past summary {
+  padding: 8px 4px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+}
+.queue__note {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.queue__item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.queue__event {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  color: inherit;
+}
+.queue__body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.queue__leave {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 12px;
+  font-size: 13px;
+}
+.queue__time.is-early {
+  font-weight: 650;
+}
+.queue__leg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-left: 22px;
+  padding: 6px 0 6px 14px;
+  border-left: 2px dotted var(--line);
+  font-size: 13px;
+}
+.queue__leg.is-warning strong {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--warn);
+  color: var(--warn-ink);
+}
+.queue__transit {
+  color: inherit;
+}
+.row-wrap .row__when {
+  flex-wrap: wrap;
+}
+
+/* M10 reminders (§5): the bell's sheet. */
+.reminder {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.reminder p {
+  margin: 0;
+}
+.reminder__leads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.reminder__lead {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 19px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 600;
+}
+.reminder__lead.is-on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.reminder__actions {
+  display: flex;
+  gap: 8px;
+}
+.reminder__note {
+  font-size: 13px;
+  color: var(--muted);
+}
+.reminder__error {
+  color: var(--error-ink);
+}
+.reminder > .btn {
+  flex: none;
+}
+
+/* M11: private events, friends, organisers (built from the card's existing pieces; no mockup). */
+.private-panel,
+.organiser,
+.friends-line {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+}
+.private-panel__head,
+.organiser__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.private-panel__answer,
+.organiser__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.friends-line p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+}
+.check--small {
+  margin-bottom: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.guests__actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+}
+.posts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.post {
+  padding: 10px 12px;
+  border: 0.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.post--important {
+  border: 1.5px solid var(--warn-ink);
+  background: var(--warn);
+  color: var(--warn-ink);
+}
+.post--schedule {
+  border-color: var(--ink);
+}
+.post__kind {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.post__body,
+.post__change {
+  margin: 4px 0;
+  font-size: 14px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.post__change {
+  font-weight: 600;
+}
+.post__meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.post--important .post__meta {
+  color: inherit;
+}
+.claim-code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.claim-code code {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--sunken);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+.my-events__open {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+}
+.mod-card__diff {
+  margin: 6px 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+/* M7 search and followed artists: the field at the top of the list (§2), performer chips with
+   ♡ on the card (§4), the ★ on followed artists' events, and the Followed screen. */
+.search {
+  position: sticky;
+  top: -10px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 640px;
+  margin: -10px auto 10px;
+  padding: 10px 0 6px;
+  background: var(--paper);
+}
+.search__field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 6px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--muted);
+}
+.search__field:focus-within {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.search__field input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  outline: none;
+}
+.search__field input::-webkit-search-cancel-button {
+  display: none;
+}
+.search__clear {
+  flex: none;
+}
+.search__followed {
+  flex: none;
+  width: 44px;
+  height: 44px;
+}
+.search__status {
+  max-width: 640px;
+  margin: 16px auto;
+  text-align: center;
+  color: var(--muted);
+}
+.performers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+.performer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  max-width: 100%;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+}
+.performer-chip__name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.performer-chip.is-on {
+  border-color: var(--ink);
+}
+.follow-star {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink);
+}
+.follow-btn {
+  flex: none;
+}
+.follow-btn.is-on {
+  color: var(--ink);
+}
+.followed {
+  max-width: 640px;
+  margin: 0 auto 20px;
+}
+a.row {
+  color: inherit;
+  text-decoration: none;
+}
+.followed-screen {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.followed-screen__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.followed-screen__head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.followed-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+.followed-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 48px;
+  border-bottom: 1px solid var(--line);
+}
+.followed-list li span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.followed-alerts {
+  padding: 4px 0;
+}
+.followed-screen .btn {
+  flex: none;
+}
+
+/* M13 legal texts: links to the full pages under the summaries. */
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
 }

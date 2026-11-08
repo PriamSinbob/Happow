@@ -9,11 +9,13 @@ import { selectablePresets, THEME_SETTINGS, useTheme } from '../theme';
 import { AccountCard, DeleteAccountSheet } from './Account';
 import { AtlasBar } from './Atlas';
 import { Icon } from './Icons';
+import { LegalLinks } from './Legal';
 import { PremiumMark, PremiumSheet } from './Premium';
 import { Screen } from './Screen';
 import { SignInSheet } from './SignIn';
 
 const NUMBERS = ['1', '2', '3', '4'] as const;
+
 /** Presets in the order of the plans that unlock them. */
 const TIERS = ['anonymous', 'account', 'premium'];
 
@@ -139,6 +141,7 @@ export function About({
           {config.app.submissions.autofill && <li>{t('about.privacy.autofill')}</li>}
           {config.app.analytics.plausibleDomain && <li>{t('about.privacy.analytics')}</li>}
         </ul>
+        <LegalLinks />
 
         <h2>{t('about.contact')}</h2>
         <p>

@@ -1,0 +1,69 @@
+{
+  "_embedded": {
+    "events": [
+      {
+        "name": "Dawid Podsiadło – Trasa 2026",
+        "type": "event",
+        "id": "Z698xZb_Z17aWaw",
+        "url": "https://www.ticketmaster.pl/event/dawid-podsiadlo-warszawa-bilety/2001",
+        "dates": {
+          "start": {
+            "localDate": "2026-12-05",
+            "localTime": "20:00:00",
+            "dateTime": "2026-12-05T19:00:00Z"
+          },
+          "status": { "code": "onsale" }
+        },
+        "_embedded": {
+          "venues": [
+            {
+              "name": "PGE Narodowy",
+              "city": { "name": "Warszawa" },
+              "location": { "longitude": "21.044", "latitude": "52.2395" }
+            }
+          ],
+          "attractions": [{ "name": "Dawid Podsiadło", "id": "K8vZ9175Tr0" }]
+        }
+      },
+      {
+        "name": "Dawid Podsiadło",
+        "type": "event",
+        "id": "Z698xZb_Z17a0kA",
+        "url": "https://www.ticketmaster.pl/event/dawid-podsiadlo-wroclaw-bilety/1001",
+        "dates": {
+          "start": {
+            "localDate": "2026-11-14",
+            "localTime": "20:00:00",
+            "dateTime": "2026-11-14T19:00:00Z"
+          },
+          "status": { "code": "onsale" }
+        },
+        "_embedded": {
+          "venues": [
+            {
+              "name": "Hala Stulecia",
+              "city": { "name": "Wrocław" },
+              "location": { "longitude": "17.0773", "latitude": "51.1069" }
+            }
+          ],
+          "attractions": [{ "name": "Dawid Podsiadło", "id": "K8vZ9175Tr0" }]
+        }
+      },
+      {
+        "name": "Dawid Podsiadło – Gdańsk",
+        "type": "event",
+        "id": "Z698xZb_Z17aGda",
+        "url": "https://www.ticketmaster.pl/event/dawid-podsiadlo-gdansk-bilety/2002",
+        "dates": {
+          "start": { "localDate": "2026-12-12", "dateTime": "2026-12-12T19:00:00Z" },
+          "status": { "code": "cancelled" }
+        },
+        "_embedded": {
+          "venues": [{ "name": "Ergo Arena", "city": { "name": "Gdańsk" } }],
+          "attractions": [{ "name": "Dawid Podsiadło", "id": "K8vZ9175Tr0" }]
+        }
+      }
+    ]
+  },
+  "page": { "size": 50, "totalElements": 3, "totalPages": 1, "number": 0 }
+}

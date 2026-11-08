@@ -53,6 +53,8 @@ Age and audience: age_min is the youngest age let in, as a number. Polish pages 
 
 entry is "fixed" when the event has a set start that people should be there for (a play, a film, a seated or ticketed concert, a talk, a match, "początek o 19:00", "wpuszczanie do 18:50") and "open" when people come and go while it runs (a club night or DJ set, a fair, a market, an exhibition, a festival day, "wstęp wolny przez cały dzień"). A concert is fixed, a club night is open. Use null when you cannot tell.
 
+performers lists who performs: artists, bands, DJs, actors named as the cast, speakers, or the teams in a match, each name exactly as printed. Leave out organisers, venues, sponsors, hosts of a Meetup group and the event's own title unless it is a performer's name. Use an empty list when the page names nobody.
+
 confidence is how sure you are about the title, date, start time and place together: about 0.9 when all are stated plainly, 0.6 when one had to be inferred, 0.3 or lower when the page is ambiguous.`;
 
 const SYSTEM = `${PAGE_INTRO}\n\n${RULES}`;
@@ -83,6 +85,9 @@ function schema(categoryIds: string[]) {
     age_min: z.number().nullable().describe('Youngest age let in: 18 for "18+", 0 for "0+"'),
     family: z.boolean().nullable().describe('Explicitly for children or families'),
     entry: z.string().nullable().describe('"fixed" (set start) or "open" (come and go)'),
+    performers: z
+      .array(z.string())
+      .describe('Artists, bands, speakers or teams performing, exactly as printed'),
     confidence: z.number().describe('0 to 1'),
   });
   return z.object({ events: z.array(event) });
@@ -220,6 +225,9 @@ export class ClaudeExtractor implements Extractor {
           online: e.online_only,
           categoryHints: [],
           categoryIds: [...new Set(e.category_ids.filter((c) => ids.includes(c)))].slice(0, 2),
+          performers: [
+            ...new Set((e.performers ?? []).map((n) => n.replace(/\s+/g, ' ').trim())),
+          ].filter((n) => n.length >= 2 && n.length <= 120),
           method: 'llm',
           confidence: Math.min(1, Math.max(0, e.confidence)),
         },

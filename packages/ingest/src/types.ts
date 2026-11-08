@@ -69,6 +69,10 @@ export const parsedEventSchema = z.object({
       city: z.string().nullable(),
     })
     .optional(),
+  /** Who performs, as the source names them (M7 §1). */
+  performers: z
+    .array(z.object({ name: z.string().min(1), externalId: z.string().nullable().optional() }))
+    .optional(),
   /** 0–1; defaults to 1 for API sources. */
   confidence: z.number().min(0).max(1).optional(),
 });
@@ -77,6 +81,34 @@ export type ParsedEvent = z.infer<typeof parsedEventSchema>;
 export interface FetchWindow {
   from: Date;
   to: Date;
+}
+
+/** A crawled page as last read (M13 §3): validators, its content hash, what it gave. */
+export interface PageEntry {
+  etag: string | null;
+  lastModified: string | null;
+  hash: string;
+  events: ExtractedEvent[];
+  /** Pages to follow found on it (start pages only). */
+  links: string[];
+  fetchedAt: string;
+}
+
+export interface PageCache {
+  get(url: string): Promise<PageEntry | undefined>;
+  set(url: string, entry: PageEntry): Promise<void>;
+}
+
+/** What crawler politeness saved in a run, for the run's stats. */
+export interface PolitenessStats {
+  /** 304 Not Modified answers. */
+  notModified: number;
+  /** Fetched again, same content: nothing parsed or sent to the LLM. */
+  unchanged: number;
+  /** Event pages not fetched at all: read recently, and their events are still far ahead. */
+  revisitSkipped: number;
+  /** Pages with a TDM reservation: read for structured data only, never sent to the LLM. */
+  tdmReserved: number;
 }
 
 /** Shared helpers some adapters need (the crawler); absent ones mean the feature is off. */
@@ -93,6 +125,15 @@ export interface AdapterServices {
   onSiteResult?: (id: number, error: string | null, events: number) => void;
   /** OSM places with `service_times` (the `worship-services` source, M12 §2.3). */
   worshipPlaces?: OsmVenue[];
+  /** Crawler politeness (M13 §3): the page cache, its settings and the run's counters. */
+  pages?: PageCache;
+  politeness?: {
+    conditionalRequests: boolean;
+    respectTdm: boolean;
+    revisitHours: number;
+    revisitFarDays: number;
+    stats: PolitenessStats;
+  };
 }
 
 /** A site an admin accepted from the website check (source_candidates). */

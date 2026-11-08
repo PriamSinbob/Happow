@@ -4,7 +4,7 @@ Oct 30, 2026
 
 Spec from the brief (Future features → Event links, sharing and attendance, requested 2026-10-22) and M6 §9 (co-presence). M9 comes after M12 in the build order (brief, 2026-10-26). Build it the usual way: post each slice's plan, wait for the owner's OK, build it, then replace the "Status" line with the report.
 
-**Status:** spec approved, §9 answered by the owner on 2026-10-30; no slice built yet.
+**Status:** spec approved, §9 answered by the owner on 2026-10-30; all slices built; what it does: [M9-summary.md](M9-summary.md).
 
 Goal: **a shared event opens in Happow itself, looks right wherever it's pasted, and shows that people are going, without anyone giving up their privacy.** Sharing is the app's growth loop, so all of M9 is free for everyone, with no account and no install for the person who receives a link. The brief's rules hold throughout: no streaks, no fake urgency, pull not push, paid never buys visibility. No new data sources.
 
@@ -12,15 +12,15 @@ Goal: **a shared event opens in Happow itself, looks right wherever it's pasted,
 
 One branch and one PR to `main` per slice, as in M12. Each slice PR updates its row below and the Status line, and adds a short "Built (slice X)" note under its section. UI slices follow the existing screens (no mockups since M12 slice D, owner 2026-10-28); the design studio pass comes after everything is built.
 
-| Slice | Spec | What                                                                                             | Needs | Status  |
-| ----- | ---- | ------------------------------------------------------------------------------------------------ | ----- | ------- |
-| A     | §1   | Clean `/e/<id>` links: the Worker answers them with the event's preview tags; the app opens them | —     | planned |
-| B     | §2   | The generated preview image (1200×630), cached at the edge per event version                     | A     | planned |
-| C     | §3   | Sharing: link with a short text, share as image, QR code; the in-app route first, Maps second    | A, B  | planned |
-| D     | §4   | Links that outlive the event: "Ended" plus what's on now near that place                         | A     | planned |
-| E     | §5   | "I'm going" on the card, and the sharer's link-scoped count                                      | A, C  | planned |
-| F     | §6   | Co-presence: looking, on the way, here; counts from 5, off for sensitive categories              | E     | planned |
-| G     | §7   | Opening in the app: Android link capture, the iOS "Add to Home Screen" hint                      | A     | planned |
+| Slice | Spec | What                                                                                             | Needs | Status |
+| ----- | ---- | ------------------------------------------------------------------------------------------------ | ----- | ------ |
+| A     | §1   | Clean `/e/<id>` links: the Worker answers them with the event's preview tags; the app opens them | —     | built  |
+| B     | §2   | The generated preview image (1200×630), cached at the edge per event version                     | A     | built  |
+| C     | §3   | Sharing: link with a short text, share as image, QR code; the in-app route first, Maps second    | A, B  | built  |
+| D     | §4   | Links that outlive the event: "Ended" plus what's on now near that place                         | A     | built  |
+| E     | §5   | "I'm going" on the card, and the sharer's link-scoped count                                      | A, C  | built  |
+| F     | §6   | Co-presence: looking, on the way, here; counts from 5, off for sensitive categories              | E     | built  |
+| G     | §7   | Opening in the app: Android link capture, the iOS "Add to Home Screen" hint                      | A     | built  |
 
 ### Working notes
 
@@ -45,6 +45,8 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 - **Private events** (M11) will get the generic tags and no details: the Worker checks the event is public before filling anything in. Until M11 every event is public.
 - **Tests.** The Worker route with a fake event: tags present and HTML-escaped, a hidden event, an unknown id, the hash link still working.
 
+**Built (slice A).** `packages/api/src/eventPage.ts` answers `/e/<id>` (the Worker reads `index.html` through the new `ASSETS` binding). The tags go in by plain string insertion: `index.html` is under 1 KB, so streaming it through HTMLRewriter would add nothing and couldn't be tested in Node. The description reads day, time, venue and category in the language of the region the event is in. A database error still serves the app (uncached), so a link never breaks. In the app, `adoptEventPath` turns `/e/<id>?…` into `/?…#/e/<id>` before anything reads the URL, so the card, Back and closing work as before. Sharing still sends the hash link until slice C.
+
 ## 2. Preview image (slice B)
 
 - **Our own card, never the source's image** (copyright rule): 1200×630, in the app's look, with:
@@ -57,6 +59,14 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 - **Budget check.** The renderer and fonts must keep the Worker under its size limit; if they don't, the image moves to a second Worker. The PR reports the bundle size.
 - **Tests.** The SVG for a fake event (text escaped, long titles cut, the glyph present) and that the PNG has the right size.
 
+**Built (slice B).**
+
+- **Image.** `apps/web/worker/preview.ts` draws the SVG with resvg (`@resvg/resvg-wasm`) and bundled Inter Regular and Bold (OFL, credited in `third-party-licenses.txt`). The map is the district outlines within 1.5 km, from the new `district_outlines()` (migration 22, service role only). The event's own district is tinted in the category colour, with its name and "© OpenStreetMap" in the corner. Without districts the map is plain.
+- **Version.** The image URL carries `?v=`, a 12-character hash of what's drawn (title, time, venue, category, point, language), so the image is cached at the edge for a week and an edited event gets a new one. The link tags now use `summary_large_image`.
+- **Budget.** The Worker is 1.65 MB gzipped (was 0.37), under the 3 MB limit, so no second Worker is needed.
+- **CPU.** A render takes about 60 ms of CPU. On the Workers Free plan's 10 ms some first renders will fail; the link then previews without the picture (`docs/HARDENING.md`).
+- **Migration.** Needs migration 22 on the live database; until then the map is plain.
+
 ## 3. Sharing (slice C)
 
 - **Share** on the event card sends the clean link (`/e/<id>`) plus a short text: title · day and time · venue. Without a share sheet, it copies the link.
@@ -65,12 +75,29 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 - **In-app route first.** On the event card and in GoThere, "Going there" (the in-app walking route) is the main button; the Google Maps hand-off becomes a secondary link.
 - **Tests.** Share data (link and text), the copy fallback, the QR code encoding the clean link, button order.
 
+**Built (slice C).**
+
+- **Share sheet.** "Share" on the card opens a small sheet (`ShareSheet.tsx`): **Send link** (the share sheet with title · day and time · venue, or a copy where there is none), **Share as image** (only where the browser can share files), **Copy link**, and the QR code below them, always visible. Three more buttons in the card's tool row didn't fit at 380 px, so they live in this sheet.
+- **QR code.** Drawn on the device with `qrcode-generator` (MIT, medium error correction), white on any theme so it scans from a dark screen.
+- **Clean links.** Links are now `/e/<id>`, in the calendar file too.
+- **Route first.** On the event card and the list cards, "Route in Happow" is the main button and Google Maps the plain one next to it. In GoThere the Maps hand-off is no longer the main button.
+
 ## 4. Links that outlive the event (slice D)
 
 - An ended event's link still opens its card, marked **Ended**, with what's on **now** near that place (the same reach rules as the map, a few events, nearest first). An old share always leads somewhere live.
 - The preview tags of an ended event say "Ended" in the description; the image is kept.
 - An event removed by moderation (hidden) opens as "not found", never with its old details.
 - **Tests.** An ended event's card and its "now nearby" list; a hidden one.
+
+**Built (slice D).**
+
+- **Card.** An ended event's card shows "This event has ended" at the top and, under its buttons, **On now nearby** (`NearbyNow.tsx`): live, not cancelled events within the person's own reach around the event's place, nearest first.
+  - At most `sharing.endedNearbyMax` (5) events, from new config in `config/app.json`.
+  - Tapping one swaps the card.
+  - With none, the section says so.
+- **Preview.** The link's preview description starts with `sharing.endedLabel` ("Zakończone" / "Ended"), and the image stays as it was.
+- **Hidden events.** A hidden event already reads as "no longer listed": `event_by_id` reads `events_public`, both in the app and in the Worker (404).
+- **Retention.** Ended events stay in the database; only sources with a cache limit (`maxCacheAgeHours`) drop out, and their old links read as "no longer listed".
 
 ## 5. "I'm going" and link-scoped counts (slice E)
 
@@ -80,6 +107,17 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 - **Names** only with M11: when both people are signed in and the recipient chooses to show theirs. M9 shows counts only (see §9.3).
 - **Storage.** One row per device and event (`going`), with the share token if any; removed when the event ends plus a day. The device token is hashed with `SUBMITTER_SALT`, as elsewhere.
 - **Tests.** Going and undoing; counts from 5 in buckets; the sharer's count from the token; one per device; sensitive categories show nothing.
+
+**Built (slice E).**
+
+- **Card.** An "I'm going" toggle (`Going.tsx`) sits under the route buttons on events that haven't ended. Beside it, "10+ going" appears once the server's bucket allows; a sharer also gets "3 people from your link are going" (Polish plurals). Links carry `?s=<token>`, one token per device and event (`POST /api/share`), kept on the device and reused.
+- **Arriving through a link.** The app remembers that link's token per event (the first one wins) and takes it out of the address.
+- **Server.** Migration **23** adds `attendance` (one row per device hash, event and signal, with the account when signed in, for M11), `share_links`, `attendance_get`, `attendance_set` and `share_link_create`, all service-role only.
+  - A token counts only for a link made by another device for the same event, so a sharer can't count themselves.
+  - Ended, hidden and unknown events get no signals.
+  - Rows go a day after the event ends (`attendance.keepAfterEndHours`).
+- **API.** `POST /api/attendance`, `/api/attendance/set` and `/api/share` bucket the counts (`attendance.publicMin` 5, `buckets` 5/10/25 in `config/app.json`) and rate-limit per device.
+- **Sensitive categories.** For a category with `publicAttendance: false` (religious), the API returns no counts at all, and no link count either, since a sharer knows who they sent the link to. People still see their own mark.
 
 ## 6. Co-presence (slice F; M6 §9)
 
@@ -95,12 +133,28 @@ What exists: share sends `/#/e/<id>`, which opens the event card. Social apps fe
 - **Separate from M12's counts.** "Your impact" totals (opens, routes, arrivals) stay as they are: daily, per event, for the adder only. Co-presence is live and public, so it is its own short-lived table.
 - **Tests.** Each signal and its window; the threshold and buckets; a religious event showing nothing; dedup per device.
 
+**Built (slice F).**
+
+- **Signals.**
+  - **Looking:** opening a card that hasn't ended sends "looking" for `attendance.lookingMinutes` (30). It's resent at most every 15 minutes per event; if it's refused (rate limit), the card only reads the counts.
+  - **On the way:** "Going there" sends "on the way" when the route starts and takes it back when the screen closes, whether the person arrived, stopped or gave up.
+  - **Here:** always an explicit tap, never sent from location alone. It's offered on arrival in "Going there", and on the card of a live event within `attendance.hereRadiusM` (100 m).
+- **Distance.** The card measures from the map's search centre (the person's location when it's on). Since "here" is a tap and only counts from 5, a wrong offer costs little.
+- **Card line.** Under "I'm going" the card shows "10+ here · 5+ on the way · 25+ looking", each only from the threshold up, and nothing for categories with `publicAttendance: false`.
+- **Storage.** It's the slice E table (migration 23); a short signal expires on its own window (`forSeconds`).
+- **Separate from M12's counts.** "Your impact" is unchanged.
+
 ## 7. Opening in the app (slice G)
 
 - **Android:** an installed Happow (WebAPK) captures links in its scope, so tapping a shared link opens the app. Check the manifest's `scope` and `start_url` cover `/e/`, and add `handle_links: "preferred"` where supported.
 - **iOS:** Home Screen web apps can't capture links, so the link opens in Safari, where the whole app works without installing. Show a one-line "Add to Home Screen" hint on a shared card, once, dismissible, never again after that.
 - Either way the recipient needs no account and no install.
 - **Tests.** The manifest fields; the hint shown once on iOS Safari and never in the installed app.
+
+**Built (slice G).**
+
+- **Android.** The manifest now has `id` and `scope` "/", which covers `/e/`, plus `handle_links: "preferred"` and `launch_handler` (`navigate-existing`), so an installed Happow opens shared links and reuses its open window. The service worker already serves the app for `/e/<id>` offline, and the app turns the path into the card.
+- **iOS.** A card opened from a shared link in iOS Safari (iPadOS included) shows one line with a close button: "Add Happow to your Home Screen: tap Share, then 'Add to Home Screen'" (`InstallHint.tsx`). It shows once per device, and never in the installed app.
 
 ## 8. Free and paid after M9
 

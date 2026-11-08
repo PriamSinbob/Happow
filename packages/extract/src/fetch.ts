@@ -139,3 +139,34 @@ export async function fetchPage(raw: string, opts: FetchPageOptions): Promise<Fe
     return { url: url.toString(), status: res.status, html };
   }
 }
+
+/**
+ * A text file (a calendar feed) from an address someone gave us: every hop is checked with
+ * `checkPublicUrl` again, so a name that later points elsewhere, or a redirect to a private
+ * address, is refused; and at most `maxBytes` are read (M13 §6).
+ */
+export async function fetchPublicText(
+  raw: string,
+  opts: { userAgent: string; fetch?: typeof fetch; maxBytes: number; timeoutMs?: number },
+): Promise<string> {
+  const doFetch = opts.fetch ?? fetch;
+  let url = checkPublicUrl(raw);
+  for (let hop = 0; ; hop++) {
+    const res = await doFetch(url.toString(), {
+      redirect: 'manual',
+      headers: { 'User-Agent': opts.userAgent },
+      signal: AbortSignal.timeout(opts.timeoutMs ?? 20_000),
+    });
+    if (res.status >= 300 && res.status < 400 && res.headers.get('location')) {
+      if (hop >= 3) throw new FetchPageError('too many redirects');
+      url = checkPublicUrl(new URL(res.headers.get('location')!, url).toString());
+      continue;
+    }
+    if (!res.ok) throw new FetchPageError(`feed returned ${res.status}`, res.status);
+    const declared = Number(res.headers.get('content-length'));
+    if (declared > opts.maxBytes) throw new FetchPageError('the feed is too large');
+    const bytes = await readLimited(res, opts.maxBytes + 1);
+    if (bytes.byteLength > opts.maxBytes) throw new FetchPageError('the feed is too large');
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+}

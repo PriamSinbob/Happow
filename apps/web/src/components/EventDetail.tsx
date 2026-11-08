@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FLAG_REASONS, type FlagReason, type NearbyEvent } from '@happow/core';
+import { FLAG_REASONS, type FlagReason, type LatLng, type NearbyEvent } from '@happow/core';
 import { track } from '../analytics';
 import { config } from '../config';
 import { formatAgo, formatDay, formatTime, isSameDay } from '../format';
@@ -7,13 +7,25 @@ import { eventUrl } from '../hooks/useHashRoute';
 import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
+import { Going } from './Going';
+import { InstallHint } from './InstallHint';
+import { NearbyNow } from './NearbyNow';
+import { ShareSheet } from './ShareSheet';
 import { hasRules, RuleList } from './EventCard';
+import { FollowStar, PerformerChips } from './Follow';
+import { follows, useFollows } from '../follows';
 import { Glyph, Icon } from './Icons';
 import { glyphOf } from '../pins';
 import { ReportDialog } from './ReportDialog';
+import { ReminderSheet, useLeadLabel } from './ReminderSheet';
+import { useReminders } from '../reminders';
 import { countEvent } from '../counts';
 import type { Credit } from '../data/repository';
 import { levelKey } from '../contributions';
+import { isPrivate } from '../private';
+import { FriendsLine } from './FriendsLine';
+import { OrganiserPanel } from './OrganiserPanel';
+import { PrivatePanel } from './PrivatePanel';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
 
@@ -30,6 +42,14 @@ interface Props {
   onGo: () => void;
   /** "Added by" for a community event, read live (M12 §5.5). */
   loadCredit: (eventId: string, signal: AbortSignal) => Promise<Credit | null>;
+  /** Events around a place, for "on now nearby" under an ended event (M9 §4). */
+  loadNearby: (at: LatLng, signal: AbortSignal) => Promise<NearbyEvent[]>;
+  /** Opens another event's card in place of this one. */
+  onOpenEvent: (id: string) => void;
+  /** Where distances count from (private events read with it, M11). */
+  center?: LatLng | null;
+  /** An edit or an answer changed the event: read it again (M11 §3, §8). */
+  onChanged?: () => void;
 }
 
 /** Wall-clock midnight to midnight: a day-long listing (exhibitions, fairs). */
@@ -54,6 +74,10 @@ export function EventDetail({
   onReported,
   onGo,
   loadCredit,
+  loadNearby,
+  onOpenEvent,
+  center = null,
+  onChanged = () => {},
 }: Props) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
@@ -99,6 +123,11 @@ export function EventDetail({
           onReported={onReported}
           onGo={onGo}
           loadCredit={loadCredit}
+          loadNearby={loadNearby}
+          onOpenEvent={onOpenEvent}
+          center={center}
+          onChanged={onChanged}
+          onClose={onClose}
         />
       ) : (
         <p className="detail__empty" id="detail-title" aria-live="polite">
@@ -117,6 +146,11 @@ function DetailBody({
   onReported,
   onGo,
   loadCredit,
+  loadNearby,
+  onOpenEvent,
+  center,
+  onChanged,
+  onClose,
 }: {
   ev: NearbyEvent;
   now: Date;
@@ -125,12 +159,22 @@ function DetailBody({
   onReported: Props['onReported'];
   onGo: () => void;
   loadCredit: Props['loadCredit'];
+  loadNearby: Props['loadNearby'];
+  onOpenEvent: Props['onOpenEvent'];
+  center: LatLng | null;
+  onChanged: () => void;
+  onClose: () => void;
 }) {
   const { t, lang } = useI18n();
+  const priv = isPrivate(ev);
   const credit = useCredit(ev, loadCredit);
   const { running, price, distance, walk, categories } = useEventText(ev, now);
   const [toast, setToast] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [reminding, setReminding] = useState(false);
+  const reminder = useReminders()[ev.id] ?? null;
+  const leadLabel = useLeadLabel();
   const url = eventUrl(ev.id);
   const ended = new Date(ev.endAt) < now;
   const dayLong = isDayLong(ev);
@@ -139,25 +183,14 @@ function DetailBody({
   const sameDay = isSameDay(ev.startAt, new Date(new Date(ev.endAt).getTime() - 1), ev.timezone);
   const minutesToStart = Math.round((new Date(ev.startAt).getTime() - now.getTime()) / 60_000);
   const source = (ev.sourceId && sourceNames.get(ev.sourceId)) || t(`event.source.${ev.trust}`);
+  useFollows();
+  const followed = (ev.performers ?? []).some((p) => follows.isFollowed(p.name));
 
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(null), 2200);
     return () => clearTimeout(id);
   }, [toast]);
-
-  async function share() {
-    const data = { title: ev.title, text: `${ev.title} · ${ev.venue?.name ?? ''}`.trim(), url };
-    try {
-      if (navigator.share) await navigator.share(data);
-      else {
-        await navigator.clipboard.writeText(url);
-        setToast(t('event.linkCopied'));
-      }
-    } catch {
-      /* the user dismissed the share sheet */
-    }
-  }
 
   return (
     <div className="detail__scroll">
@@ -178,13 +211,18 @@ function DetailBody({
           {ev.verified === false && (
             <span className="badge badge--unverified">{t('event.unverified')}</span>
           )}
+          {followed && <FollowStar />}
         </div>
         <h1 id="detail-title">{ev.title}</h1>
+        <InstallHint />
+        {priv && <PrivatePanel ev={ev} center={center} onToast={setToast} onGone={onClose} />}
 
+        {ended && <p className="status-banner status-banner--ended">{t('ended.banner')}</p>}
         <FlagNotice ev={ev} now={now} />
         {ev.status !== 'scheduled' && (
           <p className={`status-banner status-banner--${ev.status}`}>{t(`event.${ev.status}`)}</p>
         )}
+        <PerformerChips performers={ev.performers} />
 
         <ul className="facts">
           <li>
@@ -235,6 +273,11 @@ function DetailBody({
         <div className="event-card__actions">
           <GoButtons ev={ev} onGo={onGo} />
         </div>
+        {/* On a private event, only its owner and accepted guests mark themselves (M11 §4). */}
+        {!ended && (!priv || ev.mine || ev.invitation?.status === 'accepted') && (
+          <Going ev={ev} now={now} />
+        )}
+        {!ended && <FriendsLine eventId={ev.id} />}
         <div className="event-card__actions event-card__actions--links">
           {ev.ticketUrl && (
             <a className="btn" href={ev.ticketUrl} target="_blank" rel="noreferrer">
@@ -252,16 +295,33 @@ function DetailBody({
             <Icon name="calendar" />
             {t('event.addToCalendar')}
           </button>
-          <button type="button" className="tool" onClick={share}>
-            <Icon name="share" />
-            {t('event.share')}
-          </button>
+          {/* A private event is never shared by link, QR or image (M11 §4). */}
+          {!priv && (
+            <button type="button" className="tool" onClick={() => setSharing(true)}>
+              <Icon name="share" />
+              {t('event.share')}
+            </button>
+          )}
           <button type="button" className="tool" aria-pressed={saved} onClick={onToggleSave}>
             <Icon name="bookmark" filled={saved} />
             {saved ? t('event.saved') : t('event.save')}
           </button>
+          {saved && Date.parse(ev.startAt) > now.getTime() && (
+            <button
+              type="button"
+              className="tool"
+              aria-pressed={!!reminder}
+              onClick={() => setReminding(true)}
+            >
+              <Icon name="bell" filled={!!reminder} />
+              {reminder ? leadLabel(reminder) : t('reminder.bell')}
+            </button>
+          )}
         </div>
+        {reminding && <ReminderSheet ev={ev} onClose={() => setReminding(false)} />}
 
+        <OrganiserPanel ev={ev} now={now} onToast={setToast} onChanged={onChanged} />
+        {ended && !priv && <NearbyNow ev={ev} now={now} load={loadNearby} onOpen={onOpenEvent} />}
         {ev.description && (
           <section className="detail__section">
             <h2>{t('event.about')}</h2>
@@ -309,6 +369,9 @@ function DetailBody({
           <Icon name="flag" size={16} /> {t('event.report')}
         </button>
       </div>
+      {sharing && (
+        <ShareSheet ev={ev} url={url} onClose={() => setSharing(false)} onToast={setToast} />
+      )}
       {reporting && (
         <ReportDialog
           eventId={ev.id}

@@ -46,6 +46,8 @@ interface Prefill {
   ageMin: number | null;
   family: boolean | null;
   entry: EntryType | null;
+  /** Older servers leave it out. */
+  performers?: string[];
 }
 
 interface Form {
@@ -66,6 +68,8 @@ interface Form {
   family: boolean;
   /** Null until the user picks one: the category default applies. */
   entry: EntryType | null;
+  /** "Who's performing" (M7 §1), one name per line or comma-separated. */
+  performers: string;
   terms: boolean;
 }
 
@@ -85,6 +89,7 @@ const EMPTY: Form = {
   ageMin: null,
   family: false,
   entry: null,
+  performers: '',
   terms: false,
 };
 
@@ -105,6 +110,7 @@ interface SentForm {
   ageMin?: number | null;
   family?: boolean | null;
   entry?: EntryType | null;
+  performers?: string | null;
 }
 
 /** Everything but the date and time, which the new event needs its own of. */
@@ -124,6 +130,7 @@ function copyOf(s: SentForm): Form {
     ageMin: s.ageMin ?? null,
     family: s.family === true,
     entry: s.entry ?? null,
+    performers: s.performers ?? '',
   };
 }
 
@@ -346,6 +353,13 @@ export function AddEvent({
   const compact = quick === 'compact';
   // "Repeats weekly" (M12 §4.5): one event per date, each counting against the month.
   const [repeat, setRepeat] = useState<WeeklyRepeat | null>(null);
+  // Private (M11 §1): only the people you invite see it; it can't repeat. A free account has one
+  // a month (owner, 2026-11-04), and it counts against the month's events too.
+  const [isPrivate, setPrivate] = useState(false);
+  const privateUsage = me?.usage.private;
+  // Unknown (a server from before M11): the server's answer decides.
+  const privateLeft = privateUsage ? Math.max(0, privateUsage.limit - privateUsage.used) : null;
+  const canPrivate = !!me?.entitlements['private.create'] && !me?.privateBlocked;
   const { recurring } = submissions;
   const dates =
     repeat && form.start && repeat.until
@@ -536,6 +550,7 @@ export function AddEvent({
       ageMin: p.ageMin,
       family: p.family === true,
       entry: p.entry,
+      performers: (p.performers ?? []).join('\n'),
     }));
     if (!p.point && (p.address || p.venueName)) void locate(p.address || p.venueName!);
   }
@@ -582,7 +597,8 @@ export function AddEvent({
         body: {
           deviceId: deviceId(),
           regionId: region.id,
-          ...(repeat && { repeat }),
+          ...(repeat && !isPrivate && { repeat }),
+          ...(isPrivate && { private: true }),
           event: {
             title: form.title.trim(),
             categoryIds: form.categoryIds,
@@ -599,6 +615,7 @@ export function AddEvent({
             ageMin: form.ageMin,
             family: form.family || null,
             entry,
+            performers: form.performers.trim() || null,
           },
         },
       });
@@ -909,7 +926,50 @@ export function AddEvent({
           </div>
         )}
 
-        {!compact && (
+        {!compact && canPrivate && (
+          <fieldset className="field">
+            <legend className="field__label">{t('add.visibility')}</legend>
+            <div className="segmented segmented--2" role="radiogroup">
+              {([false, true] as const).map((priv) => (
+                <button
+                  key={String(priv)}
+                  type="button"
+                  role="radio"
+                  aria-checked={isPrivate === priv}
+                  className={isPrivate === priv ? 'is-active' : ''}
+                  disabled={priv && privateLeft === 0}
+                  onClick={() => {
+                    setPrivate(priv);
+                    if (priv) setRepeat(null);
+                  }}
+                >
+                  {priv && <Icon name="lock" size={14} />} {t(priv ? 'add.private' : 'add.public')}
+                </button>
+              ))}
+            </div>
+            <p className="field__hint">
+              {privateLeft === 0
+                ? t('add.privateOut')
+                : isPrivate || privateLeft === null
+                  ? t('add.privateHint')
+                  : t('add.privateLeft', { count: privateLeft })}
+              {privateLeft === 0 && me?.plan !== 'premium' && (
+                <>
+                  {' '}
+                  <button
+                    type="button"
+                    className="inline-link"
+                    onClick={() => setPremiumOpen(true)}
+                  >
+                    {t('add.more')}
+                  </button>
+                </>
+              )}
+            </p>
+          </fieldset>
+        )}
+
+        {!compact && !isPrivate && (
           <fieldset className="field">
             <legend className="field__label">{t('add.repeat')}</legend>
             <div className="segmented segmented--2" role="radiogroup">
@@ -1129,6 +1189,16 @@ export function AddEvent({
                 maxLength={submissions.maxDescriptionChars}
                 value={form.description}
                 onChange={(e) => set('description', e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span className="field__label">{t('add.field.performers')}</span>
+              <textarea
+                rows={2}
+                maxLength={1000}
+                placeholder={t('add.field.performersHint')}
+                value={form.performers}
+                onChange={(e) => set('performers', e.target.value)}
               />
             </label>
           </>

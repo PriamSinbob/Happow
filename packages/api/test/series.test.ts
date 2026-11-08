@@ -24,6 +24,12 @@ function backend(rpc: Record<string, Rpc>) {
     contributor_trusted: () => ({ body: false }),
     duplicate_candidates: () => ({ body: { title: 'Pchli targ na Ruskiej', others: [] } }),
     contribution_award: () => ({ body: { kind: 'verified', days: 3, startsAt: null } }),
+    // M11: every event public, nobody an organiser, empty organiser queues.
+    event_visibility: () => ({ body: 'public' }),
+    organiser_at: () => ({ body: false }),
+    claims_queue: () => ({ body: [] }),
+    edits_queue: () => ({ body: [] }),
+    post_reports_queue: () => ({ body: [] }),
     ...rpc,
   };
   const f = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {

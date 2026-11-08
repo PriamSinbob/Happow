@@ -7,6 +7,7 @@ import type { Guidance } from '../hooks/useGuidance';
 import { useI18n } from '../i18n';
 import { CategoryIcon, useEventText } from './EventMeta';
 import { GuidanceCard } from './Guidance';
+import { Icon } from './Icons';
 
 interface Props {
   events: NearbyEvent[];
@@ -34,15 +35,21 @@ export function Row({
   ev,
   now,
   onSelect,
+  tag,
+  onUnsave,
 }: {
   ev: NearbyEvent;
   now: Date;
   onSelect: (id: string) => void;
+  /** A short mark after the time (the agenda's "Going"). */
+  tag?: string;
+  /** The agenda's bookmark beside the row (M10 §1). */
+  onUnsave?: () => void;
 }) {
   const { running, when, price, distance, walk } = useEventText(ev, now);
   const { t } = useI18n();
   return (
-    <li>
+    <li className={onUnsave ? 'row-wrap' : undefined}>
       <button type="button" className="row" onClick={() => onSelect(ev.id)}>
         <CategoryIcon ev={ev} />
         <span className="row__body">
@@ -58,6 +65,10 @@ export function Row({
             )}
             {running && <span className="now-pill">{t('event.now')}</span>}
             {when}
+            {ev.status === 'cancelled' && (
+              <span className="badge badge--flag">{t('event.cancelled')}</span>
+            )}
+            {tag && <span className="badge badge--going">{tag}</span>}
           </span>
           <span className="row__meta">
             {ev.venue?.name} · {distance} · {walk}
@@ -65,6 +76,16 @@ export function Row({
         </span>
         {price && <span className="row__price">{price}</span>}
       </button>
+      {onUnsave && (
+        <button
+          type="button"
+          className="icon-btn row__unsave"
+          aria-label={t('agenda.unsave', { title: ev.title })}
+          onClick={onUnsave}
+        >
+          <Icon name="bookmark" filled />
+        </button>
+      )}
     </li>
   );
 }

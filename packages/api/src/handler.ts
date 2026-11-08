@@ -1,6 +1,7 @@
 import {
   ageMinSchema,
   areaFrom,
+  can,
   distanceM,
   areaSlackM,
   daysBounds,
@@ -11,6 +12,7 @@ import {
   loadConfig,
   quota,
   shiftWall,
+  splitPerformers,
   usageMonth,
   wallMinutes,
   weeklyStarts,
@@ -40,8 +42,15 @@ import {
 import { normalize } from '@happow/ingest/normalize';
 import { z } from 'zod';
 import { accountRoutes, quotaExceeded } from './accounts.js';
+import { attendanceRoutes } from './attendance.js';
 import { contributionRoutes } from './contributions.js';
 import { feedRoutes } from './feeds.js';
+import { organiserRoutes } from './organisers.js';
+import { privateRoutes } from './private.js';
+import { reminderRoutes } from './reminders.js';
+import { followRoutes } from './follows.js';
+import { emailSender, type EmailSender } from './email.js';
+import { savedRoutes } from './saved.js';
 import { ApiError, body, json, sha256 } from './http.js';
 import { premiumProviders, premiumRoutes, type PremiumProvider } from './premium.js';
 import { dispatchDueIngest, type ScheduleEnv } from './schedule.js';
@@ -67,6 +76,8 @@ export interface ApiDeps {
   extractor?: Extractor | null;
   /** Instead of the providers named in config (premium.providers). */
   premiumProviders?: PremiumProvider[];
+  /** Instead of the sender named in config (email.provider); null = email off. */
+  email?: EmailSender | null;
 }
 
 /** "2026-10-24T19:00" in the region's time zone, for <input type="datetime-local">. */
@@ -112,7 +123,11 @@ const submissionSchema = z.object({
     family: z.boolean().nullable().optional(),
     /** Sent only when the user changes it; otherwise the category default applies. */
     entry: entrySchema.nullable().optional(),
+    /** "Who's performing" (M7 §1): names separated by commas or new lines. */
+    performers: z.string().trim().max(1000).nullable().optional(),
   }),
+  /** Only invitees see it (M11 §1); needs `private.create`, and it can't repeat. */
+  private: z.boolean().optional(),
   /** Weekly on these ISO weekdays (1 = Monday) until a day, inclusive (M12 §4.5). */
   repeat: z
     .object({
@@ -132,6 +147,7 @@ const reportSchema = z.object({
     'moved',
     'wrong_info',
     'inappropriate',
+    'unlawful',
     'other',
   ]),
   note: z.string().trim().max(500).nullable().optional(),
@@ -159,6 +175,8 @@ export interface Prefill {
   ageMin: number | null;
   family: boolean | null;
   entry: 'fixed' | 'open' | null;
+  /** Names as printed, one per line in the form. */
+  performers: string[];
 }
 
 export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
@@ -218,7 +236,12 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
 
   // Quotas count per calendar month, and the promotion ends, in the default region's time zone.
   const accountZone = getRegion(config).timezone;
+  const email =
+    deps.email !== undefined
+      ? deps.email
+      : emailSender(config.app.email, env as Record<string, unknown>, doFetch);
   const accounts = accountRoutes({
+    email,
     app: config.app,
     plans: config.plans,
     timeZone: accountZone,
@@ -233,6 +256,15 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     need,
     now,
     limit,
+  });
+  const attendance = attendanceRoutes({
+    config,
+    need,
+    now,
+    limit,
+    // Only when the request carries a sign-in; an anonymous one stays anonymous.
+    userOf: (req) =>
+      req.headers.has('authorization') ? accounts.requireUser(req) : Promise.resolve(null),
   });
   /** A reward that fails must not undo the approval or the submission it follows. */
   const award = async (submissionId: string, eventId: string | null) => {
@@ -253,6 +285,47 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   });
 
   const feeds = feedRoutes({ config, need, requireUser: accounts.requireUser, limit });
+  const pushSecret = (env as Record<string, unknown>)[config.app.push.secret];
+  const reminders = reminderRoutes({
+    config,
+    need,
+    limit,
+    userOf: (req) =>
+      req.headers.has('authorization') ? accounts.requireUser(req) : Promise.resolve(null),
+    pushSecret: typeof pushSecret === 'string' && pushSecret ? pushSecret : undefined,
+  });
+  const saved = savedRoutes({
+    config,
+    need,
+    requireUser: accounts.requireUser,
+    planOf: accounts.planOf,
+    limit,
+  });
+
+  const follows = followRoutes({
+    config,
+    env: env as Record<string, string | undefined>,
+    need,
+    limit,
+    clientHash,
+    requireUser: accounts.requireUser,
+    planOf: accounts.planOf,
+    now,
+    fetch: doFetch,
+  });
+
+  const privateApi = privateRoutes({ config, need, requireUser: accounts.requireUser, limit });
+  const organisers = organiserRoutes({
+    config,
+    need,
+    requireUser: accounts.requireUser,
+    planOf: accounts.planOf,
+    limit,
+    trusted: (id) => contributions.trusted(id),
+    now,
+    fetch: doFetch,
+    pushSecret: typeof pushSecret === 'string' && pushSecret ? pushSecret : undefined,
+  });
 
   const regionFor = (id?: string): Region => getRegion(config, id);
   /** The signed-in user when the request carries a token (a bad token is 401), else null. */
@@ -310,6 +383,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       ageMin: e.ageMin ?? null,
       family: e.family ?? null,
       entry: e.entry ?? null,
+      performers: e.performers ?? [],
     };
   }
 
@@ -499,6 +573,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     // A weekly repeat is one event per date (M12 §4.5), each its own length after its start.
     const { recurring } = limits;
     if (input.repeat && !user) throw new ApiError(401, 'account_required');
+    if (input.private && !user) throw new ApiError(401, 'account_required');
+    if (input.private && input.repeat) throw new ApiError(400, 'invalid_input', 'repeat');
     const starts = input.repeat
       ? weeklyStarts(e.start, input.repeat, recurring.maxWeeks)
       : [e.start];
@@ -530,10 +606,32 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     // without one, the per-device and per-IP daily caps apply.
     let quotaMax = 0;
     let trusted = false;
+    let privateMax = 0;
     if (user) {
       await limit('submit-account', user.id, 3600, limits.perHourPerAccount);
-      quotaMax = quota((await accounts.planOf(user)).entitlements, 'events.perMonth');
-      trusted = await contributions.trusted(user.id);
+      const { entitlements } = await accounts.planOf(user);
+      quotaMax = quota(entitlements, 'events.perMonth');
+      if (input.private) {
+        if (!can(entitlements, 'private.create'))
+          throw new ApiError(403, 'forbidden', 'private.create is not in this plan');
+        const p = await db.rpc<{ privateBlocked?: boolean }>('profile_get', { p_user: user.id });
+        if (p.privateBlocked) throw new ApiError(403, 'forbidden', 'private events are blocked');
+        privateMax = quota(entitlements, 'private.perMonth');
+      } else {
+        trusted = await contributions.trusted(user.id);
+        // The verified organiser of a venue here publishes at once (M11 §8).
+        if (
+          !trusted &&
+          can(entitlements, 'organiser.publish') &&
+          (await db.rpc<boolean>('organiser_at', {
+            p_user: user.id,
+            p_lat: e.point.lat,
+            p_lng: e.point.lng,
+            p_radius_m: config.app.organiser.venueRadiusM,
+          }))
+        )
+          trusted = true;
+      }
     } else {
       await limit('submit', submitter, 86_400, limits.maxPerDevicePerDay);
       await limit('submit-ip', await clientHash(req, salt), 86_400, limits.maxPerDevicePerDay * 3);
@@ -574,6 +672,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
           ticketUrl: null,
           imageUrl: null,
           status: 'scheduled',
+          performers: splitPerformers(e.performers ?? ''),
         },
         {
           source: submissionsSource,
@@ -597,6 +696,39 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         },
       };
     });
+    // A private event: live at once for its owner, never moderated, no rewards (M11 §1).
+    if (input.private && user) {
+      const first = items[0]!;
+      let eventId: string;
+      try {
+        eventId = await db.rpc<string>('submit_private', {
+          p: first.p,
+          p_submitter: submitter,
+          p_region: region.id,
+          p_user: user.id,
+          p_month: usage.month,
+          p_max: quotaMax,
+          p_private_max: privateMax,
+        });
+      } catch (err) {
+        if (err instanceof SupabaseError && err.code === 'HQ001')
+          throw quotaExceeded('events', quotaMax, usage.resetsAt);
+        if (err instanceof SupabaseError && err.code === 'HQ002')
+          throw quotaExceeded('private', privateMax, usage.resetsAt);
+        throw err;
+      }
+      return json(
+        {
+          id: first.id,
+          eventId,
+          status: 'published',
+          private: true,
+          trusted: false,
+          firstPlace: false,
+        },
+        201,
+      );
+    }
     const publish = limits.publishBeforeModeration;
     const common = {
       p_submitter: submitter,
@@ -650,6 +782,17 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     const input = await body(req, reportSchema);
     const reporter = await sha256(`${salt}:device:${input.deviceId}`);
     await limit('report', reporter, 86_400, limits.reportsPerDayPerDevice);
+    // A private event can be reported only by someone who may see it (M11 §4).
+    if (
+      (await db.rpc<string | null>('event_visibility', { p_event: input.eventId })) === 'private'
+    ) {
+      const user = await optionalUser(req);
+      if (
+        !user ||
+        !(await db.rpc<boolean>('event_visible_to', { p_event: input.eventId, p_user: user.id }))
+      )
+        throw new ApiError(404, 'unknown_event');
+    }
     try {
       await db.rpc('report_event', {
         p_event: input.eventId,
@@ -680,10 +823,21 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         ...(await db.rpc<object>('moderation_queue', {})),
         // Spot checks of what trusted accounts published (M12 §5.3).
         trusted: await db.rpc<object[]>('trusted_recent', { p_days: 7 }),
+        // Claims, contributors' edits and reported posts (M11 §6–§8).
+        ...(await organisers.queues()),
       });
     if (req.method !== 'POST' || path.length !== 2) throw new ApiError(404, 'not_found');
-    const { action, note } = await body(req, moderateSchema);
     const [kind, id] = path as [string, string];
+    if (['claims', 'edits', 'posts', 'private'].includes(kind)) {
+      const { action } = await body(
+        req,
+        z.object({ action: z.enum(['approve', 'reject', 'revoke', 'hide', 'dismiss', 'block']) }),
+      );
+      const done = await organisers.moderation(kind, id, action, email);
+      if (done) return done;
+      throw new ApiError(400, 'invalid_input', 'action');
+    }
+    const { action, note } = await body(req, moderateSchema);
     try {
       if (kind === 'submissions' && (action === 'approve' || action === 'reject')) {
         const done = await db.rpc<{ id: string; eventId: string | null; action: string }>(
@@ -876,11 +1030,30 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'me' && rest.join('/') === 'contributions' && req.method === 'GET')
         return json(await contributions.mine((await accounts.requireUser(req)).id));
       if (head === 'me' && rest[0] === 'feeds') return await feeds.mine(req, rest.slice(1));
+      if (head === 'me' && rest[0] === 'saved') return await saved(req, rest.slice(1));
+      if (head === 'me' && rest[0] === 'follows') return await follows.mine(req, rest.slice(1));
+      if (head === 'search' && req.method === 'GET' && !rest.length)
+        return await follows.search(req);
+      if (head === 'follows' && req.method === 'POST' && rest.join('/') === 'match')
+        return await follows.match(req);
+      if (head === 'me' && rest.length === 1 && (rest[0] === 'claims' || rest[0] === 'events'))
+        return await organisers.mine(req, rest[0]);
+      if (head === 'private') return await privateApi.privateEvents(req, rest);
+      if (head === 'invitations') return await privateApi.invitations(req, rest);
+      if (head === 'contacts') return await privateApi.contacts(req, rest);
+      if (head === 'friends') return await privateApi.friends(req, rest);
+      if (head === 'events' && rest.length >= 2)
+        return await organisers.events(req, rest[0]!, rest.slice(1));
+      if (head === 'posts') return await organisers.posts(req, rest);
+      if (head === 'claims') return await organisers.claims(req, rest);
       if (head === 'me') return await accounts.me(req, rest);
       if (head === 'auth') return await accounts.auth(req, rest);
       if (head === 'admin' && rest[0] === 'feeds') return await feeds.admin(req, rest.slice(1));
       if (head === 'admin') return await accounts.admin(req, rest);
       if (head === 'premium') return await premium(req, rest);
+      if (head === 'push') return await reminders.push(req, rest);
+      if (head === 'reminders') return await reminders.reminders(req, rest);
+      if (head === 'attendance' || head === 'share') return await attendance.route(req, head, rest);
       if (head === 'area' && req.method === 'GET' && !rest.length) return await area(req);
       if (head === 'ingest' && req.method === 'GET' && rest.join('/') === 'status')
         return await ingestStatus();

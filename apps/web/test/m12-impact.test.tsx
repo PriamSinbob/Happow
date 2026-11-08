@@ -282,6 +282,8 @@ describe('"Added by" on the card (M12 slice F)', () => {
           onReported={vi.fn()}
           onGo={vi.fn()}
           loadCredit={loadCredit as never}
+          loadNearby={async () => []}
+          onOpenEvent={vi.fn()}
         />
       </I18nProvider>,
     );

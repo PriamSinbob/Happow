@@ -10,7 +10,11 @@ function icsDate(iso: string): string {
 
 /** RFC 5545 TEXT escaping. */
 function esc(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  return s
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
 }
 
 /** Lines longer than 75 octets continue on the next line, indented by one space. */
@@ -34,16 +38,10 @@ function fold(line: string): string {
   return parts.join('\r\n ');
 }
 
-/** A single-event iCalendar file for "Add to calendar". */
-export function eventToIcs(ev: HappowEvent, url: string, now = new Date()): string {
+function vevent(ev: HappowEvent, url: string, now: Date): string[] {
   const location = [ev.venue?.name, ev.venue?.address].filter(Boolean).join(', ');
   const description = [ev.description, url].filter(Boolean).join('\n\n');
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Happow//Happening Now//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
+  return [
     'BEGIN:VEVENT',
     `UID:${esc(ev.id)}@happow`,
     `DTSTAMP:${icsDate(now.toISOString())}`,
@@ -56,18 +54,55 @@ export function eventToIcs(ev: HappowEvent, url: string, now = new Date()): stri
     `URL:${url}`,
     ...(ev.status === 'cancelled' ? ['STATUS:CANCELLED'] : []),
     'END:VEVENT',
+  ];
+}
+
+/**
+ * An iCalendar file for "Add to calendar": one event, or a day of the agenda (M10 §1). `urlOf`
+ * gives each event's link.
+ */
+export function eventsToIcs(
+  events: readonly HappowEvent[],
+  urlOf: (ev: HappowEvent) => string,
+  now = new Date(),
+): string {
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Happow//Happening Now//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    ...events.flatMap((ev) => vevent(ev, urlOf(ev), now)),
     'END:VCALENDAR',
   ];
   return lines.map(fold).join('\r\n') + '\r\n';
 }
 
-export function downloadIcs(ev: HappowEvent, url: string): void {
-  const blob = new Blob([eventToIcs(ev, url)], { type: 'text/calendar;charset=utf-8' });
+/** A single-event iCalendar file for "Add to calendar". */
+export function eventToIcs(ev: HappowEvent, url: string, now = new Date()): string {
+  return eventsToIcs([ev], () => url, now);
+}
+
+function download(text: string, name: string): void {
+  const blob = new Blob([text], { type: 'text/calendar;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `${ev.title.replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 60) || 'event'}.ics`;
+  a.download = `${name.replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 60) || 'event'}.ics`;
   document.body.append(a);
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+}
+
+export function downloadIcs(ev: HappowEvent, url: string): void {
+  download(eventToIcs(ev, url), ev.title);
+}
+
+/** One file with a day's events (M10 §1). */
+export function downloadDayIcs(
+  events: readonly HappowEvent[],
+  urlOf: (ev: HappowEvent) => string,
+  name: string,
+): void {
+  download(eventsToIcs(events, urlOf), name);
 }

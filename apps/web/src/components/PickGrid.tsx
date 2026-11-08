@@ -1,9 +1,11 @@
 import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { Glyph } from './Icons';
+import { Glyph, Icon, type IconName } from './Icons';
 
 export interface PickOption {
   id: string;
-  glyph: string;
+  /** A category glyph, or `icon` for a control (the views, M10 §1). */
+  glyph?: string;
+  icon?: IconName;
   label: string;
 }
 
@@ -72,7 +74,7 @@ export function PickGrid({
             className={`pick-grid__opt${o.id === current ? ' is-current' : ''}`}
             onClick={() => onPick(o.id)}
           >
-            <Glyph id={o.glyph} size={22} />
+            {o.icon ? <Icon name={o.icon} size={22} /> : <Glyph id={o.glyph ?? ''} size={22} />}
           </button>
         ))}
       </div>

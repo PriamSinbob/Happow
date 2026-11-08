@@ -33,8 +33,20 @@ export function spriteIds(): string[] {
     'ring-dotted',
     ...Array.from({ length: RING_STEPS }, (_, i) => `ring-${i + 1}`),
     ...GLYPH_IDS.map((g) => `glyph-${g}`),
+    'pin-lock',
+    'pin-star',
   ];
 }
+
+/** The star on a followed artist's pin (M7 §4): Tabler star, as on the card. */
+const STAR_PATH =
+  'M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z';
+const STAR_PX = 13;
+
+/** The lock on a private event's pin (M11 §4): Tabler lock, as on the card. */
+const LOCK_PATH =
+  'M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2zM8 11v-4a4 4 0 1 1 8 0v4';
+const LOCK_PX = 13;
 
 function sdfImage(size: number, draw: Draw) {
   const px = Math.ceil(size * RATIO) + 2 * BUFFER;
@@ -69,6 +81,15 @@ export function addPinSprites(m: maplibregl.Map) {
     c.stroke();
   };
   add('pin-outline', PIN_PX, outline(false));
+  add('pin-lock', LOCK_PX, (c) => {
+    c.scale(LOCK_PX / 24, LOCK_PX / 24);
+    c.lineWidth = 2.6;
+    c.stroke(new Path2D(LOCK_PATH));
+  });
+  add('pin-star', STAR_PX, (c) => {
+    c.scale(STAR_PX / 24, STAR_PX / 24);
+    c.fill(new Path2D(STAR_PATH));
+  });
   add('pin-outline-dashed', PIN_PX, outline(true));
   const r = RING_PX / 2;
   const ring = (fraction: number, dotted: boolean) => (c: CanvasRenderingContext2D) => {

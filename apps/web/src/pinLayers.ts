@@ -112,6 +112,20 @@ export function addPinLayers(m: maplibregl.Map) {
     },
     paint: { 'text-opacity': opacity, 'text-halo-width': 3 },
   });
+  // M11 §4: a private event (yours, or one you're invited to) carries a lock at the lower left.
+  layer({
+    id: 'pin-lock',
+    filter: ['all', notCluster, get('locked')],
+    layout: { ...common, 'icon-image': 'pin-lock', 'icon-offset': [-13, 11] },
+    paint: { 'icon-opacity': opacity, 'icon-halo-width': 2 },
+  });
+  // M7 §4: a followed artist's event carries a star at the upper left.
+  layer({
+    id: 'pin-star',
+    filter: ['all', notCluster, get('starred')],
+    layout: { ...common, 'icon-image': 'pin-star', 'icon-offset': [-13, -11] },
+    paint: { 'icon-opacity': opacity, 'icon-halo-width': 2 },
+  });
   // §4.4: "16+" / "18+" at the upper right. Numerals only, no translation.
   layer({
     id: 'pin-age',
@@ -152,6 +166,10 @@ export function pinPaint(
     ['pin-count', 'text-halo-color', ['case', get('cluster'), t.ink, t.paper]],
     ['pin-flag', 'text-color', t.warnInk],
     ['pin-flag', 'text-halo-color', t.warn],
+    ['pin-lock', 'icon-color', t.ink],
+    ['pin-lock', 'icon-halo-color', t.paper],
+    ['pin-star', 'icon-color', t.ink],
+    ['pin-star', 'icon-halo-color', t.paper],
     ['pin-age', 'text-color', t.ink],
     ['pin-age', 'text-halo-color', t.paper],
   ];

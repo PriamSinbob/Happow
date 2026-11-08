@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { FLAG_REASONS, type FlagReason } from '@happow/core';
+import { accessToken } from '../auth';
 import { api, deviceId } from '../api';
 import { errorText } from '../errors';
 import { useI18n } from '../i18n';
 import { Icon } from './Icons';
 
 /** Off or changed: everyone sees a warning at once. The rest go to moderators only. */
-const OTHER_REASONS = ['wrong_info', 'inappropriate', 'other'] as const;
+const OTHER_REASONS = ['wrong_info', 'inappropriate', 'unlawful', 'other'] as const;
 type Reason = FlagReason | (typeof OTHER_REASONS)[number];
 const GROUPS = [
   { title: 'report.group.status', reasons: FLAG_REASONS },
@@ -48,7 +49,9 @@ export function ReportDialog({
     setSending(true);
     setError(null);
     try {
+      // Signed in, the report carries the account: a private event needs it (M11 §4).
       await api('reports', {
+        token: await accessToken(),
         body: { deviceId: deviceId(), eventId, reason, note: note.trim() || null },
       });
       onSent(reason);

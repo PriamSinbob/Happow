@@ -34,6 +34,7 @@ interface TmEvent {
   ageRestrictions?: { legalAgeEnforced?: boolean };
   accessibility?: { info?: string };
   _embedded?: {
+    attractions?: { id?: string; name?: string }[];
     venues?: {
       id?: string;
       name?: string;
@@ -180,6 +181,9 @@ export const ticketmaster: SourceAdapter = {
       imageUrl: pickImage(e.images),
       status:
         status === 'cancelled' ? 'cancelled' : status === 'postponed' ? 'postponed' : 'scheduled',
+      performers: (e._embedded?.attractions ?? []).flatMap((a) =>
+        a.name?.trim() ? [{ name: a.name.trim(), externalId: a.id ?? null }] : [],
+      ),
     };
   },
 };

@@ -114,6 +114,21 @@ describe('merge and decide', () => {
     expect(rank('unknown')).toBeLessThan(rank('seed'));
   });
 
+  it('takes the union of both listings’ performers, an external id winning (M7 §1)', () => {
+    const merged = mergeEvents(
+      ev({ title: 'A', performers: [{ name: 'Dawid Podsiadło' }, { name: 'Support' }] }),
+      ev({
+        title: 'B',
+        performers: [{ name: 'dawid podsiadlo', externalId: 'K8vZ9175Tr0' }, { name: 'Kult' }],
+      }),
+    );
+    expect(merged.performers).toEqual([
+      { name: 'Dawid Podsiadło', externalId: 'K8vZ9175Tr0' },
+      { name: 'Support' },
+      { name: 'Kult' },
+    ]);
+  });
+
   it('fills gaps from the other listing and prefers a real end time', () => {
     const merged = mergeEvents(
       ev({ title: 'A', ticketUrl: 'https://t.example/1', endEstimated: true, entry: 'open' }),

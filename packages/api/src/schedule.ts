@@ -1,4 +1,4 @@
-import type { HappowConfig } from '@happow/core';
+import { siteTemplate, type HappowConfig } from '@happow/core';
 import { dispatchLookbackMs, dueForDispatch, type RunRecord } from '@happow/ingest/schedule';
 import appJson from '../../../config/app.json';
 import regionsJson from '../../../config/regions.json';
@@ -68,7 +68,9 @@ export async function dispatchDueIngest(
 ): Promise<DispatchResult> {
   const config = deps.config ?? scheduleConfig();
   const doFetch = deps.fetch ?? fetch;
-  const { dispatch, userAgent } = (deps.config?.app ?? appJson).ingest;
+  const app = deps.config?.app ?? appJson;
+  const { dispatch } = app.ingest;
+  const userAgent = siteTemplate(app.ingest.userAgent, app);
   const token = env[dispatch.tokenSecret];
   const tokenSet = typeof token === 'string' && token.length > 0;
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)

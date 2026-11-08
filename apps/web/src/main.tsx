@@ -3,15 +3,22 @@ import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import { AccountProvider } from './account';
 import { initAnalytics } from './analytics';
+import { captureArrival } from './attendance';
 import { App } from './App';
 import { captureAuthRedirect } from './auth';
 import { config } from './config';
+import { adoptContactPath, adoptEventPath } from './hooks/useHashRoute';
 import { detectLanguage, I18nProvider } from './i18n';
+import { captureInvite } from './private';
 import { captureShare } from './share';
 import { applyInitialTheme, ThemeProvider } from './theme';
 import './styles.css';
 
 registerSW({ immediate: true });
+adoptEventPath();
+adoptContactPath();
+captureArrival();
+captureInvite();
 // Before the app reads the URL: a sign-in from a code email's link or from Google lands here,
 // and so does a page shared into the installed app (it opens the add form).
 const signedIn = captureAuthRedirect();
