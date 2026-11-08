@@ -21,6 +21,8 @@ function sheet(over: Partial<FiltersState> = {}) {
     setWindow: vi.fn(),
     categories: [],
     toggleCategory: vi.fn(),
+    excluded: [],
+    toggleExcluded: vi.fn(),
     price: 'any',
     setPrice: vi.fn(),
     setCategories: vi.fn(),
@@ -36,7 +38,6 @@ function sheet(over: Partial<FiltersState> = {}) {
       count={476}
       loading={false}
       onClose={vi.fn()}
-      onAdd={vi.fn()}
       onAbout={vi.fn()}
     />,
     { wrapper },
@@ -54,6 +55,27 @@ describe('settings sheet (§15)', () => {
     expect(free.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(free);
     expect(f.setPrice).toHaveBeenCalledWith('paid');
+  });
+
+  it('a hold on a category hides it; a tap still shows only it', () => {
+    vi.useFakeTimers();
+    try {
+      const f = sheet({ excluded: ['sport'] });
+      const music = screen.getByRole('button', { name: /^music$/i });
+      fireEvent.pointerDown(music);
+      act(() => vi.advanceTimersByTime(600));
+      fireEvent.pointerUp(music);
+      fireEvent.click(music);
+      expect(f.toggleExcluded).toHaveBeenCalledWith('music');
+      expect(f.toggleCategory).not.toHaveBeenCalled();
+      fireEvent.click(music);
+      expect(f.toggleCategory).toHaveBeenCalledWith('music');
+      const sport = screen.getByRole('button', { name: /sport: hidden/i });
+      expect(sport.className).toContain('is-out');
+      expect(sport.getAttribute('aria-pressed')).toBe('false');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('the last ticket that is on nudges instead of going off', () => {
@@ -122,6 +144,26 @@ describe('map shortcut', () => {
     act(() => result.current.shortcut.choose('family'));
     expect(result.current.filters.categories).toEqual([]);
     expect(result.current.filters.family).toBe(true);
+  });
+
+  it('a hidden category is never also shown-only; the shortcut and Clear unhide it', () => {
+    const { result } = hook();
+    act(() => result.current.filters.toggleCategory('music'));
+    act(() => result.current.filters.toggleExcluded('music'));
+    expect(result.current.filters.categories).toEqual([]);
+    expect(result.current.filters.excluded).toEqual(['music']);
+    expect(result.current.filters.activeCount).toBe(1);
+    expect(localStorage.getItem('happow:excluded')).toBe('["music"]');
+    act(() => result.current.filters.toggleCategory('music'));
+    expect(result.current.filters.excluded).toEqual([]);
+    expect(result.current.filters.categories).toEqual([]);
+    act(() => result.current.filters.toggleExcluded('food'));
+    act(() => result.current.filters.toggleExcluded('sport'));
+    act(() => result.current.shortcut.choose('food'));
+    expect(result.current.filters.categories).toEqual(['food']);
+    expect(result.current.filters.excluded).toEqual(['sport']);
+    act(() => result.current.filters.clear());
+    expect(result.current.filters.excluded).toEqual([]);
   });
 });
 

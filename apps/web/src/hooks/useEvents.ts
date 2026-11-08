@@ -49,14 +49,16 @@ export function useEvents(
   });
 
   const categoryKey = [...filters.categories].sort().join(',');
+  const excludedKey = [...filters.excluded].sort().join(',');
   const query = useMemo(
     () => ({
       center,
       radiusM,
       categories: categoryKey ? categoryKey.split(',') : [],
+      excluded: excludedKey ? excludedKey.split(',') : [],
       price: filters.price,
     }),
-    [center, radiusM, categoryKey, filters.price],
+    [center, radiusM, categoryKey, excludedKey, filters.price],
   );
   // A new question shows "loading"; the minute clock re-evaluating the same one does not.
   const shown = useRef<object | null>(null);

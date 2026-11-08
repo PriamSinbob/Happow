@@ -67,6 +67,7 @@ import { GuidanceCard } from './components/Guidance';
 import { useDistrictGoal } from './hooks/useDistrictGoal';
 import { Glyph, Icon } from './components/Icons';
 import { ListView } from './components/ListView';
+import { MapAddButton } from './components/AddButton';
 import { FollowedGroup, FollowedScreen, SearchPanel } from './components/Follow';
 import { useFollowMatches, useFollowSync } from './follows';
 import { MapView } from './components/MapView';
@@ -176,7 +177,7 @@ export function App() {
     () => new Set(followMatches.matches.map((m) => m.id)),
     [followMatches.matches],
   );
-  // The list's search field (§2) and the Followed screen; the magnifier opens the list focused.
+  // The list's search field (§2) and the Followed screen; opening the list focuses the field.
   const [searchFocus, setSearchFocus] = useState(0);
   const [followedOpen, setFollowedOpen] = useState(false);
   const [flyTo, setFlyTo] = useState<{ point: LatLng; seq: number } | null>(null);
@@ -616,6 +617,7 @@ export function App() {
           </span>
         )}
         <span className="hud-top__end">
+          <MapAddButton onClick={startAdd} />
           <button
             type="button"
             className={`map-btn${filtered ? ' has-active' : ''}`}
@@ -705,19 +707,6 @@ export function App() {
         <button
           type="button"
           className="map-btn"
-          aria-label={t('search.open')}
-          onClick={() => {
-            clearCards();
-            setFollowedOpen(false);
-            setView('list');
-            setSearchFocus((n) => n + 1);
-          }}
-        >
-          <Icon name="search" />
-        </button>
-        <button
-          type="button"
-          className="map-btn"
           onClick={locate}
           aria-label={t(point ? 'point.back' : 'header.locate')}
           data-status={location.status}
@@ -728,15 +717,19 @@ export function App() {
         <button
           type="button"
           className="map-btn"
-          aria-label={t(view === 'list' ? 'view.toMap' : 'view.list')}
+          aria-label={t(view === 'list' ? 'view.toMap' : 'view.listSearch')}
           aria-pressed={view === 'list'}
           onClick={() => {
             clearCards();
             setFollowedOpen(false);
-            setView(view === 'list' ? 'map' : 'list');
+            if (view === 'list') setView('map');
+            else {
+              setView('list');
+              setSearchFocus((n) => n + 1);
+            }
           }}
         >
-          <Icon name={view === 'list' ? 'map' : 'list'} />
+          <Icon name={view === 'list' ? 'map' : 'listSearch'} />
         </button>
       </div>
 
@@ -854,7 +847,8 @@ export function App() {
               onClose={() => setHotspotOpen(false)}
             />
           </div>
-        ) : inPlans ? (
+        ) : (
+          inPlans &&
           view === 'map' &&
           !mine.loading &&
           mineOnMap.length === 0 && (
@@ -866,24 +860,6 @@ export function App() {
                   {t('agenda.openList')}
                 </button>
               )}
-            </div>
-          )
-        ) : (
-          view === 'map' &&
-          !loading &&
-          events.length === 0 && (
-            <div className="sheet__card">
-              <GuidanceCard
-                guidance={guidance}
-                radiusM={radius}
-                mode="empty"
-                filtered={filtered}
-                fallbackRadiusM={nextRadius}
-                onExpand={setRadius}
-                onClearFilters={filters.clear}
-                goal={goal}
-                onAdd={startAdd}
-              />
             </div>
           )
         )}
@@ -919,10 +895,6 @@ export function App() {
           count={events.length}
           loading={loading}
           onClose={() => setSettingsOpen(false)}
-          onAdd={() => {
-            setSettingsOpen(false);
-            startAdd();
-          }}
           onAbout={() => {
             setSettingsOpen(false);
             go({ name: 'about' });

@@ -8,7 +8,7 @@ M7 has two goals: **find any upcoming event in the region by name, artist or pla
 
 | Feature              | What the user sees                                                                                                                                                         | Slice |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| **The magnifier**    | Above locate and the list button on the map. It opens the list with the search field focused. The field is also at the top of the list itself.                             | C     |
+| **The magnifier**    | In the list button's icon on the map (since 2026-11-08; it was a button of its own above locate). The list opens with the search field at the top, focused.                | C     |
 | **Typo-tolerant**    | "podsiadlo", "Podsiadło", "podsiadło dawid" and "podsaidlo" all find Dawid Podsiadło's concert. Titles and venues are searched too.                                        | B     |
 | **The whole region** | Every upcoming event in Wrocław for the next 60 days, not only the map's reach or time window. An exact artist comes first, then similar names, then titles; ties by date. | A, B  |
 | **Results**          | By day, with the time, venue, distance and city, and the artist that matched. A tap goes to the event on the map (or its page, when it's beyond the loaded area).          | C     |

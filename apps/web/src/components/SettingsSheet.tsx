@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { priceFromToggles, priceToggles, type Language } from '@happow/core';
+import { priceFromToggles, priceToggles, type Category, type Language } from '@happow/core';
 import { config } from '../config';
 import type { FiltersState } from '../hooks/useFilters';
+import { useLongPress } from '../hooks/useLongPress';
 import { useI18n } from '../i18n';
 import { Glyph, Icon } from './Icons';
 
@@ -10,25 +11,44 @@ interface Props {
   count: number;
   loading: boolean;
   onClose: () => void;
-  onAdd: () => void;
   onAbout: () => void;
 }
 
-/** Fanned category glyphs beside the add button, shrinking and fading outward (§15). */
-const FAN = [
-  { size: 20, opacity: 0.9 },
-  { size: 16, opacity: 0.6 },
-  { size: 13, opacity: 0.35 },
-];
-const FAN_LEFT = ['note', 'mask', 'frame'];
-const FAN_RIGHT = ['basket', 'beer', 'confetti'];
+/**
+ * A category chip: a tap shows only this kind (highlighted), a hold hides this kind and shows
+ * everything else (greyed out). A tap or a hold on a hidden chip makes it neutral again.
+ */
+function CategoryChip({ category: c, filters }: { category: Category; filters: FiltersState }) {
+  const { t, lang } = useI18n();
+  const press = useLongPress(
+    () => filters.toggleCategory(c.id),
+    () => filters.toggleExcluded(c.id),
+  );
+  const on = filters.categories.includes(c.id);
+  const out = filters.excluded.includes(c.id);
+  const name = c.labels[lang];
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      aria-label={out ? t('filters.excluded', { name }) : undefined}
+      className={`cat-chip${on ? ' is-on' : ''}${out ? ' is-out' : ''}`}
+      {...press}
+    >
+      <span className="cat-chip__icon" aria-hidden>
+        <Glyph id={c.glyph} size={18} />
+      </span>
+      <span className="cat-chip__label">{name}</span>
+    </button>
+  );
+}
 
 /**
  * Settings (§5, §15; `docs/design/settings-rows.html`): the category chips, then wordless rows in
- * black and white: price and family toggles, add event, language, About, and the footer. Filters
- * apply live and the count updates behind the sheet.
+ * black and white: price and family toggles, language, About, and the footer. Adding lives on the
+ * map's top row. Filters apply live and the count updates behind the sheet.
  */
-export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout }: Props) {
+export function SettingsSheet({ filters, count, loading, onClose, onAbout }: Props) {
   const { t, lang, setLang } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
   // The last price toggle that is on can't go off: it nudges instead.
@@ -82,23 +102,9 @@ export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout
         onClick={(e) => e.stopPropagation()}
       >
         <div className="cat-grid" role="group" aria-label={t('filters.categories')}>
-          {config.categories.map((c) => {
-            const on = filters.categories.includes(c.id);
-            return (
-              <button
-                key={c.id}
-                type="button"
-                aria-pressed={on}
-                className={`cat-chip${on ? ' is-on' : ''}`}
-                onClick={() => filters.toggleCategory(c.id)}
-              >
-                <span className="cat-chip__icon" aria-hidden>
-                  <Glyph id={c.glyph} size={18} />
-                </span>
-                <span className="cat-chip__label">{c.labels[lang]}</span>
-              </button>
-            );
-          })}
+          {config.categories.map((c) => (
+            <CategoryChip key={c.id} category={c} filters={filters} />
+          ))}
         </div>
 
         <div className="toggle-row">
@@ -132,22 +138,6 @@ export function SettingsSheet({ filters, count, loading, onClose, onAdd, onAbout
             </button>
           </div>
         </div>
-
-        <button type="button" className="settings-row" aria-label={t('header.add')} onClick={onAdd}>
-          {[...FAN].reverse().map((f, i) => (
-            <span key={`l${i}`} className="settings-row__motif" style={{ opacity: f.opacity }}>
-              <Glyph id={FAN_LEFT[FAN.length - 1 - i]!} size={f.size} />
-            </span>
-          ))}
-          <span className="settings-row__main">
-            <Icon name="plusCircle" size={38} strokeWidth={1.6} />
-          </span>
-          {FAN.map((f, i) => (
-            <span key={`r${i}`} className="settings-row__motif" style={{ opacity: f.opacity }}>
-              <Glyph id={FAN_RIGHT[i]!} size={f.size} />
-            </span>
-          ))}
-        </button>
 
         <div className="settings-row" role="radiogroup" aria-label={t('settings.language')}>
           {languages.slice(0, half).map(langButton)}

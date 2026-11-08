@@ -25,6 +25,9 @@ const paths = {
   // Map-screen controls (§5): settings sliders, list, map, locate, walking person.
   sliders: 'M4 6h9M17 6h3M15 4v4M4 12h3M11 12h9M9 10v4M4 18h11M19 18h1M17 16v4',
   list: 'M9 6h11M9 12h11M9 18h11M5 6h.01M5 12h.01M5 18h.01',
+  // The list button also opens the search: the top row makes room for a small magnifier.
+  listSearch:
+    'M9 6h2.5M9 12h11M9 18h11M5 6h.01M5 12h.01M5 18h.01M17 8.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.2 7.7l1.8 1.8',
   map: 'M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3zM9 4v13M15 7v13',
   locate:
     'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 2v2M12 20v2M2 12h2M20 12h2',
