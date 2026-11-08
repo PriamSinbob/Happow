@@ -420,6 +420,7 @@ Add `entry: 'fixed' | 'open'` and `graceMin` to the event model. Category defaul
   - Tabler Icons (MIT, notice in `/third-party-licenses.txt`): music, theatre, cinema, exhibition, festival (confetti), happening (sparkles), sport (runner), market (basket), kids (rocking horse), food (utensils). Drawn for Happow: garage sale (tag), talk (microphone), religious (candle), café (cup), bar (beer mug), other (dot).
   - Food picks its glyph per event (core `eventGlyph`, `glyphRules` in `config/categories.json`): the title is checked before the venue; utensils for places that serve food (milk bars, bistros, restaurants, food trucks), cup for cafés, beer mug for pubs, bars and breweries. Never random.
   - Selected category chips: ink tile with a paper glyph (as the active range icon).
+  - Hidden category chips (owner, 2026-11-08): a hold (500 ms, or a right-click) on a chip hides that category and shows everything else; the chip is greyed out (40 % opacity, name struck through). A tap or a hold on a hidden chip makes it neutral again; a hold on a selected chip hides it instead. An event is hidden only when all of its categories are hidden: one that spans kinds (music + festival) stays, since those are often relevant outside one simple category (owner). Saved per device (`happow:excluded`), counted in `activeCount`, cleared by Clear. Applied on the phone only (`matchesFilters`; the direct `events_near` fallback filters after the call); the legacy `density_near` fallback doesn't know it, so its hotspot counts include hidden categories.
 
 ### 4.4 Age limits and family mode
 
@@ -505,6 +506,10 @@ Added 2026-10-22: age restrictions visible on events, and a child-friendly filte
   - Skipped: dice and the family chip (slice G); the first-launch rail nudge (§1); iOS has no haptics (Vibration API).
   - Checked by the owner on a phone (2026-10-23, preview build): rail drag, pinch to city mode, long-press, list style B. "Much better than the live app."
   - Open: the 60 fps target with 500 events is not measured. Edge dots and map pins are not keyboard-focusable; the list is the keyboard and screen-reader path. Many events sat on one city-centre point because of a geocoder fallback, fixed separately (`fix-geocode-city-centre`).
+- **Owner changes (2026-11-08):**
+  - **Add on the map.** The add motif (circled plus with category glyphs) sits in the top row's right group before settings, nearest the centre: a pill with one glyph each side at 380 px, two from 410 px. The settings sheet's add row is gone (§15).
+  - **One button for list and search.** The M7 magnifier above locate is gone: it did what the list button does. The list button's icon is the list with a small magnifier at the upper right (`listSearch`); opening the list focuses the search field as the magnifier did.
+  - **No empty-reach card on the map.** An empty reach is visible on the map, so "Nothing within …" no longer covers it. The list keeps its empty state (expand, clear filters, the district goal, add).
 
 ## 6. Lit map (explored areas)
 
@@ -698,7 +703,7 @@ Agreed with the owner on 2026-10-23 after four mockup rounds. Reference: `docs/d
   - On = `raised` tile with `onRaised` icon; off = no tile, `muted` icon.
   - The last tile that is on cannot be switched off: it gives a 3 px sideways nudge (none under `prefers-reduced-motion`).
   - Filter state maps to the existing `price` filter: both on = any, one on = free or paid.
-- **Add event row.** Full-width 58 px row: a circled plus in `ink` (38 px, stroke 1.6) with three category glyphs on each side, shrinking outward (20 / 16 / 13 px) and fading (opacity 0.9 / 0.6 / 0.35). No live hue.
+- **Add event row.** Removed 2026-11-08 (owner): adding moved to the map's top row (§5). It was a full-width 58 px row: a circled plus in `ink` (38 px, stroke 1.6) with three category glyphs on each side, shrinking outward (20 / 16 / 13 px) and fading (opacity 0.9 / 0.6 / 0.35).
 - **Language row.** The globe (30 px, stroke 1.6) on the sheet's `paper`, centred. Each language is a small field: `sunken` 2 px padding around a 32 × 22 button with its code ("PL", "EN"; 10.5 px, weight 700, 0.06 em tracking). The active one is `raised`, the others flat and `muted`. Tapping switches at once (no menu). More languages line up outward on both sides at the same size. No flags.
 - **About row.** A circled "i" drawn for Happow, symmetric (dot over a straight stroke, no serif foot), 34 px, stroke 1.6, flanked by small motifs: dice and gear on the left, moderator shield and tag on the right (13 / 17 px, opacity 0.35 / 0.6). It opens About, where the theme and colour settings and the moderator sign-in live.
 - **Footer.** Clear = outlined button with the `filter-off` icon in `muted`; show = `ink`-filled button with a check and the event count ("✓ 476"). No words.

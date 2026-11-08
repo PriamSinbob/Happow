@@ -53,7 +53,8 @@
     0 36px 72px -24px rgb(20 18 30 / 0.22);
   /* Under filled ink buttons: a shadow, never a glow (night ink is light). */
   --lift: 0 8px 20px -10px rgb(20 18 30 / 0.55);
-  --live-glow: 0 0 0 0.5px var(--live), 0 6px 18px -6px color-mix(in srgb, var(--live) 80%, transparent);
+  --live-glow:
+    0 0 0 0.5px var(--live), 0 6px 18px -6px color-mix(in srgb, var(--live) 80%, transparent);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -322,6 +323,26 @@ button {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--paper);
+}
+/* Add an event (top row, before settings): the plus with its glyphs, a pill instead of a circle. */
+.map-btn.map-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  width: auto;
+  padding: 0 9px;
+  border-radius: 20px;
+}
+.map-add__motif {
+  display: inline-flex;
+}
+.map-add__far {
+  display: none;
+}
+@media (min-width: 410px) {
+  .map-add__far {
+    display: inline-flex;
+  }
 }
 /* The grid a hold opens under the top row: glyphs only, the current one ringed. */
 .pick-grid {
@@ -1292,6 +1313,10 @@ div.settings-row {
   font-size: 14px;
   font-weight: 550;
   letter-spacing: -0.01em;
+  /* A hold hides the category: no text selection or callout menu under the finger. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 .cat-chip__icon {
   display: inline-grid;
@@ -1312,6 +1337,14 @@ div.settings-row {
   /* Selected: ink tile, paper glyph, as the active range icon; readable in both themes. */
   background: var(--ink);
   color: var(--paper);
+}
+.cat-chip.is-out {
+  /* Hidden (a hold): the whole chip greyed out, the name struck through. */
+  opacity: 0.4;
+  background: transparent;
+}
+.cat-chip.is-out .cat-chip__label {
+  text-decoration: line-through;
 }
 .segmented--3 {
   grid-template-columns: repeat(3, 1fr);

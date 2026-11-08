@@ -46,6 +46,13 @@ describe('filters', () => {
     expect(matchesFilters(ev, { categories: ['festival', 'sport'] })).toBe(true);
     expect(matchesFilters(ev, { categories: ['sport'] })).toBe(false);
   });
+  it('hides an event only when all of its categories are excluded', () => {
+    expect(matchesFilters(ev, { excluded: ['sport'] })).toBe(true);
+    expect(matchesFilters(ev, { excluded: ['festival'] })).toBe(true);
+    expect(matchesFilters(ev, { excluded: ['music', 'festival'] })).toBe(false);
+    expect(matchesFilters({ ...ev, categoryIds: ['music'] }, { excluded: ['music'] })).toBe(false);
+    expect(matchesFilters(ev, { categories: ['sport'], excluded: ['festival'] })).toBe(false);
+  });
   it('filters by price', () => {
     expect(matchesFilters(ev, { price: 'free' })).toBe(true);
     expect(matchesFilters(ev, { price: 'paid' })).toBe(false);

@@ -1,5 +1,6 @@
 import {
   FLAG_REASONS,
+  matchesFilters,
   SOURCE_MISSING,
   type DensityCluster,
   type DensityQuery,
@@ -184,7 +185,11 @@ export class SupabaseEventRepository implements EventRepository {
       },
       signal,
     );
-    return rows.map(rowToEvent);
+    // The SQL function has no excluded categories: they are applied here.
+    const events = rows.map(rowToEvent);
+    return q.excluded?.length
+      ? events.filter((e) => matchesFilters(e, { excluded: q.excluded }))
+      : events;
   }
 
   async density(q: DensityQuery, signal?: AbortSignal): Promise<DensityCluster[]> {

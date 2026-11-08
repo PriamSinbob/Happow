@@ -1,15 +1,22 @@
 import type { EventFilters, HappowEvent, PriceFilter, TimeWindow } from './types.js';
 import { dayBounds, daysBounds } from './time.js';
 
-export const DEFAULT_FILTERS: EventFilters = { categories: [], price: 'any' };
+export const DEFAULT_FILTERS: EventFilters = { categories: [], excluded: [], price: 'any' };
 
-/** Same rules as the `events_near` SQL function, for the offline repository and tests. */
+/**
+ * Same rules as the `events_near` SQL function, for the offline repository and tests, plus the
+ * excluded categories, which only the phone applies (the SQL functions don't know them).
+ */
 export function matchesFilters(
   event: Pick<HappowEvent, 'categoryIds' | 'isFree'>,
   filters: Partial<EventFilters>,
 ): boolean {
   const cats = filters.categories ?? [];
   if (cats.length && !event.categoryIds.some((c) => cats.includes(c))) return false;
+  // Hidden only when every category it has is hidden: an event spanning kinds stays visible.
+  const out = filters.excluded ?? [];
+  const hidden = event.categoryIds.length > 0 && event.categoryIds.every((c) => out.includes(c));
+  if (out.length && hidden) return false;
   if (filters.price === 'free' && !event.isFree) return false;
   if (filters.price === 'paid' && event.isFree) return false;
   return true;

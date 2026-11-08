@@ -119,6 +119,8 @@ export type PriceFilter = 'any' | 'free' | 'paid';
 export interface EventFilters {
   /** Category ids; empty means every category. */
   categories: string[];
+  /** Category ids to hide: an event is left out only when all of its categories are hidden. */
+  excluded: string[];
   price: PriceFilter;
 }
 

@@ -48,6 +48,7 @@ export const en = {
   'window.hours': '{hours} h',
   'window.days': '{days} days',
   'filters.categories': 'Categories',
+  'filters.excluded': '{name}: hidden',
   'filters.price': 'Price',
   'filters.price.free': 'Free',
   'filters.price.paid': 'Paid',
@@ -191,7 +192,7 @@ export const en = {
   'add.field.url': 'Website or tickets (optional)',
   'add.field.description': 'Short description (optional)',
   // M7 search and followed artists
-  'search.open': 'Search events and artists',
+  'view.listSearch': 'List and search',
   'search.label': 'Search',
   'search.placeholder': 'Artist, event or place',
   'search.clear': 'Clear the search',

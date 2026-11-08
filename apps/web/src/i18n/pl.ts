@@ -50,6 +50,7 @@ export const pl: Record<MessageKey, string> = {
   'window.hours': '{hours} h',
   'window.days': '{days} dni',
   'filters.categories': 'Kategorie',
+  'filters.excluded': '{name}: ukryte',
   'filters.price': 'Cena',
   'filters.price.free': 'Bezpłatne',
   'filters.price.paid': 'Płatne',
@@ -200,7 +201,7 @@ export const pl: Record<MessageKey, string> = {
   'add.field.url': 'Strona lub bilety (opcjonalnie)',
   'add.field.description': 'Krótki opis (opcjonalnie)',
   // M7 wyszukiwanie i obserwowani artyści
-  'search.open': 'Szukaj wydarzeń i artystów',
+  'view.listSearch': 'Lista i wyszukiwanie',
   'search.label': 'Szukaj',
   'search.placeholder': 'Artysta, wydarzenie albo miejsce',
   'search.clear': 'Wyczyść wyszukiwanie',
