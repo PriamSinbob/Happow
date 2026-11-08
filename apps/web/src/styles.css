@@ -1,14 +1,64 @@
+/* Geist (OFL, notice in public/third-party-licenses.txt), bundled so the PWA works offline. Only
+   the subsets the app's languages and Wrocław's event titles use; other scripts fall back. */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/geist/files/geist-latin-wght-normal.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/geist/files/geist-latin-ext-wght-normal.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/geist/files/geist-cyrillic-wght-normal.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
 :root {
   /* Colours come from config/theme.json at runtime (src/theme.ts): --land, --paper, --paper-2,
-     --ink, --muted, --line, --scrim, --warn, --warn-ink, --error, --error-ink, --live, --on-live. */
-  --radius-lg: 20px;
-  --radius-md: 14px;
-  --shadow-lg: 0 10px 30px rgb(0 0 0 / 0.16), 0 2px 6px rgb(0 0 0 / 0.08);
-  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.12);
+     --ink, --muted, --line, --scrim, --warn, --warn-ink, --error, --error-ink, --live, --on-live.
+     Everything below derives from them, so both themes and every preset follow. */
+  --radius-lg: 26px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  /* Hairlines and quiet fills: ink at low strength, so they sit on any surface. */
+  --hair: color-mix(in srgb, var(--ink) 9%, transparent);
+  --hair-strong: color-mix(in srgb, var(--ink) 16%, transparent);
+  --fill: color-mix(in srgb, var(--ink) 5%, transparent);
+  --fill-strong: color-mix(in srgb, var(--ink) 9%, transparent);
+  /* Floating chrome over the map: paper, slightly translucent, the map blurred behind it. */
+  --glass: color-mix(in srgb, var(--paper) 76%, transparent);
+  --glass-solid: color-mix(in srgb, var(--paper) 90%, transparent);
+  --blur: blur(24px) saturate(1.8);
+  --rim: inset 0 0.5px 0 rgb(255 255 255 / 0.7);
+  --shadow-sm: 0 1px 2px rgb(20 18 30 / 0.06), 0 6px 16px -4px rgb(20 18 30 / 0.12);
+  --shadow-lg:
+    0 1px 2px rgb(20 18 30 / 0.05), 0 12px 32px -8px rgb(20 18 30 / 0.18),
+    0 36px 72px -24px rgb(20 18 30 / 0.22);
+  /* Under filled ink buttons: a shadow, never a glow (night ink is light). */
+  --lift: 0 8px 20px -10px rgb(20 18 30 / 0.55);
+  --live-glow: 0 0 0 0.5px var(--live), 0 6px 18px -6px color-mix(in srgb, var(--live) 80%, transparent);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   font-family:
-    Inter,
+    Geist,
     system-ui,
     -apple-system,
     'Segoe UI',
@@ -16,10 +66,73 @@
     'Helvetica Neue',
     Arial,
     sans-serif;
+  letter-spacing: -0.006em;
   color: var(--ink);
   background: var(--paper-2);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+}
+:root[data-theme='night'] {
+  --hair: color-mix(in srgb, var(--ink) 10%, transparent);
+  --hair-strong: color-mix(in srgb, var(--ink) 18%, transparent);
+  --fill: color-mix(in srgb, var(--ink) 6%, transparent);
+  --fill-strong: color-mix(in srgb, var(--ink) 11%, transparent);
+  --glass: color-mix(in srgb, var(--paper) 72%, transparent);
+  --glass-solid: color-mix(in srgb, var(--paper) 88%, transparent);
+  --rim: inset 0 0.5px 0 rgb(255 255 255 / 0.09);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 20px -6px rgb(0 0 0 / 0.5);
+  --shadow-lg:
+    0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px -10px rgb(0 0 0 / 0.6),
+    0 40px 80px -30px rgb(0 0 0 / 0.7);
+  --lift: 0 8px 20px -10px rgb(0 0 0 / 0.8);
+}
+/* Glass: the chrome that floats over the map. Component rules below set only size and layout. */
+.counter,
+.map-btn,
+.icon-btn--raised,
+.rail__pill,
+.rail__thumb,
+.timeline__pill,
+.hud-error,
+.pick-grid {
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  border: 0.5px solid var(--hair);
+  box-shadow: var(--rim), var(--shadow-sm);
+}
+/* Pressed: a quick shrink, the only touch feedback (no hover styles, M6 §1). */
+.counter,
+.map-btn,
+.icon-btn,
+.range-btn,
+.btn,
+.row,
+.cat-chip,
+.tool,
+.chip,
+.season-chip {
+  transition:
+    transform 0.2s var(--ease-out),
+    background-color 0.2s,
+    color 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.counter:active,
+.map-btn:active,
+.icon-btn:active,
+.range-btn:active {
+  transform: scale(0.92);
+}
+.btn:active,
+.cat-chip:active,
+.tool:active,
+.chip:active,
+.season-chip:active {
+  transform: scale(0.97);
 }
 
 * {
@@ -55,14 +168,14 @@ button {
   height: 36px;
   border: 0;
   border-radius: 50%;
-  background: var(--paper-2);
+  background: var(--fill-strong);
   flex: none;
 }
 .icon-btn--raised {
   width: 40px;
   height: 40px;
-  background: var(--paper);
-  box-shadow: var(--shadow-lg);
+  /* Glass from the shared rule; restated because .icon-btn's fill comes later. */
+  background: var(--glass);
   color: var(--ink);
 }
 
@@ -82,6 +195,7 @@ button {
   background: var(--ink);
   color: var(--paper);
   border-radius: var(--radius-md);
+  letter-spacing: -0.01em;
   font-size: 14px;
   box-shadow: var(--shadow-lg);
 }
@@ -135,7 +249,7 @@ button {
   background: var(--paper);
   box-shadow: var(--shadow-sm);
   color: var(--ink);
-  transition: transform 0.15s ease;
+  transition: transform 0.3s var(--ease-out);
 }
 .marker__pin > span {
   /* Grid, not block: the glyph SVG sits centred instead of on a text baseline. */
@@ -173,7 +287,7 @@ button {
   background: var(--ink);
   border: 3px solid var(--paper);
   box-shadow:
-    0 0 0 6px color-mix(in srgb, var(--ink) 20%, transparent),
+    0 0 0 6px color-mix(in srgb, var(--ink) 14%, transparent),
     var(--shadow-sm);
 }
 
@@ -219,13 +333,12 @@ button {
   max-width: 360px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-  padding: 8px;
-  border: 0.5px solid var(--line);
-  border-radius: 16px;
-  background: var(--paper);
-  box-shadow: var(--shadow-lg);
-  animation: drop 0.16s ease-out;
+  gap: 4px;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--rim), var(--shadow-lg);
+  transform-origin: top left;
+  animation: drop 0.26s var(--ease-out);
 }
 /* Taps outside the grid only close it. */
 .pick-grid-backdrop {
@@ -238,13 +351,14 @@ button {
   place-items: center;
   height: 48px;
   padding: 0;
-  border: 0.5px solid transparent;
-  border-radius: 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--ink);
 }
 .pick-grid__opt.is-current {
-  border: 1.5px solid var(--ink);
+  background: var(--fill-strong);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
 }
 .pick-grid__opt:focus-visible {
   outline: 2px solid var(--ink);
@@ -255,12 +369,11 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 6px 10px;
+  padding: 7px 12px;
   border-radius: 999px;
-  background: var(--paper);
   color: var(--error-ink);
   font-size: 12px;
-  box-shadow: var(--shadow-sm);
+  font-weight: 500;
 }
 /* ● N: what is on now. Filled while "live only" is on. */
 .counter {
@@ -272,14 +385,12 @@ button {
   width: 76px;
   height: 40px;
   padding: 0 12px;
-  border: 0.5px solid var(--line);
   border-radius: 999px;
-  background: var(--paper);
   color: var(--ink);
   font-size: 17px;
-  font-weight: 650;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
-  box-shadow: var(--shadow-sm);
 }
 .counter__dot {
   width: 9px;
@@ -289,15 +400,18 @@ button {
 }
 .counter__dot.has-live {
   background: var(--live);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--live) 70%, transparent);
 }
 .counter.is-on {
   background: var(--live);
-  border-color: var(--live);
+  border-color: transparent;
   color: var(--on-live);
+  box-shadow: var(--live-glow);
 }
 .counter.is-on .counter__dot {
   background: var(--on-live);
   border-color: var(--on-live);
+  box-shadow: none;
 }
 /* Round icon buttons on the map: settings, locate, list. No text; the name is the aria-label. */
 .map-btn {
@@ -307,11 +421,8 @@ button {
   width: 40px;
   height: 40px;
   padding: 0;
-  border: 0.5px solid var(--line);
   border-radius: 50%;
-  background: var(--paper);
   color: var(--ink);
-  box-shadow: var(--shadow-sm);
 }
 .map-btn:focus-visible,
 .counter:focus-visible,
@@ -328,6 +439,7 @@ button {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  /* Ink, never the live colour: a set filter is not "on now". */
   background: var(--ink);
   border: 1.5px solid var(--paper);
 }
@@ -360,22 +472,22 @@ button {
 }
 .rail__line {
   position: absolute;
-  left: 21px;
+  left: 21.25px;
   top: 14px;
-  width: 2px;
+  width: 1.5px;
   height: 196px;
   border-radius: 1px;
-  background: var(--line);
+  background: var(--hair-strong);
 }
 .rail__stop {
   position: absolute;
-  left: 19px;
-  width: 6px;
-  height: 6px;
-  margin-top: -3px;
+  left: 20px;
+  width: 4px;
+  height: 4px;
+  margin-top: -2px;
   border-radius: 50%;
   background: var(--muted);
-  opacity: 0.6;
+  opacity: 0.55;
 }
 .rail__thumb {
   position: absolute;
@@ -383,9 +495,7 @@ button {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--paper);
-  border: 0.5px solid var(--muted);
-  box-shadow: var(--shadow-sm);
+  background: var(--glass-solid);
 }
 .rail__pill {
   position: absolute;
@@ -395,11 +505,10 @@ button {
   gap: 4px;
   height: 28px;
   padding: 0 10px;
-  border: 0.5px solid var(--line);
   border-radius: 14px;
-  background: var(--paper);
   color: var(--ink);
   font-size: 13px;
+  font-weight: 550;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   pointer-events: none;
@@ -422,7 +531,13 @@ button {
   right: 0;
   bottom: 0;
   padding-bottom: var(--safe-bottom);
-  background: linear-gradient(to top, var(--paper) 55%, transparent);
+  /* The map fades into the bar instead of meeting an edge. */
+  background: linear-gradient(
+    to top,
+    var(--paper) 42%,
+    color-mix(in srgb, var(--paper) 72%, transparent) 72%,
+    transparent
+  );
 }
 .timeline {
   display: flex;
@@ -449,6 +564,7 @@ button {
 .range-btn.is-active {
   background: var(--ink);
   color: var(--paper);
+  box-shadow: var(--shadow-sm);
 }
 .timeline__track {
   position: relative;
@@ -464,13 +580,13 @@ button {
   overflow: visible;
 }
 .timeline__line {
-  stroke: var(--line);
-  stroke-width: 2;
+  stroke: var(--hair-strong);
+  stroke-width: 1.5;
   stroke-linecap: round;
 }
 .timeline__bar {
   fill: var(--muted);
-  opacity: 0.35;
+  opacity: 0.3;
 }
 .timeline__bar.is-active {
   fill: var(--ink);
@@ -481,7 +597,8 @@ button {
 }
 .timeline__num {
   fill: var(--muted);
-  font-size: 11px;
+  font-size: 10.5px;
+  font-weight: 500;
   text-anchor: middle;
   font-variant-numeric: tabular-nums;
 }
@@ -507,11 +624,10 @@ button {
   gap: 6px;
   height: 26px;
   padding: 0 10px;
-  border: 0.5px solid var(--line);
   border-radius: 13px;
-  background: var(--paper);
   color: var(--ink);
   font-size: 13px;
+  font-weight: 550;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   transform: translateX(-50%);
@@ -522,6 +638,7 @@ button {
   height: 7px;
   border-radius: 50%;
   background: var(--live);
+  box-shadow: 0 0 8px var(--live);
 }
 
 /* List style B (§5): an overlay over the map; the map stays visible above it. */
@@ -533,18 +650,46 @@ button {
   top: calc(64px + var(--safe-top));
   bottom: 92px;
   overflow-y: auto;
-  padding: 10px;
-  border: 0.5px solid var(--line);
+  padding: 6px;
+  border: 0.5px solid var(--hair);
   border-radius: var(--radius-lg);
-  background: var(--paper);
-  box-shadow: var(--shadow-lg);
+  background: var(--glass-solid);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: var(--rim), var(--shadow-lg);
   -webkit-overflow-scrolling: touch;
-  animation: rise 0.18s ease-out;
+  animation: rise 0.34s var(--ease-out);
+}
+/* Inside the overlay the rows share its surface: hairlines between them instead of cards. */
+.list-overlay .list {
+  gap: 0;
+}
+.list-overlay .row {
+  position: relative;
+  padding: 12px 12px 12px 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  box-shadow: none;
+}
+.list-overlay li + li > .row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 66px;
+  right: 12px;
+  height: 0.5px;
+  background: var(--hair);
+}
+.list-overlay .row:active {
+  background: var(--fill-strong);
+  transform: none;
 }
 .list__day {
-  padding: 8px 4px 2px;
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  padding: 14px 12px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -587,7 +732,7 @@ button {
   display: flex;
   gap: 4px;
   padding: 3px;
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--sunken);
 }
 .toggle {
@@ -597,13 +742,18 @@ button {
   height: 44px;
   padding: 0;
   border: 0;
-  border-radius: 10px;
+  border-radius: 11px;
   background: transparent;
   color: var(--quiet);
+  transition:
+    background-color 0.22s var(--ease-out),
+    color 0.22s,
+    box-shadow 0.22s;
 }
 .toggle.is-on {
   background: var(--raised);
   color: var(--on-raised);
+  box-shadow: var(--shadow-sm);
 }
 .toggle.is-nudge {
   animation: nudge 0.25s;
@@ -617,7 +767,7 @@ button {
   min-height: 58px;
   padding: 0;
   border: 0;
-  border-top: 0.5px solid var(--line);
+  border-top: 0.5px solid var(--hair);
   background: transparent;
   color: var(--ink);
 }
@@ -637,7 +787,7 @@ div.settings-row {
 .lang-field {
   display: inline-flex;
   padding: 2px;
-  border-radius: 8px;
+  border-radius: 9px;
   background: var(--sunken);
 }
 .lang-code {
@@ -646,11 +796,11 @@ div.settings-row {
   height: 22px;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 7px;
   background: transparent;
   color: var(--quiet);
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 650;
   letter-spacing: 0.06em;
 }
 /* A 44 × 36 touch target around the small field. */
@@ -670,8 +820,8 @@ div.settings-row {
   gap: 8px;
   height: 46px;
   padding: 0;
-  border: 0.5px solid var(--line);
-  border-radius: 12px;
+  border: 0.5px solid var(--hair);
+  border-radius: 999px;
   background: transparent;
   color: var(--quiet);
 }
@@ -684,6 +834,8 @@ div.settings-row {
   color: var(--paper);
   font-size: 16px;
   font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow: var(--lift);
 }
 .sheet-btn__count {
   font-variant-numeric: tabular-nums;
@@ -698,8 +850,8 @@ div.settings-row {
   gap: 22px;
   min-height: 66px;
   margin: 16px 0;
-  border-top: 0.5px solid var(--line);
-  border-bottom: 0.5px solid var(--line);
+  border-top: 0.5px solid var(--hair);
+  border-bottom: 0.5px solid var(--hair);
   color: var(--ink);
 }
 .atlas-row__btn {
@@ -710,7 +862,7 @@ div.settings-row {
   height: 44px;
   padding: 0;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--ink);
 }
@@ -793,7 +945,7 @@ div.settings-row {
   background: var(--ink);
   color: var(--paper);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   box-shadow: var(--shadow-sm);
 }
 
@@ -811,8 +963,8 @@ div.settings-row {
 .guide__title {
   margin: 0;
   font-size: 17px;
-  font-weight: 750;
-  letter-spacing: -0.01em;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 .guide__line {
   display: flex;
@@ -850,7 +1002,8 @@ div.settings-row {
 .list--empty .guide {
   text-align: left;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  border: 0.5px solid var(--hair);
+  box-shadow: var(--rim), var(--shadow-sm);
   width: 100%;
 }
 
@@ -876,34 +1029,46 @@ div.settings-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   padding: 3px;
-  background: var(--line);
-  border-radius: 12px;
+  background: var(--fill-strong);
+  border-radius: 14px;
 }
 .segmented button {
   height: 38px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 11px;
   background: transparent;
   font-weight: 600;
   color: var(--muted);
+  transition:
+    background-color 0.22s var(--ease-out),
+    color 0.22s,
+    box-shadow 0.22s;
 }
 .segmented button.is-active {
   background: var(--paper);
   color: var(--ink);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--rim), var(--shadow-sm);
 }
 
 /* ---------- Event card ---------- */
 .sheet__card {
   max-height: 52dvh;
   overflow-y: auto;
+  border: 0.5px solid var(--hair);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  animation: rise 0.2s ease-out;
+  background: var(--glass-solid);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: var(--rim), var(--shadow-lg);
+  animation: rise 0.34s var(--ease-out);
 }
 .event-card {
   background: var(--paper);
-  padding: 14px 16px 16px;
+  padding: 16px;
+}
+/* On the map the card is glass; the surface comes from .sheet__card. */
+.sheet__card .event-card {
+  background: transparent;
 }
 .event-card__head {
   display: flex;
@@ -919,17 +1084,18 @@ div.settings-row {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
 }
 .event-card h2 {
   margin: 2px 0 0;
-  font-size: 18px;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
 }
 .event-card p {
   margin: 8px 0 0;
@@ -941,12 +1107,14 @@ div.settings-row {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-weight: 600;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
   margin-top: 12px !important;
 }
 .event-card__price {
   margin-left: auto;
-  font-weight: 700;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
 }
 .event-card__venue span,
 .event-card__distance {
@@ -958,7 +1126,11 @@ div.settings-row {
 .event-card__actions {
   display: flex;
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 16px;
+}
+.event-card__actions .btn {
+  padding: 0 12px;
+  white-space: nowrap;
 }
 .rules {
   display: flex;
@@ -970,9 +1142,9 @@ div.settings-row {
 }
 .rules li {
   font-size: 12px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
-  background: var(--paper-2);
+  background: var(--fill-strong);
 }
 .footnote {
   font-size: 12px !important;
@@ -980,14 +1152,15 @@ div.settings-row {
 }
 .badge {
   font-size: 10px;
-  padding: 2px 6px;
+  font-weight: 600;
+  padding: 2px 7px;
   border-radius: 999px;
-  letter-spacing: 0.02em;
-  background: var(--paper-2);
+  letter-spacing: 0.06em;
+  background: var(--fill-strong);
 }
 .badge--api,
 .badge--crawled {
-  background: var(--paper-2);
+  background: var(--fill-strong);
   color: var(--ink);
 }
 .badge--community {
@@ -997,35 +1170,38 @@ div.settings-row {
 .now-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  gap: 5px;
+  padding: 2px 8px 2px 7px;
   border-radius: 999px;
   background: var(--live);
   color: var(--on-live);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: var(--live-glow);
 }
 .now-pill::before {
   content: '';
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: var(--live);
+  background: var(--on-live);
 }
 .btn {
   flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 42px;
-  padding: 0 14px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--paper);
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 0.5px solid var(--hair);
+  background: var(--fill);
   color: var(--ink);
   text-decoration: none;
   font-weight: 600;
   font-size: 14px;
+  letter-spacing: -0.01em;
 }
 .btn {
   gap: 6px;
@@ -1038,6 +1214,7 @@ div.settings-row {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--paper);
+  box-shadow: var(--lift);
 }
 
 /* Black and white (§15): no category colours. */
@@ -1045,8 +1222,9 @@ div.settings-row {
   display: inline-grid;
   place-items: center;
   flex: none;
-  border-radius: 12px;
-  background: var(--paper-2);
+  border-radius: 14px;
+  background: var(--fill);
+  box-shadow: inset 0 0 0 0.5px var(--hair);
   color: var(--ink);
 }
 
@@ -1060,8 +1238,10 @@ div.settings-row {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: color-mix(in srgb, var(--scrim) 42%, transparent);
-  animation: fade 0.15s ease-out;
+  background: color-mix(in srgb, var(--scrim) 36%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: fade 0.28s var(--ease-out);
 }
 .filter-sheet {
   width: 100%;
@@ -1069,10 +1249,10 @@ div.settings-row {
   max-height: 88dvh;
   overflow-y: auto;
   background: var(--paper);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: 16px 16px 0;
-  box-shadow: var(--shadow-lg);
-  animation: rise 0.2s ease-out;
+  border-radius: 28px 28px 0 0;
+  padding: 18px 16px 0;
+  box-shadow: var(--rim), var(--shadow-lg);
+  animation: rise 0.4s var(--ease-out);
   outline: none;
 }
 .filter-sheet__head {
@@ -1082,14 +1262,16 @@ div.settings-row {
 }
 .filter-sheet h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
 }
 .filter-sheet h3 {
   margin: 0 0 8px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--muted);
 }
 .cat-grid {
@@ -1100,16 +1282,16 @@ div.settings-row {
 .cat-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 46px;
-  padding: 6px 10px;
-  border: 1.5px solid var(--line);
-  border-radius: 12px;
-  background: var(--paper);
+  gap: 10px;
+  min-height: 48px;
+  padding: 7px 10px 7px 8px;
+  border: 0.5px solid var(--hair);
+  border-radius: 16px;
+  background: var(--fill);
   text-align: left;
   font-size: 14px;
-  font-weight: 600;
-  line-height: 1.2;
+  font-weight: 550;
+  letter-spacing: -0.01em;
 }
 .cat-chip__icon {
   display: inline-grid;
@@ -1117,12 +1299,14 @@ div.settings-row {
   flex: none;
   width: 30px;
   height: 30px;
-  border-radius: 9px;
-  background: var(--paper-2);
+  border-radius: 10px;
+  background: var(--fill-strong);
   color: var(--ink);
 }
 .cat-chip.is-on {
   border-color: var(--ink);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--ink);
 }
 .cat-chip.is-on .cat-chip__icon {
   /* Selected: ink tile, paper glyph, as the active range icon; readable in both themes. */
@@ -1140,7 +1324,7 @@ div.settings-row {
   margin-top: 18px;
   padding: 12px 0 calc(14px + var(--safe-bottom));
   background: var(--paper);
-  border-top: 1px solid var(--line);
+  border-top: 0.5px solid var(--hair);
 }
 .filter-sheet__foot .btn {
   height: 48px;
@@ -1157,7 +1341,7 @@ div.settings-row {
   gap: 8px;
   padding: 12px 0 calc(14px + var(--safe-bottom));
   background: var(--paper);
-  border-top: 0.5px solid var(--line);
+  border-top: 0.5px solid var(--hair);
 }
 
 /* ---------- Event detail ---------- */
@@ -1176,7 +1360,7 @@ div.settings-row {
   display: flex;
   flex-direction: column;
   background: var(--paper);
-  animation: rise 0.2s ease-out;
+  animation: rise 0.4s var(--ease-out);
   outline: none;
 }
 .detail__bar {
@@ -1201,7 +1385,11 @@ div.settings-row {
   width: 100%;
   aspect-ratio: 16 / 9;
   max-height: 36dvh;
-  background: var(--paper-2);
+  /* No poster: a quiet dot grid and a soft floor glow, ink only (no category colours, §15). */
+  background:
+    radial-gradient(120% 90% at 50% 115%, var(--fill-strong), transparent 62%),
+    radial-gradient(circle at 1px 1px, var(--hair-strong) 1px, transparent 1.5px) 0 0 / 18px 18px,
+    var(--paper-2);
   overflow: hidden;
 }
 .detail__hero img {
@@ -1219,20 +1407,22 @@ div.settings-row {
   margin: -20px auto 0;
   padding: 18px 16px calc(32px + var(--safe-bottom));
   background: var(--paper);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -0.5px 0 var(--hair);
   min-height: 60dvh;
 }
 .detail h1 {
   margin: 4px 0 0;
-  font-size: 23px;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
 }
 .status-banner {
   margin: 12px 0 0;
   padding: 8px 12px;
-  border-radius: 10px;
-  font-weight: 700;
+  border-radius: var(--radius-sm);
+  font-weight: 650;
   font-size: 14px;
 }
 .status-banner--cancelled {
@@ -1303,7 +1493,7 @@ div.settings-row {
 }
 .facts {
   display: grid;
-  gap: 14px;
+  gap: 16px;
   margin: 16px 0 0;
   padding: 0;
   list-style: none;
@@ -1320,7 +1510,10 @@ div.settings-row {
 .facts strong {
   display: block;
   font-size: 15px;
+  font-weight: 600;
   line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
 }
 .facts__sub {
   display: flex;
@@ -1373,18 +1566,19 @@ div.settings-row {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 10px 4px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--paper);
+  gap: 5px;
+  padding: 12px 4px 10px;
+  border: 0.5px solid var(--hair);
+  border-radius: var(--radius-md);
+  background: var(--fill);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 550;
 }
 .tool[aria-pressed='true'] {
   color: var(--ink);
-  border-color: color-mix(in srgb, var(--ink) 50%, var(--paper));
-  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  border-color: var(--ink);
+  background: var(--fill-strong);
+  box-shadow: inset 0 0 0 0.5px var(--ink);
 }
 /* Share sheet (M9 §3): link, image, copy; the QR code big enough to scan from a screen. */
 .share-sheet__actions {
@@ -1427,10 +1621,10 @@ div.settings-row {
 }
 .detail__section h2 {
   margin: 0 0 6px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--muted);
 }
 .detail__section p {
@@ -1445,7 +1639,7 @@ div.settings-row {
 .detail__source {
   margin: 24px 0 0;
   padding-top: 14px;
-  border-top: 1px solid var(--line);
+  border-top: 0.5px solid var(--hair);
   font-size: 12px;
   color: var(--muted);
 }
@@ -1463,7 +1657,9 @@ div.settings-row {
   background: var(--ink);
   color: var(--paper);
   font-size: 14px;
+  font-weight: 550;
   box-shadow: var(--shadow-lg);
+  animation: toast-in 0.36s var(--ease-out);
 }
 
 /* A wordless toast: one icon (the empty dice). */
@@ -1487,16 +1683,16 @@ div.settings-row {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   padding: 12px;
-  border: 0;
+  border: 0.5px solid var(--hair);
   border-radius: var(--radius-md);
   background: var(--paper);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--rim), var(--shadow-sm);
   text-align: left;
 }
 .row:active {
-  transform: scale(0.99);
+  transform: scale(0.985);
 }
 .row__body {
   flex: 1;
@@ -1505,7 +1701,8 @@ div.settings-row {
   gap: 2px;
 }
 .row__title {
-  font-weight: 650;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   font-size: 15px;
   white-space: nowrap;
   overflow: hidden;
@@ -1517,6 +1714,7 @@ div.settings-row {
   gap: 6px;
   font-size: 13px;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 .row__meta {
   font-size: 12px;
@@ -1528,7 +1726,8 @@ div.settings-row {
 .row__price {
   flex: none;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .list--empty {
   padding-top: 8px;
@@ -1574,7 +1773,7 @@ div.settings-row {
 @keyframes drop {
   from {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(-6px) scale(0.97);
   }
 }
 @keyframes nudge {
@@ -1587,7 +1786,13 @@ div.settings-row {
 }
 @keyframes rise {
   from {
-    transform: translateY(12px);
+    transform: translateY(18px) scale(0.985);
+    opacity: 0;
+  }
+}
+@keyframes toast-in {
+  from {
+    transform: translate(-50%, 10px) scale(0.96);
     opacity: 0;
   }
 }
@@ -1673,7 +1878,7 @@ button.brand {
   display: flex;
   flex-direction: column;
   background: var(--paper-2);
-  animation: rise 0.2s ease-out;
+  animation: rise 0.4s var(--ease-out);
   outline: none;
 }
 .screen__bar {
@@ -1682,12 +1887,13 @@ button.brand {
   gap: 8px;
   padding: calc(10px + var(--safe-top)) 12px 10px;
   background: var(--paper);
-  border-bottom: 1px solid var(--line);
+  border-bottom: 0.5px solid var(--hair-strong);
 }
 .screen__bar h1 {
   margin: 0;
   font-size: 18px;
-  letter-spacing: -0.01em;
+  font-weight: 650;
+  letter-spacing: -0.025em;
 }
 .screen__scroll {
   flex: 1;
@@ -1717,7 +1923,7 @@ button.brand {
   gap: 8px;
   padding: 0;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
 }
 .field__error {
@@ -1743,13 +1949,20 @@ button.brand {
 .field textarea {
   width: 100%;
   min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
   background: var(--paper);
   font: inherit;
   font-size: 16px; /* no zoom on iOS focus */
   color: var(--ink);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s var(--ease-out);
+}
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--muted);
 }
 .field textarea {
   resize: vertical;
@@ -1760,8 +1973,9 @@ button.brand {
 }
 .field input:focus-visible,
 .field textarea:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: -1px;
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 4px var(--fill-strong);
 }
 .field [aria-invalid='true'] {
   border-color: var(--error-ink);
@@ -1811,7 +2025,7 @@ button.brand {
 .form-error {
   margin: 0 0 12px;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--error);
   color: var(--error-ink);
   font-size: 14px;
@@ -1819,7 +2033,7 @@ button.brand {
 .notice {
   margin: 0 0 12px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--warn);
   color: var(--warn-ink);
   font-size: 13px;
@@ -1853,7 +2067,7 @@ button.brand {
 .terms {
   margin: -4px 0 14px;
   padding: 10px 12px 10px 28px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--paper-2);
   font-size: 13px;
   line-height: 1.45;
@@ -1874,10 +2088,10 @@ button.brand {
   align-items: center;
   gap: 10px;
   margin: 4px 0 18px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--muted);
 }
 .divider::before,
@@ -1885,7 +2099,7 @@ button.brand {
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--line);
+  background: var(--hair-strong);
 }
 .found {
   margin: -6px 0 12px;
@@ -1911,8 +2125,8 @@ button.brand {
   gap: 2px;
   width: 100%;
   padding: 10px 12px;
-  border: 1.5px solid var(--line);
-  border-radius: 12px;
+  border: 1.5px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
   background: var(--paper);
   text-align: left;
   font-size: 14px;
@@ -1937,8 +2151,8 @@ label.choice input {
 }
 .pin-map {
   height: 220px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-md);
   overflow: hidden;
   cursor: crosshair;
 }
@@ -1980,8 +2194,8 @@ label.choice input {
   gap: 14px;
   margin: 0 0 18px;
   padding: 10px 12px 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
   background: var(--paper);
 }
 .done + .usage {
@@ -2014,7 +2228,7 @@ label.choice input {
   height: 4px;
   margin-top: 6px;
   border-radius: 2px;
-  background: var(--line);
+  background: var(--hair-strong);
   overflow: hidden;
 }
 .meter__fill {
@@ -2066,17 +2280,17 @@ label.choice input {
 }
 .mod-section h2 {
   margin: 20px 0 10px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--muted);
 }
 .mod-card {
   margin-bottom: 10px;
   padding: 12px 14px 14px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-md);
   background: var(--paper);
 }
 .mod-card h3 {
@@ -2099,7 +2313,7 @@ label.choice input {
 .mod-card__note {
   margin: 6px 0;
   padding: 6px 10px;
-  border-left: 3px solid var(--line);
+  border-left: 3px solid var(--hair-strong);
   font-size: 13px;
   color: var(--ink);
 }
@@ -2114,10 +2328,10 @@ label.choice input {
 }
 .prose h2 {
   margin: 24px 0 6px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--muted);
 }
 .prose ul {
@@ -2148,7 +2362,7 @@ label.choice input {
   gap: 10px;
   margin: 12px 0 0;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--warn);
   color: var(--warn-ink);
   font-size: 14px;
@@ -2174,7 +2388,7 @@ label.choice input {
 .flag-line {
   margin: 8px 0 0;
   padding: 6px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--warn);
   color: var(--warn-ink);
   font-size: 13px;
@@ -2189,17 +2403,17 @@ label.choice input {
 .choices__title {
   padding: 0;
   margin-bottom: 2px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--muted);
 }
 
 /* ---------- Getting there ---------- */
 .btn--square {
   flex: none;
-  width: 42px;
+  width: 44px;
   padding: 0;
   color: var(--ink);
 }
@@ -2229,9 +2443,13 @@ label.choice input {
   align-items: flex-start;
   gap: 10px;
   padding: 10px 14px 12px 10px;
+  border: 0.5px solid var(--hair);
   border-radius: var(--radius-lg);
-  background: var(--paper);
-  box-shadow: var(--shadow-lg);
+  background: var(--glass-solid);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: var(--rim), var(--shadow-lg);
+  animation: drop 0.34s var(--ease-out);
 }
 .go__titles {
   display: grid;
@@ -2240,22 +2458,25 @@ label.choice input {
 }
 .go__kicker {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--muted);
 }
 .go__titles h1 {
   margin: 0;
   overflow: hidden;
   font-size: 17px;
+  font-weight: 650;
   line-height: 1.25;
+  letter-spacing: -0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .go__meta {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 .go__notices {
@@ -2279,9 +2500,13 @@ label.choice input {
   right: 12px;
   bottom: calc(12px + var(--safe-bottom));
   padding: 12px;
+  border: 0.5px solid var(--hair);
   border-radius: var(--radius-lg);
-  background: var(--paper);
-  box-shadow: var(--shadow-lg);
+  background: var(--glass-solid);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: var(--rim), var(--shadow-lg);
+  animation: rise 0.4s var(--ease-out);
 }
 .go-buttons {
   display: flex;
@@ -2307,14 +2532,16 @@ label.choice input {
 /* MapLibre controls follow the theme. */
 .maplibregl-ctrl.maplibregl-ctrl-attrib,
 .maplibregl-ctrl-group {
-  background: var(--paper);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
   color: var(--muted);
 }
 .maplibregl-ctrl-attrib a {
   color: var(--ink);
 }
 .maplibregl-ctrl-group button + button {
-  border-top-color: var(--line);
+  border-top-color: var(--hair-strong);
 }
 [data-theme='night'] .maplibregl-ctrl-icon,
 [data-theme='night'] .maplibregl-ctrl-attrib-button {
@@ -2331,10 +2558,11 @@ label.choice input {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
+  padding: 16px;
+  border: 0.5px solid var(--hair-strong);
+  border-radius: var(--radius-lg);
   background: var(--paper);
+  box-shadow: var(--rim), var(--shadow-sm);
 }
 .account-card > .btn {
   flex: none;
@@ -2360,8 +2588,8 @@ label.choice input {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--paper-2);
-  font-weight: 700;
+  background: var(--fill-strong);
+  font-weight: 600;
 }
 .account-card__id {
   min-width: 0;
@@ -2370,7 +2598,7 @@ label.choice input {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 700;
+  font-weight: 600;
 }
 .account-card__plan {
   display: flex;
@@ -2463,7 +2691,7 @@ button.account-card__plan {
 /* Google's own button style: a plain outlined button with its "G", unlike the filled primary. */
 .btn--google {
   background: var(--paper);
-  border-color: var(--line);
+  border-color: var(--hair-strong);
   color: var(--ink);
 }
 .account-sheet .btn--danger {
@@ -2484,13 +2712,13 @@ button.account-card__plan {
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--line);
+  background: var(--hair-strong);
 }
 .field .code-input {
   letter-spacing: 0.5em;
   text-align: center;
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  font-weight: 600;
 }
 .perks {
   display: flex;
@@ -2512,7 +2740,7 @@ button.account-card__plan {
 .account-note {
   margin: 0 0 14px;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--paper-2);
   font-size: 13.5px;
 }
@@ -2553,7 +2781,7 @@ button.account-card__plan {
   background: var(--ink);
   color: var(--paper);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 18px;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -2576,10 +2804,10 @@ button.account-card__plan {
 .admin-lang {
   flex: none;
   padding: 1px 7px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hair-strong);
   border-radius: 6px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--quiet);
 }
@@ -2674,13 +2902,13 @@ button.account-card__plan {
   margin: 8px 0 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--hair-strong);
 }
 .admin-samples li {
   display: flex;
   gap: 10px;
   padding: 6px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--hair-strong);
   font-size: 13.5px;
 }
 .admin-samples time {
@@ -2710,14 +2938,14 @@ button.account-card__plan {
 }
 .admin-sheet__who {
   margin-bottom: 4px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
   overflow-wrap: anywhere;
 }
 .admin-code {
   margin: 4px 0 14px;
   padding: 12px 10px 10px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--paper-2);
   text-align: center;
 }
@@ -2725,7 +2953,7 @@ button.account-card__plan {
   user-select: all;
   -webkit-user-select: all;
   font-size: 40px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
   letter-spacing: 0.12em;
   font-variant-numeric: tabular-nums;
@@ -2747,7 +2975,7 @@ button.account-card__plan {
   display: block;
   margin: 0 0 4px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--muted);
 }
 .admin-ro__line {
@@ -2760,8 +2988,8 @@ button.account-card__plan {
   min-width: 0;
   margin: 0;
   padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
   background: var(--paper-2);
   font: inherit;
   font-size: 14px;
@@ -2781,8 +3009,8 @@ button.account-card__plan {
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
   background: var(--paper);
   color: var(--ink);
 }
@@ -2820,13 +3048,13 @@ button.account-card__plan {
   display: grid;
   gap: 10px;
   padding-top: 12px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--hair-strong);
 }
 .contrib__title,
 .contrib__subtitle {
   margin: 0;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .contrib__level {
   display: flex;
@@ -2861,8 +3089,8 @@ button.account-card__plan {
   min-width: 0;
   min-height: 44px;
   padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
   background: var(--paper);
   font: inherit;
   font-size: 16px;
@@ -2883,8 +3111,8 @@ button.account-card__plan {
 }
 .impact__stat {
   padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
   background: var(--paper);
 }
 .impact__stat dt {
@@ -2894,7 +3122,7 @@ button.account-card__plan {
 .impact__stat dd {
   margin: 2px 0 0;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 /* Doubled class: the account card sits in About's .prose, whose list rules would indent it. */
@@ -2906,7 +3134,7 @@ button.account-card__plan {
 }
 .my-events.my-events li + li {
   margin-top: 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--hair-strong);
 }
 .my-events__row {
   display: grid;
@@ -2982,14 +3210,14 @@ button.account-card__plan {
   gap: 8px;
   margin: 0 0 18px;
   padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
   background: var(--paper);
 }
 .quick__title {
   margin: 0;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .quick__text {
   margin: 0 0 4px;
@@ -3032,8 +3260,8 @@ button.account-card__plan {
 .weekday {
   min-height: 40px;
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
   background: var(--paper);
   font: inherit;
   font-size: 13px;
@@ -3084,7 +3312,7 @@ button.account-card__plan {
 .season-chip {
   min-height: 36px;
   padding: 0 14px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hair-strong);
   border-radius: 999px;
   background: var(--paper);
   font: inherit;
@@ -3120,7 +3348,7 @@ button.account-card__plan {
 .coverage__table th,
 .coverage__table td {
   padding: 6px 4px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--hair-strong);
   text-align: right;
   white-space: nowrap;
 }
@@ -3135,7 +3363,7 @@ button.account-card__plan {
   white-space: normal;
 }
 .coverage__table .is-now {
-  font-weight: 700;
+  font-weight: 600;
 }
 .coverage .field select {
   width: 100%;

@@ -318,16 +318,18 @@ Auto by real sunrise/sunset at the user's coordinates (`suncalc`, local maths, n
 | Token               | Day                    | Night                                        |
 | ------------------- | ---------------------- | -------------------------------------------- |
 | Land / background   | `#F1ECE2` (under veil) | `#000000`, absolute black (OLED pixels off)  |
-| Major roads         | `#FFFFFF`              | `#2E3647` lit, dimmed by the veil when unlit |
-| Minor roads         | `#E3DACA`              | `#1C2230` lit                                |
-| Water               | `#A8CBDF`              | black when unlit, `#123049` lit              |
-| Parks               | `#CDE2B4`              | black when unlit, `#173622` lit              |
+| Major roads         | `#FFFFFF`              | `#2A2B30` lit, dimmed by the veil when unlit |
+| Minor roads         | `#E3DACA`              | `#18191C` lit                                |
+| Water               | `#A8CBDF`              | black when unlit, `#0D1820` lit              |
+| Parks               | `#CDE2B4`              | black when unlit, `#0E1712` lit              |
 | Veil                | `#E6E6E4` at 0.74      | `#000000` at ~0.75                           |
-| Ink (text, glyphs)  | `#17171A`              | `#ECE9E3` (not pure white: halation)         |
-| Muted               | `#86807A`              | `#80838B`                                    |
-| Paper (cards, pins) | `#FBFAF7`              | `#1A1D23`                                    |
+| Ink (text, glyphs)  | `#17171A`              | `#EDEDEF` (not pure white: halation)         |
+| Muted               | `#86807A`              | `#84858C`                                    |
+| Paper (cards, pins) | `#FBFAF7`              | `#131416`                                    |
 
 Night intent: streets on a switched-off OLED phone. Outside lit areas only street geometry is visible. If panning shows OLED black smear on test devices, raise the background to ~`#050505`; the power cost is negligible.
+
+Graphite night (owner, 2026-11-08): neutral near-black surfaces and a near-monochrome basemap (water and parks only faintly tinted), so the live colour is the one hue on screen. It replaces the earlier slate night (`#1A1D23` paper, `#ECE9E3` ink, `#2E3647` / `#1C2230` roads, `#123049` water, `#173622` parks); the HTML mockups in `docs/design/` still show the slate values. The other night tokens in `config/theme.json` moved with it.
 
 ### 3.2 Live hue: one hue, one meaning
 
@@ -686,11 +688,11 @@ Found on 2026-10-22: the NFM crawl found 50 events and added 20, sent 1 to moder
 
 Agreed with the owner on 2026-10-23 after four mockup rounds. Reference: `docs/design/settings-rows.html` (sizes, states and colours are normative). Applies to the settings sheet from slice F, below the category chips. Built in slice G.
 
-- **Black and white only.** No live hue, no category colours anywhere in the sheet. Category colour tints also go from the category chips, card icons, the detail hero and the Going-there marker: glyph tiles use `paper2`, the selected chip is an `ink` tile with a `paper` glyph (as merged in #15), the marker outline is `ink`. The `color` field in `config/categories.json` stays for now but nothing renders it.
+- **Black and white only.** No live hue, no category colours anywhere in the sheet. Category colour tints also go from the category chips, card icons, the detail hero and the Going-there marker: glyph tiles use a faint ink fill (`--fill`, was `paper2` until the 2026-11-08 visual pass), the selected chip is an `ink` tile with a `paper` glyph (as merged in #15), the marker outline is `ink`. The `color` field in `config/categories.json` stays for now but nothing renders it.
 - **New tokens** in `config/theme.json` (day / night), checked by the contrast test:
-  - `sunken`: the track behind toggles, `#ECE8E0` / `#0E1013`.
-  - `raised`: an "on" tile, `#FFFFFF` / `#ECE9E3` (night uses the same light fill as the primary button, so on reads the same everywhere).
-  - `onRaised`: content on a raised tile, `#17171A` / `#1A1D23`.
+  - `sunken`: the track behind toggles, `#ECE8E0` / `#0A0A0B`.
+  - `raised`: an "on" tile, `#FFFFFF` / `#EDEDEF` (night uses the same light fill as the primary button, so on reads the same everywhere).
+  - `onRaised`: content on a raised tile, `#17171A` / `#131416`.
 - **Price: two toggles, not three options.** One `sunken` track, 3 px padding, 4 px gap; two 130 × 44 tiles: crossed-out ticket = free, plain ticket = paid (Tabler `ticket-off` / `ticket`, 28 px, stroke 1.8). No marks inside the tickets.
   - Both start on, which means "show everything". Tapping one turns it off and hides that kind.
   - On = `raised` tile with `onRaised` icon; off = no tile, `muted` icon.
@@ -710,6 +712,6 @@ Agreed with the owner on 2026-10-23 after four mockup rounds. Reference: `docs/d
   - **Touch-first.** No hover styles in the stylesheet (checked by a test).
   - **Tests.** `packages/core/test/dice.test.ts`, `apps/web/test/slice-g.test.tsx`; design review run (verdict and owner questions in the PR).
   - Skipped: none of §15.
-  - **Off controls.** Tickets, the family tile, language codes and clear use one darker token, `quiet` (#5C5852 / #A9ACB3, ≥ 5.7:1 on the track and on paper), instead of `muted` (owner, 2026-10-23).
+  - **Off controls.** Tickets, the family tile, language codes and clear use one darker token, `quiet` (#5C5852 / #A7A8AE, ≥ 5.7:1 on the track and on paper), instead of `muted` (owner, 2026-10-23).
   - **Owner decisions on the review (2026-10-23):** the chip stays 40 px like the other map buttons (mockup: 38 px); choosing another shortcut turns the previous one off, family mode included; the dice hold opens the shared grid under the top row, not a fan at the button.
   - Open: the language codes stay 10.5 px as in the mockup (below the 11 px floor).
