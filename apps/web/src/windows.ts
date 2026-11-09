@@ -7,12 +7,14 @@ type T = (key: MessageKey, params?: Record<string, string | number>) => string;
 export function windowLabel(t: T, w: TimeWindow): string {
   if ('endOfDay' in w) return t('window.today');
   if ('days' in w) return t('window.days', { days: w.days });
+  if ('afterDays' in w) return t('window.future');
   return t('window.hours', { hours: w.hours });
 }
 
-/** Calendar icon for whole-day windows: Today, ≤ 7 days, longer. Null for hours. */
-export function windowRows(w: TimeWindow): 0 | 1 | 2 | null {
+/** Calendar icon for whole-day windows: Today, ≤ 7 days, longer, the future. Null for hours. */
+export function windowRows(w: TimeWindow): 0 | 1 | 2 | 'future' | null {
   if ('endOfDay' in w) return 0;
   if ('days' in w) return w.days <= 7 ? 1 : 2;
+  if ('afterDays' in w) return 'future';
   return null;
 }

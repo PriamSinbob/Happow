@@ -44,7 +44,8 @@ const paths = {
   gear: 'M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0',
   shield:
     'M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06M15 19l2 2l4 -4',
-  dice: 'M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2zM8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01',
+  // Drawn for Happow: two small dice mid-throw.
+  dice: 'M3.7 10.9L10.4 9.3A1.8 1.8 0 0 1 12.6 10.6L14.2 17.3A1.8 1.8 0 0 1 12.9 19.5L6.2 21.1A1.8 1.8 0 0 1 4 19.8L2.4 13.1A1.8 1.8 0 0 1 3.7 10.9zM15.9 2.7L20.6 4.3A1.5 1.5 0 0 1 21.6 6.2L20 10.9A1.5 1.5 0 0 1 18.1 11.9L13.4 10.3A1.5 1.5 0 0 1 12.4 8.4L14 3.7A1.5 1.5 0 0 1 15.9 2.7zM5.8 13.7h.01M8.3 15.2h.01M10.8 16.7h.01M15.1 8.3h.01M18.9 6.3h.01',
   // Nothing to roll: a crossed O.
   none: 'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM5 19L19 5',
   download: 'M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2M7 11l5 5l5 -5M12 4l0 12',
@@ -102,12 +103,15 @@ export function WalkIcon() {
   return <Icon name="walk" size={14} />;
 }
 
+/** Fast-forward, two triangles in a 24 grid: inside the calendar, and alone at the line's end. */
+export const FAST_FORWARD = 'M7.2 12.2l4 2.8-4 2.8zM12.8 12.2l4 2.8-4 2.8z';
+
 /**
  * Time-range icons: a calendar with one filled day
- * (Today), one filled row (7 days) or two filled rows (14 days). Decorative: callers provide the
- * accessible name.
+ * (Today), one filled row (7 days), two filled rows (14 days) or fast-forward (the future, no
+ * end). Decorative: callers provide the accessible name.
  */
-export function RangeIcon({ rows, size = 22 }: { rows: 0 | 1 | 2; size?: number }) {
+export function RangeIcon({ rows, size = 22 }: { rows: 0 | 1 | 2 | 'future'; size?: number }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -135,6 +139,7 @@ export function RangeIcon({ rows, size = 22 }: { rows: 0 | 1 | 2; size?: number 
       )}
       {rows === 1 && <path d="M7 14h10" strokeWidth={3} />}
       {rows === 2 && <path d="M7 13h10M7 17h10" strokeWidth={3} />}
+      {rows === 'future' && <path d={FAST_FORWARD} fill="currentColor" strokeWidth={1} />}
     </svg>
   );
 }

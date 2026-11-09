@@ -129,7 +129,7 @@ export interface EventQuery extends Partial<EventFilters> {
   radiusM: number;
   from: Date;
   to: Date;
-  /** A multi-day time window (week, later): read from that window's longer area snapshot. */
+  /** A multi-day time window (later, future): read from that window's longer area snapshot. */
   range?: string;
 }
 

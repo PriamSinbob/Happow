@@ -3,7 +3,7 @@ import seed from '../../../data/seed/wroclaw.events.json';
 import { StaticEventRepository } from '../src/data/static';
 import { SupabaseEventRepository } from '../src/data/supabase';
 import { config, region } from '../src/config';
-import { formatDistance } from '../src/format';
+import { formatDistance, formatRelativeDay } from '../src/format';
 import { eventToIcs } from '../src/ics';
 import { translate } from '../src/i18n';
 
@@ -112,6 +112,13 @@ describe('format', () => {
     expect(formatDistance(1234, 'pl')).toBe('1,2 km');
     expect(formatDistance(1234, 'en')).toBe('1.2 km');
     expect(formatDistance(25000, 'en')).toBe('25 km');
+  });
+  it('names a day with its year only when it is not this year', () => {
+    const at = new Date('2026-11-09T12:00:00Z');
+    const day = (iso: string) => formatRelativeDay(iso, at, 'Europe/Warsaw', 'en');
+    expect(day('2026-11-10T18:00:00Z')).toBe('tomorrow');
+    expect(day('2026-12-15T18:00:00Z')).toBe('Tue, Dec 15');
+    expect(day('2027-12-15T18:00:00Z')).toBe('Wed, Dec 15, 2027');
   });
 });
 

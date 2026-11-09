@@ -1,5 +1,5 @@
 import type { EventFilters, HappowEvent, PriceFilter, TimeWindow } from './types.js';
-import { dayBounds, daysBounds } from './time.js';
+import { dayBounds, daysBounds, FAR_FUTURE, futureStart } from './time.js';
 
 /**
  * Same rules as the `events_near` SQL function, for the offline repository and tests, plus the
@@ -31,6 +31,8 @@ export function windowRange(
 ): { from: Date; to: Date } {
   if ('endOfDay' in window) return { from: now, to: dayBounds(now, timeZone).end };
   if ('days' in window) return { from: now, to: daysBounds(now, timeZone, window.days).end };
+  if ('afterDays' in window)
+    return { from: futureStart(now, timeZone, window.afterDays), to: FAR_FUTURE };
   return { from: now, to: new Date(now.getTime() + window.hours * 3_600_000) };
 }
 

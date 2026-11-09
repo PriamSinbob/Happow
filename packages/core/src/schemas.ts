@@ -90,6 +90,15 @@ export const timeWindowSchema = z.union([
    * day starts and ends at local midnight, DST changes included. Served by a longer snapshot.
    */
   z.object({ id: z.string().regex(/^[a-z0-9-]+$/), days: z.number().int().min(1).max(60) }),
+  /**
+   * The future with no end: everything starting after the first `afterDays` calendar days, which
+   * the day windows cover. The time line steps through `months` calendar months, then "later".
+   */
+  z.object({
+    id: z.string().regex(/^[a-z0-9-]+$/),
+    afterDays: z.number().int().min(1).max(60),
+    months: z.number().int().min(1).max(24),
+  }),
 ]);
 
 export const appConfigSchema = z.object({

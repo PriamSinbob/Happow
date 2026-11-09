@@ -47,18 +47,20 @@ export function navigationUrl(lat: number, lng: number): string {
 }
 
 /** "Sat, 24 Oct" / "sob., 24 paź" in the event's timezone. */
-export function formatDay(iso: string, timeZone: string, lang: Language): string {
+export function formatDay(iso: string, timeZone: string, lang: Language, year = false): string {
   return new Intl.DateTimeFormat(lang, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
+    year: year ? 'numeric' : undefined,
     timeZone,
   }).format(new Date(iso));
 }
 
 /**
  * "today" / "tomorrow" / "yesterday" ("dzisiaj" / "jutro" / "wczoraj") within a day of `now`,
- * else the short date, all counted in the event's timezone, so 01:00 is not mistaken for tonight.
+ * else the short date (with the year when it is not this year's), all counted in the event's
+ * timezone, so 01:00 is not mistaken for tonight.
  */
 export function formatRelativeDay(
   iso: string,
@@ -70,7 +72,10 @@ export function formatRelativeDay(
   const days = Math.round(
     (Date.parse(f.format(new Date(iso))) - Date.parse(f.format(now))) / 86_400_000,
   );
-  if (Math.abs(days) > 1) return formatDay(iso, timeZone, lang);
+  if (Math.abs(days) > 1) {
+    const otherYear = f.format(new Date(iso)).slice(0, 4) !== f.format(now).slice(0, 4);
+    return formatDay(iso, timeZone, lang, otherYear);
+  }
   return new Intl.RelativeTimeFormat(lang, { numeric: 'auto' }).format(days, 'day');
 }
 

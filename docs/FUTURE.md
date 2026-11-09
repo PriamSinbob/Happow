@@ -39,6 +39,8 @@ Everything not built yet, one line each: what, and why or what it waits for. Lau
 - **Server-side cache of density results.**
 - **Design and wording pass** over all screens (atlas bar looks, category tints on list icons and chips, language codes at 10.5 px below the 11 px floor).
 - **Checks to run:** 5-second test with someone new; veil redraw time and OLED smear on a mid-range phone; 14-day snapshot payload vs the 100 KB target; whether 14 days is the right "Later" length.
+- **The future range at scale:** its snapshot has no end and is cut at `refresh.areaMaxEvents` (1,000, nearest first); if a busy area fills it, read it per month. Sources now look a year ahead (`ingest.lookaheadHours`): watch the run time and Ticketmaster's 1,000-result cap.
+- **Open places:** restaurants, pubs, galleries and the like on the map while they are open, with the time to closing; an event there (happy hour, show, opening) takes the place over for its duration, and a private party is marked. Needs more OSM kinds, an `opening_hours` parser, a places endpoint and a pin look.
 - **Real-phone checks:** iOS Safari and Android Chrome (toolbar and pills), real GPS fix and arrival, poster photo via camera, a calendar through the feed job, `/e/` links in chats, share as image, QR code, Add-to-Home-Screen hint, private invite via WhatsApp, signed-in flows and first live `generate_link` against the real Supabase.
 
 ## Accounts and premium

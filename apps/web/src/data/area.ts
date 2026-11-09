@@ -16,7 +16,7 @@ import type { Credit, DistrictGoal, EventRepository } from './repository';
 import { rowToEvent, type Row, type SupabaseEventRepository } from './supabase';
 
 const { refresh, density } = config.app;
-/** The 24-hour snapshot follows the data step; Week and Later ones change slowly. */
+/** The 24-hour snapshot follows the data step; multi-day ones change slowly. */
 const stepMs = (range: string | undefined) =>
   (range ? refresh.longCacheMinutes : refresh.dataMinutes) * 60_000;
 
@@ -34,7 +34,7 @@ class AreaUnavailable extends Error {}
  * (`/api/area`), from which the list, the radius, time windows, filters and hotspot counts are all
  * worked out on the phone. Changing a filter or the radius, or a minute passing, costs no request.
  * Detail views still read one event fresh, so a cancellation is never 5 minutes late there.
- * The Week and Later windows read their own longer snapshot, downloaded only when chosen and
+ * The 14-day and future windows each read their own longer snapshot, downloaded only when chosen and
  * kept for 30 minutes; the everyday 24-hour one is unaffected.
  */
 export class AreaEventRepository implements EventRepository {

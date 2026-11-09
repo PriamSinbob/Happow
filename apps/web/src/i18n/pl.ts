@@ -16,6 +16,7 @@ export const pl: Record<MessageKey, string> = {
   'list.section.later': 'Później',
   'list.venueMore': '+{count} więcej',
   'list.venueLater': 'później',
+  'list.back': 'Wróć do listy',
   'view.toMap': 'Mapa',
   'event.now': 'Teraz',
   'event.until': 'do {time}',
@@ -50,6 +51,8 @@ export const pl: Record<MessageKey, string> = {
   'window.today': 'Dziś',
   'window.hours': '{hours} h',
   'window.days': '{days} dni',
+  'window.future': 'Później, bez limitu',
+  'timeline.month': 'Miesiąc',
   'filters.categories': 'Kategorie',
   'filters.excluded': '{name}: ukryte',
   'filters.price': 'Cena',
@@ -262,7 +265,6 @@ export const pl: Record<MessageKey, string> = {
   'addGate.title': 'Dodawanie wymaga konta',
   'addGate.lead':
     'Konto jest darmowe. Dodasz nim do {events} wydarzeń miesięcznie, a {autofill} z nich wypełnimy za ciebie z linku.',
-  'addGate.later': 'Nie teraz',
   'mod.title': 'Moderacja',
   'mod.notAvailable': 'Moderacja wymaga backendu (Supabase).',
   'mod.forbidden': 'To konto nie ma uprawnień moderatora.',
@@ -448,6 +450,8 @@ export const pl: Record<MessageKey, string> = {
   'about.title': 'O Happow',
   'about.intro':
     'Happow pokazuje, co dzieje się teraz w pobliżu (koncerty, targi, wyprzedaże garażowe, spotkania) w wybranym przez Ciebie niewielkim promieniu.',
+  'about.places': 'Twoje miejsca',
+  'about.info': 'Informacje',
   'about.appearance': 'Wygląd',
   'about.theme': 'Motyw',
   'about.theme.auto': 'Auto',

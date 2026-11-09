@@ -191,13 +191,6 @@ export function SignInSheet({
           <Icon name="mail" size={18} />
           {t('signIn.send')}
         </button>
-        {forAdd && (
-          <p className="account-sheet__aside">
-            <button type="button" className="inline-link" onClick={onClose}>
-              {t('addGate.later')}
-            </button>
-          </p>
-        )}
       </form>
     </Sheet>
   );

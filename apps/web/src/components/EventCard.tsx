@@ -3,7 +3,7 @@ import type { NearbyEvent } from '@happow/core';
 import { categoriesById } from '../config';
 import { useI18n, type MessageKey } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
-import { Glyph } from './Icons';
+import { Glyph, Icon } from './Icons';
 import { FollowStar, PerformerChips } from './Follow';
 import { en as RULE_KEYS } from '../i18n/en';
 
@@ -85,6 +85,7 @@ export function EventCard({
   ev,
   now,
   onClose,
+  onBack,
   onDetails,
   onGo,
   followed = false,
@@ -94,6 +95,8 @@ export function EventCard({
   /** A followed artist performs: the ★. */
   followed?: boolean;
   onClose: () => void;
+  /** Opened from a list row: the arrow returns to the list where it was left. */
+  onBack?: () => void;
   onDetails: () => void;
   /** Opens "Going there" (route inside the app). */
   onGo: () => void;
@@ -104,6 +107,11 @@ export function EventCard({
   return (
     <article className="event-card" aria-labelledby={`ev-${ev.id}`}>
       <header className="event-card__head">
+        {onBack && (
+          <button type="button" className="icon-btn" onClick={onBack} aria-label={t('list.back')}>
+            <Icon name="back" size={18} />
+          </button>
+        )}
         <CategoryIcon ev={ev} size={44} />
         <div className="event-card__titles">
           <div className="event-card__cats">
@@ -121,7 +129,7 @@ export function EventCard({
           </h2>
         </div>
         <button type="button" className="icon-btn" onClick={onClose} aria-label={t('event.close')}>
-          ✕
+          <Icon name="close" size={16} />
         </button>
       </header>
 

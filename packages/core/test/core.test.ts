@@ -78,8 +78,8 @@ describe('seed', () => {
     config.app.h3.eventResolution,
   );
 
-  it('has 20 valid events inside the region', () => {
-    expect(events).toHaveLength(20);
+  it('has 23 valid events inside the region', () => {
+    expect(events).toHaveLength(23);
     for (const e of events) {
       expect(e.point.lat).toBeGreaterThan(region.bbox.south);
       expect(e.point.lat).toBeLessThan(region.bbox.north);

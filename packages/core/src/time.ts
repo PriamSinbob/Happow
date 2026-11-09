@@ -32,6 +32,32 @@ export function daysBounds(now: Date, timeZone: string, days: number): { start: 
   return { start, end: new Date(end.getTime() - 1) };
 }
 
+/** "No end": far enough for any event, and a date every database and formatter accepts. */
+export const FAR_FUTURE = new Date(Date.UTC(9999, 0, 1));
+
+/** Local midnight after the `afterDays`-th calendar day from today: where the future window starts. */
+export function futureStart(now: Date, timeZone: string, afterDays: number): Date {
+  return new Date(daysBounds(now, timeZone, afterDays).end.getTime() + 1);
+}
+
+/**
+ * The future window's steps: `from`, then the first of each following calendar month (local
+ * midnight), then "no end": `months` month steps (the first one starts at `from`, mid-month) and
+ * one last step for everything later. Returns `months + 2` instants; step i is [i, i + 1).
+ */
+export function monthStarts(from: Date, timeZone: string, months: number): Date[] {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit' })
+      .formatToParts(from)
+      .map((x) => [x.type, x.value]),
+  );
+  const out = [from];
+  for (let i = 1; i <= months; i++)
+    out.push(zonedMidnight(Number(p.year), Number(p.month) + i, 1, timeZone));
+  out.push(FAR_FUTURE);
+  return out;
+}
+
 function offsetMs(at: Date, timeZone: string): number {
   const p = Object.fromEntries(
     new Intl.DateTimeFormat('en-US', {

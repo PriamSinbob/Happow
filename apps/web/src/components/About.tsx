@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { can } from '@happow/core';
 import { useAccount } from '../account';
 import type { Atlas } from '../atlas/useAtlas';
@@ -55,14 +55,24 @@ export function About({
     )
     .map((s) => s.name);
 
+  const fold = (title: string, body: ReactNode, id?: string) => (
+    <details className="about__fold" id={id}>
+      <summary>
+        <span>{title}</span>
+        <Icon name="back" size={16} />
+      </summary>
+      <div className="about__fold-body prose">{body}</div>
+    </details>
+  );
+
+  // One look for every group: a small label, then a paper card. Settings first (account,
+  // appearance, places), then what there is to read, folded.
   return (
     <Screen title={t('about.title')} onClose={onClose}>
-      <div className="prose">
-        <p className="lead">{t('about.intro')}</p>
-
+      <div className="about">
         {authAvailable() && (
-          <>
-            <h2>{t('account.title')}</h2>
+          <section className="about__group">
+            <h2 className="about__label">{t('account.title')}</h2>
             <AccountCard
               onSignIn={() => setSheet('signIn')}
               onPremium={() => setSheet('premium')}
@@ -70,103 +80,143 @@ export function About({
               onOpenEvent={onOpenEvent}
               onAddAgain={onAddAgain}
             />
-          </>
+          </section>
         )}
 
-        <h2>{t('about.appearance')}</h2>
-        <div className="field">
-          <span className="field__label" id="theme-label">
-            {t('about.theme')}
-          </span>
-          <div className="segmented segmented--3" role="radiogroup" aria-labelledby="theme-label">
-            {THEME_SETTINGS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                role="radio"
-                aria-checked={theme.setting === s}
-                className={theme.setting === s ? 'is-active' : ''}
-                onClick={() => theme.setSetting(s)}
+        <section className="about__group">
+          <h2 className="about__label">{t('about.appearance')}</h2>
+          <div className="about__card">
+            <div className="about__row">
+              <span className="field__label" id="theme-label">
+                {t('about.theme')}
+              </span>
+              <div
+                className="segmented segmented--3"
+                role="radiogroup"
+                aria-labelledby="theme-label"
               >
-                {t(`about.theme.${s}`)}
-              </button>
-            ))}
-          </div>
-          <span className="field__hint">{t('about.theme.hint')}</span>
-        </div>
-        <div className="field">
-          <span className="field__label" id="preset-label">
-            {t('about.colour')}
-          </span>
-          <div className="segmented segmented--2" role="radiogroup" aria-labelledby="preset-label">
-            {shown.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                role="radio"
-                aria-checked={theme.preset.id === p.id}
-                className={theme.preset.id === p.id ? 'is-active' : ''}
-                onClick={() => (allowed.includes(p) ? theme.setPreset(p.id) : setSheet('premium'))}
+                {THEME_SETTINGS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    role="radio"
+                    aria-checked={theme.setting === s}
+                    className={theme.setting === s ? 'is-active' : ''}
+                    onClick={() => theme.setSetting(s)}
+                  >
+                    {t(`about.theme.${s}`)}
+                  </button>
+                ))}
+              </div>
+              <span className="field__hint">{t('about.theme.hint')}</span>
+            </div>
+            <div className="about__row">
+              <span className="field__label" id="preset-label">
+                {t('about.colour')}
+              </span>
+              <div
+                className="segmented segmented--2"
+                role="radiogroup"
+                aria-labelledby="preset-label"
               >
-                <span className="swatch" style={{ background: p[theme.name].live }} aria-hidden />
-                {p.labels[lang]}
-                {p.tier === 'premium' && <PremiumMark size={12} label={t('account.premium')} />}
-              </button>
-            ))}
+                {shown.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={theme.preset.id === p.id}
+                    className={theme.preset.id === p.id ? 'is-active' : ''}
+                    onClick={() =>
+                      allowed.includes(p) ? theme.setPreset(p.id) : setSheet('premium')
+                    }
+                  >
+                    <span
+                      className="swatch"
+                      style={{ background: p[theme.name].live }}
+                      aria-hidden
+                    />
+                    {p.labels[lang]}
+                    {p.tier === 'premium' && <PremiumMark size={12} label={t('account.premium')} />}
+                  </button>
+                ))}
+              </div>
+              <span className="field__hint">
+                {account.status !== 'signedOut' || !authAvailable()
+                  ? t('about.colour.hint')
+                  : t('about.colour.signIn')}
+              </span>
+            </div>
           </div>
-          <span className="field__hint">
-            {account.status !== 'signedOut' || !authAvailable()
-              ? t('about.colour.hint')
-              : t('about.colour.signIn')}
-          </span>
-        </div>
-        <AtlasBar atlas={atlas} transfer={can(account.entitlements, 'atlas.export')} />
+        </section>
 
-        <h2>{t('about.sources')}</h2>
-        <p>{t('about.sourcesBody')}</p>
-        {sources.length > 0 && <p className="muted">{sources.join(' · ')}</p>}
+        <section className="about__group">
+          <h2 className="about__label">{t('about.places')}</h2>
+          <div className="about__card">
+            <AtlasBar atlas={atlas} transfer={can(account.entitlements, 'atlas.export')} />
+          </div>
+        </section>
 
-        <h2 id="terms">{t('about.terms')}</h2>
-        <ul>
-          {NUMBERS.map((n) => (
-            <li key={n}>{t(`about.terms.${n}`)}</li>
-          ))}
-        </ul>
+        <section className="about__group">
+          <h2 className="about__label">{t('about.info')}</h2>
+          <div className="about__card">
+            <p className="about__intro">{t('about.intro')}</p>
+            {fold(
+              t('about.sources'),
+              <>
+                <p>{t('about.sourcesBody')}</p>
+                {sources.length > 0 && <p className="muted">{sources.join(' · ')}</p>}
+              </>,
+            )}
+            {fold(
+              t('about.terms'),
+              <ul>
+                {NUMBERS.map((n) => (
+                  <li key={n}>{t(`about.terms.${n}`)}</li>
+                ))}
+              </ul>,
+              'terms',
+            )}
+            {fold(
+              t('about.privacy'),
+              <ul>
+                {NUMBERS.map((n) => (
+                  <li key={n}>{t(`about.privacy.${n}`)}</li>
+                ))}
+                {config.app.submissions.autofill && <li>{t('about.privacy.autofill')}</li>}
+                {config.app.analytics.plausibleDomain && <li>{t('about.privacy.analytics')}</li>}
+              </ul>,
+            )}
+            {fold(
+              t('about.contact'),
+              <p>
+                {email ? (
+                  <>
+                    {before}
+                    <a href={`mailto:${email}`}>{email}</a>
+                    {after}
+                  </>
+                ) : (
+                  t('about.contactFallback')
+                )}
+              </p>,
+            )}
+            <div className="about__row">
+              <LegalLinks />
+            </div>
+          </div>
+          <p className="about__note">
+            {t('about.attribution')} ·{' '}
+            <a href="/third-party-licenses.txt" target="_blank" rel="noopener">
+              {t('about.licenses')}
+            </a>
+          </p>
+          <p className="about__note">
+            {t('about.draft')} · {region.name[lang]}
+          </p>
+        </section>
 
-        <h2>{t('about.privacy')}</h2>
-        <ul>
-          {NUMBERS.map((n) => (
-            <li key={n}>{t(`about.privacy.${n}`)}</li>
-          ))}
-          {config.app.submissions.autofill && <li>{t('about.privacy.autofill')}</li>}
-          {config.app.analytics.plausibleDomain && <li>{t('about.privacy.analytics')}</li>}
-        </ul>
-        <LegalLinks />
-
-        <h2>{t('about.contact')}</h2>
-        <p>
-          {email ? (
-            <>
-              {before}
-              <a href={`mailto:${email}`}>{email}</a>
-              {after}
-            </>
-          ) : (
-            t('about.contactFallback')
-          )}
-        </p>
-
-        <p className="muted small">
-          {t('about.attribution')} ·{' '}
-          <a href="/third-party-licenses.txt" target="_blank" rel="noopener">
-            {t('about.licenses')}
-          </a>
-        </p>
-        <p className="muted small">
-          {t('about.draft')} · {region.name[lang]}
-        </p>
         {account.me?.role && (
-          <button type="button" className="mod-row" onClick={onModerate}>
+          <button type="button" className="about__card about__link" onClick={onModerate}>
             <Icon name="shield" size={18} />
             {t('about.moderate')}
           </button>

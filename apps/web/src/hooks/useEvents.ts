@@ -72,7 +72,7 @@ export function useEvents(
         const q = {
           ...query,
           ...windowRange(timeWindow, now, timeZone),
-          range: 'days' in timeWindow ? timeWindow.id : undefined,
+          range: 'days' in timeWindow || 'afterDays' in timeWindow ? timeWindow.id : undefined,
         };
         // One query out to the search area, split at the circle: nothing extra to download.
         const reach = Math.max(searchRadiusM, radiusM);

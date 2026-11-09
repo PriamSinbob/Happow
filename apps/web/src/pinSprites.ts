@@ -18,6 +18,8 @@ const BUFFER = RADIUS;
 export const PIN_PX = 34;
 const RING_PX = 44;
 const GLYPH_PX = 18;
+/** The selection ring: clear of the live pin's ring of time left. */
+const SELECT_PX = 60;
 
 type Draw = (c: CanvasRenderingContext2D) => void;
 
@@ -30,6 +32,7 @@ export function spriteIds(): string[] {
     'pin-disc',
     'pin-outline',
     'pin-outline-dashed',
+    'pin-select',
     'ring-dotted',
     ...Array.from({ length: RING_STEPS }, (_, i) => `ring-${i + 1}`),
     ...GLYPH_IDS.map((g) => `glyph-${g}`),
@@ -91,6 +94,12 @@ export function addPinSprites(m: maplibregl.Map) {
     c.fill(new Path2D(STAR_PATH));
   });
   add('pin-outline-dashed', PIN_PX, outline(true));
+  add('pin-select', SELECT_PX, (c) => {
+    c.lineWidth = 3;
+    c.beginPath();
+    c.arc(SELECT_PX / 2, SELECT_PX / 2, SELECT_PX / 2 - 3, 0, Math.PI * 2);
+    c.stroke();
+  });
   const r = RING_PX / 2;
   const ring = (fraction: number, dotted: boolean) => (c: CanvasRenderingContext2D) => {
     c.lineWidth = 3.5;
