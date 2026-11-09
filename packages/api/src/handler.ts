@@ -922,7 +922,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     const since = future ? futureStart(t, region.timezone, future.afterDays) : from;
     const to = future
       ? FAR_FUTURE
-      : range
+      : range && 'days' in range
         ? daysBounds(t, region.timezone, range.days).end
         : new Date(from.getTime() + refresh.areaHours * 3_600_000);
     // Everyone's copy expires at the same step boundary, so caches and phones refresh together.
