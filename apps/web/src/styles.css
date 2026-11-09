@@ -661,10 +661,10 @@ button {
   box-shadow: 0 0 8px var(--live);
 }
 
-/* The list and the map's cards are windows like the settings sheet, over the map dimmed and
-   blurred like the settings scrim. The scrim sits under the time line and the map buttons, so
-   they stay usable; a tap on it closes the window. */
-.map-scrim {
+/* The list: a window like the settings sheet, over the map dimmed and blurred like the settings
+   scrim. The scrim sits under the time line and the map buttons, so they stay usable; a tap on it
+   returns to the map. The map's cards have no scrim: the map stays usable around them. */
+.list-scrim {
   position: fixed;
   inset: 0;
   z-index: 16;
@@ -1221,7 +1221,7 @@ div.settings-row {
 /* ---------- Bottom sheet ---------- */
 .sheet {
   position: absolute;
-  z-index: 17;
+  z-index: 15;
   left: 0;
   right: 56px;
   bottom: 0;

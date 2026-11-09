@@ -733,16 +733,7 @@ export function App() {
         </button>
       </div>
 
-      {(view === 'list' ||
-        selected ||
-        placeEvents.length > 0 ||
-        (hotspotOpen && guidance.hotspot)) && (
-        <div
-          className="map-scrim"
-          aria-hidden
-          onClick={() => (view === 'list' ? setView('map') : clearCards())}
-        />
-      )}
+      {view === 'list' && <div className="list-scrim" aria-hidden onClick={() => setView('map')} />}
       {view === 'list' && inPlans && (
         <section className="list-overlay" aria-label={viewName(planView.view)}>
           <Agenda
