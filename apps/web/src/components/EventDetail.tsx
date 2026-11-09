@@ -96,44 +96,47 @@ export function EventDetail({
   }, [onClose]);
 
   return (
-    <div
-      ref={dialog}
-      className="detail"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="detail-title"
-      tabIndex={-1}
-    >
-      <header className="detail__bar">
-        <button
-          type="button"
-          className="icon-btn icon-btn--raised"
-          onClick={onClose}
-          aria-label={t('event.back')}
-        >
-          <Icon name="back" />
-        </button>
-      </header>
-      {ev ? (
-        <DetailBody
-          ev={ev}
-          now={now}
-          saved={saved}
-          onToggleSave={onToggleSave}
-          onReported={onReported}
-          onGo={onGo}
-          loadCredit={loadCredit}
-          loadNearby={loadNearby}
-          onOpenEvent={onOpenEvent}
-          center={center}
-          onChanged={onChanged}
-          onClose={onClose}
-        />
-      ) : (
-        <p className="detail__empty" id="detail-title" aria-live="polite">
-          {loading ? t('event.loading') : t('event.notFound')}
-        </p>
-      )}
+    <div className="overlay overlay--detail" onClick={onClose}>
+      <div
+        ref={dialog}
+        className="detail"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="detail-title"
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="detail__bar">
+          <button
+            type="button"
+            className="icon-btn icon-btn--raised"
+            onClick={onClose}
+            aria-label={t('event.back')}
+          >
+            <Icon name="back" />
+          </button>
+        </header>
+        {ev ? (
+          <DetailBody
+            ev={ev}
+            now={now}
+            saved={saved}
+            onToggleSave={onToggleSave}
+            onReported={onReported}
+            onGo={onGo}
+            loadCredit={loadCredit}
+            loadNearby={loadNearby}
+            onOpenEvent={onOpenEvent}
+            center={center}
+            onChanged={onChanged}
+            onClose={onClose}
+          />
+        ) : (
+          <p className="detail__empty" id="detail-title" aria-live="polite">
+            {loading ? t('event.loading') : t('event.notFound')}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

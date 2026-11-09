@@ -733,6 +733,7 @@ export function App() {
         </button>
       </div>
 
+      {view === 'list' && <div className="list-scrim" aria-hidden onClick={() => setView('map')} />}
       {view === 'list' && inPlans && (
         <section className="list-overlay" aria-label={viewName(planView.view)}>
           <Agenda

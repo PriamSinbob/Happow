@@ -239,12 +239,14 @@ export function MapView(props: Props) {
     const p = latest.current;
     const ctx = veilCanvas.current!.getContext('2d');
     if (!ctx || !m.getSource('veil')) return;
+    const { tokens } = themeRef.current;
     drawVeil(ctx, {
       box: boxRef.current,
-      colour: themeRef.current.tokens.veil,
+      colour: tokens.veil,
       cells: p.lit ?? [],
       cellRadiusM: p.cellRadiusM,
       reach: { centre: p.center, radiusM: p.radiusM },
+      light: { colour: tokens.reachLight, opacity: tokens.reachLightOpacity },
     });
     uploadVeil(m);
   };
@@ -561,7 +563,17 @@ export function MapView(props: Props) {
   useEffect(() => {
     if (map.current) redrawVeil(map.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.lit, props.cellRadiusM, props.center, props.radiusM, tokens.veil, box, styleReady]);
+  }, [
+    props.lit,
+    props.cellRadiusM,
+    props.center,
+    props.radiusM,
+    tokens.veil,
+    tokens.reachLight,
+    tokens.reachLightOpacity,
+    box,
+    styleReady,
+  ]);
 
   // Day/night or preset changed: pin colours are paint properties, no sprite rebuild.
   useEffect(() => {

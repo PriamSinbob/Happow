@@ -6,7 +6,7 @@ import { hasNews, isPrivate } from '../private';
 import { downloadDayIcs } from '../ics';
 import { eventUrl } from '../hooks/useHashRoute';
 import { Icon } from './Icons';
-import { Row } from './ListView';
+import { TimeRow } from './ListView';
 
 /**
  * The list in "My plans" and "Saved": your events by day in the region's time zone, a
@@ -39,7 +39,8 @@ export function Agenda({
 }) {
   const { t, lang } = useI18n();
   const { days, past } = agendaDays(events, now, region.timezone, config.app.agenda.keepPastDays);
-  const row = (ev: NearbyEvent) => {
+  /** A row; `anchor` is its day, so a start on another day is spelled out. */
+  const row = (ev: NearbyEvent, anchor: Date) => {
     const invited = isInvited(ev.id);
     // A private event: yours, waiting for your answer, or accepted; a dot when it changed.
     const priv = isPrivate(ev) ? ev : null;
@@ -58,10 +59,11 @@ export function Agenda({
           .join(' · ')
       : null;
     return (
-      <Row
+      <TimeRow
         key={ev.id}
         ev={ev}
         now={now}
+        anchor={anchor}
         onSelect={onSelect}
         tag={
           privTag ??
@@ -87,12 +89,8 @@ export function Agenda({
       {days.length > 0 && (
         <ul className="list">
           {days.map(({ day, events: evs }) => {
-            const label = formatRelativeDay(
-              new Date(Math.max(Date.parse(evs[0]!.startAt), now.getTime())).toISOString(),
-              now,
-              region.timezone,
-              lang,
-            );
+            const anchor = new Date(Math.max(Date.parse(evs[0]!.startAt), now.getTime()));
+            const label = formatRelativeDay(anchor.toISOString(), now, region.timezone, lang);
             return (
               <li key={day} className="agenda__day">
                 <div className="list__day agenda__head">
@@ -116,7 +114,7 @@ export function Agenda({
                     </button>
                   </span>
                 </div>
-                <ul className="list">{evs.map(row)}</ul>
+                <ul className="list tt">{evs.map((ev) => row(ev, anchor))}</ul>
               </li>
             );
           })}
@@ -133,7 +131,7 @@ export function Agenda({
       {past.length > 0 && (
         <details className="agenda__past">
           <summary>{t('agenda.past', { count: past.length })}</summary>
-          <ul className="list">{past.map(row)}</ul>
+          <ul className="list tt">{past.map((ev) => row(ev, now))}</ul>
         </details>
       )}
     </div>

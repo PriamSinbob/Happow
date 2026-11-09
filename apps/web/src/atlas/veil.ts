@@ -28,6 +28,8 @@ export interface VeilScene {
   cells: readonly LitCell[];
   cellRadiusM: number;
   reach: { centre: LatLng; radiusM: number };
+  /** A soft lift over the reach, so it reads as a lighter, see-through area (night too). */
+  light: { colour: string; opacity: number };
 }
 
 /** Each blob's gradient reaches this far past its radius, so neighbours blend into one cloud. */
@@ -77,9 +79,48 @@ function hole(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, al
 }
 
 /**
+ * The reach's falloff, as [distance in r, strength]: full inside the reach, then a gentle fade
+ * that starts at its edge, so places a minute past it stay visible, a little darker.
+ */
+const REACH_FALLOFF: [number, number][] = [
+  [0, 1],
+  [1, 1],
+  [1.12, 0.8],
+  [1.25, 0.5],
+  [1.4, 0.22],
+  [1.6, 0],
+];
+const REACH_OUTER = REACH_FALLOFF.at(-1)![0];
+
+/** A disc of `rgb` (e.g. "0,0,0") at `alpha` inside the reach, fading out past it. */
+function reachDisc(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  rgb: string,
+  alpha: number,
+) {
+  const outer = r * REACH_OUTER;
+  const g = ctx.createRadialGradient(x, y, 0, x, y, outer);
+  for (const [at, k] of REACH_FALLOFF)
+    g.addColorStop(at / REACH_OUTER, `rgba(${rgb},${(alpha * k).toFixed(3)})`);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, outer, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** "#EDEDEF" → "237,237,239". */
+function hexRgb(hex: string): string {
+  const n = parseInt(hex.slice(1, 7), 16);
+  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
+
+/**
  * Paints the veil: the theme's veil colour, with soft holes cut out (`destination-out`) for each
- * lit cell and for the reach. Overlapping holes compound, so repeat visits read clearer. Returns
- * the number of holes cut.
+ * lit cell and for the reach, then the reach's soft lift on top. Overlapping holes compound, so
+ * repeat visits read clearer. Returns the number of holes cut.
  */
 export function drawVeil(ctx: CanvasRenderingContext2D, s: VeilScene): number {
   const px = ctx.canvas.width;
@@ -107,17 +148,17 @@ export function drawVeil(ctx: CanvasRenderingContext2D, s: VeilScene): number {
       holes++;
     }
   }
-  // The reach is always lit: a soft disc with a cloudy rim.
+  // The reach is always lit: clear to its edge, fading out past it, with a cloudy rim.
   const r = metresToPx(s.reach.radiusM, s.box, px, s.reach.centre.lat);
   const c = toCanvasPx(s.reach.centre, s.box, px);
-  hole(ctx, c.x, c.y, r * 1.35, 1);
-  hole(ctx, c.x, c.y, r * 1.1, 0.6);
-  holes += 2;
+  reachDisc(ctx, c.x, c.y, r, '0,0,0', 1);
+  holes++;
   for (const b of rimBlobs('reach')) {
-    hole(ctx, c.x + b.dx * r, c.y - b.dy * r, b.r * r, 0.45);
+    hole(ctx, c.x + b.dx * r, c.y - b.dy * r, b.r * r, 0.3);
     holes++;
   }
   ctx.globalCompositeOperation = 'source-over';
+  if (s.light.opacity > 0) reachDisc(ctx, c.x, c.y, r, hexRgb(s.light.colour), s.light.opacity);
   return holes;
 }
 

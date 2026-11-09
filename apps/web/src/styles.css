@@ -275,8 +275,9 @@ button {
   display: grid;
   gap: 10px;
 }
-.place-card .list {
+.place-card .tt-venue__lines {
   max-height: 42vh;
+  margin: 0 -10px;
   overflow-y: auto;
 }
 .user-dot {
@@ -660,21 +661,31 @@ button {
   box-shadow: 0 0 8px var(--live);
 }
 
-/* List style B: an overlay over the map; the map stays visible above it. */
+/* The list: a window like the settings sheet, over the map dimmed and blurred like the settings
+   scrim. The scrim sits under the time line and the map buttons, so they stay usable; a tap on it
+   returns to the map. The map's cards have no scrim: the map stays usable around them. */
+.list-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 16;
+  background: color-mix(in srgb, var(--scrim) 36%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: fade 0.28s var(--ease-out);
+}
 .list-overlay {
   position: absolute;
   z-index: 17;
   left: 10px;
   right: 60px;
   top: calc(64px + var(--safe-top));
-  bottom: 92px;
+  max-width: 520px;
+  max-height: calc(100dvh - 156px - var(--safe-top));
+  margin: 0 auto;
   overflow-y: auto;
-  padding: 6px;
-  border: 0.5px solid var(--hair);
+  padding: 6px 10px 10px;
   border-radius: var(--radius-lg);
-  background: var(--glass-solid);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
+  background: var(--paper);
   box-shadow: var(--rim), var(--shadow-lg);
   -webkit-overflow-scrolling: touch;
   animation: rise 0.34s var(--ease-out);
@@ -711,6 +722,188 @@ button {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
+}
+/* The list as a timetable: the start time first; several events at one venue under its header. */
+.tt-row {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+.tt-row:active {
+  background: var(--fill-strong);
+}
+.tt > li + li > .tt-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 80px;
+  right: 10px;
+  height: 0.5px;
+  background: var(--hair);
+}
+.tt-time {
+  flex: none;
+  width: 58px;
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.tt-time strong {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.tt-time__period {
+  margin-left: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.tt-time small {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.tt-time--live small {
+  color: var(--ink);
+  font-weight: 600;
+}
+.live-ring__track {
+  fill: none;
+  stroke: var(--hair-strong);
+  stroke-width: 2.5;
+}
+.live-ring__arc {
+  fill: none;
+  stroke: var(--live);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.live-ring__dot {
+  fill: var(--live);
+}
+.tt-row__body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.tt-row__title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tt-row__title svg {
+  margin-right: 5px;
+  vertical-align: -2px;
+  color: var(--muted);
+}
+.tt-row__title .badge {
+  margin-left: 6px;
+  vertical-align: 2px;
+}
+.tt-row__meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.tt-row__meta svg {
+  flex: none;
+}
+.tt-row__meta span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tt-row--line {
+  padding: 7px 10px;
+}
+.tt-row--line .tt-time strong {
+  font-size: 15px;
+}
+.tt-venue {
+  margin: 6px 0;
+  padding: 2px 0 4px;
+  border-radius: var(--radius-md);
+  background: var(--fill);
+}
+.tt-venue + li > .tt-row::before,
+.tt-venue__lines li + li > .tt-row::before {
+  display: none;
+}
+.tt-venue__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px 2px;
+  font-size: 13px;
+}
+.tt-venue__head svg {
+  flex: none;
+  color: var(--muted);
+}
+.tt-venue__name {
+  min-width: 0;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tt-venue__dist {
+  flex: none;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.tt-venue__lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tt-venue__more {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 12px 6px 80px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+.tt-venue__more > span:first-child {
+  flex: none;
+}
+.tt-venue__times {
+  min-width: 0;
+  font-weight: 400;
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Off-screen events: 10 px dots on the edge; a bigger invisible target around each. */
@@ -1072,11 +1265,8 @@ div.settings-row {
 .sheet__card {
   max-height: 52dvh;
   overflow-y: auto;
-  border: 0.5px solid var(--hair);
   border-radius: var(--radius-lg);
-  background: var(--glass-solid);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
+  background: var(--paper);
   box-shadow: var(--rim), var(--shadow-lg);
   animation: rise 0.34s var(--ease-out);
 }
@@ -1084,7 +1274,7 @@ div.settings-row {
   background: var(--paper);
   padding: 16px;
 }
-/* On the map the card is glass; the surface comes from .sheet__card. */
+/* On the map the surface comes from .sheet__card. */
 .sheet__card .event-card {
   background: transparent;
 }
@@ -1381,20 +1571,28 @@ div.settings-row {
   color: inherit;
   text-align: left;
 }
-.detail {
-  position: fixed;
-  inset: 0;
+/* The detail: a window like the settings sheet (bottom sheet on a phone, centred when wide). */
+.overlay--detail {
   z-index: 50;
+}
+.detail {
+  position: relative;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 520px;
+  max-height: 92dvh;
+  overflow: hidden;
   background: var(--paper);
+  border-radius: 28px 28px 0 0;
+  box-shadow: var(--rim), var(--shadow-lg);
   animation: rise 0.4s var(--ease-out);
   outline: none;
 }
 .detail__bar {
   position: absolute;
   z-index: 2;
-  top: calc(12px + var(--safe-top));
+  top: 12px;
   left: 12px;
 }
 .detail__scroll {
@@ -1403,7 +1601,7 @@ div.settings-row {
   -webkit-overflow-scrolling: touch;
 }
 .detail__empty {
-  padding: 140px 24px;
+  padding: 72px 24px;
   text-align: center;
   color: var(--muted);
 }
@@ -1411,8 +1609,8 @@ div.settings-row {
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: 36dvh;
+  aspect-ratio: 2 / 1;
+  max-height: 30dvh;
   /* No poster: a quiet dot grid and a soft floor glow, ink only (no category colours). */
   background:
     radial-gradient(120% 90% at 50% 115%, var(--fill-strong), transparent 62%),
@@ -1431,13 +1629,11 @@ div.settings-row {
 }
 .detail__body {
   position: relative;
-  max-width: 640px;
-  margin: -20px auto 0;
-  padding: 18px 16px calc(32px + var(--safe-bottom));
+  margin-top: -20px;
+  padding: 18px 16px calc(24px + var(--safe-bottom));
   background: var(--paper);
   border-radius: 28px 28px 0 0;
   box-shadow: 0 -0.5px 0 var(--hair);
-  min-height: 60dvh;
 }
 .detail h1 {
   margin: 4px 0 0;
@@ -1835,8 +2031,12 @@ div.settings-row {
   .overlay {
     align-items: center;
   }
-  .filter-sheet {
+  .filter-sheet,
+  .detail {
     border-radius: var(--radius-lg);
+  }
+  .detail {
+    max-height: 88dvh;
   }
   .sheet {
     left: 16px;
@@ -3368,7 +3568,8 @@ button.account-card__plan {
   align-items: center;
   gap: 4px;
 }
-.row-wrap > .row {
+.row-wrap > .row,
+.row-wrap > .tt-row {
   flex: 1;
   min-width: 0;
 }

@@ -1,7 +1,7 @@
 import type { NearbyEvent } from '@happow/core';
 import { useI18n } from '../i18n';
 import { Icon } from './Icons';
-import { Row } from './ListView';
+import { VenueLines } from './ListView';
 
 /**
  * One place with several events (cinema screenings, a festival's stages): the pin opens this list
@@ -32,11 +32,7 @@ export function PlaceCard({
           <Icon name="close" size={16} />
         </button>
       </header>
-      <ul className="list">
-        {sorted.map((ev) => (
-          <Row key={ev.id} ev={ev} now={now} onSelect={onSelect} />
-        ))}
-      </ul>
+      <VenueLines events={sorted} now={now} anchor={now} onSelect={onSelect} />
     </article>
   );
 }

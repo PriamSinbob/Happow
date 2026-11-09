@@ -607,6 +607,9 @@ export const themeTokensSchema = z.object({
   /** Covers unexplored areas (lit map). */
   veil: hex,
   veilOpacity: z.number().min(0).max(1),
+  /** A soft lift over the reach, fading out past its edge, so the reach reads at a glance. */
+  reachLight: hex,
+  reachLightOpacity: z.number().min(0).max(1),
   /** Text and glyphs. */
   ink: hex,
   muted: hex,
