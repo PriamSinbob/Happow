@@ -195,6 +195,19 @@ export function App() {
     filters,
     config.app.density.searchRadiusM,
     clock,
+    day,
+  );
+  // The time line's bars cover the whole range even while one month is read on its own. Outside
+  // the future range this is the same question as above, answered from the same snapshot.
+  const overview = useEvents(
+    repo,
+    searchCenter,
+    radius,
+    region.timezone,
+    filters.window,
+    filters,
+    config.app.density.searchRadiusM,
+    clock,
   );
   const { clusters, loading, error, now } = loaded;
   // Status reports from this device show at once; everyone else's arrive with the next reload.
@@ -948,7 +961,7 @@ export function App() {
             setDay(d);
             if (d !== null) setLiveOnly(false);
           }}
-          events={loaded.events}
+          events={future ? overview.events : loaded.events}
         />
       </div>
 

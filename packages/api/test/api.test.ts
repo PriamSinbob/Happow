@@ -681,6 +681,28 @@ describe('GET /api/area', () => {
     });
   });
 
+  it('serves one month of the future on its own, and everything later as the last step', async () => {
+    const web = backend({ rpc: { events_area: () => ({ body: rows }) } });
+    const api = createApi(env, { config, fetch: web.fetch, now: at });
+    const q = 'lat=51.1&lng=17.05&r=5000&range=future';
+    expect((await api(get(`${q}&step=1`))).status).toBe(200);
+    expect((await api(get(`${q}&step=12`))).status).toBe(200);
+    const args = web.calls.filter((c) => c.name === 'events_area').map((c) => c.args);
+    // December 2026, whole, in local time (CET).
+    expect(args[0]).toMatchObject({
+      from_ts: '2026-11-30T23:00:00.000Z',
+      to_ts: '2026-12-31T22:59:59.999Z',
+    });
+    expect(args[1]).toMatchObject({
+      from_ts: '2027-10-31T23:00:00.000Z',
+      to_ts: '9999-01-01T00:00:00.000Z',
+    });
+    for (const bad of ['13', '-1', '1.5', 'x'])
+      expect((await api(get(`${q}&step=${bad}`))).status).toBe(400);
+    // A step means nothing outside the future range.
+    expect((await api(get('lat=51.1&lng=17.05&r=5000&range=later&step=1'))).status).toBe(400);
+  });
+
   it('refuses ranges that are not multi-day time windows', async () => {
     const web = backend({ rpc: { events_area: () => ({ body: [] }) } });
     const api = createApi(env, { config, fetch: web.fetch, now: at });

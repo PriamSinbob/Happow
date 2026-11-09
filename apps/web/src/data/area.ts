@@ -51,10 +51,18 @@ export class AreaEventRepository implements EventRepository {
     private readonly clock: () => number = Date.now,
   ) {}
 
-  private async area(center: LatLng, needM: number, range?: string): Promise<HappowEvent[]> {
+  private async area(
+    center: LatLng,
+    needM: number,
+    range?: string,
+    step?: number,
+  ): Promise<HappowEvent[]> {
     const k = areaKey(center, needM, refresh);
-    const key = `lat=${k.lat}&lng=${k.lng}&r=${k.radiusM}${range ? `&range=${range}` : ''}`;
-    const snap = this.snaps.get(range ?? '');
+    const part = range ? `&range=${range}${step === undefined ? '' : `&step=${step}`}` : '';
+    const key = `lat=${k.lat}&lng=${k.lng}&r=${k.radiusM}${part}`;
+    // One snapshot per range and step, so stepping back and forth through months is free.
+    const slot = range ? `${range}:${step ?? ''}` : '';
+    const snap = this.snaps.get(slot);
     if (snap && snap.key === key && this.clock() < snap.from + stepMs(range)) return snap.events;
     if (this.pending?.key === key) return (await this.pending.promise).events;
     // Not tied to one caller's abort signal: the list and the hotspot counts share this request.
@@ -67,7 +75,7 @@ export class AreaEventRepository implements EventRepository {
     this.pending = { key, promise };
     try {
       const fresh = await promise;
-      this.snaps.set(range ?? '', fresh);
+      this.snaps.set(slot, fresh);
       return fresh.events;
     } finally {
       if (this.pending?.promise === promise) this.pending = null;
@@ -77,7 +85,12 @@ export class AreaEventRepository implements EventRepository {
   private async matching(q: EventQuery): Promise<HappowEvent[] | null> {
     if (this.direct) return null;
     try {
-      const all = await this.area(q.center, Math.max(q.radiusM, density.searchRadiusM), q.range);
+      const all = await this.area(
+        q.center,
+        Math.max(q.radiusM, density.searchRadiusM),
+        q.range,
+        q.range ? q.step : undefined,
+      );
       return all.filter(
         (e) => e.status !== 'cancelled' && overlaps(e, q.from, q.to) && matchesFilters(e, q),
       );

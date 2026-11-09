@@ -131,6 +131,11 @@ export interface EventQuery extends Partial<EventFilters> {
   to: Date;
   /** A multi-day time window (later, future): read from that window's longer area snapshot. */
   range?: string;
+  /**
+   * One step of the future window (a month; the last is everything later): read from that step's
+   * own snapshot, so a busy year is never cut at the snapshot's size.
+   */
+  step?: number;
 }
 
 /** Events of one density cell (H3, coarser than event cells) that match the active filters. */
