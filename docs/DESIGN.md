@@ -34,13 +34,15 @@ The ring is full at 2 h or more and shrinks in 10-minute steps (minimum 8 %); do
 - **Top right:** add pill (circled plus with category glyphs, more of them from 380 and 410 px), dice, settings.
 - **Right edge:** reach rail (inset ~20 px, stops 100 m–5 km on a log scale, walking minutes up to 2 km), then locate and one list-and-search button; opening the list focuses search.
 - **Bottom:** the time line, range icons at its left end.
-- The list is a glass overlay; tapping a row returns to the map with that pin selected. Off-screen events are 10 px dots on the screen edge.
+- The list and the map's cards (event, place, hotspot) are windows like the settings sheet (paper, no border, 26 px corners; the list at most 520 px wide) over the map dimmed and blurred by the same scrim; the scrim stays under the time line and map buttons, and tapping it closes the window. Tapping a row returns to the map with that pin selected. Off-screen events are 10 px dots on the screen edge.
+- The list is a timetable. Today splits into Now (nearest first), Next hour and Later (soonest first); 7 / 14 days split by day. The start time leads each row (17 px tabular, AM/PM small, "in 26 min" under it up to 90 min); an event on now shows the pin's ring of time left and its end instead. Events at one venue share a tinted block: glyph, venue, distance and walk once, then a line per event. Today a venue shows once, in the section of its next event: three lines, then one line of the remaining times ("+N more", or "later" when they are all in later sections) that unfolds in place. A lone event shows its glyph, venue and walk under the title. A place's card is the same lines under the venue's name; My plans uses the same rows by day, with the tag and the bookmark.
+- The event detail is the same window: a bottom sheet on a phone, centred from 720 px; tapping the scrim closes it.
 - **Empty reach:** no card on the map; only the list shows an empty state.
 - Floating chrome is glass (`--glass`, 24 px blur, `--hair` border, `--rim`, `--shadow-sm`). Map buttons are 40 px circles, buttons are pills, sheets have 28 px top corners.
 
 ## Veil
 
-A grey veil over the full-colour basemap, with soft cloud-like holes for the reach and for places you have been (H3 res 9 cells: opened faint, arrived strong, repeat visits brighter; nothing fades). Blobs are seeded by cell id so shapes stay stable. It fades out between z12.8 and z10.5 and redraws only on change. The vector map draws no reach circle; only the raster fallback keeps a dashed circle.
+A grey veil over the full-colour basemap, with soft cloud-like holes for the reach and for places you have been (H3 res 9 cells: opened faint, arrived strong, repeat visits brighter; nothing fades). Blobs are seeded by cell id so shapes stay stable. It fades out between z12.8 and z10.5 and redraws only on change. The reach is fully clear to its edge and fades back to the veil by 1.6 r, with no line: a place a minute past the reach is still visible, a little darker. A soft lift (`reachLight` at `reachLightOpacity`, same falloff) makes the reach a lighter, see-through area, at night too. The vector map draws no reach circle; only the raster fallback keeps a dashed circle.
 
 ## Range icons and time line
 

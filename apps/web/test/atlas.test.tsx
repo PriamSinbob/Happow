@@ -164,7 +164,7 @@ describe('the veil drawing', () => {
     strength,
   });
 
-  it('fills the veil colour, then cuts soft holes for each lit cell and the reach', () => {
+  it('fills the veil colour, cuts soft holes for each lit cell and the reach, then lifts the reach', () => {
     const { ctx, calls } = stubCtx();
     const holes = drawVeil(ctx, {
       box,
@@ -172,10 +172,11 @@ describe('the veil drawing', () => {
       cells: [lit(rynek, 0.35), lit(nadodrze, 0.85, '891e2040d57ffff'), lit(rynek, 0)],
       cellRadiusM: 200,
       reach: { centre: rynek, radiusM: 500 },
+      light: { colour: '#FFFFFF', opacity: 0.2 },
     });
     const blobs = config.app.atlas.blobsPerCell;
-    expect(holes).toBe(2 * blobs + 6);
-    expect(calls.fills).toBe(holes);
+    expect(holes).toBe(2 * blobs + 5);
+    expect(calls.fills).toBe(holes + 1);
     expect(calls.rects).toBe(1);
     expect(calls.ops).toEqual(['source-over', 'destination-out', 'source-over']);
   });
@@ -189,8 +190,9 @@ describe('the veil drawing', () => {
       cells: [lit(far, 1)],
       cellRadiusM: 200,
       reach: { centre: rynek, radiusM: 500 },
+      light: { colour: '#EDEDEF', opacity: 0 },
     });
-    expect(holes).toBe(6);
+    expect(holes).toBe(5);
   });
 
   it('runs no JavaScript on pan or zoom: no map event handlers for the veil', () => {

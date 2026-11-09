@@ -12,6 +12,26 @@ export function formatTime(iso: string, timeZone: string, lang: Language): strin
   );
 }
 
+/** "11:00" and "AM" apart (period '' in 24-hour locales), for a column of start times. */
+export function formatTimeParts(
+  iso: string,
+  timeZone: string,
+  lang: Language,
+): { time: string; period: string } {
+  const parts = new Intl.DateTimeFormat(lang, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone,
+  }).formatToParts(new Date(iso));
+  const period = parts.find((p) => p.type === 'dayPeriod')?.value ?? '';
+  const time = parts
+    .filter((p) => p.type !== 'dayPeriod')
+    .map((p) => p.value)
+    .join('')
+    .trim();
+  return { time, period };
+}
+
 export function formatPrice(amount: number, currency: string | null, lang: Language): string {
   if (!currency) return new Intl.NumberFormat(lang).format(amount);
   return new Intl.NumberFormat(lang, {
