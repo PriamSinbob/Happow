@@ -16,13 +16,13 @@ import { formatDay } from '../format';
 import { useI18n } from '../i18n';
 
 /**
- * The contributor's side of the account (M12 §5, slice F): impact, level, trust, this month's
+ * The contributor's side of the account: impact, level, trust, this month's
  * premium days, the credit opt-in and the account's own events. Information only: no streaks,
  * targets or countdowns, and nothing that can be lost.
  */
 
 /** Verified events, opens, routes and arrivals: totals of the account's events. */
-export function ImpactStats({ c }: { c: Contributions }) {
+function ImpactStats({ c }: { c: Contributions }) {
   const { t } = useI18n();
   const stats = [
     ['verified', c.verified],
@@ -44,7 +44,7 @@ export function ImpactStats({ c }: { c: Contributions }) {
 }
 
 /** "Local · next: Guide at 20 verified events and 200 opens". */
-export function LevelLine({ c }: { c: Contributions }) {
+function LevelLine({ c }: { c: Contributions }) {
   const { t } = useI18n();
   const next = nextLevel(c.level);
   return (
@@ -102,7 +102,7 @@ export function ContributorSection({
   );
 }
 
-/** "Halloween: 2 of your events" for each running season the adder's live events fit (M12 §6.3). */
+/** "Halloween: 2 of your events" for each running season the adder's live events fit. */
 function SeasonLines({ events }: { events: MyEvent[] }) {
   const { t, lang } = useI18n();
   const live = events.filter((e) => e.status !== 'rejected' && !e.hidden && e.startAt && e.endAt);
@@ -132,7 +132,7 @@ function SeasonLines({ events }: { events: MyEvent[] }) {
 }
 
 /** "Show my name on events I add": off by default; turning it on first asks for a name. */
-export function CreditSetting() {
+function CreditSetting() {
   const { t, lang } = useI18n();
   const account = useAccount();
   const me = account.me;
@@ -237,7 +237,7 @@ function eventState(e: MyEvent): EventState {
   return 'live';
 }
 
-/** One row of the list: an event, or a weekly repeat shown by its next date (M12 §4.5). */
+/** One row of the list: an event, or a weekly repeat shown by its next date. */
 interface Row {
   e: MyEvent;
   /** Dates in the series; 1 for a single event. */
@@ -274,7 +274,7 @@ function rows(events: MyEvent[], now = Date.now()): Row[] {
 
 /**
  * The account's own events, newest first, with their opens and the days each earned. Any but a
- * rejected or hidden one can be added again for another date (M12 §4.4); a weekly repeat is one
+ * rejected or hidden one can be added again for another date; a weekly repeat is one
  * row with its count and next date.
  */
 function MyEvents({
@@ -347,7 +347,7 @@ function MyEvents({
 }
 
 /**
- * Under "Thanks!" after adding (M12 §5.7): what the event earns, and the impact so far. A trusted
+ * Under "Thanks!" after adding: what the event earns, and the impact so far. A trusted
  * account's event is rewarded at once; any other earns its days when a moderator approves it.
  */
 export function AfterAdd({

@@ -17,7 +17,7 @@ import { readIcal } from './venues/formats.js';
 import type { JobStats, VenueJob } from './venues/jobs.js';
 
 /**
- * Calendar feeds accounts added (M12 §4.6): each active feed in the region is read once a run and
+ * Calendar feeds accounts added: each active feed in the region is read once a run and
  * its upcoming events come in as the account's submissions, through `feed_import`, so they count
  * against the month, go to moderation until the feed's first event is approved, and are never
  * imported twice. Robots.txt is not asked: the account owner gave us the address to read.
@@ -73,7 +73,7 @@ export class FeedStore {
     return rows[0]!.r;
   }
 
-  /** The keys of events this feed already imported (M13 §6: skip them before geocoding). */
+  /** The keys of events this feed already imported, to skip them before geocoding. */
   async knownKeys(feed: number): Promise<Set<string>> {
     const { rows } = await this.db.query<{ k: string }>(
       'select feed_key as k from submissions where feed_id = $1 and feed_key is not null',
@@ -124,7 +124,7 @@ export const accountFeedsJob: VenueJob = async (ctx) => {
   for (const f of feeds) {
     let events: ExtractedEvent[];
     try {
-      // Checked again on every fetch, and capped (M13 §6): the address was checked only when added.
+      // Checked again on every fetch, and capped: the address was checked only when added.
       await http.wait();
       const text = await fetchPublicText(f.url, {
         userAgent: config.app.ingest.userAgent,
@@ -152,7 +152,7 @@ export const accountFeedsJob: VenueJob = async (ctx) => {
     const submitter = await sha256(`feed:${f.id}`);
     let imported = 0;
     let error: string | null = null;
-    // Events imported in earlier runs are skipped before geocoding (M13 §6).
+    // Events imported in earlier runs are skipped before geocoding.
     const known = await db.knownKeys(f.id);
     for (const e of events) {
       const start = resolveInstant(e.start, region.timezone)?.at;

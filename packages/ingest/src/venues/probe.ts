@@ -9,7 +9,7 @@ import { HttpError, type HttpClient } from '../http.js';
 import { readIcal, readTribe, tribeFirstPage, type TribePage } from './formats.js';
 
 /**
- * The website check (M12 §2.2): does a venue's site publish its events as an iCal feed, through
+ * The website check: does a venue's site publish its events as an iCal feed, through
  * The Events Calendar's REST API, or as schema.org Event JSON-LD on its home or events page?
  * At most five requests per site: the home page, one events page, the REST API, two feeds.
  */

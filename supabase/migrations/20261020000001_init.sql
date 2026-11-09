@@ -1,4 +1,4 @@
--- Happow milestone 1: core schema (schema.org/Event-shaped), PostGIS geography, H3 cells as text.
+-- Core schema (schema.org/Event-shaped), PostGIS geography, H3 cells as text.
 -- H3 indexes are computed in application code (h3-js); no h3 extension needed.
 
 create extension if not exists postgis with schema extensions;

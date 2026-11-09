@@ -1,77 +1,34 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import { loadConfig } from '@happow/core';
 import { createApi } from '../src';
 import { nationwideDates } from '../src/follows';
 import { alertMessage, sendFollowAlerts, type DueAlert } from '../src/followAlerts';
+import { config, env, req, SB, supabase, type Rpc } from './helpers';
 
-/** M7: search, follow matching, nationwide Ticketmaster, synced follows and new-date alerts. */
+/** Search, follow matching, nationwide Ticketmaster, synced follows and new-date alerts. */
 
-const SB = 'https://proj.supabase.co';
-const env = {
-  SUPABASE_URL: SB,
-  SUPABASE_SERVICE_ROLE_KEY: 'service-key',
-  SUBMITTER_SALT: 'salt',
-  TICKETMASTER_API_KEY: 'tm-key',
-};
 const now = () => new Date('2026-11-05T10:00:00Z');
-const config = loadConfig();
+const tmEnv = { ...env, TICKETMASTER_API_KEY: 'tm-key' };
 const tmFixture = readFileSync(
   new URL('./fixtures/ticketmaster-attraction.json', import.meta.url),
   'utf8',
 );
 
-type Rpc = (args: Record<string, unknown>) => { status?: number; body: unknown };
 function backend(rpc: Record<string, Rpc>, cfg = config) {
-  const calls: { name: string; args: Record<string, unknown> }[] = [];
   const external: string[] = [];
-  const users: Record<string, { id: string; email: string }> = {
-    'user-token': { id: 'u1', email: 'ala@example.org' },
-  };
-  const all: Record<string, Rpc> = {
-    rate_limit_hit: () => ({ body: true }),
-    staff_role: () => ({ body: null }),
-    grants_active: () => ({ body: [] }),
-    usage_get: () => ({ body: { events: 0, autofills: 0 } }),
-    ...rpc,
-  };
-  const f = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
-    const url = String(input);
-    if (url.startsWith(`${SB}/rest/v1/`)) {
-      // Only RPCs: the API never reads or writes a table directly for M7.
-      if (!url.startsWith(`${SB}/rest/v1/rpc/`)) throw new Error(`table access: ${url}`);
-      const name = url.slice(`${SB}/rest/v1/rpc/`.length);
-      const args = JSON.parse(String(init.body ?? '{}'));
-      calls.push({ name, args });
-      const h = all[name];
-      if (!h) return new Response('{}', { status: 404 });
-      const { status = 200, body } = h(args);
-      return new Response(JSON.stringify(body), { status });
-    }
-    if (url === `${SB}/auth/v1/user`) {
-      const token = new Headers(init.headers).get('authorization')?.replace('Bearer ', '') ?? '';
-      const u = users[token];
-      return u ? Response.json(u) : new Response('{}', { status: 401 });
-    }
-    external.push(url);
-    if (url.startsWith('https://app.ticketmaster.com/'))
-      return new Response(tmFixture, { headers: { 'content-type': 'application/json' } });
-    return new Response('not found', { status: 404 });
-  });
-  const api = createApi(env, { config: cfg, fetch: f as typeof fetch, now, extractor: null });
-  const call = (name: string) => calls.filter((c) => c.name === name);
-  return { api, call, calls, external };
-}
-const req = (path: string, init: { token?: string; body?: unknown; method?: string } = {}) =>
-  new Request(`https://happow.example/api/${path}`, {
-    method: init.method ?? (init.body === undefined ? 'GET' : 'POST'),
-    headers: {
-      'content-type': 'application/json',
-      'cf-connecting-ip': '203.0.113.7',
-      ...(init.token && { authorization: `Bearer ${init.token}` }),
+  const sb = supabase(rpc, {
+    other: (url) => {
+      // Only RPCs: the API never reads or writes a table directly here.
+      if (url.startsWith(`${SB}/rest/v1/`)) throw new Error(`table access: ${url}`);
+      external.push(url);
+      return url.startsWith('https://app.ticketmaster.com/')
+        ? new Response(tmFixture, { headers: { 'content-type': 'application/json' } })
+        : undefined;
     },
-    ...(init.body !== undefined && { body: JSON.stringify(init.body) }),
   });
+  const api = createApi(tmEnv, { config: cfg, fetch: sb.fetch, now, extractor: null });
+  return { ...sb, api, external };
+}
 
 const row = {
   id: 'ticketmaster:Z698xZb_Z17a0kA',
@@ -90,7 +47,7 @@ const row = {
   matched_performer: 'Dawid Podsiadło',
 };
 
-describe('GET /api/search (M7 §2)', () => {
+describe('GET /api/search', () => {
   it('asks search_events for the region up to the horizon, with config thresholds', async () => {
     const b = backend({
       search_events: () => ({ body: [{ ...row, match: 'performer', score: 1 }] }),
@@ -130,7 +87,7 @@ describe('GET /api/search (M7 §2)', () => {
   });
 });
 
-describe('POST /api/follows/match (M7 §4)', () => {
+describe('POST /api/follows/match', () => {
   const follows = [
     { name: 'Dawid  Podsiadło', tmAttractionId: 'K8vZ9175Tr0' },
     { name: 'Kult' },
@@ -215,7 +172,7 @@ describe('POST /api/follows/match (M7 §4)', () => {
   });
 });
 
-describe('follows on the account (M7 §5)', () => {
+describe('follows on the account', () => {
   it('syncs with follows.sync, normalising the names', async () => {
     const b = backend({ follows_sync: () => ({ body: [{ name: 'Kult', norm: 'kult' }] }) });
     const res = await b.api(
@@ -263,7 +220,7 @@ describe('follows on the account (M7 §5)', () => {
   });
 });
 
-describe('new-date alerts (M7 §5)', () => {
+describe('new-date alerts', () => {
   const alert: DueAlert = {
     id: 7,
     eventId: 'ticketmaster:Z698xZb_Z17a0kA',

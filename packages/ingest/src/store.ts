@@ -127,12 +127,12 @@ export function payloadHash(payload: unknown): string {
 export class EventStore {
   constructor(private readonly db: pg.ClientBase) {}
 
-  /** Account calendar feeds (M12 §4.6), on the same connection. */
+  /** Account calendar feeds, on the same connection. */
   feeds(): FeedStore {
     return new FeedStore(this.db);
   }
 
-  /** OSM venues, links and the website check (M12), on the same connection. */
+  /** OSM venues, links and the website check, on the same connection. */
   venues(): VenueStore {
     return new VenueStore(this.db);
   }
@@ -356,7 +356,7 @@ export class EventStore {
     }
   }
 
-  /** Crawled pages as last read (M13 §3); pages unread for 30 days are dropped. */
+  /** Crawled pages as last read; pages unread for 30 days are dropped. */
   pageCache(sourceId: string): PageCache {
     let pruned = false;
     return {
@@ -482,7 +482,7 @@ export class EventStore {
     return rows[0] ? toStored(rows[0]) : null;
   }
 
-  /** Candidates for a merge; private events (M11 §1) never take part, either way. */
+  /** Candidates for a merge; private events never take part, either way. */
   private async nearby(ev: HappowEvent, cfg: ApplyOptions['dedup']): Promise<StoredEvent[]> {
     const { rows } = await this.db.query<EventRow>(
       `select ${EVENT_COLUMNS} from events e left join venues v on v.id = e.venue_id
@@ -577,7 +577,7 @@ export class EventStore {
     await this.writePerformers(e, owner.sourceId);
   }
 
-  /** The event's performers as merged (M7 §1): the stored list is replaced by the union. */
+  /** The event's performers as merged: the stored list is replaced by the union. */
   private async writePerformers(e: HappowEvent, sourceId: string) {
     const list = mergePerformers(e.performers);
     await this.db.query('delete from event_performers where event_id = $1', [e.id]);

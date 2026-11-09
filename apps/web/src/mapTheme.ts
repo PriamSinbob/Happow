@@ -12,7 +12,7 @@ export type OwnLayerPaint = [string, string, keyof ThemeTokens][];
  * no style reload, so switching day/night never flashes. The raster fallback has no matching
  * layers and keeps its colours.
  */
-export function paintMapTheme(m: maplibregl.Map, tokens: ThemeTokens, own: OwnLayerPaint = []) {
+function paintMapTheme(m: maplibregl.Map, tokens: ThemeTokens, own: OwnLayerPaint = []) {
   // isStyleLoaded() also waits for tiles; the layers exist as soon as the style is parsed.
   let ids: string[];
   try {

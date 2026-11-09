@@ -1,11 +1,5 @@
 import { can, type Entitlements, type HappowConfig } from '@happow/core';
-import {
-  fetchPage,
-  FetchPageError,
-  parseRobots,
-  productToken,
-  UnsafeUrlError,
-} from '@happow/extract';
+import { fetchPage, parseRobots, productToken } from '@happow/extract';
 import { z } from 'zod';
 import type { User } from './accounts.js';
 import { ApiError, body, json, sha256 } from './http.js';
@@ -13,7 +7,7 @@ import { sendNotices, type NoticeKind } from './notices.js';
 import { SupabaseError, type Supabase } from './supabase.js';
 
 /**
- * Organisers (M11 §6–§8): claims on events and venues, posts on the event page, edits by owners
+ * Organisers: claims on events and venues, posts on the event page, edits by owners
  * and organisers, the organiser's reports, and "your events". Organisers are never placed or
  * ranked differently: nothing here touches how an event shows on the map.
  *
@@ -127,7 +121,7 @@ export function organiserRoutes(deps: OrganiserDeps) {
   };
 
   /**
-   * A schedule change, an important post or a cancellation reaches everyone interested (§7):
+   * A schedule change, an important post or a cancellation reaches everyone interested:
    * queued for the whole audience, a few sent now, the rest by the cron.
    */
   async function notify(event: string, kind: NoticeKind, text: string, except: string) {
@@ -346,8 +340,7 @@ export function organiserRoutes(deps: OrganiserDeps) {
         maxBytes: config.app.extraction.maxPageBytes,
       });
       return page.html.includes(code) ? 'found' : 'missing';
-    } catch (err) {
-      if (err instanceof UnsafeUrlError || err instanceof FetchPageError) return 'unavailable';
+    } catch {
       return 'unavailable';
     }
   }

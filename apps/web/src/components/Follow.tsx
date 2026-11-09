@@ -38,7 +38,7 @@ const iconEvent = (e: Lite) =>
   }) as unknown as NearbyEvent;
 
 /**
- * Performer chips with ♡ (M7 §4): on the card and the event page. Tapping ♡ follows or unfollows
+ * Performer chips with ♡: on the card and the event page. Tapping ♡ follows or unfollows
  * on this device; the name itself is not a link.
  */
 export function PerformerChips({ performers }: { performers?: Performer[] }) {
@@ -131,7 +131,7 @@ function byDay<T extends { startAt: string }>(items: T[], now: Date, lang: 'pl' 
 }
 
 /**
- * The search field at the top of the list (§2). With 2+ characters it shows the results of the
+ * The search field at the top of the list. With 2+ characters it shows the results of the
  * whole region up to the horizon, by day, instead of the list below it.
  */
 export function SearchPanel({
@@ -267,7 +267,7 @@ function FollowButton({ name, tmAttractionId }: { name: string; tmAttractionId: 
 }
 
 /**
- * "Followed" at the top of the list whenever a followed artist has an upcoming date (§4): the
+ * "Followed" at the top of the list whenever a followed artist has an upcoming date: the
  * region's events, then other Polish cities from Ticketmaster (with the city, a link out, never
  * on the map).
  */
@@ -349,8 +349,8 @@ function NationwideRow({ d, now, lang }: { d: NationwideDate; now: Date; lang: '
 }
 
 /**
- * The Followed screen (§4), reached from the list: type a name or paste a list (one per line),
- * remove, and on an account the alerts switch (§5, premium).
+ * The Followed screen, reached from the list: type a name or paste a list (one per line),
+ * remove, and on an account the alerts switch (premium).
  */
 export function FollowedScreen({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
@@ -417,14 +417,14 @@ export function FollowedScreen({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** New-date alerts (§5): premium, signed in, by web push to the account's devices. */
+/** New-date alerts: premium, signed in, by web push to the account's devices. */
 function AlertsRow() {
   const { t, lang } = useI18n();
   const { status, entitlements } = useAccount();
   const [on, setOn] = useState<boolean | null>(null);
   const [byEmail, setByEmail] = useState(false);
   const [busy, setBusy] = useState(false);
-  // Email alerts once the app has a sender (M13 §5).
+  // Email alerts once the app has a sender.
   const emailOn = config.app.email.provider !== 'none';
   const [error, setError] = useState<string | null>(null);
   const allowed = status === 'signedIn' && can(entitlements, 'alerts.newDates');

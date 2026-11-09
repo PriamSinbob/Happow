@@ -92,7 +92,7 @@ describe('effectivePlan', () => {
     );
   });
 
-  it('afterDay: midnight after a last day, across the year and DST (admin grants, slice F)', () => {
+  it('afterDay: midnight after a last day, across the year and DST', () => {
     expect(afterDay('2026-12-31', tz)).toEqual(at('2026-12-31T23:00:00Z'));
     expect(afterDay('2026-10-25', tz)).toEqual(at('2026-10-25T23:00:00Z'));
     expect(afterDay('2027-03-28', tz)).toEqual(at('2027-03-28T22:00:00Z'));

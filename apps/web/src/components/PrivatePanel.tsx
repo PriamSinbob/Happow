@@ -39,7 +39,7 @@ export async function shareLink(url: string, text: string): Promise<'shared' | '
 }
 
 /**
- * The private part of an event's card (M11 §3, §4): the lock and who invited you; Accept or
+ * The private part of an event's card: the lock and who invited you; Accept or
  * Decline; for the organiser, inviting people, groups or by link, and the guest list.
  */
 export function PrivatePanel({

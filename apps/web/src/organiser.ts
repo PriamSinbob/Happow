@@ -1,7 +1,7 @@
 import { api, deviceId } from './api';
 import { accessToken } from './auth';
 
-/** Organisers (M11 §6–§8): claims, posts, edits and "your events", over `api()`. */
+/** Organisers: claims, posts, edits and "your events", over `api()`. */
 
 export type PostKind = 'schedule' | 'important' | 'info';
 

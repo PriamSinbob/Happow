@@ -1,14 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ExtractedEvent, Extractor, Geocoder } from '@happow/extract';
-import { loadConfig } from '@happow/core';
 import { createApi } from '../src';
+import { config as base, env, supabase, type Rpc } from './helpers';
 
-/** POST /api/autofill/photo (M12 slice G): a poster photo read into the add form. */
+/** POST /api/autofill/photo: a poster photo read into the add form. */
 
-const SB = 'https://proj.supabase.co';
-const env = { SUPABASE_URL: SB, SUPABASE_SERVICE_ROLE_KEY: 'service-key', SUBMITTER_SALT: 'salt' };
 const now = () => new Date('2026-10-29T10:00:00Z');
-const base = loadConfig();
 const config = {
   ...base,
   app: { ...base.app, submissions: { ...base.app.submissions, autofill: 'account' as const } },
@@ -17,36 +14,8 @@ const geocoder: Geocoder = {
   geocode: async () => ({ point: { lat: 51.12, lng: 17.04 }, precision: 'venue', label: 'x' }),
 };
 
-type Rpc = Record<string, (args: Record<string, unknown>) => unknown>;
-function backend(rpc: Rpc = {}) {
-  const calls: { name: string; args: Record<string, unknown> }[] = [];
-  const handlers: Rpc = {
-    staff_role: () => null,
-    grants_active: () => [],
-    usage_get: () => ({ events: 0, autofills: 0 }),
-    usage_take: () => true,
-    rate_limit_hit: () => true,
-    ...rpc,
-  };
-  const fetchMock = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
-    const url = String(input);
-    if (url.startsWith(`${SB}/rest/v1/rpc/`)) {
-      const name = url.slice(`${SB}/rest/v1/rpc/`.length);
-      const args = JSON.parse(String(init.body ?? '{}'));
-      calls.push({ name, args });
-      const h = handlers[name];
-      return h ? new Response(JSON.stringify(h(args))) : new Response('{}', { status: 404 });
-    }
-    if (url === `${SB}/auth/v1/user`) {
-      const auth = new Headers(init.headers).get('authorization');
-      return auth === 'Bearer user-token'
-        ? new Response(JSON.stringify({ id: 'u1', email: 'ala@example.org' }))
-        : new Response('{}', { status: 401 });
-    }
-    return new Response('not found', { status: 404 });
-  });
-  return { fetch: fetchMock as unknown as typeof fetch, calls };
-}
+const backend = (rpc: Record<string, Rpc> = {}) =>
+  supabase({ usage_take: () => ({ body: true }), ...rpc });
 
 const poster: ExtractedEvent = {
   title: 'Jazz na podwórku',
@@ -98,7 +67,7 @@ const send = (
 };
 const photo = { image: JPEG, mediaType: 'image/jpeg' };
 
-describe('POST /api/autofill/photo (M12 slice G)', () => {
+describe('POST /api/autofill/photo', () => {
   it('reads the poster into prefills and takes one autofill', async () => {
     const web = backend();
     const { extractor, extractImage } = reader();
@@ -147,7 +116,7 @@ describe('POST /api/autofill/photo (M12 slice G)', () => {
   });
 
   it("says it's unavailable when today's LLM budget is spent or nothing reads images", async () => {
-    const capped = backend({ rate_limit_hit: (a) => a.p_bucket !== 'autofill-llm' });
+    const capped = backend({ rate_limit_hit: (a) => ({ body: a.p_bucket !== 'autofill-llm' }) });
     const { extractor, extractImage } = reader();
     const api = createApi(env, { config, fetch: capped.fetch, now, geocoder, extractor });
     const res = await api(send(photo));
@@ -187,7 +156,7 @@ describe('POST /api/autofill/photo (M12 slice G)', () => {
     expect((await api(send(photo, {}))).status).toBe(401);
 
     const max = config.plans.plans.premium['autofill.perMonth'];
-    const used = backend({ usage_get: () => ({ events: 0, autofills: max }) });
+    const used = backend({ usage_get: () => ({ body: { events: 0, autofills: max } }) });
     const full = createApi(env, { config, fetch: used.fetch, now, geocoder, extractor });
     const res = await full(send(photo));
     expect(res.status).toBe(429);

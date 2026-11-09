@@ -143,7 +143,7 @@ export async function fetchPage(raw: string, opts: FetchPageOptions): Promise<Fe
 /**
  * A text file (a calendar feed) from an address someone gave us: every hop is checked with
  * `checkPublicUrl` again, so a name that later points elsewhere, or a redirect to a private
- * address, is refused; and at most `maxBytes` are read (M13 §6).
+ * address, is refused; and at most `maxBytes` are read.
  */
 export async function fetchPublicText(
   raw: string,

@@ -2,7 +2,7 @@ import { arrivalAt, isLate } from './entry.js';
 import { isRunning } from './events.js';
 import type { AppConfig, Category, HappowEvent } from './types.js';
 
-/** §4.1: on now, starts within the hour, or later. */
+/** On now, starts within the hour, or later. */
 export type PinKind = 'live' | 'soon' | 'later';
 
 /** Starts within this many minutes: a "soon" pin. */

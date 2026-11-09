@@ -1,14 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  dicePool,
-  loadConfig,
-  priceFromToggles,
-  priceToggles,
-  reachForRoll,
-  reweigh,
-  rollDice,
-  topCategories,
-} from '../src';
+import { dicePool, loadConfig, reachForRoll, reweigh, rollDice, topCategories } from '../src';
 
 const { app } = loadConfig();
 const now = new Date('2026-10-23T14:10:00Z');
@@ -74,15 +65,5 @@ describe('rolling', () => {
     expect(reachForRoll(800, 500, detentsM, app.dice.reachMargin)).toBe(1000);
     expect(reachForRoll(900, 250, detentsM, app.dice.reachMargin)).toBe(2000);
     expect(reachForRoll(1900, 500, detentsM, app.dice.reachMargin)).toBe(5000);
-  });
-});
-
-describe('price toggles (§15)', () => {
-  it('both on means any; the last one on cannot go off', () => {
-    expect(priceToggles('any')).toEqual({ free: true, paid: true });
-    expect(priceToggles('free')).toEqual({ free: true, paid: false });
-    expect(priceFromToggles(true, true)).toBe('any');
-    expect(priceFromToggles(false, true)).toBe('paid');
-    expect(priceFromToggles(false, false)).toBeNull();
   });
 });

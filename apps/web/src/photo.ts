@@ -1,7 +1,7 @@
 import { config } from './config';
 
 /**
- * A poster photo for autofill (M12 §4.2), shrunk on the device before it leaves it: the long edge
+ * A poster photo for autofill, shrunk on the device before it leaves it: the long edge
  * to `extraction.photo.maxEdge` (about the most the model reads without scaling it down itself),
  * as a JPEG, turned the right way up from the photo's own orientation. The original never leaves
  * the phone.

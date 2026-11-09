@@ -9,7 +9,7 @@ import { Icon } from './Icons';
 import { Row } from './ListView';
 
 /**
- * The list in "My plans" and "Saved" (M10 §1): your events by day in the region's time zone, a
+ * The list in "My plans" and "Saved": your events by day in the region's time zone, a
  * running one first today; ended ones folded under "Past". A day with two or more events offers
  * the evening queue; each day can go into the phone's calendar in one file.
  */
@@ -29,7 +29,7 @@ export function Agenda({
   gone: string[];
   now: Date;
   isGoing: (id: string) => boolean;
-  /** An accepted invitation (M11): tagged, and it can't be un-bookmarked here (§6). */
+  /** An accepted invitation: tagged, and it can't be un-bookmarked here. */
   isInvited?: (id: string) => boolean;
   onSelect: (id: string) => void;
   onUnsave: (id: string) => void;
@@ -41,7 +41,7 @@ export function Agenda({
   const { days, past } = agendaDays(events, now, region.timezone, config.app.agenda.keepPastDays);
   const row = (ev: NearbyEvent) => {
     const invited = isInvited(ev.id);
-    // A private event (M11 §4): yours, waiting for your answer, or accepted; a dot when it changed.
+    // A private event: yours, waiting for your answer, or accepted; a dot when it changed.
     const priv = isPrivate(ev) ? ev : null;
     const privTag = priv
       ? [

@@ -4,7 +4,7 @@ import type { ScheduleEnv } from './schedule.js';
 import { Supabase } from './supabase.js';
 
 /**
- * Cloudflare Cron Trigger → the week's M12 metrics row (docs/milestones/M12-more-events.md §1).
+ * Cloudflare Cron Trigger → the week's metrics row.
  * From `metrics.weekly` (ISO weekday and hour, in the default region's time zone) to the end of
  * that day, every tick calls `metrics_save`, which saves once and is a cheap no-op after. Read
  * straight from the JSON, like the ingest schedule: a cron tick gets 10 ms of CPU.

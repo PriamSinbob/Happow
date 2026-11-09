@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isoWeekday, lastRepeatDay, weeklyStarts } from '../src/recurrence';
 
-/** M12 slice I: weekly repeats, as wall-clock values. */
 describe('weekly repeats', () => {
   it('gives every chosen weekday from the start through the until day, at the same time', () => {
     // Sat 7 Nov 2026.

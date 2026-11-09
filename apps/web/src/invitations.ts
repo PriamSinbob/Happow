@@ -2,9 +2,9 @@ import { useSyncExternalStore } from 'react';
 import type { AcceptedInvitation } from '@happow/core';
 
 /**
- * Accepted invitations (M10 §6, filled by M11). Their events are always in "My plans", private
- * ones also in "Private", and they can't be un-bookmarked: declining removes them. Empty until
- * M11 adds invitations; M11 calls `invitations.set` with what the server returns.
+ * Accepted invitations. Their events are always in "My plans", private ones also in "Private",
+ * and they can't be un-bookmarked: declining removes them. Filled by `invitations.set` with what
+ * the server returns.
  */
 
 let accepted: readonly AcceptedInvitation[] = [];

@@ -5,7 +5,7 @@ import { adapters, HttpClient } from '../src';
 import type { AdapterContext, PageCache, PageEntry, PolitenessStats } from '../src/types';
 import { config, noSleep, region } from './helpers';
 
-/** M13 §3: conditional requests, unchanged pages, revisits and TDM reservations. */
+/** Conditional requests, unchanged pages, revisits and TDM reservations. */
 
 const now = new Date('2026-11-05T10:00:00Z');
 const START = 'https://club.example.pl/events/';
@@ -111,7 +111,7 @@ async function crawl(
   return { raws, stats };
 }
 
-describe('crawler politeness (M13 §3)', () => {
+describe('crawler politeness', () => {
   it('sends the validators back and reuses the last read on 304', async () => {
     const pages = memoryPages();
     const first = site(() => ({

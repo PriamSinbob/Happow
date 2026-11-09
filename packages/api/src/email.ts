@@ -1,7 +1,7 @@
 import type { AppConfig } from '@happow/core';
 
 /**
- * The app's own email (M13 §5), behind one interface so the provider is a config choice.
+ * The app's own email, behind one interface so the provider is a config choice.
  * Resend first: a plain HTTP API that works from a Worker. Nothing is sent while
  * `email.provider` is "none" or its secret is missing.
  */
@@ -17,7 +17,7 @@ export interface EmailSender {
   send(message: EmailMessage): Promise<void>;
 }
 
-export class EmailError extends Error {
+class EmailError extends Error {
   constructor(
     readonly status: number,
     message: string,

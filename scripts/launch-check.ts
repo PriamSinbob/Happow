@@ -1,5 +1,5 @@
 /**
- * What still stands between the app and a public launch (M13 §7), from config and wrangler.jsonc.
+ * What still stands between the app and a public launch, from config and wrangler.jsonc.
  *   pnpm launch:check            exit 1 while anything blocks
  *   pnpm launch:check --report   print only (CI)
  * The owner's steps for each item are in docs/LAUNCH.md.

@@ -4,8 +4,8 @@ import { config, region } from '../config';
 import type { DistrictGoal, EventRepository } from '../data/repository';
 
 /**
- * Answers kept per ~100 m cell and weekend for one data step (M13 §6, HARDENING "The district
- * goal is asked live"): walking back and forth, or reopening the list, asks the database once.
+ * Answers kept per ~100 m cell and weekend for one data step: walking back and forth, or
+ * reopening the list, asks the database once.
  */
 const cache = new Map<string, { at: number; goal: DistrictGoal | null }>();
 const fresh = (key: string) => {
@@ -16,7 +16,7 @@ const fresh = (key: string) => {
 export const clearGoalCache = () => cache.clear();
 
 /**
- * The district goal for an empty reach (M12 §6.2): the district `at` is in, and how many events it
+ * The district goal for an empty reach: the district `at` is in, and how many events it
  * has this weekend. Only asked while `at` is given (the caller passes it when the reach is empty);
  * never a notification. Moves under ~100 m (3 decimals) don't ask again.
  */

@@ -1,4 +1,4 @@
--- M8 slice B: plan grants (docs/milestones/M8-accounts-premium.md §4). The early-access promotion
+-- Plan grants. The early-access promotion
 -- is not stored here: the Worker works it out from config/plans.json, so moving its end date
 -- extends it for everyone at once. Grants give one account a plan: by hand (the admin), as a
 -- trial, or bought through a premium provider.

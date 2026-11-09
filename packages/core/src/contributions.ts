@@ -1,15 +1,7 @@
 import type { PlansConfig } from './types.js';
 
-/** Rewards for adding events (M12 §5), from `contributions` in config/plans.json. */
+/** Rewards for adding events, from `contributions` in config/plans.json. */
 export type ContributionsConfig = PlansConfig['contributions'];
-
-/**
- * Premium days one more verified event earns: the configured days, but never past the monthly
- * cap (`earned` = days already earned this calendar month).
- */
-export function premiumDaysFor(earned: number, cfg: ContributionsConfig): number {
-  return Math.max(0, Math.min(cfg.premiumDaysPerEvent, cfg.premiumDaysPerMonth - earned));
-}
 
 /**
  * The highest level whose thresholds are both met, or null below the first. Callers keep the

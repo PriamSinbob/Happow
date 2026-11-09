@@ -1,6 +1,5 @@
--- M10 plan ahead (docs/milestones/M10-plan-ahead.md).
--- Slice D: web push subscriptions, one row per browser endpoint.
--- Slice E: reminders before an event starts, sent by the Worker's Cron Trigger.
+-- Web push subscriptions, one row per browser endpoint, and reminders before an event starts,
+-- sent by the Worker's Cron Trigger.
 -- Everything here is read and written by the API with the service role only.
 
 create table push_subscriptions (

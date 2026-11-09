@@ -16,7 +16,7 @@ import {
   vapidKey,
 } from '../src/webpush';
 
-/** M10 slice D: Web Push encryption (RFC 8291) and VAPID (RFC 8292). */
+/** Web Push encryption (RFC 8291) and VAPID (RFC 8292). */
 
 // RFC 8291 §5, "Push Message Encryption Example".
 const rfc = {

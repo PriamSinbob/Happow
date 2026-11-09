@@ -52,11 +52,10 @@ import { followRoutes } from './follows.js';
 import { emailSender, type EmailSender } from './email.js';
 import { savedRoutes } from './saved.js';
 import { ApiError, body, json, sha256 } from './http.js';
-import { premiumProviders, premiumRoutes, type PremiumProvider } from './premium.js';
 import { dispatchDueIngest, type ScheduleEnv } from './schedule.js';
 import { Supabase, SupabaseError } from './supabase.js';
 
-/** Secrets and settings from the host (Cloudflare Pages env, or .env in development). */
+/** Secrets and settings from the host (Worker env, or .env in development). */
 export interface ApiEnv {
   SUPABASE_URL?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
@@ -74,8 +73,6 @@ export interface ApiDeps {
   /** Overrides for tests. */
   geocoder?: Geocoder;
   extractor?: Extractor | null;
-  /** Instead of the providers named in config (premium.providers). */
-  premiumProviders?: PremiumProvider[];
   /** Instead of the sender named in config (email.provider); null = email off. */
   email?: EmailSender | null;
 }
@@ -123,12 +120,12 @@ const submissionSchema = z.object({
     family: z.boolean().nullable().optional(),
     /** Sent only when the user changes it; otherwise the category default applies. */
     entry: entrySchema.nullable().optional(),
-    /** "Who's performing" (M7 §1): names separated by commas or new lines. */
+    /** "Who's performing": names separated by commas or new lines. */
     performers: z.string().trim().max(1000).nullable().optional(),
   }),
-  /** Only invitees see it (M11 §1); needs `private.create`, and it can't repeat. */
+  /** Only invitees see it; needs `private.create`, and it can't repeat. */
   private: z.boolean().optional(),
-  /** Weekly on these ISO weekdays (1 = Monday) until a day, inclusive (M12 §4.5). */
+  /** Weekly on these ISO weekdays (1 = Monday) until a day, inclusive. */
   repeat: z
     .object({
       days: z.array(z.number().int().min(1).max(7)).min(1).max(7),
@@ -275,14 +272,6 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       return null;
     }
   };
-  const premium = premiumRoutes({
-    providers:
-      deps.premiumProviders ??
-      premiumProviders(config.app.premium.providers, env as Record<string, string | undefined>),
-    need,
-    requireUser: accounts.requireUser,
-    planOf: accounts.planOf,
-  });
 
   const feeds = feedRoutes({ config, need, requireUser: accounts.requireUser, limit });
   const pushSecret = (env as Record<string, unknown>)[config.app.push.secret];
@@ -443,7 +432,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   }
 
   /**
-   * POST /api/autofill/photo {image, mediaType} (M12 §4.2): a poster photo, shrunk on the device,
+   * POST /api/autofill/photo {image, mediaType}: a poster photo, shrunk on the device,
    * read by the LLM into the same prefills as a link. The photo is passed on to be read and is
    * not stored; the event never gets it as its image.
    */
@@ -570,7 +559,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     if (!e.categoryIds.every((c) => known.has(c)))
       throw new ApiError(400, 'invalid_input', 'category');
     if (!isInBbox(e.point, region.bbox)) throw new ApiError(400, 'outside_region');
-    // A weekly repeat is one event per date (M12 §4.5), each its own length after its start.
+    // A weekly repeat is one event per date, each its own length after its start.
     const { recurring } = limits;
     if (input.repeat && !user) throw new ApiError(401, 'account_required');
     if (input.private && !user) throw new ApiError(401, 'account_required');
@@ -619,7 +608,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         privateMax = quota(entitlements, 'private.perMonth');
       } else {
         trusted = await contributions.trusted(user.id);
-        // The verified organiser of a venue here publishes at once (M11 §8).
+        // The verified organiser of a venue here publishes at once.
         if (
           !trusted &&
           can(entitlements, 'organiser.publish') &&
@@ -696,7 +685,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         },
       };
     });
-    // A private event: live at once for its owner, never moderated, no rewards (M11 §1).
+    // A private event: live at once for its owner, never moderated, no rewards.
     if (input.private && user) {
       const first = items[0]!;
       let eventId: string;
@@ -756,7 +745,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     // A series earns as one event, on its first date.
     const first = items[0]!;
     const reward = trusted ? await award(first.id, first.eventId) : null;
-    // Nothing at this place lately: "first added by you" on the adder's card (M12 §6.1).
+    // Nothing at this place lately: "first added by you" on the adder's card.
     const firstPlace = user ? await contributions.firstPlace(first.id) : false;
     const shown = publish || trusted;
     return json(
@@ -782,7 +771,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     const input = await body(req, reportSchema);
     const reporter = await sha256(`${salt}:device:${input.deviceId}`);
     await limit('report', reporter, 86_400, limits.reportsPerDayPerDevice);
-    // A private event can be reported only by someone who may see it (M11 §4).
+    // A private event can be reported only by someone who may see it.
     if (
       (await db.rpc<string | null>('event_visibility', { p_event: input.eventId })) === 'private'
     ) {
@@ -821,9 +810,9 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       return json({
         moderator: email,
         ...(await db.rpc<object>('moderation_queue', {})),
-        // Spot checks of what trusted accounts published (M12 §5.3).
+        // Spot checks of what trusted accounts published.
         trusted: await db.rpc<object[]>('trusted_recent', { p_days: 7 }),
-        // Claims, contributors' edits and reported posts (M11 §6–§8).
+        // Claims, contributors' edits and reported posts.
         ...(await organisers.queues()),
       });
     if (req.method !== 'POST' || path.length !== 2) throw new ApiError(404, 'not_found');
@@ -844,11 +833,11 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
           'moderate_submission',
           { p_id: id, p_action: action, p_note: note ?? null, p_moderator: email },
         );
-        // Rewards come only after moderation (M12 §5).
+        // Rewards come only after moderation.
         const reward = action === 'approve' ? await award(id, done.eventId) : null;
         return json({ ...done, ...(reward && { reward }) });
       }
-      // A weekly repeat is decided once, for all its pending dates (M12 §4.5). It earns as one
+      // A weekly repeat is decided once, for all its pending dates. It earns as one
       // event, on its earliest date.
       if (kind === 'series' && (action === 'approve' || action === 'reject')) {
         if (!z.string().uuid().safeParse(id).success) throw new ApiError(404, 'not_found');
@@ -1050,7 +1039,6 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'auth') return await accounts.auth(req, rest);
       if (head === 'admin' && rest[0] === 'feeds') return await feeds.admin(req, rest.slice(1));
       if (head === 'admin') return await accounts.admin(req, rest);
-      if (head === 'premium') return await premium(req, rest);
       if (head === 'push') return await reminders.push(req, rest);
       if (head === 'reminders') return await reminders.reminders(req, rest);
       if (head === 'attendance' || head === 'share') return await attendance.route(req, head, rest);

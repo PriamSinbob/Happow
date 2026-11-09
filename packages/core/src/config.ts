@@ -40,7 +40,7 @@ export interface HappowConfig {
 }
 
 /**
- * Fills `{siteUrl}` and `{contactEmail}` (M13 §2). A missing contact drops its part with the
+ * Fills `{siteUrl}` and `{contactEmail}`. A missing contact drops its part with the
  * separator before it ("; {contactEmail}"), so the User-Agent stays well-formed.
  */
 export function siteTemplate(

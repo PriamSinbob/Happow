@@ -1,7 +1,7 @@
 import { api, deviceId } from './api';
 import { accessToken } from './auth';
 
-/** Contacts, groups and the friends' view (M11 §2, §5): calls over `api()`. */
+/** Contacts, groups and the friends' view: calls over `api()`. */
 
 export interface Contact {
   id: string;
@@ -72,7 +72,7 @@ export interface FriendsView {
   /** This event's override: true or false, or null for the account switch. */
   override: boolean | null;
   friends: { name: string; kinds: ('going' | 'onway' | 'here')[] }[];
-  /** Friends who came through your share links (M9 §5's count, with names). */
+  /** Friends who came through your share links (the share-link count, with names). */
   fromMyLinks: string[];
 }
 

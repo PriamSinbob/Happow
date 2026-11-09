@@ -23,7 +23,7 @@ function isStandalone(): boolean {
 
 /**
  * iOS can't open shared links in an installed web app, so a link opens in Safari, where the whole
- * app works anyway (M9 §7). On a card opened from a shared link there, one line suggests adding
+ * app works anyway. On a card opened from a shared link there, one line suggests adding
  * Happow to the Home Screen: shown once on this device, dismissible, never again.
  */
 export function InstallHint({ fromLink = openedFromLink }: { fromLink?: boolean }) {

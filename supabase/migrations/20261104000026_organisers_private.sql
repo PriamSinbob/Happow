@@ -1,14 +1,11 @@
--- M11 organisers and private events (docs/milestones/M11-organisers-private.md).
--- Slice A: private events, kept out of every public read.
--- Slice B: contacts, groups and contact links.
--- Slice C: invitations by contact, group or single-use link.
--- Slice E: the friends' view of who's going.
--- Slices F–H: organiser claims, organiser posts, edits by owners and organisers.
--- Slice I: export, deletion and retention for all of it.
+-- Organisers and private events: private events, kept out of every public read; contacts, groups
+-- and contact links; invitations by contact, group or single-use link; the friends' view of who's
+-- going; organiser claims, organiser posts, edits by owners and organisers; export, deletion and
+-- retention for all of it.
 -- Everything new is read and written by the API with the service role; row-level security is the
 -- backstop for direct PostgREST access.
 
--- ---------- Slice A: private events ----------
+-- ---------- Private events ----------
 
 alter table events add column visibility text not null default 'public'
   check (visibility in ('public', 'private'));
@@ -16,7 +13,7 @@ alter table events add column visibility text not null default 'public'
 alter table events add column owner_id uuid references auth.users (id) on delete set null;
 create index events_owner_idx on events (owner_id) where owner_id is not null;
 create index events_private_idx on events (id) where visibility = 'private';
--- Fields an organiser set (§8): they win over the sources while the claim stands (owner, 2026-11-04).
+-- Fields an organiser set: they win over the sources while the claim stands.
 alter table events add column owner_fields jsonb not null default '{}'::jsonb;
 -- What a source said that differs from the organiser's fields, for moderators.
 alter table events add column source_disagrees jsonb;
@@ -29,7 +26,7 @@ alter table events add column last_post_at timestamptz;
 alter table venues add column private boolean not null default false;
 
 -- Reasons: "unlawful" is new; with "inappropriate" (abuse), the two that reach moderators for a
--- private event (owner, 2026-11-04).
+-- private event.
 alter type report_reason add value if not exists 'unlawful';
 -- Who a report is for: moderators (every public report, abuse on a private one) or only the
 -- event's organiser. The organiser can answer either; that never blocks their edits.
@@ -64,7 +61,7 @@ left join venues v on v.id = e.venue_id
 where (e.stale_after is null or e.stale_after > now()) and not e.hidden
   and e.visibility = 'public';
 
--- ---------- Slice B: contacts and groups ----------
+-- ---------- Contacts and groups ----------
 
 alter table profiles add column friends_visible boolean not null default false;
 
@@ -111,7 +108,7 @@ create unique index contact_links_live_idx on contact_links (owner) where retire
 alter table contact_links enable row level security;
 create policy "own rows" on contact_links for select to authenticated using (owner = auth.uid());
 
--- ---------- Slice C: invitations ----------
+-- ---------- Invitations ----------
 
 create table invitations (
   id uuid primary key default gen_random_uuid(),
@@ -586,7 +583,7 @@ as $$
 $$;
 
 -- A private event: counted against both quotas in one statement, stored approved by 'private'
--- (no moderation, owner 2026-11-04), published verified, private, owned. No rewards follow.
+-- (no moderation), published verified, private, owned. No rewards follow.
 create function submit_private(
   p jsonb, p_submitter text, p_region text, p_user uuid, p_month date, p_max integer,
   p_private_max integer
@@ -617,7 +614,7 @@ begin
   return eid;
 end $$;
 
--- ---------- Slice B: contacts ----------
+-- ---------- Contacts ----------
 
 create function contact_mutual(p_a uuid, p_b uuid)
 returns boolean
@@ -783,7 +780,7 @@ as $$
   select exists (select 1 from d)
 $$;
 
--- ---------- Slice C: invitations ----------
+-- ---------- Invitations ----------
 
 -- Invites people (contacts, or the members of groups) to a private event you own. People who
 -- aren't your contacts, or who blocked you, are skipped. Returns how many were invited now.
@@ -918,7 +915,7 @@ as $$
 $$;
 
 -- The organiser's view: every invitation by person or link. For accepted guests, the list of
--- who else accepted (an invitation implies it; §5).
+-- who else accepted (an invitation implies it).
 create function event_guests(p_user uuid, p_event text)
 returns jsonb
 language plpgsql
@@ -960,7 +957,7 @@ as $$
   update invitations set seen_at = now() where event_id = p_event and invitee = p_user
 $$;
 
--- ---------- Slice E: the friends' view ----------
+-- ---------- The friends' view ----------
 
 -- Per event, "show my friends I'm going to this" overrides the account switch either way.
 create table friend_overrides (
@@ -986,7 +983,7 @@ as $$
 $$;
 
 -- Friends who are going, on the way or here, by name: mutual contacts who show themselves on
--- this event, to someone who shows themselves too. No threshold (M9 §6). Plus the names behind
+-- this event, to someone who shows themselves too. No threshold. Plus the names behind
 -- this device's share links, under the same rules.
 create function friends_on_event(p_user uuid, p_event text, p_device text)
 returns jsonb
@@ -1194,7 +1191,7 @@ begin
   return v;
 end $$;
 
--- ---------- Slice F: organiser claims ----------
+-- ---------- Organiser claims ----------
 
 create table claims (
   id uuid primary key default gen_random_uuid(),
@@ -1399,7 +1396,7 @@ as $$
   where c.status = 'pending' or (c.status = 'approved' and c.decided_at > now() - interval '60 days')
 $$;
 
--- ---------- Slices G and H: edits by owners and organisers ----------
+-- ---------- Edits by owners and organisers ----------
 
 -- The fields an owner or organiser can change, with their types.
 create function owner_field_names()
@@ -1411,8 +1408,8 @@ as $$
     'price_max', 'official_url', 'ticket_url']
 $$;
 
--- Keeps the organiser's fields over what a source writes (owner, 2026-11-04, §11.4). A source
--- value that differs is kept in source_disagrees for moderators; users see the organiser's.
+-- Keeps the organiser's fields over what a source writes. A source value that differs is kept in
+-- source_disagrees for moderators; users see the organiser's.
 create function events_keep_owner_fields()
 returns trigger
 language plpgsql
@@ -1628,7 +1625,7 @@ begin
     'action', case when p_approve then 'approve' else 'reject' end);
 end $$;
 
--- ---------- Slice G: organiser posts ----------
+-- ---------- Organiser posts ----------
 
 create table event_posts (
   id uuid primary key default gen_random_uuid(),
@@ -1795,7 +1792,7 @@ begin
   return true;
 end $$;
 
--- ---------- Push to everyone interested (owner, 2026-11-04, §11.6) ----------
+-- ---------- Push to everyone interested ----------
 
 -- A schedule change or an important post (or a private event's change) goes to every device that
 -- allowed notifications and showed interest: set a reminder, marked going / on the way / here,
@@ -2036,7 +2033,7 @@ begin
   return true;
 end $$;
 
--- ---------- Slice H: your events ----------
+-- ---------- Your events ----------
 
 -- One list: added (submissions), claimed, and private, newest first, with what you can do.
 create function my_events(p_user uuid)
@@ -2072,7 +2069,7 @@ as $$
   where e.end_at > now() - interval '30 days'
 $$;
 
--- An approved organiser of a venue near this point publishes there at once (§8).
+-- An approved organiser of a venue near this point publishes there at once.
 create function organiser_at(p_user uuid, p_lat double precision, p_lng double precision,
   p_radius_m double precision)
 returns boolean
@@ -2087,7 +2084,7 @@ as $$
       and st_dwithin(v.point, st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography, p_radius_m))
 $$;
 
--- ---------- Slice I: export, deletion, retention ----------
+-- ---------- Export, deletion, retention ----------
 
 create or replace function account_export(p_user uuid)
 returns jsonb
@@ -2204,7 +2201,7 @@ as $$
   delete from profiles where user_id = p_user;
 $$;
 
--- Retention (§9): private events and their invitations a while after they end, unused invite
+-- Retention: private events and their invitations a while after they end, unused invite
 -- links and old notices at once after the event.
 create function private_cleanup(p_keep_days integer)
 returns integer
@@ -2276,7 +2273,7 @@ grant select on contacts, contact_groups, contact_group_members, contact_links, 
   friend_overrides, claims to authenticated;
 grant select on event_posts to anon, authenticated;
 
--- The profile gains the friends' switch (§5) and whether private events are blocked (abuse).
+-- The profile gains the friends' switch and whether private events are blocked (abuse).
 create or replace function profile_get(p_user uuid)
 returns jsonb
 language plpgsql

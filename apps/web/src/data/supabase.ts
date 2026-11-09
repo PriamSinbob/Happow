@@ -57,7 +57,7 @@ export interface Row {
   primary_source_id?: string | null;
   source_url?: string | null;
   distance_m: number | null;
-  /** Names only in the area snapshot (≤ 5), names and Ticketmaster ids elsewhere (M7 §1). */
+  /** Names only in the area snapshot (≤ 5), names and Ticketmaster ids elsewhere. */
   performers?: (string | { name: string; externalId?: string | null })[] | null;
 }
 

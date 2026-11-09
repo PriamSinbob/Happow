@@ -29,7 +29,7 @@ export interface AccountDeps {
   now: () => Date;
   limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
   clientHash: (req: Request, salt: string) => Promise<string>;
-  /** The app's email sender (M13 §5), null while email is off. */
+  /** The app's email sender, null while email is off. */
   email?: EmailSender | null;
 }
 
@@ -37,10 +37,10 @@ const meSchema = z
   .object({
     locale: languageSchema.optional(),
     termsVersion: z.string().min(1).max(60).optional(),
-    /** "Show my name on events I add" (M12 §5.5), off by default, and the name it shows. */
+    /** "Show my name on events I add", off by default, and the name it shows. */
     showName: z.boolean().optional(),
     displayName: z.string().trim().min(1).max(60).optional(),
-    /** "Show my friends when I'm going" (M11 §5), off by default. */
+    /** "Show my friends when I'm going", off by default. */
     friendsVisible: z.boolean().optional(),
   })
   .strict();
@@ -60,12 +60,12 @@ const grantSchema = z
   })
   .strict();
 
-/** A decision on a website-check candidate (M12 §2.2, the Sources tab). */
+/** A decision on a website-check candidate (the Sources tab). */
 const sourceActionSchema = z
   .object({ action: z.enum(['accept', 'reject', 'stop', 'resume', 'restore']) })
   .strict();
 
-/** 429 for a used-up monthly quota, with what the add form needs to say so (M8 §5). */
+/** 429 for a used-up monthly quota, with what the add form needs to say so. */
 export const quotaExceeded = (
   kind: 'events' | 'autofill' | 'private',
   limit: number,
@@ -77,7 +77,7 @@ export const quotaExceeded = (
     resetsAt: resetsAt.toISOString(),
   });
 
-/** Account endpoints (M8 §2–§5): /api/me, /api/auth/*, /api/admin/*. */
+/** Account endpoints: /api/me, /api/auth/*, /api/admin/*. */
 export function accountRoutes({
   app,
   plans,
@@ -117,7 +117,7 @@ export function accountRoutes({
     for (const [k, v] of cache) if (v.user.id === userId) cache.delete(k);
   };
 
-  /** The plan in force for a signed-in user and what it allows (M8 §3–§4). */
+  /** The plan in force for a signed-in user and what it allows. */
   async function planOf(user: { id: string }) {
     const { db } = need();
     const grants = await db.rpc<PlanGrant[]>('grants_active', { p_user: user.id });
@@ -136,7 +136,7 @@ export function accountRoutes({
     };
   }
 
-  /** This month's use of both quotas, their limits and when they reset (M8 §5). */
+  /** This month's use of both quotas, their limits and when they reset. */
   async function usageOf(user: { id: string }, entitlements: Entitlements) {
     const { db } = need();
     const { month, resetsAt } = usageMonth(now(), timeZone);
@@ -201,7 +201,7 @@ export function accountRoutes({
       return json(await profile(user));
     }
     if (req.method === 'GET' && path[0] === 'submissions' && path.length === 2) {
-      // "Add again" (M12 §4.4): the owner's own form, for another date. Anyone else gets 404.
+      // "Add again": the owner's own form, for another date. Anyone else gets 404.
       const id = path[1]!;
       if (!uuid.safeParse(id).success) throw new ApiError(404, 'not_found');
       const form = await db.rpc<object | null>('submission_form', { p_user: user.id, p_id: id });
@@ -231,7 +231,7 @@ export function accountRoutes({
 
   /**
    * POST /api/auth/code-request {email, locale}: with manual delivery, files a request for a
-   * sign-in code that the admin sends by hand; with "app" delivery (M13 §5), makes the code and
+   * sign-in code that the admin sends by hand; with "app" delivery, makes the code and
    * emails it at once. Always the same answer, so it never tells whether an account exists.
    */
   async function authRoutes(req: Request, path: string[]): Promise<Response> {
@@ -284,7 +284,7 @@ export function accountRoutes({
     return { subject: fill(t.subject), body: fill(t.body) };
   }
 
-  /** /api/admin/grants[/:id] for the admin only: manual plan grants (M8 §4). */
+  /** /api/admin/grants[/:id] for the admin only: manual plan grants. */
   async function grants(req: Request, path: string[], user: User): Promise<Response> {
     const { db } = need();
     const id = path[1];
@@ -317,7 +317,7 @@ export function accountRoutes({
     throw new ApiError(404, 'not_found');
   }
 
-  /** /api/admin/sources[/:id] for the admin only: the website check's candidates (M12 §2.2). */
+  /** /api/admin/sources[/:id] for the admin only: the website check's candidates. */
   async function sources(req: Request, path: string[], user: User): Promise<Response> {
     const { db } = need();
     if (req.method === 'GET' && path.length === 1)
@@ -350,7 +350,7 @@ export function accountRoutes({
     const [kind, id, action] = path;
     if (kind === 'grants') return grants(req, path, user);
     if (kind === 'sources') return sources(req, path, user);
-    // Events per district and category, today and the week, with the weekly metrics (M12 §3).
+    // Events per district and category, today and the week, with the weekly metrics.
     if (kind === 'coverage' && req.method === 'GET' && path.length === 1) {
       const region = new URL(req.url).searchParams.get('region') ?? app.defaultRegion;
       try {
@@ -369,7 +369,7 @@ export function accountRoutes({
         throw err;
       }
     }
-    // Trust back after a rejection (M12 §5.3).
+    // Trust back after a rejection.
     if (kind === 'trust' && req.method === 'POST' && path.length === 1) {
       const { email } = await body(req, trustSchema);
       if (!(await db.rpc<boolean>('trust_restore', { p_email: email })))

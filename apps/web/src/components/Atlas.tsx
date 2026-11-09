@@ -9,14 +9,8 @@ const RING = 2 * Math.PI * 19;
 
 type Toast = { ok: true; text?: string; label: string } | { ok: false; label: string };
 
-/** The folded map with a lit spot, drawn for Happow (docs/design/atlas.html). */
-export function AtlasGlyph({
-  size = 34,
-  strokeWidth = 1.6,
-}: {
-  size?: number;
-  strokeWidth?: number;
-}) {
+/** The folded map with a lit spot, drawn for Happow. */
+function AtlasGlyph({ size = 34, strokeWidth = 1.6 }: { size?: number; strokeWidth?: number }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -43,10 +37,10 @@ export function AtlasGlyph({
 }
 
 /**
- * The atlas bar (§6, `docs/design/atlas.html`), inside About with the theme and colour
- * settings (owner, 2026-10-23): export, the number of lit areas, import, and a hold-to-clear
- * bin. Wordless, black and white; every button has a translated name. Export and import need an
- * account (M8 §6); the count and hold-to-clear are for everyone.
+ * The atlas bar, inside About with the theme and colour settings: export, the number of lit
+ * areas, import, and a hold-to-clear bin. Wordless, black and white; every button has a
+ * translated name. Export and import need an account; the count and hold-to-clear are for
+ * everyone.
  */
 export function AtlasBar({ atlas, transfer }: { atlas: Atlas; transfer: boolean }) {
   const { t } = useI18n();

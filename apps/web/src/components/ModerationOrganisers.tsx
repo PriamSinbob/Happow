@@ -7,7 +7,7 @@ import { formatDay, formatTime } from '../format';
 import { eventHref } from '../hooks/useHashRoute';
 import { useI18n } from '../i18n';
 
-/** What the moderation queue adds for M11 (§6–§8): claims, contributors' edits, reported posts. */
+/** What the moderation queue adds for organisers: claims, contributors' edits, reported posts. */
 export interface OrganiserQueue {
   claims?: {
     id: string;
@@ -56,9 +56,9 @@ const show = (v: unknown, lang: 'pl' | 'en') =>
       : String(v);
 
 /**
- * The moderators' part of M11: approve or reject claims (and revoke approved ones), review
+ * The moderators' organiser tools: approve or reject claims (and revoke approved ones), review
  * contributors' edits, hide or keep reported posts, and see where a source disagrees with an
- * organiser (the organiser's values stay; owner 2026-11-04).
+ * organiser (the organiser's values stay).
  */
 export function OrganiserModeration({ queue }: { queue: OrganiserQueue }) {
   const { t, lang } = useI18n();

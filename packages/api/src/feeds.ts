@@ -6,7 +6,7 @@ import { ApiError, body, json } from './http.js';
 import { SupabaseError, type Supabase } from './supabase.js';
 
 /**
- * Calendar feeds an account imports its events from (M12 §4.6, slice L). The account adds and
+ * Calendar feeds an account imports its events from. The account adds and
  * removes its own; the ingest job reads them; an admin can stop one (and start it again).
  */
 
@@ -26,7 +26,7 @@ const id = z.coerce.number().int().positive();
 const noStore = { 'cache-control': 'private, no-store' };
 
 /** "webcal://…" is how calendars hand out feeds; it is plain https. */
-export function feedUrl(raw: string): string {
+function feedUrl(raw: string): string {
   const url = raw.replace(/^webcals?:\/\//i, 'https://');
   try {
     checkPublicUrl(url);

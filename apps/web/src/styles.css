@@ -104,7 +104,7 @@
   border: 0.5px solid var(--hair);
   box-shadow: var(--rim), var(--shadow-sm);
 }
-/* Pressed: a quick shrink, the only touch feedback (no hover styles, M6 §1). */
+/* Pressed: a quick shrink, the only touch feedback (no hover styles). */
 .counter,
 .map-btn,
 .icon-btn,
@@ -113,7 +113,6 @@
 .row,
 .cat-chip,
 .tool,
-.chip,
 .season-chip {
   transition:
     transform 0.2s var(--ease-out),
@@ -131,7 +130,6 @@
 .btn:active,
 .cat-chip:active,
 .tool:active,
-.chip:active,
 .season-chip:active {
   transform: scale(0.97);
 }
@@ -292,7 +290,7 @@ button {
     var(--shadow-sm);
 }
 
-/* ---------- Map screen controls (M6 §5) ---------- */
+/* ---------- Map screen controls ---------- */
 /* Top row: live counter at the left, settings at the right. */
 .hud-top {
   position: absolute;
@@ -318,7 +316,7 @@ button {
   gap: 8px;
   margin-left: auto;
 }
-/* The map shortcut (slice G): on = ink fill, like the filled counter. */
+/* The map shortcut: on = ink fill, like the filled counter. */
 .map-btn[data-on='true'] {
   background: var(--ink);
   border-color: var(--ink);
@@ -401,7 +399,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  /* Fixed width, dot and number centred: the shortcut beside it never moves (owner, 2026-10-23). */
+  /* Fixed width, dot and number centred: the shortcut beside it never moves. */
   justify-content: center;
   width: 76px;
   height: 40px;
@@ -476,7 +474,7 @@ button {
   color: var(--paper);
 }
 
-/* Reach rail (§5): right edge, lower middle, inset from the back-gesture edge. */
+/* Reach rail: right edge, lower middle, inset from the back-gesture edge. */
 .rail {
   position: absolute;
   z-index: 18;
@@ -544,7 +542,7 @@ button {
   gap: 8px;
 }
 
-/* Time line (§5, §13.2, §13.3): range icons at the left, the track to the right. */
+/* Time line: range icons at the left, the track to the right. */
 .timeline-bar {
   position: absolute;
   z-index: 16;
@@ -662,7 +660,7 @@ button {
   box-shadow: 0 0 8px var(--live);
 }
 
-/* List style B (§5): an overlay over the map; the map stays visible above it. */
+/* List style B: an overlay over the map; the map stays visible above it. */
 .list-overlay {
   position: absolute;
   z-index: 17;
@@ -715,7 +713,7 @@ button {
   color: var(--muted);
 }
 
-/* Off-screen events (§5): 10 px dots on the edge; a bigger invisible target around each. */
+/* Off-screen events: 10 px dots on the edge; a bigger invisible target around each. */
 .edge-dot {
   position: absolute;
   z-index: 5;
@@ -742,7 +740,7 @@ button {
   opacity: 0.9;
 }
 
-/* Settings (§15, docs/design/settings-rows.html): wordless rows, black and white, no hover. */
+/* Settings: wordless rows, black and white, no hover. */
 .toggle-row {
   display: flex;
   justify-content: center;
@@ -861,8 +859,7 @@ div.settings-row {
 .sheet-btn__count {
   font-variant-numeric: tabular-nums;
 }
-/* The atlas bar (§6, docs/design/atlas.html), in About: export, lit areas, import; hold the bin
-   at the far right to clear. */
+/* The atlas bar, in About: export, lit areas, import; hold the bin at the far right to clear. */
 .atlas-bar {
   position: relative;
   display: flex;
@@ -1223,8 +1220,6 @@ div.settings-row {
   font-weight: 600;
   font-size: 14px;
   letter-spacing: -0.01em;
-}
-.btn {
   gap: 6px;
 }
 .btn:disabled {
@@ -1238,7 +1233,7 @@ div.settings-row {
   box-shadow: var(--lift);
 }
 
-/* Black and white (§15): no category colours. */
+/* Black and white: no category colours. */
 .cat-icon {
   display: inline-grid;
   place-items: center;
@@ -1365,7 +1360,7 @@ div.settings-row {
 .filter-sheet__foot .btn--primary {
   flex: 2;
 }
-/* Settings footer (§15): clear and show, icons only. */
+/* Settings footer: clear and show, icons only. */
 .settings-foot {
   position: sticky;
   bottom: 0;
@@ -1418,7 +1413,7 @@ div.settings-row {
   width: 100%;
   aspect-ratio: 16 / 9;
   max-height: 36dvh;
-  /* No poster: a quiet dot grid and a soft floor glow, ink only (no category colours, §15). */
+  /* No poster: a quiet dot grid and a soft floor glow, ink only (no category colours). */
   background:
     radial-gradient(120% 90% at 50% 115%, var(--fill-strong), transparent 62%),
     radial-gradient(circle at 1px 1px, var(--hair-strong) 1px, transparent 1.5px) 0 0 / 18px 18px,
@@ -1470,7 +1465,7 @@ div.settings-row {
   background: var(--sunken);
   color: var(--quiet);
 }
-/* "On now nearby" under an ended event (M9 §4). */
+/* "On now nearby" under an ended event. */
 .nearby-now__list {
   list-style: none;
   margin: 0;
@@ -1509,7 +1504,7 @@ div.settings-row {
 .nearby-now__empty {
   color: var(--quiet);
 }
-/* One-time "Add to Home Screen" line on a shared card in iOS Safari (M9 §7). */
+/* One-time "Add to Home Screen" line on a shared card in iOS Safari. */
 .install-hint {
   display: flex;
   align-items: center;
@@ -1563,7 +1558,7 @@ div.settings-row {
 .detail .event-card__actions {
   margin-top: 18px;
 }
-/* "I'm going" (M9 §5): the toggle, the bucketed count, the sharer's link count. */
+/* "I'm going": the toggle, the bucketed count, the sharer's link count. */
 .going {
   margin-top: 10px;
 }
@@ -1613,7 +1608,7 @@ div.settings-row {
   background: var(--fill-strong);
   box-shadow: inset 0 0 0 0.5px var(--ink);
 }
-/* Share sheet (M9 §3): link, image, copy; the QR code big enough to scan from a screen. */
+/* Share sheet: link, image, copy; the QR code big enough to scan from a screen. */
 .share-sheet__actions {
   display: flex;
   flex-direction: column;
@@ -1836,18 +1831,6 @@ div.settings-row {
     transition: none !important;
   }
 }
-@media (max-width: 359px) {
-  .chip {
-    padding: 0 10px;
-  }
-  .chip--filters .chip__text {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-  }
-}
 @media (min-width: 720px) {
   .overlay {
     align-items: center;
@@ -1863,12 +1846,7 @@ div.settings-row {
   }
 }
 
-/* ---------- M4: screens, forms, moderation ---------- */
-button.brand {
-  border: 0;
-  font: inherit;
-  color: inherit;
-}
+/* ---------- Screens, forms, moderation ---------- */
 .icon-btn svg {
   display: block;
 }
@@ -2001,7 +1979,7 @@ button.brand {
   resize: vertical;
 }
 .field input:disabled {
-  /* The link field once autofill is used up (docs/design/add.html). */
+  /* The link field once autofill is used up. */
   opacity: 0.5;
 }
 .field input:focus-visible,
@@ -2037,6 +2015,7 @@ button.brand {
 }
 .segmented--2 {
   grid-template-columns: 1fr 1fr;
+  gap: 3px;
 }
 .swatch {
   display: inline-block;
@@ -2219,8 +2198,8 @@ label.choice input {
   width: 100%;
 }
 
-/* Usage strip on the add form (M8 §5, docs/design/add.html): ink on the line colour, never the
-   live colour; a used-up meter turns warm with its reset date. */
+/* Usage strip on the add form: ink on the line colour, never the live colour; a used-up meter
+   turns warm with its reset date. */
 .usage {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2444,12 +2423,6 @@ label.choice input {
 }
 
 /* ---------- Getting there ---------- */
-.btn--square {
-  flex: none;
-  width: 44px;
-  padding: 0;
-  color: var(--ink);
-}
 .event-card__actions--links {
   margin-top: 8px;
 }
@@ -2586,7 +2559,7 @@ label.choice input {
   bottom: calc(80px + var(--safe-bottom));
 }
 
-/* ---------- Account (M8 slice E, docs/design/account.html) ---------- */
+/* ---------- Account ---------- */
 .account-card {
   display: flex;
   flex-direction: column;
@@ -2672,15 +2645,12 @@ button.account-card__plan {
 .premium-mark {
   flex: none;
 }
-.segmented--2 {
-  gap: 3px;
-}
 .segmented .premium-mark {
   display: inline-block;
   margin-left: 6px;
   vertical-align: -1px;
 }
-/* Staff only (M8 §2): the shield row at the end of About. */
+/* Staff only: the shield row at the end of About. */
 .mod-row {
   display: inline-flex;
   align-items: center;
@@ -2794,7 +2764,7 @@ button.account-card__plan {
   margin: 0 0 6px;
 }
 
-/* ---------- Admin (M8 slice F, docs/design/admin.html) ---------- */
+/* ---------- Admin ---------- */
 .admin-tabs {
   gap: 3px;
   margin: 0 0 12px;
@@ -2904,14 +2874,7 @@ button.account-card__plan {
   color: var(--ink);
 }
 
-/* Sources (M12 slice C2): four staff tabs, the three lists, a candidate's site and samples */
-.segmented--4 {
-  grid-template-columns: repeat(4, 1fr);
-}
-.admin-tabs.segmented--4 button {
-  gap: 4px;
-  font-size: 13.5px;
-}
+/* Sources: the three lists, a candidate's site and samples */
 .admin-sublists {
   gap: 3px;
   margin: 0 0 4px;
@@ -3064,7 +3027,7 @@ button.account-card__plan {
   font-size: 13px;
 }
 
-/* Share into Happow (M12 slice D): the line on an add form opened by a share */
+/* Share into Happow: the line on an add form opened by a share */
 .add-shared {
   display: flex;
   align-items: center;
@@ -3074,9 +3037,8 @@ button.account-card__plan {
   color: var(--quiet);
 }
 
-/* ---------- Contributor (M12 slice F): built from the account card and usage styles, no mockup
-   (owner, 2026-10-28); the design pass comes after M12. Ink and line colours, never the live
-   colour: these are thanks, not alerts. ---------- */
+/* ---------- Contributor: built from the account card and usage styles. Ink and line colours,
+   never the live colour: these are thanks, not alerts. ---------- */
 .contrib {
   display: grid;
   gap: 10px;
@@ -3220,8 +3182,7 @@ button.account-card__plan {
   margin-top: 10px;
 }
 
-/* Poster photo (M12 slice G): a label wrapping the hidden file input, styled as the form's
-   secondary button; no mockup (owner, 2026-10-28). */
+/* Poster photo: a label wrapping the hidden file input, styled as the form's secondary button. */
 .autofill__photo {
   margin: 0 0 12px;
   cursor: pointer;
@@ -3236,8 +3197,7 @@ button.account-card__plan {
   outline-offset: 2px;
 }
 
-/* Quick add and add again (M12 slice H): built from the usage card and add-form styles, no mockup
-   (owner, 2026-10-28). */
+/* Quick add and add again: built from the usage card and add-form styles. */
 .quick {
   display: grid;
   gap: 8px;
@@ -3283,7 +3243,7 @@ button.account-card__plan {
   font-size: 13px;
 }
 
-/* Weekly repeats (M12 slice I): the weekday buttons reuse the category chips' look. */
+/* Weekly repeats: the weekday buttons reuse the category chips' look. */
 .weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -3306,7 +3266,7 @@ button.account-card__plan {
   color: var(--paper);
 }
 
-/* Calendar feeds on the account card (M12 slice L): the contributor section's list and fields. */
+/* Calendar feeds on the account card: the contributor section's list and fields. */
 .feeds__add {
   margin-top: 8px;
 }
@@ -3314,7 +3274,7 @@ button.account-card__plan {
   color: var(--warn-ink);
 }
 
-/* Places first and thanks (M12 slice M): quiet ink, never the live colour (thanks, not alerts). */
+/* Places first and thanks: quiet ink, never the live colour (thanks, not alerts). */
 .impact__stat:last-child:nth-child(odd) {
   grid-column: 1 / -1;
 }
@@ -3331,7 +3291,7 @@ button.account-card__plan {
   color: var(--ink);
 }
 
-/* District goals and seasons (M12 slice N): the goal is a quiet guidance line; season chips follow
+/* District goals and seasons: the goal is a quiet guidance line; season chips follow
    the filter chips, ink not the live colour. */
 .guide__goal .inline-link {
   font-weight: 600;
@@ -3358,7 +3318,7 @@ button.account-card__plan {
   color: var(--paper);
 }
 
-/* Coverage (M12 slice O): the admin tab, a fifth tab, and the measures as a small table that
+/* Coverage: the admin tab, a fifth tab, and the measures as a small table that
    scrolls on its own at 380 px. */
 .segmented--5 {
   grid-template-columns: repeat(5, 1fr);
@@ -3402,7 +3362,7 @@ button.account-card__plan {
   width: 100%;
 }
 
-/* M10 plan ahead: the agenda (§1) and the evening queue (§3). */
+/* Plan ahead: the agenda and the evening queue. */
 .row-wrap {
   display: flex;
   align-items: center;
@@ -3550,7 +3510,7 @@ button.account-card__plan {
   flex-wrap: wrap;
 }
 
-/* M10 reminders (§5): the bell's sheet. */
+/* Reminders: the bell's sheet. */
 .reminder {
   display: flex;
   flex-direction: column;
@@ -3593,7 +3553,7 @@ button.account-card__plan {
   flex: none;
 }
 
-/* M11: private events, friends, organisers (built from the card's existing pieces; no mockup). */
+/* Private events, friends, organisers (built from the card's existing pieces). */
 .private-panel,
 .organiser,
 .friends-line {
@@ -3709,8 +3669,8 @@ button.account-card__plan {
   font-size: 13px;
 }
 
-/* M7 search and followed artists: the field at the top of the list (§2), performer chips with
-   ♡ on the card (§4), the ★ on followed artists' events, and the Followed screen. */
+/* Search and followed artists: the field at the top of the list, performer chips with ♡ on the
+   card, the ★ on followed artists' events, and the Followed screen. */
 .search {
   position: sticky;
   top: -10px;
@@ -3858,7 +3818,7 @@ a.row {
   flex: none;
 }
 
-/* M13 legal texts: links to the full pages under the summaries. */
+/* Legal texts: links to the full pages under the summaries. */
 .legal-links {
   display: flex;
   flex-wrap: wrap;

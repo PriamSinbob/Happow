@@ -1,72 +1,19 @@
-import { describe, expect, it, vi } from 'vitest';
-import { loadConfig } from '@happow/core';
+import { describe, expect, it } from 'vitest';
 import { createApi } from '../src';
+import { config, env, req, submitRpc, supabase, type Rpc } from './helpers';
 
-/** M10 slice B: saved events synced across an account's devices. */
+/** Saved events synced across an account's devices. */
 
-const SB = 'https://proj.supabase.co';
-const env = { SUPABASE_URL: SB, SUPABASE_SERVICE_ROLE_KEY: 'service-key', SUBMITTER_SALT: 'salt' };
 const now = () => new Date('2026-10-29T22:30:00Z');
-const config = loadConfig();
 
-type Rpc = (args: Record<string, unknown>) => { status?: number; body: unknown };
 function backend(rpc: Record<string, Rpc>, cfg = config) {
-  const calls: { name: string; args: Record<string, unknown> }[] = [];
-  const users: Record<string, { id: string; email: string }> = {
-    'user-token': { id: 'u1', email: 'ala@example.org' },
-    'mod-token': { id: 'u2', email: 'mod@example.org' },
-    'admin-token': { id: 'u3', email: 'owner@example.org' },
-  };
-  const all: Record<string, Rpc> = {
-    rate_limit_hit: () => ({ body: true }),
-    staff_role: (a) => ({
-      body:
-        { 'mod@example.org': 'moderator', 'owner@example.org': 'admin' }[a.p_email as string] ??
-        null,
-    }),
-    grants_active: () => ({ body: [] }),
-    usage_get: () => ({ body: { events: 0, autofills: 0 } }),
-    contributor_trusted: () => ({ body: false }),
-    duplicate_candidates: () => ({ body: { title: 'Pchli targ na Ruskiej', others: [] } }),
-    contribution_award: () => ({ body: { kind: 'verified', days: 3, startsAt: null } }),
-    ...rpc,
-  };
-  const f = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
-    const url = String(input);
-    if (url.startsWith(`${SB}/rest/v1/rpc/`)) {
-      const name = url.slice(`${SB}/rest/v1/rpc/`.length);
-      const args = JSON.parse(String(init.body ?? '{}'));
-      calls.push({ name, args });
-      const h = all[name];
-      if (!h) return new Response('{}', { status: 404 });
-      const { status = 200, body } = h(args);
-      return new Response(JSON.stringify(body), { status });
-    }
-    if (url === `${SB}/auth/v1/user`) {
-      const token = new Headers(init.headers).get('authorization')?.replace('Bearer ', '') ?? '';
-      const u = users[token];
-      return u ? Response.json(u) : new Response('{}', { status: 401 });
-    }
-    return new Response('not found', { status: 404 });
-  });
-  const api = createApi(env, { config: cfg, fetch: f as typeof fetch, now, extractor: null });
-  const call = (name: string) => calls.filter((c) => c.name === name);
-  return { api, call };
+  const sb = supabase({ ...submitRpc, ...rpc });
+  return { ...sb, api: createApi(env, { config: cfg, fetch: sb.fetch, now, extractor: null }) };
 }
-const req = (path: string, init: { token?: string; body?: unknown; method?: string } = {}) =>
-  new Request(`https://happow.example/api/${path}`, {
-    method: init.method ?? (init.body === undefined ? 'GET' : 'POST'),
-    headers: {
-      'content-type': 'application/json',
-      'cf-connecting-ip': '203.0.113.7',
-      ...(init.token && { authorization: `Bearer ${init.token}` }),
-    },
-    ...(init.body !== undefined && { body: JSON.stringify(init.body) }),
-  });
 
 const merged = [{ id: 'e1', on: true, going: true, at: 1_793_000_000_000 }];
 
-describe('POST /api/me/saved (M10 §2)', () => {
+describe('POST /api/me/saved', () => {
   it("merges the device's list into the account's and returns the result", async () => {
     const b = backend({ saved_sync: () => ({ body: merged }) });
     const items = [

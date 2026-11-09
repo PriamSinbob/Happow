@@ -44,9 +44,8 @@ function CategoryChip({ category: c, filters }: { category: Category; filters: F
 }
 
 /**
- * Settings (§5, §15; `docs/design/settings-rows.html`): the category chips, then wordless rows in
- * black and white: price and family toggles, language, About, and the footer. Adding lives on the
- * map's top row. Filters apply live and the count updates behind the sheet.
+ * Settings: the category chips, then wordless rows: price and family toggles, language, About,
+ * and the footer. Filters apply live and the count updates behind the sheet.
  */
 export function SettingsSheet({ filters, count, loading, onClose, onAbout }: Props) {
   const { t, lang, setLang } = useI18n();

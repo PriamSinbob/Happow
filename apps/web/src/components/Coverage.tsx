@@ -9,7 +9,7 @@ import { useI18n } from '../i18n';
 const TOP = 3;
 
 /**
- * The admin's coverage view (M12 §3, slice O): the five metrics now and week by week, then every
+ * The admin's coverage view: the five metrics now and week by week, then every
  * district with its events today and this week, the emptiest first, so the next source is chosen
  * by data. Picking a category counts only its events.
  */

@@ -4,7 +4,7 @@ import { accountFeedsJob, type DueFeed, type FeedStore } from '../src/feeds';
 import type { EventStore } from '../src/store';
 import { config, fixture, noSleep, region, source } from './helpers';
 
-/** M12 slice L: an account's calendar feed read into its submissions (recorded iCal feed). */
+/** An account's calendar feed read into its submissions (recorded iCal feed). */
 
 const now = new Date('2026-10-29T12:00:00Z');
 const FEED: DueFeed = {
@@ -66,7 +66,7 @@ const run = (store: EventStore, fetch: typeof globalThis.fetch, g: Geocoder | nu
     geocoder: g,
   });
 
-describe('account feeds job (M12 §4.6)', () => {
+describe('account feeds job', () => {
   it('imports the feed’s upcoming events in person, each once, as the account’s submissions', async () => {
     const s = fakeStore();
     const stats = await run(s.store, web(fixture('venues/wroclaw-club.ics')));
@@ -92,7 +92,7 @@ describe('account feeds job (M12 §4.6)', () => {
     expect(stats).toMatchObject({ feeds: 1, imported: s.imported.length, failed: 0 });
     expect(s.records).toEqual([{ feed: 7, error: null, events: s.imported.length }]);
 
-    // The next run finds them all known, before asking the geocoder about any (M13 §6).
+    // The next run finds them all known, before asking the geocoder about any.
     const again = fakeStore({ known: s.known });
     const asked = vi.fn(geocoder.geocode);
     const second = await run(again.store, web(fixture('venues/wroclaw-club.ics')), {
@@ -127,7 +127,7 @@ describe('account feeds job (M12 §4.6)', () => {
     expect(s.imported).toEqual([]);
   });
 
-  it('checks the address again on every fetch, redirects included, and caps the size (M13 §6)', async () => {
+  it('checks the address again on every fetch, redirects included, and caps the size', async () => {
     const privateFeed = { ...FEED, id: 9, url: 'http://192.168.1.10/cal.ics' };
     const s = fakeStore({ feeds: [privateFeed] });
     const f = web(fixture('venues/wroclaw-club.ics'));

@@ -114,7 +114,7 @@ describe('merge and decide', () => {
     expect(rank('unknown')).toBeLessThan(rank('seed'));
   });
 
-  it('takes the union of both listings’ performers, an external id winning (M7 §1)', () => {
+  it('takes the union of both listings’ performers, an external id winning', () => {
     const merged = mergeEvents(
       ev({ title: 'A', performers: [{ name: 'Dawid Podsiadło' }, { name: 'Support' }] }),
       ev({

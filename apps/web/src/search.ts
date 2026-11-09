@@ -3,7 +3,7 @@ import type { LatLng } from '@happow/core';
 import { track } from './analytics';
 import { config, region } from './config';
 
-/** A search hit (GET /api/search, M7 §2). */
+/** A search hit (GET /api/search). */
 export interface SearchHit {
   id: string;
   title: string;
@@ -31,7 +31,7 @@ const { search: cfg } = config.app;
 
 /**
  * Debounced search (300 ms, at least 2 characters); a newer query cancels the one in flight.
- * Plausible counts a "Search" event without the text (§2).
+ * Plausible counts a "Search" event without the text.
  */
 export function useSearch(q: string, center: LatLng | null): SearchState {
   const [s, setS] = useState<SearchState>({ state: 'idle' });

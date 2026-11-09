@@ -96,7 +96,7 @@ export const crawler: SourceAdapter = {
       }
     };
 
-    // Politeness (M13 §3): validators and content hashes per page, TDM reservations per origin.
+    // Politeness: validators and content hashes per page, TDM reservations per origin.
     const pages = services.pages;
     const polite = services.politeness;
     const tdmRules = new Map<string, Promise<TdmRule[]>>();

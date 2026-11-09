@@ -45,20 +45,20 @@ interface Props {
   bottomInset: number;
   /** Incremented by the locate button: fit the view to the reach again even after panning. */
   recenter: number;
-  /** A search result picked from the list (M7 §2): the map flies there once per `seq`. */
+  /** A search result picked from the list: the map flies there once per `seq`. */
   flyTo?: { point: LatLng; seq: number } | null;
   hidden?: boolean;
   hotspot: Guidance['hotspot'];
   onHotspot: () => void;
   /** While the reach rail is dragged: the radius under the finger, so the map zooms with it. */
   previewRadiusM: number | null;
-  /** Pinched out well past the rail's last stop: city mode (§5). */
+  /** Pinched out well past the rail's last stop: city mode. */
   onCity: () => void;
   /** The reach is pinned to a point on the map ("plan from here"), not following the user. */
   pinned: boolean;
   /** Long-press on the map: plan from that spot. */
   onSetPoint: (point: LatLng) => void;
-  /** The local atlas (§6): lit cells, null until loaded (the veil then lights the reach only). */
+  /** The local atlas: lit cells, null until loaded (the veil then lights the reach only). */
   lit: readonly LitCell[] | null;
   cellRadiusM: number;
 }
@@ -111,7 +111,7 @@ const CLUSTER_PX = 48;
  * Groups events by exact spot, then merges spots falling into the same CLUSTER_PX grid square of
  * the Web Mercator world at this zoom. A grid (not distance) keeps groups stable while panning.
  */
-export function groupMarkers(events: NearbyEvent[], zoom: number): MarkerItem[] {
+function groupMarkers(events: NearbyEvent[], zoom: number): MarkerItem[] {
   const places = new Map<string, MarkerItem>();
   for (const ev of events) {
     const key = `p:${ev.point.lat.toFixed(5)},${ev.point.lng.toFixed(5)}`;
@@ -175,7 +175,7 @@ function fitPadding(bottomInset: number) {
   return { top: TOP_INSET, bottom: bottomInset + 16, left: 20, right: RIGHT_INSET };
 }
 
-/** Off-screen events as dots on the edge of the visible map, live ones in the live hue (§5). */
+/** Off-screen events as dots on the edge of the visible map, live ones in the live hue. */
 function computeEdgeDots(m: maplibregl.Map, p: Props): EdgeDot[] {
   const el = m.getContainer();
   const rect = {
@@ -221,7 +221,7 @@ export function MapView(props: Props) {
   const [edgeDots, setEdgeDots] = useState<EdgeDot[]>([]);
   const latest = useRef(props);
   latest.current = props;
-  // The veil (§6): one small canvas, redrawn only when what it shows changes.
+  // The veil: one small canvas, redrawn only when what it shows changes.
   const veilCanvas = useRef<HTMLCanvasElement | null>(null);
   veilCanvas.current ??= Object.assign(document.createElement('canvas'), {
     width: atlas.canvasPx,
@@ -281,7 +281,7 @@ export function MapView(props: Props) {
     });
     m.on('style.load', () => {
       const p = latest.current;
-      // Under the basemap labels and below the pins. Its lit disc shows the reach (M8 §1).
+      // Under the basemap labels and below the pins. Its lit disc shows the reach.
       addVeil(m, veilCanvas.current!, boxRef.current);
       paintVeil(m, themeRef.current.tokens);
       addReachCircle(m, p.center, p.radiusM);
@@ -304,7 +304,7 @@ export function MapView(props: Props) {
     m.on('dragstart', markMoved);
     m.on('zoomstart', markMoved);
 
-    // Pinching out far past the rail's last stop asks for the whole city (§5).
+    // Pinching out far past the rail's last stop asks for the whole city.
     m.on('zoomend', (e) => {
       const p = latest.current;
       if (!e.originalEvent || p.radiusM > RAIL_MAX) return;
@@ -317,7 +317,7 @@ export function MapView(props: Props) {
       if (half > RAIL_MAX * CITY_FACTOR) p.onCity();
     });
 
-    // Long-press = plan from here (§5). A move, a second finger or a drag cancels it.
+    // Long-press = plan from here. A move, a second finger or a drag cancels it.
     let press: { timer: number; x: number; y: number } | null = null;
     let pressed = false;
     const cancel = () => {
@@ -414,7 +414,7 @@ export function MapView(props: Props) {
       m.setPaintProperty(DRAG_LAYER, 'line-color', dragRingColour(themeName));
   }, [themeName, styleReady]);
 
-  // Rail drag: the map zooms with the finger (§5). The dashed ring (vector map) or the circle
+  // Rail drag: the map zooms with the finger. The dashed ring (vector map) or the circle
   // (raster fallback) follows it. No animation: this runs every frame of the drag.
   useEffect(() => {
     const m = map.current;
@@ -523,7 +523,7 @@ export function MapView(props: Props) {
     };
   }, []);
 
-  // Pins: one GeoJSON source drawn by symbol layers (§4.3). Places that would overlap at this
+  // Pins: one GeoJSON source drawn by symbol layers. Places that would overlap at this
   // zoom merge into a count bubble that zooms in; rebuilt on data, selection, time or zoom.
   useEffect(() => {
     const groups = groupMarkers(props.events, zoom);

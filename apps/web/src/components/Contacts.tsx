@@ -22,7 +22,7 @@ import { shareLink } from './PrivatePanel';
 import { Sheet } from './Sheet';
 import { SignInSheet } from './SignIn';
 
-/** "How your friends see you": the display name contacts and invitations need (M11 §2). */
+/** "How your friends see you": the display name contacts and invitations need. */
 export function NameSheet({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const { t, lang } = useI18n();
   const account = useAccount();
@@ -81,7 +81,7 @@ export function NameSheet({ onClose, onSaved }: { onClose: () => void; onSaved: 
 }
 
 /**
- * Contacts on the account card (M11 §2, §5): the friends' switch, your contact link to share,
+ * Contacts on the account card: the friends' switch, your contact link to share,
  * the people you're connected with, and groups. No address book, no search for people.
  */
 export function ContactsSection() {
@@ -416,7 +416,7 @@ function GroupSheet({
 }
 
 /**
- * Someone's contact link (/c/<token>, M11 §2): whose it is, then "Add" after signing in. Both of
+ * Someone's contact link (/c/<token>): whose it is, then "Add" after signing in. Both of
  * you become contacts; nothing else is shared.
  */
 export function ContactLinkSheet({ token, onClose }: { token: string; onClose: () => void }) {

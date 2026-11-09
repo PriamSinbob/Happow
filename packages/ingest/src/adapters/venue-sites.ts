@@ -14,7 +14,7 @@ import { inRegion, sha256 } from './extraction.js';
 const TRIBE_MAX_PAGES = 4;
 
 /**
- * Sites an admin accepted from the website check (M12 §2.2): iCal feeds, The Events Calendar's
+ * Sites an admin accepted from the website check: iCal feeds, The Events Calendar's
  * REST API and pages with Event JSON-LD. The list comes from `source_candidates`, not config;
  * the source itself (trust, schedule, terms) is in config/sources.json. Items reuse the crawler's
  * payload and parse step. An event with no place of its own is at the site's venue.

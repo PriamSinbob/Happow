@@ -17,7 +17,7 @@ import { storage } from './storage';
 
 const SETTINGS: ThemeSetting[] = ['auto', 'day', 'night'];
 
-/** The presets these entitlements allow (M8 §3: Tally red with an account, Magenta premium). */
+/** The presets these entitlements allow (Tally red with an account, Magenta premium). */
 export const selectablePresets = (ent: Entitlements) => presetsFor(ent, config.theme.presets);
 
 function savedSetting(): ThemeSetting {
@@ -27,7 +27,7 @@ function savedSetting(): ThemeSetting {
 
 /**
  * The chosen preset if these entitlements allow it, else the default (Violet). The choice stays
- * saved on the device and comes back with the entitlement (M8 §3).
+ * saved on the device and comes back with the entitlement.
  */
 function allowedPreset(id: string | null, ent: Entitlements): ThemePreset {
   const p = presetById(config.theme, id);

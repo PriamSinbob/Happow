@@ -13,7 +13,7 @@ export function useEventDetail(
   id: string | null,
   loaded: NearbyEvent[],
   from: LatLng,
-  /** Bumped after an edit (M11 §8), to read the event again. */
+  /** Bumped after an edit, to read the event again. */
   version = 0,
 ): { ev: NearbyEvent | null; loading: boolean } {
   const inList = id ? (loaded.find((e) => e.id === id) ?? null) : null;

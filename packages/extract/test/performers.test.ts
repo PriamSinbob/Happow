@@ -11,7 +11,7 @@ const names = (node: object) =>
   eventsFromJsonLd([{ '@type': 'MusicEvent', ...base, ...node }], 'https://example.pl/')[0]!
     .performers;
 
-describe('schema.org performer (M7 §1)', () => {
+describe('schema.org performer', () => {
   it('reads a Person, a PerformingGroup and a MusicGroup', () => {
     expect(names({ performer: { '@type': 'Person', name: 'Dawid Podsiadło' } })).toEqual([
       'Dawid Podsiadło',

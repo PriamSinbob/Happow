@@ -14,7 +14,7 @@ export interface ExtractInput {
   categories: { id: string; label: string }[];
 }
 
-/** A photo of a poster or flyer (M12 §4.2), already shrunk on the device. */
+/** A photo of a poster or flyer, already shrunk on the device. */
 export interface ImageInput {
   /** Base64, no data: prefix. */
   data: string;

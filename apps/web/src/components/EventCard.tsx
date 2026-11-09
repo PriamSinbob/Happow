@@ -27,7 +27,7 @@ function ruleText(
 
 type RuleFields = Pick<NearbyEvent, 'rules' | 'ageMin' | 'family'> & {
   categoryIds?: string[];
-  /** Family mode let it through without age data (§4.4). */
+  /** Family mode let it through without age data. */
   familyUnconfirmed?: boolean;
 };
 
@@ -91,7 +91,7 @@ export function EventCard({
 }: {
   ev: NearbyEvent;
   now: Date;
-  /** A followed artist performs (M7 §4): the ★. */
+  /** A followed artist performs: the ★. */
   followed?: boolean;
   onClose: () => void;
   onDetails: () => void;

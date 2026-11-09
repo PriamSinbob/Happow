@@ -1,16 +1,17 @@
 import { attendanceBucket, type HappowConfig } from '@happow/core';
 import { z } from 'zod';
 import { ApiError, body, json, sha256 } from './http.js';
+import { newToken } from './private.js';
 import type { Supabase } from './supabase.js';
 
 /**
- * "I'm going", co-presence and share links on the server (M9 §5, §6). Anonymous: a device is its
+ * "I'm going", co-presence and share links on the server. Anonymous: a device is its
  * salted hash, as for submissions. Counts leave as buckets from the threshold up, and not at all
  * for categories with publicAttendance: false. A sharer's link count has no threshold (it's their
  * own link) but follows the same category rule.
  */
 
-export const SIGNALS = ['going', 'looking', 'onway', 'here'] as const;
+const SIGNALS = ['going', 'looking', 'onway', 'here'] as const;
 export type Signal = (typeof SIGNALS)[number];
 
 export interface AttendanceDeps {
@@ -18,7 +19,7 @@ export interface AttendanceDeps {
   need: () => { db: Supabase; salt: string };
   now: () => Date;
   limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
-  /** The signed-in account, if any: kept with the row for M11's friends' view, never shown. */
+  /** The signed-in account, if any: kept with the row for the friends' view, never shown. */
   userOf: (req: Request) => Promise<{ id: string } | null>;
 }
 
@@ -35,7 +36,7 @@ interface Raw {
   counts: Partial<Record<Signal, number>>;
   mine: Signal[];
   fromMyLinks: number;
-  /** A private event (M11): no public counts. */
+  /** A private event: no public counts. */
   private?: boolean | null;
 }
 
@@ -49,18 +50,9 @@ const setSchema = z.object({
   on: z.boolean(),
   /** The share link this device arrived with. */
   token: z.string().min(8).max(64).nullable().optional(),
-  /** Seconds a short-lived signal lasts ("looking", slice F). */
+  /** Seconds a short-lived signal lasts ("looking"). */
   forSeconds: z.number().int().positive().max(86_400).optional(),
 });
-
-/** 16 random bytes, URL-safe: a share link's token. */
-function newToken(): string {
-  const b = crypto.getRandomValues(new Uint8Array(16));
-  return btoa(String.fromCharCode(...b))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
 
 export function attendanceRoutes({ config, need, now, limit, userOf }: AttendanceDeps) {
   const cfg = config.app.attendance;
@@ -68,7 +60,7 @@ export function attendanceRoutes({ config, need, now, limit, userOf }: Attendanc
 
   /** Raw database counts to what the card may show. */
   function view(raw: Raw): AttendanceView {
-    // Private events (M11 §4) never show public counts, whatever the category.
+    // Private events never show public counts, whatever the category.
     const off = raw.private === true || (raw.categories ?? []).some((c) => hidden.has(c));
     const counts = Object.fromEntries(
       SIGNALS.map((s) => [s, off ? null : attendanceBucket(raw.counts[s] ?? 0, cfg)]),
@@ -116,7 +108,7 @@ export function attendanceRoutes({ config, need, now, limit, userOf }: Attendanc
     return json(view(raw));
   }
 
-  /** POST /api/share: a new share link token for this device and event (§5). */
+  /** POST /api/share: a new share link token for this device and event. */
   async function share(req: Request): Promise<Response> {
     const { db, salt } = need();
     const input = await body(req, viewSchema);

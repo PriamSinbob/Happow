@@ -6,7 +6,7 @@ import { loadMyClaims, loadMyEvents, type Claim, type MyEvent } from '../organis
 import { Icon } from './Icons';
 
 /**
- * "Your events" on the account card (M11 §8): the events you added, organise or created privately,
+ * "Your events" on the account card: the events you added, organise or created privately,
  * in one list, with what's waiting (guests, reports, edits under review); and your claims. Tapping
  * one opens its card, where editing, posts and guests live.
  */

@@ -1,7 +1,7 @@
 import { deviceId } from './api';
 
 /**
- * "Your impact" counts (M12 §5.1): opens, in-app routes and arrivals per event, sent in batches
+ * "Your impact" counts: opens, in-app routes and arrivals per event, sent in batches
  * to /api/counts. Totals only: the server keeps no device or user with them. Each event counts
  * once per kind per page session, so reopening a card doesn't inflate it. Failures are dropped:
  * these are a thank-you to contributors, not data the app depends on.

@@ -22,7 +22,7 @@ const { atlas } = config.app;
 type H3 = typeof import('@happow/core/h3');
 let h3Loading: Promise<H3 | null> | null = null;
 /** h3-js (~93 KB gzipped) loads after the first paint, so the cold open never waits for it. */
-export const loadH3 = () => (h3Loading ??= import('@happow/core/h3').catch(() => null));
+const loadH3 = () => (h3Loading ??= import('@happow/core/h3').catch(() => null));
 
 export interface Atlas {
   /** Lit cells with their centres; null until h3-js and the store are loaded. */
@@ -52,7 +52,7 @@ function readText(file: Blob): Promise<string> {
 }
 
 /**
- * The local atlas (§6): records the cells the user opens the app in (once per cell per session,
+ * The local atlas: records the cells the user opens the app in (once per cell per session,
  * from precise fixes only) and the cells Going there arrives in. All on the device; nothing is
  * sent anywhere.
  */

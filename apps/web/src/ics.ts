@@ -58,8 +58,8 @@ function vevent(ev: HappowEvent, url: string, now: Date): string[] {
 }
 
 /**
- * An iCalendar file for "Add to calendar": one event, or a day of the agenda (M10 §1). `urlOf`
- * gives each event's link.
+ * An iCalendar file for "Add to calendar": one event, or a day of the agenda. `urlOf` gives each
+ * event's link.
  */
 export function eventsToIcs(
   events: readonly HappowEvent[],
@@ -98,7 +98,7 @@ export function downloadIcs(ev: HappowEvent, url: string): void {
   download(eventToIcs(ev, url), ev.title);
 }
 
-/** One file with a day's events (M10 §1). */
+/** One file with a day's events. */
 export function downloadDayIcs(
   events: readonly HappowEvent[],
   urlOf: (ev: HappowEvent) => string,

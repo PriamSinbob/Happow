@@ -3,7 +3,7 @@ import { api } from './api';
 import { accessToken } from './auth';
 import { region } from './config';
 
-/** The admin's endpoints (M8 §2 "How codes reach people", §4 "Grants"): admin role only. */
+/** The admin's endpoints (how codes reach people, grants): admin role only. */
 
 /** GET /api/admin/code-requests, oldest first. */
 export interface CodeRequest {
@@ -62,7 +62,7 @@ export const addGrant = (grant: { email: string; endsAt: string | null; note?: s
 export const endGrant = (id: string) =>
   call<void>(`grants/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
-/** Trust back after a rejection (M12 §5.3); 404 when no account has this email. */
+/** Trust back after a rejection; 404 when no account has this email. */
 export const restoreTrust = (email: string) => call<{ ok: true }>('trust', { body: { email } });
 
 /**
@@ -78,7 +78,7 @@ export const activeFirst = (grants: readonly Grant[]): Grant[] => [
   ...grants.filter((g) => !g.active),
 ];
 
-/** GET /api/admin/sources: the website check's candidates, oldest find first (M12 §2.2). */
+/** GET /api/admin/sources: the website check's candidates, oldest find first. */
 export interface SourceCandidate {
   id: number;
   regionId: string;
@@ -100,7 +100,7 @@ export interface SourceCandidate {
 
 export type SourceAction = 'accept' | 'reject' | 'stop' | 'resume' | 'restore';
 
-/** The five metrics of M12 §1, as m12_metrics returns them. */
+/** The five metrics, as m12_metrics returns them. */
 export interface Metrics {
   eventsToday: number;
   events7d: number;
@@ -111,7 +111,7 @@ export interface Metrics {
   accountsAddedTotal: number;
 }
 
-/** GET /api/admin/coverage (M12 §3): districts emptiest first, the metrics now and by week. */
+/** GET /api/admin/coverage: districts emptiest first, the metrics now and by week. */
 export interface Coverage {
   now: Metrics;
   districts: {

@@ -13,9 +13,8 @@ import { Sheet } from './Sheet';
 const { leads, dayBeforeAt } = config.app.reminders;
 
 /**
- * The bell's choices (M10 §5): how long before the start, or the evening before. Push only, no
- * email (owner, 2026-11-04): where push can't work, the sheet says why and offers the phone's
- * calendar instead.
+ * The bell's choices: how long before the start, or the evening before. Push only; where push
+ * can't work, the sheet says why and offers the phone's calendar instead.
  */
 export function ReminderSheet({ ev, onClose }: { ev: NearbyEvent; onClose: () => void }) {
   const { t, lang } = useI18n();

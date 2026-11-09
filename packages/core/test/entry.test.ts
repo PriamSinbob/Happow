@@ -6,7 +6,6 @@ import {
   familyMatch,
   isLate,
   loadConfig,
-  minutesAfterStart,
   type HappowEvent,
 } from '../src';
 
@@ -93,8 +92,6 @@ describe('arrival and late', () => {
     const e = ev();
     expect(isLate(e, at('2026-10-24T17:05:00Z'), categories, app)).toBe(false);
     expect(isLate(e, at('2026-10-24T17:05:01Z'), categories, app)).toBe(true);
-    expect(minutesAfterStart(e, at('2026-10-24T17:07:30Z'))).toBe(8);
-    expect(minutesAfterStart(e, at('2026-10-24T16:50:00Z'))).toBe(0);
   });
   it('open entry is never late while open, until 5 min before the end', () => {
     const e = ev({ categoryIds: ['market'] });

@@ -15,7 +15,7 @@ export interface ServicePayload {
 const num = (v: unknown, fallback: number) => (typeof v === 'number' ? v : fallback);
 
 /**
- * Regular services at places of worship (M12 §2.3), from the OSM venues slice C loads: each
+ * Regular services at places of worship, from the OSM venues the venue jobs load: each
  * place's `service_times` becomes one event per service for the next `options.horizonDays` (14).
  * They are never merged into one card (time-first); a report from the card removes one. The
  * title, the confidence and the category come from the source's config.

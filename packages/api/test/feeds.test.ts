@@ -1,75 +1,19 @@
-import { describe, expect, it, vi } from 'vitest';
-import { loadConfig } from '@happow/core';
+import { describe, expect, it } from 'vitest';
 import { createApi } from '../src';
+import { config, env, fail, req, submitRpc, supabase, type Rpc } from './helpers';
 
-/** M12 slice L: calendar feeds an account imports its events from. */
+/** Calendar feeds an account imports its events from. */
 
-const SB = 'https://proj.supabase.co';
-const env = { SUPABASE_URL: SB, SUPABASE_SERVICE_ROLE_KEY: 'service-key', SUBMITTER_SALT: 'salt' };
 const now = () => new Date('2026-10-29T22:30:00Z');
-const config = loadConfig();
 
-type Rpc = (args: Record<string, unknown>) => { status?: number; body: unknown };
 function backend(rpc: Record<string, Rpc>) {
-  const calls: { name: string; args: Record<string, unknown> }[] = [];
-  const users: Record<string, { id: string; email: string }> = {
-    'user-token': { id: 'u1', email: 'ala@example.org' },
-    'mod-token': { id: 'u2', email: 'mod@example.org' },
-    'admin-token': { id: 'u3', email: 'owner@example.org' },
-  };
-  const all: Record<string, Rpc> = {
-    rate_limit_hit: () => ({ body: true }),
-    staff_role: (a) => ({
-      body:
-        { 'mod@example.org': 'moderator', 'owner@example.org': 'admin' }[a.p_email as string] ??
-        null,
-    }),
-    grants_active: () => ({ body: [] }),
-    usage_get: () => ({ body: { events: 0, autofills: 0 } }),
-    contributor_trusted: () => ({ body: false }),
-    duplicate_candidates: () => ({ body: { title: 'Pchli targ na Ruskiej', others: [] } }),
-    contribution_award: () => ({ body: { kind: 'verified', days: 3, startsAt: null } }),
-    ...rpc,
-  };
-  const f = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
-    const url = String(input);
-    if (url.startsWith(`${SB}/rest/v1/rpc/`)) {
-      const name = url.slice(`${SB}/rest/v1/rpc/`.length);
-      const args = JSON.parse(String(init.body ?? '{}'));
-      calls.push({ name, args });
-      const h = all[name];
-      if (!h) return new Response('{}', { status: 404 });
-      const { status = 200, body } = h(args);
-      return new Response(JSON.stringify(body), { status });
-    }
-    if (url === `${SB}/auth/v1/user`) {
-      const token = new Headers(init.headers).get('authorization')?.replace('Bearer ', '') ?? '';
-      const u = users[token];
-      return u ? Response.json(u) : new Response('{}', { status: 401 });
-    }
-    return new Response('not found', { status: 404 });
-  });
-  const api = createApi(env, { config, fetch: f as typeof fetch, now, extractor: null });
-  const call = (name: string) => calls.filter((c) => c.name === name);
-  return { api, call };
+  const sb = supabase({ ...submitRpc, ...rpc });
+  return { ...sb, api: createApi(env, { config, fetch: sb.fetch, now, extractor: null }) };
 }
-const req = (path: string, init: { token?: string; body?: unknown; method?: string } = {}) =>
-  new Request(`https://happow.example/api/${path}`, {
-    method: init.method ?? (init.body === undefined ? 'GET' : 'POST'),
-    headers: {
-      'content-type': 'application/json',
-      'cf-connecting-ip': '203.0.113.7',
-      ...(init.token && { authorization: `Bearer ${init.token}` }),
-    },
-    ...(init.body !== undefined && { body: JSON.stringify(init.body) }),
-  });
 
 const feed = { id: 1, url: 'https://kalendarz.example/moje.ics', status: 'active' };
-const fail =
-  (code: string): Rpc =>
-  () => ({ status: 400, body: { code, message: code } });
 
-describe('GET/POST/DELETE /api/me/feeds (M12 §4.6)', () => {
+describe('GET/POST/DELETE /api/me/feeds', () => {
   it("lists the account's feeds with the most it may add", async () => {
     const b = backend({ feeds_list: () => ({ body: [feed] }) });
     const res = await b.api(req('me/feeds', { token: 'user-token' }));
@@ -135,7 +79,7 @@ describe('GET/POST/DELETE /api/me/feeds (M12 §4.6)', () => {
   });
 });
 
-describe('POST /api/admin/feeds/:id (M12 §4.6)', () => {
+describe('POST /api/admin/feeds/:id', () => {
   it('lets an admin stop a feed or start it again, and nobody else', async () => {
     const b = backend({ feed_set_status: (a) => ({ body: { ...feed, status: a.p_status } }) });
     const stop = await b.api(
@@ -160,7 +104,7 @@ describe('POST /api/admin/feeds/:id (M12 §4.6)', () => {
   });
 });
 
-describe('GET /api/admin/coverage (M12 §3)', () => {
+describe('GET /api/admin/coverage', () => {
   it('gives the admin the region’s coverage now, and nobody else', async () => {
     const body = { now: {}, districts: [], weeks: [] };
     const b = backend({ coverage: () => ({ body }) });

@@ -1,4 +1,4 @@
--- Happow milestone 4: crawler caches, user submissions, reports and moderation.
+-- Crawler caches, user submissions, reports and moderation.
 -- Business rules live in the functions below; the API server calls them with the service role.
 -- None of them is executable by anon or authenticated clients.
 

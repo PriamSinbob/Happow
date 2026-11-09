@@ -5,7 +5,7 @@ import { formatDistance, formatTime } from '../format';
 import { useI18n } from '../i18n';
 import { CategoryIcon } from './EventMeta';
 
-/** Live, not cancelled, not this event; nearest to its place first, at most `max` (M9 §4). */
+/** Live, not cancelled, not this event; nearest to its place first, at most `max`. */
 export function liveNearby(
   events: readonly NearbyEvent[],
   now: Date,

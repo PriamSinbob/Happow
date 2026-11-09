@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createEventPage, eventIdFromPath } from '../src';
 import { whenText, withTags } from '../src/eventPage';
 
-/** M9 slice A: /e/<id> answers with the app's index.html plus that event's preview tags. */
+/** /e/<id> answers with the app's index.html plus that event's preview tags. */
 
 const SB = 'https://proj.supabase.co';
 const env = { SUPABASE_URL: SB, SUPABASE_SERVICE_ROLE_KEY: 'service-key' };
@@ -63,7 +63,7 @@ function backend(rows: unknown[] | 'error', outlines: unknown = OUTLINES) {
 const get = (path: string) => new Request(`https://happow.example${path}`);
 const link = `/e/${encodeURIComponent(EVENT.id)}`;
 
-describe('event links (M9 slice A)', () => {
+describe('event links', () => {
   it('reads the id from the path, percent-encoded, ignoring anything after it', () => {
     expect(eventIdFromPath('/e/ticketmaster%3AZ7')).toBe('ticketmaster:Z7');
     expect(eventIdFromPath('/e/ticketmaster%3AZ7/preview.png')).toBe('ticketmaster:Z7');
@@ -90,7 +90,7 @@ describe('event links (M9 slice A)', () => {
       `<meta property="og:url" content="https://happow.example/e/ticketmaster%3AZ7%20%22x%22" />`,
     );
     expect(html).toContain('<link rel="canonical" href="https://happow.example/e/');
-    // Slice B: the event's own image, its URL carrying a version of what's drawn.
+    // The event's own image, its URL carrying a version of what's drawn.
     expect(html).toMatch(
       /og:image" content="https:\/\/happow\.example\/e\/ticketmaster%3AZ7%20%22x%22\/preview\.png\?v=[0-9a-f]{12}"/,
     );
@@ -139,7 +139,7 @@ describe('event links (M9 slice A)', () => {
   });
 });
 
-describe('preview image data (M9 slice B)', () => {
+describe('preview image data', () => {
   it('gives what the image draws, with the districts around the event', async () => {
     const { preview } = createEventPage(env, { now, fetch: backend([EVENT]) });
     const data = await preview(EVENT.id);
@@ -174,7 +174,7 @@ describe('preview image data (M9 slice B)', () => {
   });
 });
 
-describe('links that outlive the event (M9 slice D)', () => {
+describe('links that outlive the event', () => {
   it('marks an ended event in the preview text, and keeps its image', async () => {
     const later = () => new Date('2026-11-02T12:00:00Z');
     const { page, preview } = createEventPage(env, { now: later, fetch: backend([EVENT]) });

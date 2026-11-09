@@ -1,6 +1,6 @@
--- M12 slice O: the admin's coverage view (docs/milestones/M12-more-events.md §3). Live events per
--- district and category for today and the week (now to the end of day 7, as m12_metrics counts),
--- the emptiest districts first, with the five metrics now and their weekly rows.
+-- The admin's coverage view. Live events per district and category for today and the week (now
+-- to the end of day 7, as m12_metrics counts), the emptiest districts first, with the five metrics
+-- now and their weekly rows.
 create function coverage(p_region text, p_at timestamptz, p_evening_hour integer default 18,
   p_weeks integer default 12)
 returns jsonb

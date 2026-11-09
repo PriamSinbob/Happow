@@ -4,15 +4,15 @@ import { accessToken } from './auth';
 import { config } from './config';
 import type { MessageKey } from './i18n/en';
 
-/** One of the account's own events in GET /api/me/contributions (M12 §5). */
+/** One of the account's own events in GET /api/me/contributions. */
 export interface MyEvent {
   submissionId: string;
-  /** The dates of one weekly repeat share it (M12 §4.5). */
+  /** The dates of one weekly repeat share it. */
   seriesId?: string | null;
   eventId: string | null;
   title: string;
   startAt: string | null;
-  /** For counting the adder's events in a running season (M12 §6.3). */
+  /** For counting the adder's events in a running season. */
   endAt?: string | null;
   categoryIds?: string[];
   status: 'pending' | 'approved' | 'rejected';
@@ -25,7 +25,7 @@ export interface MyEvent {
   routes: number;
   arrivals: number;
   thanks: number;
-  /** Nothing happened at its place lately when it was added (M12 §6.1). */
+  /** Nothing happened at its place lately when it was added. */
   firstPlace: boolean;
 }
 
@@ -35,7 +35,7 @@ export interface Contributions {
   opens: number;
   routes: number;
   arrivals: number;
-  /** Thanks from visitors who arrived (M12 §6.4); only the adder sees them. */
+  /** Thanks from visitors who arrived; only the adder sees them. */
   thanks: number;
   trusted: boolean;
   monthDays: number;
@@ -54,7 +54,7 @@ export interface Reward {
   startsAt: string | null;
 }
 
-export const levels = config.plans.contributions.levels;
+const levels = config.plans.contributions.levels;
 
 /** Level ids come from config; a test checks each has its strings in every language. */
 export const levelKey = (id: string) => `level.${id}` as MessageKey;
@@ -65,7 +65,7 @@ export function nextLevel(level: string | null) {
   return levels[i + 1] ?? null;
 }
 
-export async function loadContributions(): Promise<Contributions> {
+async function loadContributions(): Promise<Contributions> {
   return api<Contributions>('me/contributions', { token: await accessToken() });
 }
 

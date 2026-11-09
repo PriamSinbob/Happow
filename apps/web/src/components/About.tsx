@@ -27,13 +27,13 @@ export function About({
   onOpenEvent,
   onAddAgain,
 }: {
-  /** The local atlas (§6): its bar sits with the theme and colour settings. */
+  /** The local atlas: its bar sits with the theme and colour settings. */
   atlas: Atlas;
   onClose: () => void;
   onModerate: () => void;
   /** One of the account's own events, from the contributor section. */
   onOpenEvent: (id: string) => void;
-  /** Opens the add form copied from one of the account's submissions (M12 §4.4). */
+  /** Opens the add form copied from one of the account's submissions. */
   onAddAgain: (submissionId: string) => void;
 }) {
   const { t, lang } = useI18n();

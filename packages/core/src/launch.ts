@@ -1,6 +1,6 @@
 import type { HappowConfig } from './config.js';
 
-/** One thing that stands between the app and a public launch (M13 §7). */
+/** One thing that stands between the app and a public launch. */
 export interface LaunchItem {
   id: string;
   /** "block": must be done before launch; "check": worth a look, not blocking. */

@@ -1,8 +1,6 @@
 import type { EventFilters, HappowEvent, PriceFilter, TimeWindow } from './types.js';
 import { dayBounds, daysBounds } from './time.js';
 
-export const DEFAULT_FILTERS: EventFilters = { categories: [], excluded: [], price: 'any' };
-
 /**
  * Same rules as the `events_near` SQL function, for the offline repository and tests, plus the
  * excluded categories, which only the phone applies (the SQL functions don't know them).
@@ -36,7 +34,7 @@ export function windowRange(
   return { from: now, to: new Date(now.getTime() + window.hours * 3_600_000) };
 }
 
-/** The two price toggles in settings (§15): free and paid, both on = any. */
+/** The two price toggles in settings: free and paid, both on = any. */
 export function priceToggles(price: PriceFilter): { free: boolean; paid: boolean } {
   return { free: price !== 'paid', paid: price !== 'free' };
 }

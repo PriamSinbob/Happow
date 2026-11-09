@@ -38,12 +38,12 @@ export function spriteIds(): string[] {
   ];
 }
 
-/** The star on a followed artist's pin (M7 §4): Tabler star, as on the card. */
+/** The star on a followed artist's pin: Tabler star, as on the card. */
 const STAR_PATH =
   'M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z';
 const STAR_PX = 13;
 
-/** The lock on a private event's pin (M11 §4): Tabler lock, as on the card. */
+/** The lock on a private event's pin: Tabler lock, as on the card. */
 const LOCK_PATH =
   'M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2zM8 11v-4a4 4 0 1 1 8 0v4';
 const LOCK_PX = 13;
@@ -101,7 +101,7 @@ export function addPinSprites(m: maplibregl.Map) {
     c.stroke();
   };
   for (let i = 1; i <= RING_STEPS; i++)
-    // The smallest step keeps an 8 % stub until the event ends (§4.1).
+    // The smallest step keeps an 8 % stub until the event ends.
     add(`ring-${i}`, RING_PX, ring(Math.max(0.08, i / RING_STEPS), false));
   add('ring-dotted', RING_PX, ring(1, true));
   for (const id of GLYPH_IDS)

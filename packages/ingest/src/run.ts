@@ -263,7 +263,7 @@ async function runSource(
     source.adapter === 'worship-services' && venueDb
       ? await venueDb.servicePlaces(region.id, Array.isArray(kinds) ? kinds.map(String) : [])
       : undefined;
-  // Crawler politeness (M13 §3): the page cache lives with the store; without one, each run
+  // Crawler politeness: the page cache lives with the store; without one, each run
   // reads every page (tests, dry runs).
   const politeness = {
     ...ingest.politeness,
@@ -292,7 +292,7 @@ async function runSource(
   });
   if (venueDb && siteResults.length)
     await venueDb.recordSiteResults(siteResults, config.app.venues.pauseAfterFailures);
-  // Venues whose pin moved to its OSM point (M12 §2.2): events there take that point.
+  // Venues whose pin moved to its OSM point: events there take that point.
   const pins = venueDb ? await venueDb.osmPins(region.id) : new Map<string, LatLng>();
 
   const categories: Category[] = config.categories;

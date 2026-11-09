@@ -29,9 +29,8 @@ import { planLastDay, PremiumMark } from './Premium';
 import { Sheet } from './Sheet';
 
 /**
- * The admin's tabs in the staff screen (M8 slice F, `docs/design/admin.html`): sign-in code
- * requests with a ready email to send by hand, and manual premium grants. M12 slice C2 adds the
- * website check's candidates (Sources).
+ * The admin's tabs in the staff screen: sign-in code requests with a ready email to send by
+ * hand, manual premium grants, and the website check's candidates (Sources).
  */
 
 /** Copies `text`; when the clipboard is refused, selects `el` so it can be copied by hand. */
@@ -253,7 +252,7 @@ function DeleteRequestSheet({
 }
 
 /** After Generate: the code to read out, and the email to send from the owner's own address. */
-export function ReadyEmailSheet({ mail, onClose }: { mail: ReadyEmail; onClose: () => void }) {
+function ReadyEmailSheet({ mail, onClose }: { mail: ReadyEmail; onClose: () => void }) {
   const { t } = useI18n();
   const address = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLPreElement>(null);
@@ -518,7 +517,7 @@ function EndGrantSheet({
 }
 
 /**
- * Restore trust (M12 §5.3): a rejection removes a contributor's trust until the admin gives it
+ * Restore trust: a rejection removes a contributor's trust until the admin gives it
  * back here. Their events then skip the queue again, while they still meet the threshold.
  */
 export function RestoreTrustSheet({ onClose }: { onClose: () => void }) {
@@ -598,7 +597,7 @@ export function RestoreTrustSheet({ onClose }: { onClose: () => void }) {
 }
 
 /** Give premium: email, no end or a last day (sent as midnight after it), an optional note. */
-export function GiveGrantSheet({ onClose, onGiven }: { onClose: () => void; onGiven: () => void }) {
+function GiveGrantSheet({ onClose, onGiven }: { onClose: () => void; onGiven: () => void }) {
   const { t, lang } = useI18n();
   const [email, setEmail] = useState('');
   const [dated, setDated] = useState(false);
@@ -745,8 +744,8 @@ type SourceView = 'new' | 'read' | 'rejected';
 const SOURCE_VIEWS: SourceView[] = ['new', 'read', 'rejected'];
 
 /**
- * The website check's candidates (M12 slice C2, `docs/design/admin.html`): New, Read (paused
- * first) and Rejected. Every decision can be undone from another list, so none asks first.
+ * The website check's candidates: New, Read (paused first) and Rejected. Every decision can be
+ * undone from another list, so none asks first.
  */
 export function Sources({ reload, onCount }: { reload: number; onCount: (n: number) => void }) {
   const { t, lang } = useI18n();

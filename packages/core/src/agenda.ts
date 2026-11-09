@@ -4,7 +4,7 @@ import { distanceM } from './geo.js';
 import type { AppConfig, Category, HappowEvent } from './types.js';
 
 /**
- * Plan ahead (M10, docs/milestones/M10-plan-ahead.md): the saved list a device keeps and an
+ * Plan ahead: the saved list a device keeps and an
  * account syncs, the agenda's days, and the evening queue.
  */
 
@@ -12,7 +12,7 @@ export type AgendaConfig = AppConfig['agenda'];
 export type PlanView = AgendaConfig['views'][number];
 
 /**
- * One event on someone's list (§1, §2). A removal is kept as `on: false` for a while, so a phone
+ * One event on someone's list. A removal is kept as `on: false` for a while, so a phone
  * that was offline doesn't bring the event back. `going`: marked "I'm going" (which also saves).
  * `at`: when it last changed, in milliseconds; the latest change wins when lists are merged.
  */
@@ -26,7 +26,7 @@ export interface PlanEntry {
 const DAY_MS = 86_400_000;
 
 /**
- * Two lists as one (§2): per event the latest change wins (on a tie, `b`, the server's). Removals
+ * Two lists as one: per event the latest change wins (on a tie, `b`, the server's). Removals
  * older than `keepRemovedDays` go; of the saved ones, the oldest go past `maxSaved`.
  */
 export function mergePlans(
@@ -47,7 +47,7 @@ export function mergePlans(
   return all.filter((e) => !drop.has(e.id) && (e.on || e.at >= removedAfter));
 }
 
-/** The list after one save, removal or "going" change. "I'm going" also saves (owner, 2026-11-04). */
+/** The list after one save, removal or "going" change. "I'm going" also saves. */
 export function setPlan(
   list: readonly PlanEntry[],
   id: string,
@@ -63,7 +63,7 @@ export function setPlan(
 }
 
 /**
- * A private event or invitation of the person's (M11 §4). `accepted` and `owner` are in "My
+ * A private event or invitation of the person's. `accepted` and `owner` are in "My
  * plans" and can't be un-bookmarked (declining removes them); `pending` waits for an answer and
  * shows only in the Private view (and locked on the map). `private`: a private event, in the
  * Private view; a public event someone was invited to has `private: false`.
@@ -71,16 +71,16 @@ export function setPlan(
 export interface AcceptedInvitation {
   id: string;
   private: boolean;
-  /** Missing = accepted (the M10 shape). */
+  /** Missing = accepted. */
   status?: 'accepted' | 'pending' | 'owner';
 }
 
 const planned = (i: AcceptedInvitation) => (i.status ?? 'accepted') !== 'pending';
 
 /**
- * Event ids a view shows; null for "everything" (§1, §6). My plans: saved ∪ going ∪ accepted
+ * Event ids a view shows; null for "everything". My plans: saved ∪ going ∪ accepted
  * invitations and your own private events ("going" always saves); Saved: the bookmarks only;
- * Private: every private event you own or are invited to, pending ones included (M11 §4).
+ * Private: every private event you own or are invited to, pending ones included.
  */
 export function viewIds(
   list: readonly PlanEntry[],
@@ -103,7 +103,7 @@ export interface AgendaDay<E> {
 }
 
 /**
- * Your events by day (§1): upcoming ones under the day they are on from now (a running one counts
+ * Your events by day: upcoming ones under the day they are on from now (a running one counts
  * today and comes first), by start time; ended ones in `past`, newest first, for
  * `keepPastDays`. `expired` lists the ids past that, for the device to drop.
  */
@@ -138,14 +138,14 @@ type QueueConfig = Pick<AppConfig, 'walkingSpeedMPerMin' | 'arrival' | 'agenda'>
   navigation: Pick<AppConfig['navigation'], 'maxMinutes'>;
 };
 
-/** Minutes on foot (M6 §4.2's estimate), rounded up to `agenda.walkRoundMin` (§3). */
+/** Minutes on foot, rounded up to `agenda.walkRoundMin`. */
 export function walkMinutes(meters: number, app: QueueConfig): number {
   const exact = (meters * app.arrival.detourFactor) / app.walkingSpeedMPerMin;
   const step = app.agenda.walkRoundMin;
   return Math.max(0, Math.ceil(exact / step - 1e-9)) * step;
 }
 
-/** How the walk from one event to the next works out (§3). Times are ISO strings. */
+/** How the walk from one event to the next works out. Times are ISO strings. */
 export type LegVerdict =
   | { kind: 'fine'; spareMin: number }
   /** The next one is open entry and already open when you'd get there. */
@@ -183,7 +183,7 @@ const MIN = 60_000;
 const iso = (ms: number) => new Date(ms).toISOString();
 
 /**
- * An evening of several events in start order (§3), with the walk between each pair and what it
+ * An evening of several events in start order, with the walk between each pair and what it
  * means for the next one. Nothing is moved or dropped: the verdicts only say how it works out.
  * `leaveAt` holds times chosen on the device, kept between the event's start and its end.
  */
@@ -243,7 +243,7 @@ export function eveningQueue<E extends QueueEvent>(
   return { stops, legs };
 }
 
-/** A chosen leave time one step earlier or later, on the step grid, within the event (§3). */
+/** A chosen leave time one step earlier or later, on the step grid, within the event. */
 export function stepLeave(
   ev: Pick<HappowEvent, 'startAt' | 'endAt'>,
   current: string,

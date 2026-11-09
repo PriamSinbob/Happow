@@ -107,7 +107,7 @@ export function drawVeil(ctx: CanvasRenderingContext2D, s: VeilScene): number {
       holes++;
     }
   }
-  // The reach is always lit: a soft disc with a cloudy rim (prototype).
+  // The reach is always lit: a soft disc with a cloudy rim.
   const r = metresToPx(s.reach.radiusM, s.box, px, s.reach.centre.lat);
   const c = toCanvasPx(s.reach.centre, s.box, px);
   hole(ctx, c.x, c.y, r * 1.35, 1);
@@ -121,9 +121,8 @@ export function drawVeil(ctx: CanvasRenderingContext2D, s: VeilScene): number {
   return holes;
 }
 
-export const VEIL_SOURCE = 'veil';
+const VEIL_SOURCE = 'veil';
 const OUTER_SOURCE = 'veil-outer';
-export const VEIL_LAYERS = ['veil-outer', 'veil'] as const;
 
 /** The world with the canvas box cut out: veiled the same way, so panning never shows colour. */
 function outerFeature(box: VeilBox) {
@@ -147,7 +146,7 @@ function outerFeature(box: VeilBox) {
   };
 }
 
-/** The veil goes on the vector basemap only, under its labels (owner, 2026-10-23). */
+/** The veil goes on the vector basemap only, under its labels. */
 export function canVeil(m: maplibregl.Map): boolean {
   try {
     return Object.values(m.getStyle().sources).some((s) => s.type === 'vector');

@@ -16,9 +16,9 @@ export interface FiltersState {
   toggleExcluded: (id: string) => void;
   price: PriceFilter;
   setPrice: (p: PriceFilter) => void;
-  /** Replaces the chosen categories (the map shortcut, slice G); none of them stays excluded. */
+  /** Replaces the chosen categories (the map shortcut); none of them stays excluded. */
   setCategories: (ids: string[]) => void;
-  /** Family mode (§4.4): a setting on this device, never sent. */
+  /** Family mode: a setting on this device, never sent. */
   family: boolean;
   setFamily: (on: boolean) => void;
   /** Category, exclusion, price and family filters in use (the time window is always set, so it does not count). */
@@ -104,7 +104,7 @@ export function useFilters(): FiltersState {
     setExcluded((xs) => xs.filter((c) => !known.includes(c)));
     track('Filter', { type: 'categories', value: ids.join(',') });
   }, []);
-  // Not tracked: family mode stays on the device (§4.4 privacy).
+  // Not tracked: family mode stays on the device (privacy).
   const setFamily = setFamilyState;
   const clear = useCallback(() => {
     setCategories([]);

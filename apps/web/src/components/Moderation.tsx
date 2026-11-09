@@ -28,9 +28,9 @@ interface QueuedSubmission {
   confidence: number | null;
   event_id: string | null;
   created_at: string;
-  /** The dates of one weekly repeat share it (M12 §4.5). */
+  /** The dates of one weekly repeat share it. */
   series_id?: string | null;
-  /** Imported from an account's calendar feed (M12 §4.6). */
+  /** Imported from an account's calendar feed. */
   feed_id?: number | null;
   feed_url?: string | null;
   feed_status?: 'active' | 'stopped' | null;
@@ -66,7 +66,7 @@ interface ReportedEvent {
   count: number;
   reasons: Record<string, number>;
   notes: string[] | null;
-  /** M11: the organiser's answer, and whether the event is private (abuse reports only). */
+  /** The organiser's answer, and whether the event is private (abuse reports only). */
   organiser_note?: string | null;
   organiser?: string | null;
   visibility?: 'public' | 'private';
@@ -76,7 +76,7 @@ interface Queue extends OrganiserQueue {
   moderator: string;
   submissions: QueuedSubmission[];
   reports: ReportedEvent[];
-  /** Published by trusted accounts in the last 7 days, for spot checks (M12 §5.3). */
+  /** Published by trusted accounts in the last 7 days, for spot checks. */
   trusted?: QueuedSubmission[];
 }
 
@@ -92,8 +92,8 @@ const TABS: Tab[] = ['queue', 'codes', 'grants', 'sources', 'coverage'];
 
 /**
  * The staff screen. Moderators: the queue of pending submissions (user and low-confidence crawls)
- * and open reports. The admin also gets tabs for sign-in code requests and grants (M8 slice F)
- * and the website check's candidates (M12 slice C2).
+ * and open reports. The admin also gets tabs for sign-in code requests and grants and the
+ * website check's candidates.
  */
 export function Moderation({ onClose }: { onClose: () => void }) {
   const { t, lang } = useI18n();
@@ -101,7 +101,7 @@ export function Moderation({ onClose }: { onClose: () => void }) {
   const admin = me?.role === 'admin';
   const [state, setState] = useState<State>({ name: 'loading' });
   const [busy, setBusy] = useState<string | null>(null);
-  // Feeds an admin stopped from this queue (M12 §4.6).
+  // Feeds an admin stopped from this queue.
   const [stopped, setStopped] = useState<Set<number>>(new Set());
   const isAdmin = me?.role === 'admin';
   async function stopFeed(id: number) {

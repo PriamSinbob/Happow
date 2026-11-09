@@ -1,7 +1,6 @@
 import type { MessageKey } from './en';
 
 export const pl: Record<MessageKey, string> = {
-  'app.tagline': 'Dzieje się teraz',
   'header.locate': 'Pokaż moją lokalizację',
   'view.list': 'Lista',
   'radius.label': 'Promień',
@@ -23,7 +22,6 @@ export const pl: Record<MessageKey, string> = {
   'event.walk': '{minutes} min pieszo',
   'event.website': 'Strona',
   'event.tickets': 'Bilety',
-  'event.navigate': 'Nawiguj',
   'event.close': 'Zamknij',
   'event.source.community': 'Społeczność',
   'event.source.api': 'Oficjalne API',
@@ -43,8 +41,6 @@ export const pl: Record<MessageKey, string> = {
   'location.outside': 'Jesteś poza obszarem {region}. Pokazujemy jego centrum.',
   'location.useMine': 'Użyj mojej lokalizacji',
   'location.dismiss': 'OK',
-  'map.attribution': 'Mapa',
-  'map.you': 'Tu jesteś',
   'window.label': 'Kiedy',
   'window.today': 'Dziś',
   'window.hours': '{hours} h',
@@ -112,12 +108,7 @@ export const pl: Record<MessageKey, string> = {
   'guide.busiestTitle': 'Tu dzieje się najwięcej',
   'guide.place': 'ruchliwe miejsce',
   'guide.takeMeThere': 'Zaprowadź mnie',
-  'guide.showOnMap': 'Pokaż na mapie',
   'guide.nothingAround': 'W promieniu {distance} też nic. Zmień okno czasu lub filtry.',
-  'place.label':
-    '{place}: {count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}}',
-  'place.zoom':
-    '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} blisko siebie. Przybliż.',
   'place.title':
     '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} w tym miejscu',
   'hotspot.label':
@@ -200,7 +191,7 @@ export const pl: Record<MessageKey, string> = {
     'O stałej godzinie: trzeba być na początek (spektakl, koncert). W dowolnej chwili: można wpaść w trakcie (targi, impreza klubowa).',
   'add.field.url': 'Strona lub bilety (opcjonalnie)',
   'add.field.description': 'Krótki opis (opcjonalnie)',
-  // M7 wyszukiwanie i obserwowani artyści
+  // Wyszukiwanie i obserwowani artyści
   'view.listSearch': 'Lista i wyszukiwanie',
   'search.label': 'Szukaj',
   'search.placeholder': 'Artysta, wydarzenie albo miejsce',
@@ -260,7 +251,7 @@ export const pl: Record<MessageKey, string> = {
   'add.more': 'Więcej z Premium',
   'add.close': 'Zamknij',
   'usage.events': 'Wydarzenia',
-  // Short, so the premium mark fits beside it at 380 px (owner, 2026-10-24).
+  // Short, so the premium mark fits beside it at 380 px.
   'usage.autofill': 'Z linku',
   'usage.resets': 'od {date}',
   'addGate.title': 'Dodawanie wymaga konta',
@@ -335,7 +326,7 @@ export const pl: Record<MessageKey, string> = {
   'admin.grants.end': 'Zakończ',
   'admin.tab.sources': 'Źródła',
   'admin.tab.coverage': 'Pokrycie',
-  // Coverage (M12 slice O)
+  // Coverage
   'coverage.metrics': 'Pięć miar',
   'coverage.week': 'Tydzień od',
   'coverage.now': 'Teraz',
@@ -508,7 +499,6 @@ export const pl: Record<MessageKey, string> = {
   'nav.close': 'Zamknij',
   'nav.noLocation': 'Lokalizacja jest wyłączona. Włącz ją albo użyj Map Google.',
   'nav.you': 'Ty',
-  offline: 'Offline — pokazujemy zapisane dane',
   'settings.open': 'Ustawienia',
   'settings.title': 'Ustawienia',
   'settings.language': 'Język',
@@ -538,7 +528,7 @@ export const pl: Record<MessageKey, string> = {
     '{count, plural, one {Dodano # obszar} few {Dodano # obszary} many {Dodano # obszarów} other {Dodano # obszaru}}',
   'atlas.badFile': 'To nie jest plik miejsc Happow',
   'atlas.cleared': 'Miejsca zapomniane',
-  // M12 slice F: strona osoby dodającej
+  // Strona osoby dodającej
   'add.done.toEarn':
     'Po zatwierdzeniu przez moderatora dostajesz {count, plural, one {# dzień premium} other {# dni premium}}.',
   'add.done.earned':
@@ -590,13 +580,13 @@ export const pl: Record<MessageKey, string> = {
   'admin.trust.confirm': 'Przywróć',
   'admin.trust.done': 'Zaufanie przywrócone dla {email}.',
   'admin.trust.notFound': 'Brak konta z tym adresem.',
-  // M12 slice G: zdjęcie plakatu
+  // Zdjęcie plakatu
   'add.photo': 'Zdjęcie plakatu',
   'add.photo.reading': 'Czytam plakat…',
   'add.photo.notFound':
     'Nie udało się odczytać wydarzenia z tego zdjęcia. Uzupełnij formularz poniżej.',
   'add.photo.unreadable': 'Nie udało się otworzyć tego zdjęcia. Spróbuj innego.',
-  // Quick add and add again (M12 slice H)
+  // Quick add and add again
   'add.quick.title': 'Dzieje się tu i teraz?',
   'add.quick.text': 'Dodaj w kilka dotknięć: pinezka tam, gdzie jesteś, początek teraz.',
   'add.quick.start': 'Dodaj tutaj',
@@ -608,7 +598,7 @@ export const pl: Record<MessageKey, string> = {
   'add.again.gone': 'Tego wydarzenia nie można dodać ponownie.',
   'contrib.again': 'Dodaj ponownie',
   'contrib.againFor': 'Dodaj ponownie „{title}”',
-  // Recurring events (M12 slice I)
+  // Recurring events
   'add.repeat': 'Powtarza się',
   'add.repeat.once': 'Nie powtarza się',
   'add.repeat.weekly': 'Co tydzień',
@@ -628,7 +618,7 @@ export const pl: Record<MessageKey, string> = {
     '{count, plural, one {# termin} few {# terminy} many {# terminów} other {# terminu}}',
   'contrib.seriesNext':
     '{count, plural, one {# termin} few {# terminy} many {# terminów} other {# terminu}} · najbliższy {date}',
-  // Calendar feeds (M12 slice L)
+  // Calendar feeds
   'feeds.title': 'Kalendarze',
   'feeds.intro':
     'Dodaj raz link iCal swojego kalendarza: jego nadchodzące wydarzenia trafią do Happow jako Twoje i liczą się do miesięcznego limitu. Pierwsze sprawdzi moderator.',
@@ -649,14 +639,14 @@ export const pl: Record<MessageKey, string> = {
   'mod.feed': 'Z kalendarza: {host}',
   'mod.feedStop': 'Zatrzymaj ten kalendarz',
   'mod.feedStopped': 'Kalendarz zatrzymany',
-  // Places first and thanks (M12 slice M)
+  // Places first and thanks
   'contrib.stat.thanks': 'Podziękowania',
   'contrib.firstPlace': 'dodane przez Ciebie jako pierwsze',
   'add.done.firstPlace':
     'Od dawna nic się tu nie działo: na Twojej karcie widnieje „dodane przez Ciebie jako pierwsze”.',
   'nav.thanks': 'Dziękuję',
   'nav.thanked': 'Podziękowanie wysłane osobie, która to dodała',
-  // District goals and seasons (M12 slice N)
+  // District goals and seasons
   'goal.line':
     '{district}: {count, plural, =0 {w ten weekend nic} one {# wydarzenie w ten weekend} few {# wydarzenia w ten weekend} many {# wydarzeń w ten weekend} other {# wydarzenia w ten weekend}}. Wiesz o czymś?',
   'goal.add': 'Dodaj',
@@ -671,14 +661,13 @@ export const pl: Record<MessageKey, string> = {
   'error.photo_too_large': 'To zdjęcie jest za duże. Spróbuj innego.',
   'about.privacy.autofill':
     'Gdy wypełniasz formularz z linku albo zdjęcia plakatu, tekst strony lub zdjęcie trafia do usługi AI tylko do odczytania. Nie jest przechowywane.',
-  // M10 plan ahead
+  // Plan ahead
   'view.label': 'Widok: {name}. Przytrzymaj, by wybrać',
   'view.pick': 'Pokaż',
   'view.all': 'Wszystko',
   'view.plans': 'Moje plany',
   'view.saved': 'Zapisane',
   'view.private': 'Prywatne',
-  'agenda.title': 'Moje plany',
   'agenda.empty': 'Nic jeszcze nie zapisano: stuknij zakładkę przy wydarzeniu',
   'agenda.noneNow': 'Żadnego z Twoich planów w tym czasie. Lista pokazuje wszystkie.',
   'agenda.openList': 'Otwórz listę',
@@ -744,7 +733,7 @@ export const pl: Record<MessageKey, string> = {
   'mod.disagree.source': 'źródło',
   'mod.organiserAnswer': '{name} odpowiada: {text}',
   'mod.blockPrivate': 'Zablokuj prywatne wydarzenia tego konta',
-  // M11: private events, contacts, friends, organisers.
+  // Private events, contacts, friends, organisers.
   'add.visibility': 'Kto widzi',
   'add.public': 'Wszyscy',
   'add.private': 'Tylko zaproszeni',

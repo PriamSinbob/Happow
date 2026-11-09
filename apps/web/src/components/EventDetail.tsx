@@ -40,15 +40,15 @@ interface Props {
   onReported: (id: string, reason: FlagReason) => void;
   /** Opens "Going there" (route inside the app). */
   onGo: () => void;
-  /** "Added by" for a community event, read live (M12 §5.5). */
+  /** "Added by" for a community event, read live. */
   loadCredit: (eventId: string, signal: AbortSignal) => Promise<Credit | null>;
-  /** Events around a place, for "on now nearby" under an ended event (M9 §4). */
+  /** Events around a place, for "on now nearby" under an ended event. */
   loadNearby: (at: LatLng, signal: AbortSignal) => Promise<NearbyEvent[]>;
   /** Opens another event's card in place of this one. */
   onOpenEvent: (id: string) => void;
-  /** Where distances count from (private events read with it, M11). */
+  /** Where distances count from (private events read with it). */
   center?: LatLng | null;
-  /** An edit or an answer changed the event: read it again (M11 §3, §8). */
+  /** An edit or an answer changed the event: read it again. */
   onChanged?: () => void;
 }
 
@@ -82,7 +82,7 @@ export function EventDetail({
   const { t } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
 
-  // An open for its adder's "your impact" (M12 §5.1).
+  // An open for its adder's "your impact".
   const eventId = ev?.id;
   useEffect(() => {
     if (eventId) countEvent(eventId, 'open');
@@ -273,7 +273,7 @@ function DetailBody({
         <div className="event-card__actions">
           <GoButtons ev={ev} onGo={onGo} />
         </div>
-        {/* On a private event, only its owner and accepted guests mark themselves (M11 §4). */}
+        {/* On a private event, only its owner and accepted guests mark themselves. */}
         {!ended && (!priv || ev.mine || ev.invitation?.status === 'accepted') && (
           <Going ev={ev} now={now} />
         )}
@@ -295,7 +295,7 @@ function DetailBody({
             <Icon name="calendar" />
             {t('event.addToCalendar')}
           </button>
-          {/* A private event is never shared by link, QR or image (M11 §4). */}
+          {/* A private event is never shared by link, QR or image. */}
           {!priv && (
             <button type="button" className="tool" onClick={() => setSharing(true)}>
               <Icon name="share" />

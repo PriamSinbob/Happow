@@ -1,18 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import type { Extractor, Geocoder } from '@happow/extract';
-import { loadConfig } from '@happow/core';
 import { createApi } from '../src';
+import { config as base, env, organiserRpc, SB, type Rpc } from './helpers';
 
 const page = (name: string) =>
   readFileSync(new URL(`../../extract/test/fixtures/${name}`, import.meta.url), 'utf8');
 
-const SB = 'https://proj.supabase.co';
-const env = { SUPABASE_URL: SB, SUPABASE_SERVICE_ROLE_KEY: 'service-key', SUBMITTER_SALT: 'salt' };
 const now = () => new Date('2026-10-20T20:00:00Z');
 
 interface Backend {
-  rpc: Record<string, (args: Record<string, unknown>) => { status?: number; body: unknown }>;
+  rpc: Record<string, Rpc>;
   pages?: Record<string, string>;
   users?: Record<string, string>;
 }
@@ -23,18 +21,13 @@ const accountRpc: Backend['rpc'] = {
   grants_active: () => ({ body: [] }),
   usage_get: () => ({ body: { events: 0, autofills: 0 } }),
   usage_take: () => ({ body: true }),
-  // M12 slice E: nobody is trusted, nothing published by trusted accounts, rewards recorded.
+  // Nobody is trusted, nothing published by trusted accounts, rewards recorded.
   contributor_trusted: () => ({ body: false }),
   trusted_recent: () => ({ body: [] }),
   duplicate_candidates: () => ({ body: { title: 'x', others: [] } }),
   contribution_award: () => ({ body: { kind: 'verified', days: 3, startsAt: null } }),
   contribution_revoke_event: () => ({ body: 0 }),
-  // M11: every event public, nobody an organiser, empty organiser queues.
-  event_visibility: () => ({ body: 'public' }),
-  organiser_at: () => ({ body: false }),
-  claims_queue: () => ({ body: [] }),
-  edits_queue: () => ({ body: [] }),
-  post_reports_queue: () => ({ body: [] }),
+  ...organiserRpc,
 };
 
 /** Fake Supabase (PostgREST RPC + GoTrue) and web, recording every call. */
@@ -70,9 +63,8 @@ function backend(b: Backend) {
 const geocoder: Geocoder = {
   geocode: async () => ({ point: { lat: 51.1079, lng: 17.0385 }, precision: 'venue', label: 'x' }),
 };
-// Since M8 slice G the live config requires an account and turns autofill on with it. Most tests
-// here cover the anonymous mode, which config still offers: accounts optional, autofill off.
-const base = loadConfig();
+// The live config requires an account and turns autofill on with it. Most tests here cover the
+// anonymous mode, which config still allows: accounts optional, autofill off.
 const config = {
   ...base,
   app: {
@@ -238,7 +230,7 @@ describe('POST /api/autofill', () => {
   });
 });
 
-describe('autofill quota (M8 §5)', () => {
+describe('autofill quota', () => {
   const goUrl = 'https://www.wroclaw.pl/go/wydarzenia/edukacja-i-rozwoj/1416880-cool-moms-club';
   const pages = { [goUrl]: page('go-event-1.html') };
   const run = (b: Backend, headers: Record<string, string> = auth, url = goUrl) => {

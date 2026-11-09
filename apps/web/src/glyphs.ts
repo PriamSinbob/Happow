@@ -146,7 +146,7 @@ export const GLYPHS = {
     paths: ['M8.5 10h7v11h-7z', 'M12 10v-2', 'M12 2.5q3.5 3.5 0 5q-3.5 -1.5 0 -5'],
   },
   dot: { fill: true, paths: ['M8.5 12a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0'] },
-  // Family mode (§4.4, slice G), not a category: an adult and a child, so it differs from the horse.
+  // Family mode, not a category: an adult and a child, so it differs from the horse.
   family: {
     paths: [
       'M5 7a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0',

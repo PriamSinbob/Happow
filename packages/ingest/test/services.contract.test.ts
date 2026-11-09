@@ -8,7 +8,7 @@ import { parseOsmVenues } from '../src/venues/osm';
 import { parseServiceTimes, serviceDates } from '../src/venues/services';
 import { config, fixture, region, source } from './helpers';
 
-/** M12 slice J: regular services at places of worship, from OSM `service_times`. */
+/** Regular services at places of worship, from OSM `service_times`. */
 
 describe('service_times', () => {
   it('reads weekdays, day ranges and several times', () => {

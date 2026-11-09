@@ -69,7 +69,7 @@ export const parsedEventSchema = z.object({
       city: z.string().nullable(),
     })
     .optional(),
-  /** Who performs, as the source names them (M7 §1). */
+  /** Who performs, as the source names them. */
   performers: z
     .array(z.object({ name: z.string().min(1), externalId: z.string().nullable().optional() }))
     .optional(),
@@ -83,7 +83,7 @@ export interface FetchWindow {
   to: Date;
 }
 
-/** A crawled page as last read (M13 §3): validators, its content hash, what it gave. */
+/** A crawled page as last read: validators, its content hash, what it gave. */
 export interface PageEntry {
   etag: string | null;
   lastModified: string | null;
@@ -123,9 +123,9 @@ export interface AdapterServices {
   siteTargets?: SiteTarget[];
   /** Per site after a run: an error, or null and how many events it gave. */
   onSiteResult?: (id: number, error: string | null, events: number) => void;
-  /** OSM places with `service_times` (the `worship-services` source, M12 §2.3). */
+  /** OSM places with `service_times` (the `worship-services` source). */
   worshipPlaces?: OsmVenue[];
-  /** Crawler politeness (M13 §3): the page cache, its settings and the run's counters. */
+  /** Crawler politeness: the page cache, its settings and the run's counters. */
   pages?: PageCache;
   politeness?: {
     conditionalRequests: boolean;

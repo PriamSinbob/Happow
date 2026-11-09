@@ -1,6 +1,6 @@
--- M12 slice C2: the admin's Sources tab (docs/design/admin.html, docs/milestones/M12-more-events.md
--- §2.2). The Worker lists the website check's candidates and moves them between new, accepted
--- ("read"), paused and rejected. Service role only, behind the admin check in /api/admin/sources.
+-- The admin's Sources tab. The Worker lists the website check's candidates and moves them between
+-- new, accepted ("read"), paused and rejected. Service role only, behind the admin check in
+-- /api/admin/sources.
 
 -- How many events a site gave on its last run, for the Read list.
 alter table source_candidates add column last_run_events integer;

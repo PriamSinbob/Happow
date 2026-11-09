@@ -1,5 +1,5 @@
 /**
- * Public attendance counts (M9 §5, §6): nothing below the threshold, then the highest bucket
+ * Public attendance counts: nothing below the threshold, then the highest bucket
  * reached ("10+" for 17), so a count never pins down a small group.
  */
 export function attendanceBucket(

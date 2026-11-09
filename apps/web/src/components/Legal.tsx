@@ -1,8 +1,8 @@
 import { useI18n } from '../i18n';
 
-/** The full legal texts (M13 §1), static pages in Polish (the default) and English. */
-export const LEGAL = ['terms', 'privacy', 'takedown', 'storage'] as const;
-export const legalHref = (name: (typeof LEGAL)[number], lang: string) =>
+/** The full legal texts, static pages in Polish (the default) and English. */
+const LEGAL = ['terms', 'privacy', 'takedown', 'storage'] as const;
+const legalHref = (name: (typeof LEGAL)[number], lang: string) =>
   `/legal/${name}${lang === 'pl' ? '' : '.en'}`;
 
 export function LegalLinks() {

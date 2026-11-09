@@ -4,7 +4,7 @@ import { afterDay, localToInstant } from './time.js';
 import type { Entitlements, PlanId, PlansConfig, ThemePreset } from './types.js';
 
 /**
- * Plans and entitlements (M8 §3–§4). Code asks `can(ent, 'atlas.export')` or
+ * Plans and entitlements. Code asks `can(ent, 'atlas.export')` or
  * `quota(ent, 'events.perMonth')`, never which plan someone has, so moving a feature between
  * plans is a change to config/plans.json.
  */
@@ -23,7 +23,7 @@ export type PlanSource =
 /** A grant as the API reads it from plan_grants. */
 export interface PlanGrant {
   plan: PlanId;
-  /** `contribution`: premium days for verified events (M12 §5.2). */
+  /** `contribution`: premium days for verified events. */
   source: 'manual' | 'trial' | 'purchase' | 'contribution';
   startsAt: string;
   /** Null = no end. */
@@ -53,7 +53,7 @@ export function earlyAccessEnd(
  * the promotion and the active grants. Its end is the latest end among whatever gives that plan
  * (they all hold at `now`, so together they last until the latest one ends), carried on through
  * grants of that plan that start before it ends: premium days earned during the promotion start
- * when it ends (M12 §5.2), so the account shows when premium really stops.
+ * when it ends, so the account shows when premium really stops.
  */
 export function effectivePlan(input: {
   signedIn: boolean;
@@ -108,7 +108,7 @@ export const can = (ent: Entitlements, key: FeatureKey): boolean => ent[key];
 export const quota = (ent: Entitlements, key: QuotaKey): number => ent[key];
 
 /**
- * The calendar month quotas count in (M8 §5): its first day in `timeZone` ("2026-10-01") and the
+ * The calendar month quotas count in: its first day in `timeZone` ("2026-10-01") and the
  * instant the next month starts there.
  */
 export function usageMonth(now: Date, timeZone: string): { month: string; resetsAt: Date } {
@@ -118,7 +118,7 @@ export function usageMonth(now: Date, timeZone: string): { month: string; resets
   return { month: `${day.slice(0, 7)}-01`, resetsAt: localToInstant(next, null, timeZone)! };
 }
 
-/** The live-hue presets these entitlements allow (M8 §3: presets by tier). */
+/** The live-hue presets these entitlements allow (presets by tier). */
 export function presetsFor<P extends Pick<ThemePreset, 'tier'>>(
   ent: Entitlements,
   presets: readonly P[],

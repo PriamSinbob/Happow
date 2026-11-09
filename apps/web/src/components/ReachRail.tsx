@@ -17,7 +17,7 @@ interface Props {
 }
 
 /**
- * Reach rail on the right edge (§5): log scale between the detents, walking minutes up to 2 km,
+ * Reach rail on the right edge: log scale between the detents, walking minutes up to 2 km,
  * a tick of haptics per detent on Android. City mode (past the last detent) comes from a pinch.
  */
 export function ReachRail({ radiusM, onChange, onPreview }: Props) {

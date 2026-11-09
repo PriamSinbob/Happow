@@ -25,7 +25,7 @@ export interface Bbox {
   north: number;
 }
 
-/** Address → point. Swappable (Nominatim for the PoC, self-hosted Photon later). */
+/** Address → point. Swappable (Nominatim now, self-hosted Photon later). */
 export interface Geocoder {
   geocode(q: GeoQuery, bbox: Bbox): Promise<GeoResult | null>;
 }

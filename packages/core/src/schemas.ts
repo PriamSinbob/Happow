@@ -49,8 +49,8 @@ export const categorySchema = z.object({
   color: z.string().regex(/^#[0-9a-f]{6}$/i),
   /**
    * false: never show public attendance counts (going, co-presence, a sharer's link count) for
-   * this category's events, because they would reveal religion or politics (GDPR Art. 9; M9 §6).
-   * People can still mark themselves, for M11's opt-in friends' view.
+   * this category's events, because they would reveal religion or politics (GDPR Art. 9).
+   * People can still mark themselves, for an opt-in friends' view.
    */
   publicAttendance: z.boolean().default(true),
 });
@@ -73,7 +73,7 @@ export const regionSchema = z.object({
   enabledSources: z.array(z.string()),
   seedFile: z.string().optional(),
   /**
-   * District boundaries for the M12 metrics: a GeoJSON file written by `pnpm districts` from
+   * District boundaries for the metrics: a GeoJSON file written by `pnpm districts` from
    * OSM `boundary=administrative` relations at this `admin_level`, inside the bbox.
    */
   districts: z
@@ -100,7 +100,7 @@ export const appConfigSchema = z.object({
     minM: z.number().positive(),
     maxM: z.number().positive(),
     defaultM: z.number().positive(),
-    /** Reach rail stops (§5), ascending; past the last one is city mode (maxM), via pinch. */
+    /** Reach rail stops, ascending; past the last one is city mode (maxM), via pinch. */
     detentsM: z.array(z.number().positive()).min(2),
   }),
   walkingSpeedMPerMin: z.number().positive(),
@@ -115,7 +115,7 @@ export const appConfigSchema = z.object({
     /** "HH:MM" in the region's time zone: later starts are hidden in family mode. */
     latestEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'use a time like "21:00"'),
   }),
-  /** The dice (§7). */
+  /** The dice. */
   dice: z.object({
     /** Rolls only events this close to the user. */
     maxDistanceM: z.number().positive(),
@@ -126,7 +126,7 @@ export const appConfigSchema = z.object({
     /** Categories in the long-press fan. */
     fanSize: z.number().int().positive(),
   }),
-  /** The local atlas and the veil over the map (§6, slice H). Kept on the device only. */
+  /** The local atlas and the veil over the map. Kept on the device only. */
   atlas: z.object({
     /** H3 resolution of the recorded cells (9 ≈ 0.1 km²). */
     resolution: z.number().int().min(0).max(15),
@@ -158,13 +158,13 @@ export const appConfigSchema = z.object({
     searchRadiusM: z.number().positive(),
     /** A cell needs at least this many events to be called a hotspot. */
     hotspotMinEvents: z.number().int().positive(),
-    /** Off-screen events shown as edge dots at once: the nearest ones (§5). */
+    /** Off-screen events shown as edge dots at once: the nearest ones. */
     maxEdgeDots: z.number().int().min(0),
-    /** Cell size when hotspots are counted on the device (family mode, slice G). */
+    /** Cell size when hotspots are counted on the device (family mode). */
     deviceCellM: z.number().positive(),
   }),
   timeWindows: z.array(timeWindowSchema).min(1),
-  /** The time line under the map (§5, §13.3). */
+  /** The time line under the map. */
   timeline: z.object({
     /** A drag ending this close to now snaps back to now. */
     snapNowMin: z.number().nonnegative(),
@@ -183,7 +183,7 @@ export const appConfigSchema = z.object({
     titleSimilarity: z.number().min(0).max(1),
     /** H3 rings around the event's cell to search, so venues on a cell edge still match. */
     h3Ring: z.number().int().min(0).max(3),
-    /** Same place for the reward check (M12 §5): about what h3Ring 1 covers at resolution 9. */
+    /** Same place for the reward check: about what h3Ring 1 covers at resolution 9. */
     radiusM: z.number().positive(),
   }),
   geocoding: z.object({
@@ -245,7 +245,7 @@ export const appConfigSchema = z.object({
     maxPageBytes: z.number().int().positive(),
     /** Most LLM calls URL autofill may make per day across all users (cost cap). */
     autofillLlmPerDay: z.number().int().nonnegative(),
-    /** Poster photos for autofill (M12 §4.2): the largest decoded image the API accepts. */
+    /** Poster photos for autofill: the largest decoded image the API accepts. */
     photo: z.object({
       maxBytes: z.number().int().positive(),
       /** Shrunk on the device first: the long edge in px, and the JPEG quality (0–1). */
@@ -258,12 +258,12 @@ export const appConfigSchema = z.object({
   submissions: z.object({
     /**
      * URL autofill on the add-event form: off, or for signed-in accounts within their monthly
-     * quota (M8 §5, `autofill.perMonth`).
+     * quota (`autofill.perMonth`).
      */
     autofill: z.union([z.literal(false), z.literal('account')]),
     /**
      * Who may add events: "optional" = anyone, and submissions from an account count against its
-     * monthly quota; "required" = accounts only (M8 §5, switched on with the form's sign-in).
+     * monthly quota; "required" = accounts only (switched on with the form's sign-in).
      */
     account: z.enum(['optional', 'required']),
     /** Show user submissions on the map (as unverified) before a moderator approves them. */
@@ -279,14 +279,14 @@ export const appConfigSchema = z.object({
     reportsPerDayPerDevice: z.number().int().positive(),
     maxDescriptionChars: z.number().int().positive(),
     /**
-     * "Happening here, now" on the add form (M12 §4.3): offered only with a location fix at least
+     * "Happening here, now" on the add form: offered only with a location fix at least
      * this precise; the start is now, rounded down to `roundMin` minutes.
      */
     quickAdd: z.object({
       maxAccuracyM: z.number().positive(),
       roundMin: z.number().int().min(1).max(60),
     }),
-    /** Weekly repeats on the add form (M12 §4.5): how far ahead, and how many dates at most. */
+    /** Weekly repeats on the add form: how far ahead, and how many dates at most. */
     recurring: z.object({
       maxWeeks: z.number().int().min(1).max(52),
       maxOccurrences: z.number().int().min(2).max(100),
@@ -311,14 +311,14 @@ export const appConfigSchema = z.object({
     /** Plausible's manual-pageview script (page views carry screen names, not URLs). */
     scriptUrl: z.string().url(),
   }),
-  /** OpenStreetMap data beyond the map tiles (M12): district boundaries, later venues. */
+  /** OpenStreetMap data beyond the map tiles: district boundaries, later venues. */
   osm: z.object({
     /** Overpass servers, tried in order: one alone can refuse or time out for hours. */
     overpassUrls: z.array(z.string().url()).min(1),
     /** overpass-api.de answers 406 to a User-Agent with a URL in it, so no crawler URL here. */
     userAgent: z.string().min(1),
   }),
-  /** OSM venues, links to event venues and the website check (M12 §2.2). */
+  /** OSM venues, links to event venues and the website check. */
   venues: z.object({
     /** OSM tags that make a venue: key → values (e.g. amenity → theatre, cinema). */
     osmTags: z.record(z.array(z.string().min(1)).min(1)),
@@ -341,20 +341,20 @@ export const appConfigSchema = z.object({
     /** Runs in a row an accepted site may fail before it is paused. */
     pauseAfterFailures: z.number().int().positive(),
   }),
-  /** Per-event opens, routes and arrivals for "your impact" (M12 §5.1). */
+  /** Per-event opens, routes and arrivals for "your impact". */
   counts: z.object({
     /** Counts accepted in one POST /api/counts. */
     maxBatch: z.number().int().positive(),
     perHourPerDevice: z.number().int().positive(),
   }),
-  /** Shared event links (M9, docs/milestones/M9-sharing-attendance.md). */
+  /** Shared event links. */
   sharing: z.object({
-    /** Live events listed under an ended event's card, nearest first (§4). */
+    /** Live events listed under an ended event's card, nearest first. */
     endedNearbyMax: z.number().int().min(0).max(20),
-    /** Put before an ended event's link-preview description (§4). */
+    /** Put before an ended event's link-preview description. */
     endedLabel: labelsSchema,
   }),
-  /** "I'm going" and co-presence (M9 §5, §6). */
+  /** "I'm going" and co-presence. */
   attendance: z.object({
     /** Public counts show only from this many people (no "be the first"). */
     publicMin: z.number().int().min(2),
@@ -364,36 +364,36 @@ export const appConfigSchema = z.object({
     keepAfterEndHours: z.number().int().min(0),
     perHourPerDevice: z.number().int().positive(),
     sharesPerHourPerDevice: z.number().int().positive(),
-    /** "Looking": opened the card within this many minutes (§6). */
+    /** "Looking": opened the card within this many minutes. */
     lookingMinutes: z.number().int().positive(),
-    /** The card offers "I'm here" within this distance of a live event (§6). */
+    /** The card offers "I'm here" within this distance of a live event. */
     hereRadiusM: z.number().positive(),
   }),
-  /** Plan ahead (M10, docs/milestones/M10-plan-ahead.md). */
+  /** Plan ahead. */
   agenda: z.object({
-    /** The views the bookmark in the top row switches between; "all" is the map as usual (§1). */
+    /** The views the bookmark in the top row switches between; "all" is the map as usual. */
     views: z
       .array(z.enum(['all', 'plans', 'saved', 'private']))
       .min(2)
       .refine((v) => v[0] === 'all' && new Set(v).size === v.length, {
         message: 'views start with "all" and list each view once',
       }),
-    /** Ended events stay under "Past" this long, then leave the list (§1). */
+    /** Ended events stay under "Past" this long, then leave the list. */
     keepPastDays: z.number().int().min(1),
-    /** A removal is remembered this long, so an offline device doesn't bring it back (§2). */
+    /** A removal is remembered this long, so an offline device doesn't bring it back. */
     keepRemovedDays: z.number().int().min(1),
-    /** Saved events per device or account; the oldest go first (§2). */
+    /** Saved events per device or account; the oldest go first. */
     maxSaved: z.number().int().min(10).max(1000),
-    /** Saved events read by id in one request (§1). */
+    /** Saved events read by id in one request. */
     maxPerRead: z.number().int().min(1).max(500),
-    /** Walks between events are rounded up to this many minutes (§3). */
+    /** Walks between events are rounded up to this many minutes. */
     walkRoundMin: z.number().int().min(1).max(15),
-    /** The "leave at" stepper's step (§3). */
+    /** The "leave at" stepper's step. */
     leaveStepMin: z.number().int().min(5).max(60),
-    /** Sync calls per account per hour (§2). */
+    /** Sync calls per account per hour. */
     syncPerHour: z.number().int().positive(),
   }),
-  /** Web push (M10 §4). */
+  /** Web push. */
   push: z.object({
     /** The Worker secret holding the VAPID private key (a P-256 JWK; `pnpm push:keys`). */
     secret: z.string().min(1),
@@ -401,11 +401,11 @@ export const appConfigSchema = z.object({
     ttlSeconds: z.number().int().min(60).max(86_400),
     subscribePerHourPerDevice: z.number().int().positive(),
   }),
-  /** Reminders before a start (M10 §5). */
+  /** Reminders before a start. */
   reminders: z.object({
     /** The choices on the bell: minutes before the start, or "dayBefore" (the evening before). */
     leads: z.array(z.union([z.string().regex(/^[0-9]{1,4}$/), z.literal('dayBefore')])).min(1),
-    /** Chosen until the person picks another (owner, 2026-11-04: 60 minutes). */
+    /** Chosen until the person picks another. */
     defaultLead: z.string(),
     /** "The day before" fires at this local time. */
     dayBeforeAt: z.string().regex(/^\d{2}:\d{2}$/),
@@ -416,33 +416,32 @@ export const appConfigSchema = z.object({
     /** Reminders sent in one tick at most; the rest go on the next. */
     maxPerTick: z.number().int().positive(),
   }),
-  /** Private events, contacts and invitations (M11 §1–§3). */
+  /** Private events, contacts and invitations. */
   private: z.object({
-    /** Private events and their invitations are deleted this many days after they end (§9). */
+    /** Private events and their invitations are deleted this many days after they end. */
     keepAfterEndDays: z.number().int().min(1),
-    /** Contacts per account, and groups (§2). */
+    /** Contacts per account, and groups. */
     maxContacts: z.number().int().positive(),
     maxGroups: z.number().int().positive(),
-    /** Invitations per event, people and links together (§3). */
+    /** Invitations per event, people and links together. */
     maxInvitationsPerEvent: z.number().int().positive(),
     /** Contact, group and invitation changes per account per hour. */
     perHourPerAccount: z.number().int().positive(),
   }),
-  /** Organisers: claims, posts and edits (M11 §6–§8). */
+  /** Organisers: claims, posts and edits. */
   organiser: z.object({
-    /** Posts per event per organiser per day (§7). */
+    /** Posts per event per organiser per day. */
     postsPerEventPerDay: z.number().int().positive(),
-    /** Site checks of a claim's code per account per hour (§6). */
+    /** Site checks of a claim's code per account per hour. */
     checksPerHour: z.number().int().positive(),
-    /** Edits per account per hour (§8). */
+    /** Edits per account per hour. */
     editsPerHour: z.number().int().positive(),
-    /** A new event this close to a claimed venue publishes at once (§8). */
+    /** A new event this close to a claimed venue publishes at once. */
     venueRadiusM: z.number().positive(),
-    /** Posts are cached at the edge this long (§7). */
+    /** Posts are cached at the edge this long. */
     postsCacheSec: z.number().int().min(0),
   }),
-  /** Push notices to everyone interested in an event (M11 §7, owner 2026-11-04). */
-  /** M7 search (docs/milestones/M7-search-follow.md §2). */
+  /** Search. */
   search: z.object({
     /** Trigram similarity a match needs (pg_trgm `%`), about 0.3. */
     minSimilarity: z.number().min(0).max(1),
@@ -457,15 +456,15 @@ export const appConfigSchema = z.object({
     /** The app waits this long after the last keystroke before asking. */
     debounceMs: z.number().int().min(0),
   }),
-  /** M7 follows (§4, §5). */
+  /** Followed artists. */
   follows: z.object({
     /** Names per device or account. */
     max: z.number().int().positive().max(500),
     /** Match requests per client and hour. */
     matchPerHourPerClient: z.number().int().positive(),
-    /** The app asks again at most this often (§4: on open, then hourly). */
+    /** The app asks again at most this often (on open, then hourly). */
     matchEveryMinutes: z.number().int().positive(),
-    /** Nationwide Ticketmaster lookups (slice E). */
+    /** Nationwide Ticketmaster lookups. */
     nationwide: z.object({
       enabled: z.boolean(),
       /** The source in sources.json whose endpoint and secrets are used. */
@@ -478,7 +477,7 @@ export const appConfigSchema = z.object({
       perRequest: z.number().int().min(0),
       countryCode: z.string().length(2),
     }),
-    /** New-date alerts (slice G): sent per cron tick at most, and how far back a new event counts. */
+    /** New-date alerts: sent per cron tick at most, and how far back a new event counts. */
     alerts: z.object({
       maxPerTick: z.number().int().positive(),
       lookbackHours: z.number().int().positive(),
@@ -492,7 +491,7 @@ export const appConfigSchema = z.object({
     /** Sent per cron tick at most (Workers Free CPU, as reminders.maxPerTick). */
     maxPerTick: z.number().int().positive(),
   }),
-  /** M12 metrics (docs/milestones/M12-more-events.md §1), in the default region's time zone. */
+  /** Metrics, in the default region's time zone. */
   metrics: z.object({
     /** "Tonight" runs from this hour to midnight. */
     eveningFromHour: z.number().int().min(0).max(23),
@@ -502,7 +501,7 @@ export const appConfigSchema = z.object({
       hour: z.number().int().min(0).max(23),
     }),
   }),
-  /** The public site (M13 §2): its origin is the one place the domain is written. */
+  /** The public site: its origin is the one place the domain is written. */
   site: z.object({
     url: z
       .string()
@@ -513,14 +512,14 @@ export const appConfigSchema = z.object({
   legal: z.object({
     /** Takedown / DSA notice contact shown on the About page, the legal pages and the crawler's UA. */
     contactEmail: z.string().email().nullable(),
-    /** Version of the terms and privacy notice an account accepts at sign-up (M8 §2). */
+    /** Version of the terms and privacy notice an account accepts at sign-up. */
     termsVersion: z.string().min(1),
-    /** The controller named in the terms and privacy policy (M13 §1); null until the owner sets it. */
+    /** The controller named in the terms and privacy policy; null until the owner sets it. */
     operator: z.string().min(1).nullable(),
     /** The operator's postal address, for the legal pages. */
     address: z.string().min(1).nullable(),
   }),
-  /** The app's own email (M13 §5): sign-in codes with `auth.emailDelivery: "app"`, alerts. */
+  /** The app's own email: sign-in codes with `auth.emailDelivery: "app"`, alerts. */
   email: z.object({
     provider: z.enum(['none', 'resend']),
     /** "Happow <hello@example.org>"; a sender verified with the provider. Null = no email. */
@@ -529,12 +528,12 @@ export const appConfigSchema = z.object({
     secret: z.string().min(1),
     endpoint: z.string().url(),
   }),
-  /** User accounts (M8 §2). */
+  /** User accounts. */
   auth: z.object({
     /**
      * How sign-in codes reach people: "manual" = the app files a request and the admin sends the
      * code by hand from the admin panel; "supabase" = Supabase Auth emails it (custom SMTP);
-     * "app" = the Worker makes the code and sends it with the app's email sender (M13 §5).
+     * "app" = the Worker makes the code and sends it with the app's email sender.
      */
     emailDelivery: z.enum(['manual', 'supabase', 'app']),
     /** Sign-in providers besides the email code, once set up in Supabase (docs/SETUP.md). */
@@ -550,8 +549,6 @@ export const appConfigSchema = z.object({
     /** The email the admin sends by hand, per language: {code}, {link} and {hours} are filled in. */
     codeEmail: z.object({ pl: emailTemplateSchema, en: emailTemplateSchema }),
   }),
-  /** Ways to buy premium (M8 §4). Empty = none: no offers, premium only from promotions and grants. */
-  premium: z.object({ providers: z.array(z.string().regex(/^[a-z0-9-]+$/)) }),
   ingest: z.object({
     descriptionMaxChars: z.number().int().positive(),
     /** Fetch from this long ago, so events that started earlier and still run are kept. */
@@ -559,10 +556,10 @@ export const appConfigSchema = z.object({
     lookaheadHours: z.number().positive(),
     /**
      * Identifies our crawler/API client to providers. `{siteUrl}` and `{contactEmail}` are filled
-     * from `site.url` and `legal.contactEmail` (M13 §2); see `siteTemplate`.
+     * from `site.url` and `legal.contactEmail`; see `siteTemplate`.
      */
     userAgent: z.string().min(1),
-    /** Crawler politeness (M13 §3). */
+    /** Crawler politeness. */
     politeness: z.object({
       /** Send If-None-Match / If-Modified-Since with the validators of the last read. */
       conditionalRequests: z.boolean(),
@@ -600,14 +597,14 @@ export const appConfigSchema = z.object({
 
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i, 'use a colour like "#6A4CF5"');
 
-/** §3.1 colours of one theme: the basemap, the chrome and notices. */
+/** Colours of one theme: the basemap, the chrome and notices. */
 export const themeTokensSchema = z.object({
   land: hex,
   majorRoad: hex,
   minorRoad: hex,
   water: hex,
   park: hex,
-  /** Covers unexplored areas (lit map, slice H). */
+  /** Covers unexplored areas (lit map). */
   veil: hex,
   veilOpacity: z.number().min(0).max(1),
   /** Text and glyphs. */
@@ -617,12 +614,12 @@ export const themeTokensSchema = z.object({
   paper: hex,
   /** Subtle fills on paper (segmented controls, chips). */
   paper2: hex,
-  /** The track behind toggles (§15). */
+  /** The track behind toggles. */
   sunken: hex,
-  /** A toggle that is on, and what sits on it (§15). */
+  /** A toggle that is on, and what sits on it. */
   raised: hex,
   onRaised: hex,
-  /** What is off in the settings sheet: toggles, language codes, clear (§15, owner 2026-10-23). */
+  /** What is off in the settings sheet: toggles, language codes, clear. */
   quiet: hex,
   line: hex,
   /** Behind dialogs, at partial opacity. */
@@ -635,11 +632,11 @@ export const themeTokensSchema = z.object({
 
 const liveSchema = z.object({ live: hex, onLive: hex });
 
-/** A live-hue preset (§3.2): the one colour that means "on now", and the glyph on it. */
+/** A live-hue preset: the one colour that means "on now", and the glyph on it. */
 export const themePresetSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   labels: labelsSchema,
-  /** Who may pick it: everyone, signed-in users, premium (§8). */
+  /** Who may pick it: everyone, signed-in users, premium. */
   tier: z.enum(['anonymous', 'account', 'premium']),
   day: liveSchema,
   night: liveSchema,
@@ -649,27 +646,25 @@ export const themeConfigSchema = z.object({
   themes: z.object({ day: themeTokensSchema, night: themeTokensSchema }),
   presets: z.array(themePresetSchema).min(1),
   defaultPreset: z.string(),
-  /** §3.2: every preset must meet these in both themes (checked by the contrast test). */
+  /** Every preset must meet these in both themes (checked by the contrast test). */
   rules: z.object({
     minGlyphContrast: z.number().min(1),
     minLandContrast: z.number().min(1),
     minHueDistance: z.number().min(0).max(180),
     minInkContrast: z.number().min(1),
     minMutedContrast: z.number().min(1),
-    /** The veil (§6) must dim unlit areas without hiding them. */
+    /** The veil must dim unlit areas without hiding them. */
     veilOpacity: z.object({ min: z.number().min(0).max(1), max: z.number().min(0).max(1) }),
   }),
 });
 
 export const mapConfigSchema = z.object({
-  provider: z.string(),
   styleUrl: z.string().url(),
   fallbackRaster: z.object({
     tiles: z.array(z.string()).min(1),
     tileSize: z.number().int().positive(),
     maxZoom: z.number(),
   }),
-  attribution: z.string(),
   minZoom: z.number(),
   maxZoom: z.number(),
   /**
@@ -706,7 +701,7 @@ export const sourceSchema = z.object({
   termsNotes: z.string(),
   /**
    * What must happen before a public launch while this source is on (consent, a switch-off);
-   * `pnpm launch:check` lists it (M13 §7).
+   * `pnpm launch:check` lists it.
    */
   beforeLaunch: z.string().optional(),
   /** Names of environment variables the adapter needs; the source is skipped when any is missing. */
@@ -786,12 +781,12 @@ export const seedFileSchema = z.object({
   events: z.array(seedEventSchema),
 });
 
-/** Plans from lowest to highest; a higher plan never gets less (M8 §3). */
+/** Plans from lowest to highest; a higher plan never gets less. */
 export const planIdSchema = z.enum(['anonymous', 'account', 'premium']);
 
 const quotaSchema = z.number().int().min(0);
 
-/** What a plan allows. Code asks for these, never for a plan (M8 §3). */
+/** What a plan allows. Code asks for these, never for a plan. */
 export const entitlementsSchema = z
   .object({
     'events.perMonth': quotaSchema,
@@ -801,15 +796,15 @@ export const entitlementsSchema = z
     'atlas.export': z.boolean(),
     'atlas.sync': z.boolean(),
     'alerts.newDates': z.boolean(),
-    /** Followed artists synced across the account's devices (M7 §5). */
+    /** Followed artists synced across the account's devices. */
     'follows.sync': z.boolean(),
     'saved.sync': z.boolean(),
     'private.create': z.boolean(),
-    /** Private events a month (M11 §1, owner 2026-11-04: 1 on a free account). */
+    /** Private events a month. */
     'private.perMonth': quotaSchema,
-    /** Info posts on your events (§7); schedule changes and important posts are always free. */
+    /** Info posts on your events; schedule changes and important posts are always free. */
     'organiser.infoPosts': z.boolean(),
-    /** Edit your events and publish at a claimed venue at once (§8). */
+    /** Edit your events and publish at a claimed venue at once. */
     'organiser.publish': z.boolean(),
   })
   .strict();
@@ -822,7 +817,7 @@ export const plansConfigSchema = z
       premium: entitlementsSchema,
     }),
     /**
-     * A promotion for every account, the same for all (M8 §4): `plan` through the whole `until`
+     * A promotion for every account, the same for all: `plan` through the whole `until`
      * day in the default region's time zone. Null = no promotion.
      */
     earlyAccess: z
@@ -831,7 +826,7 @@ export const plansConfigSchema = z
         until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       })
       .nullable(),
-    /** Rewards for adding events (M12 §5): only after moderation or trusted publishing. */
+    /** Rewards for adding events: only after moderation or trusted publishing. */
     contributions: z
       .object({
         /** Premium days per verified event, and at most this many earned per calendar month. */
@@ -839,10 +834,10 @@ export const plansConfigSchema = z
         premiumDaysPerMonth: z.number().int().nonnegative(),
         /** Verified events with no rejection after which new events skip the queue. */
         trustedAfter: z.number().int().positive(),
-        /** Calendar feeds an account may import from (M12 §4.6). */
+        /** Calendar feeds an account may import from. */
         feedsPerAccount: z.number().int().min(0).default(2),
         /**
-         * "First added by you" (M12 §6.1): no other live event within `radiusM` that ended in the
+         * "First added by you": no other live event within `radiusM` that ended in the
          * last `quietDays` or is still ahead.
          */
         firstPlace: z
@@ -866,7 +861,7 @@ export const plansConfigSchema = z
 const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 /**
- * Season collections (M12 §6.3): while a season runs, events that fit it open as a themed list.
+ * Season collections: while a season runs, events that fit it open as a themed list.
  * An event fits when it overlaps the dates (inclusive, in the region's time zone) and, where given,
  * has one of the categories and a keyword in its title (lower case, without diacritics).
  */

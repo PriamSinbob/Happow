@@ -9,7 +9,7 @@ import {
   uaFromTemplate,
 } from '../build/crawlerPage';
 
-/** M13 §1: the legal texts as static pages, filled from config. */
+/** The legal texts as static pages, filled from config. */
 describe('legal pages', () => {
   it('renders every page in Polish and English, with no placeholder left', () => {
     const pages = renderPages();

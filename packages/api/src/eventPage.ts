@@ -25,7 +25,7 @@ interface EventRow {
   lng: number;
 }
 
-/** How far around the event the preview image's map reaches, in metres (M9 §2). */
+/** How far around the event the preview image's map reaches, in metres. */
 export const PREVIEW_MAP_RADIUS_M = 1500;
 
 /** A district on the preview map, from district_outlines(). */
@@ -36,7 +36,7 @@ export interface Outline {
   geometry: { type: 'Polygon' | 'MultiPolygon'; coordinates: unknown };
 }
 
-/** Everything the preview image shows; no prices and no counts (M9 §2). */
+/** Everything the preview image shows; no prices and no counts. */
 export interface PreviewData {
   title: string;
   when: string;
@@ -50,7 +50,7 @@ export interface PreviewData {
   version: string;
 }
 
-/** How long a shared link's tagged page is cached at the edge (M9 §1). */
+/** How long a shared link's tagged page is cached at the edge. */
 const EVENT_CACHE_S = 300;
 const MISSING_CACHE_S = 60;
 
@@ -104,7 +104,7 @@ export interface PreviewTags {
   description: string;
   url: string;
   image: string;
-  /** "summary_large_image" once the event has its own 1200×630 card (slice B). */
+  /** "summary_large_image" once the event has its own 1200×630 card. */
   card: 'summary' | 'summary_large_image';
   lang: string;
 }
@@ -136,7 +136,7 @@ export function withTags(indexHtml: string, t: PreviewTags): string {
 
 /**
  * GET /e/<id>: the app's own index.html with Open Graph and Twitter Card tags for that event, so
- * a link pasted in a chat previews as the event (M9 §1). Crawlers don't run JavaScript and never
+ * a link pasted in a chat previews as the event. Crawlers don't run JavaScript and never
  * see a #fragment, so the tags have to be in the HTML. The app itself turns the path into its
  * event route. An unknown or hidden event gets the generic tags and a 404; a database error still
  * serves the app, so a shared link never breaks.
@@ -176,7 +176,7 @@ export function createEventPage(env: ApiEnv, deps: Pick<ApiDeps, 'fetch' | 'conf
     const labels = category?.labels as Record<string, string> | undefined;
     const when = whenText(row.start_at, row.end_at, row.timezone || region.timezone, lang);
     const categoryLabel = labels?.[lang] ?? labels?.[fallback] ?? null;
-    // An old link still previews, marked as ended (§4); the image is kept as it was.
+    // An old link still previews, marked as ended; the image is kept as it was.
     const ended = new Date(row.end_at) < now();
     // Changes exactly when something drawn on the image changes, so edited events get a new one.
     const version = (
@@ -201,7 +201,7 @@ export function createEventPage(env: ApiEnv, deps: Pick<ApiDeps, 'fetch' | 'conf
         return page(indexHtml, 200, 0);
       }
       if (!ev) {
-        // A private event (M11 §4): generic tags only, never its title, time or place. The app
+        // A private event: generic tags only, never its title, time or place. The app
         // opens the card for its invitees.
         const visibility = await db
           .rpc<string | null>('event_visibility', { p_event: id })
@@ -245,7 +245,7 @@ export function createEventPage(env: ApiEnv, deps: Pick<ApiDeps, 'fetch' | 'conf
     },
 
     /**
-     * What the preview image shows (M9 §2), or null for an unknown or hidden event. Districts
+     * What the preview image shows, or null for an unknown or hidden event. Districts
      * that fail to load leave the map plain rather than failing the image.
      */
     async preview(id: string): Promise<PreviewData | null> {

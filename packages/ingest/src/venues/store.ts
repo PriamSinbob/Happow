@@ -14,7 +14,7 @@ export interface SiteToCheck {
 
 const point = (lat: number, lng: number): LatLng => ({ lat, lng });
 
-/** Postgres for OSM venues, links, the website check and accepted sites (M12 §2.2). */
+/** Postgres for OSM venues, links, the website check and accepted sites. */
 export class VenueStore {
   constructor(private readonly db: pg.ClientBase) {}
 
@@ -75,7 +75,7 @@ export class VenueStore {
     }));
   }
 
-  /** OSM venues of these kinds ("amenity=place_of_worship") with service times (M12 §2.3). */
+  /** OSM venues of these kinds ("amenity=place_of_worship") with service times. */
   async servicePlaces(regionId: string, kinds: string[]): Promise<OsmVenue[]> {
     const all = await this.osmVenues(regionId);
     return all.filter((v) => v.serviceTimes && (!kinds.length || kinds.includes(v.kind)));

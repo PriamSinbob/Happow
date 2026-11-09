@@ -7,7 +7,7 @@ import { Supabase } from './supabase.js';
 import { sendPush, type PushOutcome } from './webpush.js';
 
 /**
- * New-date alerts for followed artists (M7 §5, slice G). Each cron tick: make alerts for public
+ * New-date alerts for followed artists. Each cron tick: make alerts for public
  * events first stored since the follow and the switch-on (follow_alerts_queue), then send a few
  * by web push to the account's subscribed devices (Workers Free CPU, as reminders). An alert with
  * nowhere to go is marked done and never retried.
@@ -23,7 +23,7 @@ export interface DueAlert {
   timezone: string;
   hidden: boolean;
   status: string;
-  /** The account's address when it asked for alerts by email (M13 §5). */
+  /** The account's address when it asked for alerts by email. */
   email?: string | null;
   locale?: string;
   subscriptions: { endpoint: string; p256dh: string; auth: string; lang: string }[];

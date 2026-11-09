@@ -1,6 +1,6 @@
--- M8 slice A: user accounts. Profiles, staff roles and sign-in code requests sent by hand
--- (docs/milestones/M8-accounts-premium.md §2). The API reaches all of this through the
--- service-role functions below; row-level security is the backstop for direct PostgREST access.
+-- User accounts: profiles, staff roles and sign-in code requests sent by hand. The API reaches all
+-- of this through the service-role functions below; row-level security is the backstop for direct
+-- PostgREST access.
 
 -- ---------- Supabase Auth on plain Postgres ----------
 
@@ -32,7 +32,7 @@ end $$;
 
 create table profiles (
   user_id uuid primary key references auth.users (id) on delete cascade,
-  -- Optional; shown only to people one invites or is invited by (M11).
+  -- Optional; shown only to people one invites or is invited by.
   display_name text check (char_length(display_name) between 1 and 60),
   locale text,
   -- The terms and privacy notice version the user accepted, and when.
@@ -61,8 +61,8 @@ create trigger happow_new_user after insert on auth.users
 
 -- ---------- Staff roles ----------
 
--- Moderators review the queue; the admin (the owner) also sends sign-in codes and, from slice B,
--- grants plans. Rows are added by hand: see docs/SETUP.md.
+-- Moderators review the queue; the admin also sends sign-in codes and grants plans. Rows are added
+-- by hand: see docs/SETUP.md.
 alter table moderators add column role text not null default 'moderator'
   check (role in ('moderator', 'admin'));
 
@@ -200,7 +200,7 @@ begin
   return profile_get(p_user);
 end $$;
 
--- Everything stored for the user (GDPR export). Later slices add their own parts.
+-- Everything stored for the user (GDPR export). Later migrations add their own parts.
 create function account_export(p_user uuid)
 returns jsonb
 language sql

@@ -7,7 +7,7 @@ import { config } from './config';
 import { storage } from './storage';
 
 /**
- * Your plans (M10 §1, §2): the events saved on this device, with "I'm going" marks and recent
+ * Your plans: the events saved on this device, with "I'm going" marks and recent
  * removals. One store for the whole app, so the bookmark, "I'm going", the views and the agenda
  * agree. Signed in with `saved.sync`, it follows the account (see `usePlanSync`).
  */
@@ -29,14 +29,7 @@ function isEntry(v: unknown): v is PlanEntry {
 function load(): PlanEntry[] {
   try {
     const v: unknown = JSON.parse(storage.get(KEY) ?? 'null');
-    if (Array.isArray(v)) return v.filter(isEntry);
-    // Before M10: a plain list of saved ids, oldest first.
-    const old: unknown = JSON.parse(storage.get('saved') ?? '[]');
-    if (!Array.isArray(old)) return [];
-    const t = Date.now() - old.length;
-    return old
-      .filter((x): x is string => typeof x === 'string')
-      .map((id, i) => ({ id, on: true, going: false, at: t + i }));
+    return Array.isArray(v) ? v.filter(isEntry) : [];
   } catch {
     return [];
   }
@@ -57,7 +50,7 @@ export const plans = {
   isGoing: (id: string) => list.some((e) => e.id === id && e.on && e.going),
   /** The bookmark on the card. */
   toggle: (id: string) => commit(setPlan(list, id, { on: !plans.isSaved(id) }, Date.now())),
-  /** "I'm going" also saves; taking it back keeps the bookmark (owner, 2026-11-04). */
+  /** "I'm going" also saves; taking it back keeps the bookmark. */
   setGoing: (id: string, going: boolean) => commit(setPlan(list, id, { going }, Date.now())),
   /** Takes events off the list (ended long ago); a removal, so other devices drop them too. */
   remove: (ids: readonly string[]) => {
@@ -66,7 +59,7 @@ export const plans = {
     for (const id of ids) next = setPlan(next, id, { on: false }, Date.now());
     commit(next);
   },
-  /** An event marked "going" before M10, or on a device that didn't save it: save it once. */
+  /** An event marked "going" without being saved (older data, another device): save it once. */
   adoptGoing: (id: string) => {
     if (!list.some((e) => e.id === id)) plans.setGoing(id, true);
   },
@@ -89,7 +82,7 @@ export function usePlans(): PlanEntry[] {
 }
 
 /**
- * Keeps the list in step with the account (§2): on sign-in, after each change (batched) and every
+ * Keeps the list in step with the account: on sign-in, after each change (batched) and every
  * `refresh.dataMinutes`. Without an account or `saved.sync`, nothing leaves the device.
  */
 export function usePlanSync(): void {

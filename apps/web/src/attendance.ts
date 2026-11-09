@@ -3,8 +3,8 @@ import { accessToken } from './auth';
 import { storage } from './storage';
 
 /**
- * "I'm going", co-presence and share links on the device (M9 §5, §6). Everything is anonymous: the
- * server sees this device's random id (hashed there), and the account only when signed in.
+ * "I'm going", co-presence and share links on the device. Everything is anonymous: the server
+ * sees this device's random id (hashed there), and the account only when signed in.
  */
 
 export type Signal = 'going' | 'looking' | 'onway' | 'here';
@@ -65,7 +65,7 @@ export function arrivalToken(eventId: string): string | null {
   return readMap(ARRIVED)[eventId] ?? null;
 }
 
-export async function getAttendance(eventId: string): Promise<AttendanceView> {
+async function getAttendance(eventId: string): Promise<AttendanceView> {
   return api<AttendanceView>('attendance', { body: { deviceId: deviceId(), eventId } });
 }
 
@@ -96,7 +96,7 @@ export async function shareToken(eventId: string): Promise<string> {
 const lookedAt = new Map<string, number>();
 
 /**
- * Opening a card: "looking" for the next few minutes (§6), sent at most once per half that window
+ * Opening a card: "looking" for the next few minutes, sent at most once per half that window
  * per event, then the card's view. Falls back to only reading the view.
  */
 export async function lookAt(eventId: string, minutes: number): Promise<AttendanceView> {

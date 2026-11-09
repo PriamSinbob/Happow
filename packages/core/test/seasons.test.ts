@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../src/config';
 import { activeSeasons, fitsSeason, plainText, weekendWindow } from '../src/seasons';
 
-/** M12 slice N: season collections and the district goal's weekend. */
 const config = loadConfig();
 const tz = 'Europe/Warsaw';
 const season = (id: string) => config.seasons.find((s) => s.id === id)!;

@@ -7,10 +7,10 @@ import { Supabase } from './supabase.js';
 import { sendPush, vapidKey, type PushOutcome, type VapidKey } from './webpush.js';
 
 /**
- * Web push and reminders (M10 §4, §5). A device subscribes with its push endpoint (anonymous: its
+ * Web push and reminders. A device subscribes with its push endpoint (anonymous: its
  * salted hash, as for "I'm going"); a reminder is one event and a lead time. The Worker's Cron
  * Trigger sends what's due before the next tick. With an account, a reminder reaches all of the
- * account's subscribed devices. No account is needed (owner, 2026-11-04).
+ * account's subscribed devices. No account is needed.
  */
 
 export interface ReminderDeps {
@@ -157,7 +157,7 @@ export interface DueReminder {
 }
 
 /**
- * What a reminder says (§5): the real time left when it's sent (owner, 2026-11-04), not the lead
+ * What a reminder says: the real time left when it's sent, not the lead
  * chosen; "Time changed" when the start moved since it was set; "Cancelled" for a cancelled one.
  */
 export function reminderMessage(r: DueReminder, lang: string, now: Date) {
@@ -202,7 +202,7 @@ export interface ReminderTickDeps {
 }
 
 /**
- * Cron Trigger → reminders due before the next tick (§5). Read straight from the JSON, like the
+ * Cron Trigger → reminders due before the next tick. Read straight from the JSON, like the
  * ingest schedule. A reminder whose sending failed everywhere stays due and is tried next tick.
  */
 export async function sendDueReminders(

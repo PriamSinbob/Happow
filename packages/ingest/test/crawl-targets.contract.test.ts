@@ -1,31 +1,13 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import type { ExtractedEvent, Extractor, Geocoder } from '@happow/extract';
 import { MemoryCache } from '@happow/extract';
 import { runIngest } from '../src';
-import { config, noSleep } from './helpers';
+import { config, noSleep, page, site } from './helpers';
 
 /**
- * M12 slice K: more crawl targets, on pages recorded on 29 Oct 2026. Each test turns its source
- * on, so the tests hold whether config has it on or off.
+ * More crawl targets, on pages recorded on 29 Oct 2026. Each test turns its source on, so the
+ * tests hold whether config has it on or off.
  */
-
-const page = (name: string) =>
-  readFileSync(new URL(`../../extract/test/fixtures/${name}`, import.meta.url), 'utf8');
-
-function site(pages: Record<string, string | { status: number }>) {
-  const requested: string[] = [];
-  const fetchMock = vi.fn(async (input: string | URL | Request) => {
-    const url = String(input);
-    requested.push(url);
-    const body = pages[url];
-    if (body === undefined) return new Response('not found', { status: 404 });
-    if (typeof body !== 'string') return new Response('', { status: body.status });
-    const type = url.endsWith('.txt') ? 'text/plain' : 'text/html; charset=utf-8';
-    return new Response(body, { status: 200, headers: { 'content-type': type } });
-  });
-  return { fetch: fetchMock as unknown as typeof fetch, requested };
-}
 
 const geocoder: Geocoder = {
   geocode: async () => ({
@@ -80,7 +62,7 @@ const llmEvent = (title: string, start: string, venueName: string): ExtractedEve
   confidence: 0.9,
 });
 
-describe('more crawl targets (M12 §2.4–2.5)', () => {
+describe('more crawl targets', () => {
   it('are crawled sources with their terms check written down', () => {
     for (const id of ['biletyna', 'mbp-wroclaw', 'uwr']) {
       const s = config.sources.find((x) => x.id === id)!;
@@ -130,7 +112,7 @@ describe('more crawl targets (M12 §2.4–2.5)', () => {
     });
     expect(s).toMatchObject({ status: 'ok' });
     // robots.txt, the listing, at most options.maxFollow (30) event pages, and tdmrep.json once
-    // (its pages go to the LLM, M13 §3).
+    // (its pages go to the LLM).
     expect(web.requested.length).toBeLessThanOrEqual(33);
     expect(web.requested).toContain('https://biblioteka.wroc.pl/.well-known/tdmrep.json');
     expect(web.requested).toContain('https://biblioteka.wroc.pl/co-i-jak-czytal-rozewicz-4-11/');
@@ -162,7 +144,7 @@ describe('more crawl targets (M12 §2.4–2.5)', () => {
     expect(s!.events!.map(({ event }) => event.title)).toContain('Szewskie czwartki: wykład');
   });
 
-  it('Meetup public pages (M7 §7): follows event links from the group page’s JSON, reads JSON-LD', async () => {
+  it('Meetup public pages: follows event links from the group page’s JSON, reads JSON-LD', async () => {
     const group = 'https://www.meetup.com/wroclaw-english-speakers-group/events/';
     const event = 'https://www.meetup.com/wroclaw-english-speakers-group/events/316633001/';
     const src = config.sources.find((x) => x.id === 'meetup-pages')!;

@@ -21,8 +21,8 @@ export interface ViewState {
 }
 
 /**
- * What the map and list show (M10 §1, owner 2026-11-04): everything, your plans, saved (and from
- * M11, private events). Remembered on the device, like the map shortcut.
+ * What the map and list show: everything, your plans, saved, private events. Remembered on the
+ * device, like the map shortcut.
  */
 export function useView(): ViewState {
   const [view, setView] = useState<PlanView>(() => saved('view', 'all', views));

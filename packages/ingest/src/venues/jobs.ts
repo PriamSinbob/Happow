@@ -8,7 +8,7 @@ import { linkVenues, parseOsmVenues, venueQuery } from './osm.js';
 import { probeSite } from './probe.js';
 
 /**
- * Scheduled jobs that keep venues and the website check up to date (M12 §2.2). They are sources
+ * Scheduled jobs that keep venues and the website check up to date. They are sources
  * in config/sources.json like any other, so the Worker's cron and `source_runs` schedule them,
  * but they write venues and candidates, not events.
  */

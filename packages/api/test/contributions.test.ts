@@ -1,79 +1,24 @@
 import { describe, expect, it, vi } from 'vitest';
-import { loadConfig } from '@happow/core';
 import { createApi } from '../src';
+import { config, env, organiserRpc, req, submitRpc, supabase, type Rpc } from './helpers';
 
-/** M12 slice E: rewards after moderation, trusted publishing, counts and the contributor's side. */
+/** Rewards after moderation, trusted publishing, counts and the contributor's side. */
 
-const SB = 'https://proj.supabase.co';
-const env = { SUPABASE_URL: SB, SUPABASE_SERVICE_ROLE_KEY: 'service-key', SUBMITTER_SALT: 'salt' };
 // Thu 29 Oct 2026, 23:30 in Warsaw: still October there, while UTC is already 22:30 the same day.
 const now = () => new Date('2026-10-29T22:30:00Z');
-const config = loadConfig();
 
-type Rpc = (args: Record<string, unknown>) => { status?: number; body: unknown };
 function backend(rpc: Record<string, Rpc>) {
-  const calls: { name: string; args: Record<string, unknown> }[] = [];
-  const users: Record<string, { id: string; email: string }> = {
-    'user-token': { id: 'u1', email: 'ala@example.org' },
-    'mod-token': { id: 'u2', email: 'mod@example.org' },
-    'admin-token': { id: 'u3', email: 'owner@example.org' },
-  };
-  const all: Record<string, Rpc> = {
-    rate_limit_hit: () => ({ body: true }),
-    staff_role: (a) => ({
-      body:
-        { 'mod@example.org': 'moderator', 'owner@example.org': 'admin' }[a.p_email as string] ??
-        null,
-    }),
-    grants_active: () => ({ body: [] }),
-    usage_get: () => ({ body: { events: 0, autofills: 0 } }),
+  const sb = supabase({
     usage_take: () => ({ body: true }),
     profile_get: () => ({ body: { displayName: null, locale: 'pl', termsVersion: null } }),
-    contributor_trusted: () => ({ body: false }),
     trusted_recent: () => ({ body: [] }),
     moderation_queue: () => ({ body: { submissions: [], reports: [] } }),
-    duplicate_candidates: () => ({ body: { title: 'Pchli targ na Ruskiej', others: [] } }),
-    contribution_award: () => ({ body: { kind: 'verified', days: 3, startsAt: null } }),
-    // M11: every event public, nobody an organiser, empty organiser queues.
-    event_visibility: () => ({ body: 'public' }),
-    organiser_at: () => ({ body: false }),
-    claims_queue: () => ({ body: [] }),
-    edits_queue: () => ({ body: [] }),
-    post_reports_queue: () => ({ body: [] }),
+    ...submitRpc,
+    ...organiserRpc,
     ...rpc,
-  };
-  const f = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
-    const url = String(input);
-    if (url.startsWith(`${SB}/rest/v1/rpc/`)) {
-      const name = url.slice(`${SB}/rest/v1/rpc/`.length);
-      const args = JSON.parse(String(init.body ?? '{}'));
-      calls.push({ name, args });
-      const h = all[name];
-      if (!h) return new Response('{}', { status: 404 });
-      const { status = 200, body } = h(args);
-      return new Response(JSON.stringify(body), { status });
-    }
-    if (url === `${SB}/auth/v1/user`) {
-      const token = new Headers(init.headers).get('authorization')?.replace('Bearer ', '') ?? '';
-      const u = users[token];
-      return u ? Response.json(u) : new Response('{}', { status: 401 });
-    }
-    return new Response('not found', { status: 404 });
   });
-  const api = createApi(env, { config, fetch: f as typeof fetch, now, extractor: null });
-  const call = (name: string) => calls.filter((c) => c.name === name);
-  return { api, calls, call };
+  return { ...sb, api: createApi(env, { config, fetch: sb.fetch, now, extractor: null }) };
 }
-const req = (path: string, init: { method?: string; token?: string; body?: unknown } = {}) =>
-  new Request(`https://happow.example/api/${path}`, {
-    method: init.method ?? (init.body === undefined ? 'GET' : 'POST'),
-    headers: {
-      'content-type': 'application/json',
-      'cf-connecting-ip': '203.0.113.7',
-      ...(init.token && { authorization: `Bearer ${init.token}` }),
-    },
-    ...(init.body !== undefined && { body: JSON.stringify(init.body) }),
-  });
 
 const SUB = '0b7a3c1e-2f4d-4e5a-9b6c-7d8e9f0a1b2c';
 const approve = (b: ReturnType<typeof backend>, id = SUB) =>
@@ -82,7 +27,7 @@ const decided = {
   moderate_submission: () => ({ body: { id: SUB, eventId: 'submissions:e1', action: 'approve' } }),
 };
 
-describe('rewards after moderation (M12 §5)', () => {
+describe('rewards after moderation', () => {
   it('records the reward on approval, with the configured days, the cap and the region month', async () => {
     const b = backend(decided);
     const res = await approve(b);
@@ -172,7 +117,7 @@ describe('rewards after moderation (M12 §5)', () => {
   });
 });
 
-describe('trusted publishing (M12 §5.3)', () => {
+describe('trusted publishing', () => {
   const event = {
     deviceId: 'device-0123456789',
     event: {
@@ -213,7 +158,7 @@ describe('trusted publishing (M12 §5.3)', () => {
   });
 });
 
-describe('POST /api/counts (M12 §5.1)', () => {
+describe('POST /api/counts', () => {
   const items = (n: number) =>
     Array.from({ length: n }, (_, i) => ({ eventId: `e${i % 2}`, kind: i % 3 ? 'open' : 'route' }));
 
@@ -322,7 +267,7 @@ describe('the contributor’s side of the account', () => {
   });
 });
 
-describe('GET /api/me/submissions/:id, add again (M12 §4.4)', () => {
+describe('GET /api/me/submissions/:id, add again', () => {
   const form = {
     title: 'Pchli targ na Ruskiej',
     categoryIds: ['market'],
@@ -356,7 +301,7 @@ describe('GET /api/me/submissions/:id, add again (M12 §4.4)', () => {
   });
 });
 
-describe('POST /api/thanks (M12 §6.4)', () => {
+describe('POST /api/thanks', () => {
   it('counts a hashed device once per event, with an hourly guard', async () => {
     const b = backend({ thanks_add: () => ({ body: true }) });
     const res = await b.api(
@@ -382,7 +327,7 @@ describe('POST /api/thanks (M12 §6.4)', () => {
   });
 });
 
-describe('first added by you (M12 §6.1)', () => {
+describe('first added by you', () => {
   const event = {
     title: 'Pchli targ na Ruskiej',
     categoryIds: ['garage-sale'],
