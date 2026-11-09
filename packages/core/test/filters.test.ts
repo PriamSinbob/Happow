@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FAR_FUTURE,
   intervalMs,
   localToInstant,
   matchesFilters,
+  monthStarts,
   priceFromToggles,
   priceToggles,
   rateLimitIntervalMs,
@@ -31,6 +33,26 @@ describe('time windows', () => {
     expect(week.to.toISOString()).toBe('2026-10-30T22:59:59.999Z');
     const later = windowRange({ id: 'later', days: 14 }, now, 'Europe/Warsaw');
     expect(later.to.toISOString()).toBe('2026-11-06T22:59:59.999Z');
+  });
+
+  it('the future starts where the 14 days end and has no end', () => {
+    const future = windowRange({ id: 'future', afterDays: 14, months: 12 }, now, 'Europe/Warsaw');
+    // Local midnight after Fri 6 Nov (CET), the instant after the 14-day range.
+    expect(future.from.toISOString()).toBe('2026-11-06T23:00:00.000Z');
+    expect(future.to).toEqual(FAR_FUTURE);
+  });
+
+  it('steps the future by calendar month, then one step for everything later', () => {
+    const from = new Date('2026-11-06T23:00:00.000Z');
+    const steps = monthStarts(from, 'Europe/Warsaw', 12);
+    expect(steps).toHaveLength(14);
+    expect(steps[0]).toEqual(from);
+    // The rest of November, then whole months at local midnight, summer time included.
+    expect(steps[1]!.toISOString()).toBe('2026-11-30T23:00:00.000Z');
+    expect(steps[2]!.toISOString()).toBe('2026-12-31T23:00:00.000Z');
+    expect(steps[6]!.toISOString()).toBe('2027-04-30T22:00:00.000Z');
+    expect(steps[12]!.toISOString()).toBe('2027-10-31T23:00:00.000Z');
+    expect(steps[13]).toEqual(FAR_FUTURE);
   });
 });
 

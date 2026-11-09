@@ -517,6 +517,15 @@ button {
   border-radius: 50%;
   background: var(--glass-solid);
 }
+/* The glass thumb alone is lost on the night map: an ink dot of half its width marks it
+   (white at night, dark by day). */
+.rail__thumb::after {
+  content: '';
+  position: absolute;
+  inset: 25%;
+  border-radius: 50%;
+  background: var(--ink);
+}
 .rail__pill {
   position: absolute;
   right: 46px;
@@ -615,6 +624,12 @@ button {
 .timeline__tick {
   stroke: var(--muted);
 }
+.timeline__ff {
+  fill: var(--muted);
+}
+.is-active > .timeline__ff {
+  fill: var(--ink);
+}
 .timeline__num {
   fill: var(--muted);
   font-size: 10.5px;
@@ -688,7 +703,19 @@ button {
   background: var(--paper);
   box-shadow: var(--rim), var(--shadow-lg);
   -webkit-overflow-scrolling: touch;
+  /* It scrolls by touch; a scroll bar inside the rounded window is only noise. */
+  scrollbar-width: none;
   animation: rise 0.34s var(--ease-out);
+}
+.list-overlay::-webkit-scrollbar {
+  display: none;
+}
+/* A row opened on the map: the list waits out of sight, keeping its place, for the card's back
+   arrow. Not display: none, which would drop the scroll position. */
+.list-overlay.is-parked {
+  visibility: hidden;
+  pointer-events: none;
+  animation: none;
 }
 /* Inside the overlay the rows share its surface: hairlines between them instead of cards. */
 .list-overlay .list {
@@ -805,9 +832,13 @@ button {
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.015em;
-  white-space: nowrap;
+  /* Long titles take a second line; only the third is cut. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.25;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .tt-row__title svg {
   margin-right: 5px;
@@ -1886,11 +1917,13 @@ div.settings-row {
   animation: toast-in 0.36s var(--ease-out);
 }
 
-/* A wordless toast: one icon (the empty dice). */
+/* The empty dice: its icon, then what it means. */
 .toast--icon {
-  display: grid;
-  place-items: center;
-  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px 9px 12px;
+  white-space: nowrap;
 }
 
 /* ---------- List ---------- */
@@ -1928,9 +1961,13 @@ div.settings-row {
   font-weight: 600;
   letter-spacing: -0.015em;
   font-size: 15px;
-  white-space: nowrap;
+  /* Long titles take a second line; only the third is cut. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.25;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .row__when {
   display: flex;
@@ -4028,4 +4065,116 @@ a.row {
   padding: 0;
   list-style: none;
   font-size: 14px;
+}
+
+/* ---------- About: settings, then what to read ---------- */
+/* Every group looks the same: an uppercase label, then a paper card with hairlines between rows. */
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.about__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.about__label {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.about__card {
+  display: flex;
+  flex-direction: column;
+  border: 0.5px solid var(--hair-strong);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  box-shadow: var(--rim), var(--shadow-sm);
+  overflow: hidden;
+}
+.about__card > * + * {
+  border-top: 0.5px solid var(--hair);
+}
+.about__row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+}
+.about__intro {
+  margin: 0;
+  padding: 14px 16px;
+}
+.about__card .atlas-bar {
+  margin: 0;
+  border: 0;
+}
+.about__card .legal-links {
+  margin: 0;
+}
+.about__fold > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 16px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+.about__fold > summary::-webkit-details-marker {
+  display: none;
+}
+.about__fold > summary svg {
+  flex: none;
+  color: var(--muted);
+  transform: rotate(-90deg);
+  transition: transform 0.2s var(--ease-out);
+}
+.about__fold[open] > summary svg {
+  transform: rotate(90deg);
+}
+.about__fold > summary:active {
+  background: var(--fill-strong);
+}
+.about__fold > summary:focus-visible,
+.about__link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+.about__fold-body {
+  padding: 0 16px 14px;
+  font-size: 14px;
+}
+.about__fold-body p {
+  margin: 0 0 6px;
+}
+.about__note {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.about__link {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 16px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+}
+.about__link:active {
+  background: var(--fill-strong);
 }

@@ -38,6 +38,8 @@ export function useEvents(
   filters: EventFilters,
   searchRadiusM: number,
   now: Date,
+  /** The future window's picked step (a month); null reads the whole range. */
+  step: number | null = null,
 ): EventsState {
   const [state, setState] = useState<EventsState>({
     events: [],
@@ -72,7 +74,8 @@ export function useEvents(
         const q = {
           ...query,
           ...windowRange(timeWindow, now, timeZone),
-          range: 'days' in timeWindow ? timeWindow.id : undefined,
+          range: 'days' in timeWindow || 'afterDays' in timeWindow ? timeWindow.id : undefined,
+          step: 'afterDays' in timeWindow && step !== null ? step : undefined,
         };
         // One query out to the search area, split at the circle: nothing extra to download.
         const reach = Math.max(searchRadiusM, radiusM);
@@ -101,7 +104,7 @@ export function useEvents(
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [repo, query, timeZone, timeWindow, searchRadiusM, radiusM, now]);
+  }, [repo, query, timeZone, timeWindow, searchRadiusM, radiusM, now, step]);
 
   return state;
 }

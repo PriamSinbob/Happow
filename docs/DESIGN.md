@@ -22,21 +22,21 @@ How the UI looks and behaves today. Any deviation, and every new icon or glyph, 
 | -------------------- | ----- | --------------------------------------------- |
 | On now               | 34 px | live fill, `on-live` glyph, ring of time left |
 | Starts within 60 min | 26 px | paper fill, ink glyph, live outline           |
-| Later                | 10 px | muted dot                                     |
-| Outside reach        | ×0.85 | half opacity                                  |
-| Selected             | ×1.2  | full opacity, on top                          |
+| Later                | 10 px | ink dot                                       |
+| Outside reach        | ×0.85 | full opacity: pins read through the veil      |
+| Selected             | ×1.3  | ink ring on a paper disc, on top              |
 
-The ring is full at 2 h or more and shrinks in 10-minute steps (minimum 8 %); dotted means no fixed end. A dashed outline means you would arrive late or after closing. Age badges sit top right. Live draws over soon over later.
+The ring is full at 2 h or more and shrinks in 10-minute steps (minimum 8 %); dotted means no fixed end. A dashed outline means you would arrive late or after closing. Age badges sit top right. Live draws over soon over later. Every loaded event is a pin, in the reach or beyond it. The selected pin never merges into a count bubble, and a selected later dot grows into a 26 px glyph pin.
 
 ## Layout (portrait)
 
 - **Top left:** live counter `● N` (tap = live only, filled while on), then the shortcut chip.
-- **Top right:** add pill (circled plus with category glyphs, more of them from 380 and 410 px), dice, settings.
-- **Right edge:** reach rail (inset ~20 px, stops 100 m–5 km on a log scale, walking minutes up to 2 km), then locate and one list-and-search button; opening the list focuses search.
+- **Top right:** add pill (circled plus with category glyphs, more of them from 380 and 410 px), settings, dice (two small dice mid-throw). A roll that finds nothing close and soon widens to the loaded area, then to anything still to come; only then a toast says so, in words.
+- **Right edge:** reach rail (inset ~20 px, glass thumb with an ink dot of half its width, stops 100 m–5 km on a log scale, walking minutes up to 2 km), then locate and one list-and-search button; opening the list focuses search.
 - **Bottom:** the time line, range icons at its left end.
-- The list is a window like the settings sheet (paper, no border, 26 px corners, at most 520 px wide) over the map dimmed and blurred by the same scrim; the scrim stays under the time line and map buttons, and tapping it returns to the map. Tapping a row returns to the map with that pin selected. Off-screen events are 10 px dots on the screen edge.
+- The list is a window like the settings sheet (paper, no border, 26 px corners, at most 520 px wide) over the map dimmed and blurred by the same scrim; the scrim stays under the time line and map buttons, and tapping it returns to the map. The window shows no scroll bar. Tapping a row returns to the map with that pin selected and in view (the map zooms out when the pin is outside it); the card then carries a back arrow to the list, which kept its scroll position and search text. Off-screen events are 10 px dots on the screen edge (the nearest 24).
 - The map's cards (event, place, hotspot) are the same paper with no border, but with no scrim: the map stays usable around them, so another pin opens with one tap.
-- The list is a timetable. Today splits into Now (nearest first), Next hour and Later (soonest first); 7 / 14 days split by day. The start time leads each row (17 px tabular, AM/PM small, "in 26 min" under it up to 90 min); an event on now shows the pin's ring of time left and its end instead. Events at one venue share a tinted block: glyph, venue, distance and walk once, then a line per event. Today a venue shows once, in the section of its next event: three lines, then one line of the remaining times ("+N more", or "later" when they are all in later sections) that unfolds in place. A lone event shows its glyph, venue and walk under the title. A place's card is the same lines under the venue's name; My plans uses the same rows by day, with the tag and the bookmark.
+- The list is a timetable. Today splits into Now (nearest first), Next hour and Later (soonest first); 14 days and the future split by day (with the year when it is not this year's). Titles take up to two lines. The start time leads each row (17 px tabular, AM/PM small, "in 26 min" under it up to 90 min); an event on now shows the pin's ring of time left and its end instead. Events at one venue share a tinted block: glyph, venue, distance and walk once, then a line per event. Today a venue shows once, in the section of its next event: three lines, then one line of the remaining times ("+N more", or "later" when they are all in later sections) that unfolds in place. A lone event shows its glyph, venue and walk under the title. A place's card is the same lines under the venue's name; My plans uses the same rows by day, with the tag and the bookmark.
 - The event detail is the same window: a bottom sheet on a phone, centred from 720 px; tapping the scrim closes it.
 - **Empty reach:** no card on the map; only the list shows an empty state.
 - Floating chrome is glass (`--glass`, 24 px blur, `--hair` border, `--rim`, `--shadow-sm`). Map buttons are 40 px circles, buttons are pills, sheets have 28 px top corners.
@@ -47,7 +47,9 @@ A grey veil over the full-colour basemap, with soft cloud-like holes for the rea
 
 ## Range icons and time line
 
-24 × 24, 1.6 stroke, round caps, `currentColor`: Today a filled square, 7 days one bar, 14 days two bars (geometry in `Icons.tsx`). 36 px touch area; the active one is ink-filled, tapping it again shows the whole range. Today steps by hour with a 30-min histogram; 7 / 14 days step by day.
+24 × 24, 1.6 stroke, round caps, `currentColor`: Today a filled square, 14 days two bars, the future fast-forward on the calendar (geometry in `Icons.tsx`). 36 px touch area; the active one is ink-filled, tapping it again shows the whole range. Today steps by hour with a 30-min histogram; 14 days step by day.
+
+The future has no end: it starts where the 14 days end and shows only events starting from then on, never today's or the 14 days'. Its line has 13 steps: 12 calendar months (numbered; the first is the rest of the month the 14 days end in), then fast-forward alone for everything later. Today's map never shows events further than the 14 days.
 
 ## Glyphs and chips
 
@@ -58,6 +60,10 @@ A grey veil over the full-colour basemap, with soft cloud-like holes for the rea
 ## Settings sheet
 
 Black and white only. Top to bottom: category chips; free / paid ticket toggles and the family tile (88 × 44, the last ticket toggle can't go off); language (globe, PL / EN); About row (circled "i"; theme, colour and atlas live in About); footer with clear (`filter-off`) and show (✓ + count). Adding lives on the map, not here.
+
+## About screen
+
+Every group is an 11 px uppercase label over one paper card (26 px corners, hairlines between rows). Top to bottom: Account; Appearance (theme, colour); Your places (the atlas bar); Information (the intro, then sources, terms, privacy and contact folded, and the legal links); Moderation for staff. Sheets close with the X or the scrim only: no "not now" links.
 
 ## Type
 

@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { entitlementsFor } from '@happow/core';
 import { AccountProvider, type Me } from '../src/account';
@@ -110,7 +110,7 @@ describe('the add form with accounts', () => {
     expect(config.app.submissions.autofill).toBe('account');
   });
 
-  it('signed out: offers sign-in with what a free account gives; "Not now" closes', () => {
+  it('signed out: offers sign-in with what a free account gives; only the X closes', () => {
     serve(() => ok({}, 404));
     const onClose = renderAdd();
     const sheet = screen.getByRole('dialog', { name: 'Adding events needs an account' });
@@ -118,7 +118,8 @@ describe('the add form with accounts', () => {
     expect(sheet.textContent).toContain('fill in 5 of them');
     expect(sheet.textContent).toContain('Send me a code');
     expect(screen.queryByRole('button', { name: 'Add event' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(screen.queryByRole('button', { name: 'Not now' })).toBeNull();
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalled();
   });
 

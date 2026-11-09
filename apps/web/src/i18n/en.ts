@@ -14,6 +14,7 @@ export const en = {
   'list.section.later': 'Later',
   'list.venueMore': '+{count} more',
   'list.venueLater': 'later',
+  'list.back': 'Back to the list',
   'view.toMap': 'Map',
   'event.now': 'Now',
   'event.until': 'until {time}',
@@ -48,6 +49,8 @@ export const en = {
   'window.today': 'Today',
   'window.hours': '{hours} h',
   'window.days': '{days} days',
+  'window.future': 'Later, no end date',
+  'timeline.month': 'Month',
   'filters.categories': 'Categories',
   'filters.excluded': '{name}: hidden',
   'filters.price': 'Price',
@@ -252,7 +255,6 @@ export const en = {
   'addGate.title': 'Adding events needs an account',
   'addGate.lead':
     "The account is free. It adds up to {events} events a month, and we'll fill in {autofill} of them for you from a link.",
-  'addGate.later': 'Not now',
   'mod.title': 'Moderation',
   'mod.notAvailable': 'Moderation needs the hosted backend (Supabase).',
   'mod.forbidden': 'This account is not a moderator.',
@@ -433,6 +435,8 @@ export const en = {
   'about.title': 'About Happow',
   'about.intro':
     "Happow shows what's happening near you right now (concerts, markets, garage sales, talks) within a small radius you choose.",
+  'about.places': 'Your places',
+  'about.info': 'Information',
   'about.appearance': 'Appearance',
   'about.theme': 'Theme',
   'about.theme.auto': 'Auto',

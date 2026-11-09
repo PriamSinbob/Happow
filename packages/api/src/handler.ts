@@ -5,6 +5,9 @@ import {
   distanceM,
   areaSlackM,
   daysBounds,
+  FAR_FUTURE,
+  futureStart,
+  monthStarts,
   entrySchema,
   getRegion,
   isAreaKey,
@@ -883,8 +886,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
 
   /**
    * GET /api/area?lat&lng&r[&range] → every listed event within r of a grid point for the next
-   * hours, or with `range` (a multi-day time window: week, later) up to the end of that window's
-   * last day. The response is public and expires at the end of its step (5 min; 30 min for a
+   * hours, or with `range` (a multi-day time window) up to the end of that window's last day; the
+   * future window reads from its first day on, with no end, or one `step` of it (a month). The response is public and expires at the end of its step (5 min; 30 min for a
    * range), so Cloudflare's Workers Caching (wrangler.jsonc) answers everyone in the same grid
    * square without running this, and Supabase is asked about once per busy area per step.
    * Revalidations get a 304 via the ETag.
@@ -909,15 +912,35 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       throw new ApiError(400, 'invalid_input', 'area');
     const rangeId = u.searchParams.get('range');
     const range = rangeId === null ? null : config.app.timeWindows.find((w) => w.id === rangeId);
-    if (range !== null && !(range && 'days' in range))
+    if (range !== null && !(range && ('days' in range || 'afterDays' in range)))
       throw new ApiError(400, 'invalid_input', 'range');
 
     const t = now();
     const stepMinutes = range ? refresh.longCacheMinutes : refresh.dataMinutes;
     const from = areaFrom(t, stepMinutes);
-    const to = range
-      ? daysBounds(t, region.timezone, range.days).end
-      : new Date(from.getTime() + refresh.areaHours * 3_600_000);
+    // The future window starts after the day windows and has no end.
+    const future = range && 'afterDays' in range ? range : null;
+    // One step of it (a month, or the last one: everything later) is read on its own, so a busy
+    // year is not cut at the snapshot's size.
+    const stepParam = u.searchParams.get('step');
+    const step = stepParam === null ? null : Number(stepParam);
+    if (step !== null && !(future && Number.isInteger(step) && step >= 0 && step <= future.months))
+      throw new ApiError(400, 'invalid_input', 'step');
+    const steps = future
+      ? monthStarts(
+          futureStart(t, region.timezone, future.afterDays),
+          region.timezone,
+          future.months,
+        )
+      : [];
+    const since = future ? steps[step ?? 0]! : from;
+    const to = future
+      ? step === null || step === future.months
+        ? FAR_FUTURE
+        : new Date(steps[step + 1]!.getTime() - 1)
+      : range && 'days' in range
+        ? daysBounds(t, region.timezone, range.days).end
+        : new Date(from.getTime() + refresh.areaHours * 3_600_000);
     // Everyone's copy expires at the same step boundary, so caches and phones refresh together.
     const expires = from.getTime() + stepMinutes * 60_000;
     const maxAge = Math.max(15, Math.round((expires - t.getTime()) / 1000));
@@ -925,7 +948,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       lat: key.lat,
       lng: key.lng,
       radius_m: key.radiusM + areaSlackM(key.lat, refresh),
-      from_ts: from.toISOString(),
+      from_ts: since.toISOString(),
       to_ts: to.toISOString(),
       max_events: refresh.areaMaxEvents,
     });

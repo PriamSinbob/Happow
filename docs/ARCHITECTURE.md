@@ -120,7 +120,7 @@ How the Worker routes /api/* (packages/api/src/handler.ts), including submission
 ```mermaid
 flowchart LR
   REQ(["Request /api/..."]) --> R{"route head"}
-  R -- "GET area" --> AREA["events_area RPC<br/>grid-snapped key, ETag,<br/>public cache 5 / 30 min"]
+  R -- "GET area" --> AREA["events_area RPC<br/>grid-snapped key, ETag,<br/>public cache 5 / 30 min<br/>range: 14 days · future"]
   R -- "POST autofill" --> AF["Sign-in + monthly allowance<br/>fetchPage → JSON-LD<br/>→ LLM (daily cap) → prefills"]
   R -- "POST autofill/photo" --> AFP["Poster photo → LLM prefill"]
   R -- "POST geocode" --> GC["Address → point in region"]
@@ -161,7 +161,7 @@ flowchart TB
   SEED --> HOME
   OPEN --> LOC["Geolocation /<br/>live location"] --> HOME
   HOME["Home: Map, list + search overlay<br/>shared filter state"]
-  HOME --> F["Filters: time window chips<br/>radius rail 100 m–25 km<br/>categories · price · My plans"]
+  HOME --> F["Filters: time line (today · 14 days · future)<br/>radius rail 100 m–25 km<br/>categories · price · My plans"]
   F --> HOME
   HOME --> EMPTY{"Anything in radius?"}
   EMPTY -- no --> GUIDE["Guidance: nearest + busiest<br/>expand radius / take me there"]

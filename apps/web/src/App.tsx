@@ -10,6 +10,7 @@ import {
   isOnDay,
   isRunning,
   matchesFilters,
+  monthStarts,
   overlaps,
   pinState,
   reachForRoll,
@@ -88,7 +89,6 @@ import { countEvent } from './counts';
 type View = 'map' | 'list';
 
 const { minM, maxM, defaultM } = config.app.radius;
-const { maxEdgeDots } = config.app.density;
 
 /**
  * Family mode moves the hotspot to the device (the density query does not know the mode): square
@@ -150,7 +150,7 @@ export function App() {
     const id = setTimeout(() => setToast(null), 2200);
     return () => clearTimeout(id);
   }, [toast]);
-  // The time line: a time today (null = now), or a day of the 7 / 14 days.
+  // The time line: a time today (null = now), or a step of the 14 days (a day) or of the future (a month).
   const [at, setAt] = useState<Date | null>(null);
   const [day, setDay] = useState<number | null>(null);
   const [liveOnly, setLiveOnly] = useState(false);
@@ -181,8 +181,25 @@ export function App() {
   const [searchFocus, setSearchFocus] = useState(0);
   const [followedOpen, setFollowedOpen] = useState(false);
   const [flyTo, setFlyTo] = useState<{ point: LatLng; seq: number } | null>(null);
+  // A list row opened on the map: the map brings its pin into view, and the list stays as it was
+  // (scroll position, search text) behind the card's back arrow.
+  const [focus, setFocus] = useState<{ point: LatLng; seq: number } | null>(null);
+  const [parked, setParked] = useState(false);
   const clock = useMinuteClock();
   const loaded = useEvents(
+    repo,
+    searchCenter,
+    radius,
+    region.timezone,
+    filters.window,
+    filters,
+    config.app.density.searchRadiusM,
+    clock,
+    day,
+  );
+  // The time line's bars cover the whole range even while one month is read on its own. Outside
+  // the future range this is the same question as above, answered from the same snapshot.
+  const overview = useEvents(
     repo,
     searchCenter,
     radius,
@@ -217,19 +234,39 @@ export function App() {
   const familyAround = useMemo(() => familyOnly(loaded.around), [familyOnly, loaded.around]);
 
   // What the time line selects. Today: what is still on at the time looked at, drawn for that
-  // time. 7 / 14 days: everything as dots, or one day's events as glyph pins.
+  // time. 14 days and the future: everything as dots, or one step's events as glyph pins.
+  // The future: months from the end of the day windows, then one step for everything later.
+  const future = 'afterDays' in filters.window ? filters.window : null;
   const days = 'days' in filters.window ? filters.window.days : 0;
-  const starts = useMemo(() => (days ? dayStarts(now, region.timezone, days) : []), [days, now]);
-  const pinTime = days ? now : (at ?? now);
-  const pinMode: PinMode = days ? (day === null ? 'range' : 'day') : 'time';
+  const stepped = days > 0 || future !== null;
+  const futureFrom = future ? windowRange(future, now, region.timezone).from.getTime() : 0;
+  const starts = useMemo(
+    () =>
+      future
+        ? monthStarts(new Date(futureFrom), region.timezone, future.months)
+        : days
+          ? dayStarts(now, region.timezone, days)
+          : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [future, futureFrom, days, future ? 0 : now],
+  );
+  const pinTime = stepped ? now : (at ?? now);
+  const pinMode: PinMode = stepped ? (day === null ? 'range' : 'day') : 'time';
   const visible = useCallback(
     (e: NearbyEvent) => {
       if (liveOnly) return isRunning(e, now);
+      if (future) {
+        // By start only: what is on today or in the 14 days belongs to those ranges.
+        const s = Date.parse(e.startAt);
+        return day === null
+          ? s >= futureFrom
+          : s >= starts[day]!.getTime() && s < starts[day + 1]!.getTime();
+      }
       if (!days) return Date.parse(e.endAt) > pinTime.getTime();
       if (day === null) return true;
       return isOnDay(e, starts[day]!, starts[day + 1]!, config.app.timeline.carryOverMin);
     },
-    [liveOnly, days, day, starts, now, pinTime],
+    [liveOnly, future, futureFrom, days, day, starts, now, pinTime],
   );
   const events = useMemo(
     () => flagged(familyEvents.filter(visible)),
@@ -281,9 +318,10 @@ export function App() {
       ),
     );
   }, [priv, filters, now, familyOnly, flagged, visible]);
-  // The map shows the reach plus the nearest events beyond it (faded, or edge dots off screen).
+  // The map shows the reach and everything loaded beyond it, as pins everywhere (the nearest
+  // off-screen ones as edge dots).
   const mapEvents = useMemo(() => {
-    const base = inPlans ? mineOnMap : [...events, ...around.slice(0, maxEdgeDots)];
+    const base = inPlans ? mineOnMap : [...events, ...around];
     const ids = new Set(base.map((e) => e.id));
     const out = [...base, ...privOnMap.filter((e) => !ids.has(e.id))];
     // ★ on a followed artist's pin.
@@ -455,26 +493,29 @@ export function App() {
     setDay(null);
     setLiveOnly(false);
     setView('map');
+    setParked(false);
     clearCards();
     setRecenter((n) => n + 1);
     location.retry();
   };
-  // Events reported cancelled or moved are never rolled.
-  const dicePoolNow = useMemo(
-    () =>
-      dicePool(
-        flagged([...familyEvents, ...familyAround]).filter((e) => !e.flag),
-        now,
-        {
-          ...config.app.dice,
-          liveOnly,
-          late: (e) => pinState(e, now, e.distanceM, radius, config.categories, config.app).late,
-        },
-      ),
-    [flagged, familyEvents, familyAround, now, liveOnly, radius],
-  );
+  // Events reported cancelled or moved are never rolled. The pool widens until it has something:
+  // close and soon first, then anywhere in the loaded area, then anything still to come in the
+  // range shown. Only when all three are empty does the dice say so.
+  const dicePools = useMemo(() => {
+    const candidates = flagged([...familyEvents, ...familyAround]).filter((e) => !e.flag);
+    const late = (e: NearbyEvent) =>
+      pinState(e, now, e.distanceM, radius, config.categories, config.app).late;
+    const pool = (maxDistanceM: number, soonMin: number) =>
+      dicePool(candidates, now, { maxDistanceM, soonMin, liveOnly, late });
+    const { maxDistanceM, soonMin } = config.app.dice;
+    return [pool(maxDistanceM, soonMin), pool(Infinity, soonMin), pool(Infinity, Infinity)];
+  }, [flagged, familyEvents, familyAround, now, liveOnly, radius]);
+  const dicePoolNow = dicePools.find((p) => p.length > 0) ?? [];
   const roll = (category?: string) => {
-    const pool = dicePoolNow;
+    const pool =
+      dicePools.find((p) =>
+        category ? p.some((e) => e.categoryIds.includes(category)) : p.length,
+      ) ?? [];
     // Rolling again while the last result is open counts as "not this one".
     let weights = diceWeights;
     const last = rolledId === selectedId ? pool.find((e) => e.id === rolledId) : undefined;
@@ -493,6 +534,7 @@ export function App() {
     setAt(null);
     setDay(null);
     setView('map');
+    setParked(false);
     setRadius(
       reachForRoll(e.distanceM, radius, config.app.radius.detentsM, config.app.dice.reachMargin),
     );
@@ -554,8 +596,10 @@ export function App() {
             setSelectedId(id);
             setPlaceIds(null);
             setHotspotOpen(false);
+            setParked(false);
           }}
           onSelectPlace={(ids) => {
+            setParked(false);
             setSelectedId(null);
             setPlaceIds(ids);
             setHotspotOpen(false);
@@ -563,6 +607,7 @@ export function App() {
           bottomInset={timelineHeight}
           recenter={recenter}
           flyTo={flyTo}
+          focus={focus}
           hotspot={inPlans ? null : guidance.hotspot}
           onHotspot={() => {
             setSelectedId(null);
@@ -652,6 +697,7 @@ export function App() {
           current={planView.view}
           onPick={(id) => {
             planView.choose(id as PlanView);
+            setParked(false);
             clearCards();
             setGrid(null);
           }}
@@ -670,13 +716,9 @@ export function App() {
         />
       )}
       {toast && (
-        <div
-          className="toast toast--icon"
-          role="status"
-          aria-label={toast}
-          style={{ bottom: timelineHeight + 12 }}
-        >
-          <Icon name="none" size={22} />
+        <div className="toast toast--icon" role="status" style={{ bottom: timelineHeight + 12 }}>
+          <Icon name="none" size={20} />
+          {toast}
         </div>
       )}
 
@@ -721,12 +763,18 @@ export function App() {
           aria-pressed={view === 'list'}
           onClick={() => {
             clearCards();
-            setFollowedOpen(false);
-            if (view === 'list') setView('map');
-            else {
+            if (view === 'list') {
+              setView('map');
+              setFollowedOpen(false);
+            } else if (parked) {
+              // The list a row was opened from: back to it as it was.
+              setView('list');
+            } else {
+              setFollowedOpen(false);
               setView('list');
               setSearchFocus((n) => n + 1);
             }
+            setParked(false);
           }}
         >
           <Icon name={view === 'list' ? 'map' : 'listSearch'} />
@@ -754,8 +802,12 @@ export function App() {
           <FollowedScreen onClose={() => setFollowedOpen(false)} />
         </section>
       )}
-      {view === 'list' && !inPlans && !followedOpen && (
-        <section className="list-overlay" aria-label={t('view.list')}>
+      {(view === 'list' || parked) && !inPlans && !followedOpen && (
+        <section
+          className={`list-overlay${view === 'list' ? '' : ' is-parked'}`}
+          aria-label={t('view.list')}
+          aria-hidden={view !== 'list'}
+        >
           <SearchPanel
             key={searchFocus}
             center={searchCenter}
@@ -767,6 +819,7 @@ export function App() {
               // the event's page.
               if (all.some((e) => e.id === hit.id)) {
                 setView('map');
+                setParked(true);
                 setPlaceIds(null);
                 setHotspotOpen(false);
                 setSelectedId(hit.id);
@@ -780,6 +833,9 @@ export function App() {
               onOpen={(m) => {
                 if (all.some((e) => e.id === m.id)) {
                   setView('map');
+                  setParked(true);
+                  setPlaceIds(null);
+                  setHotspotOpen(false);
                   setSelectedId(m.id);
                   setFlyTo((f) => ({ point: m.point, seq: (f?.seq ?? 0) + 1 }));
                 } else openDetail(m.id);
@@ -793,14 +849,18 @@ export function App() {
               around={around}
               guidance={guidance}
               filtered={filtered}
-              byDay={days > 0}
-              dayFrom={days && day !== null ? starts[day]! : now}
-              // A row returns to the map with its pin selected.
+              byDay={stepped}
+              dayFrom={stepped && day !== null ? starts[day]! : now}
+              // A row returns to the map with its pin selected and in view; the list waits
+              // behind the card's back arrow.
               onSelect={(id) => {
+                const ev = all.find((e) => e.id === id);
                 setView('map');
+                setParked(true);
                 setPlaceIds(null);
                 setHotspotOpen(false);
                 setSelectedId(id);
+                if (ev) setFocus((f) => ({ point: ev.point, seq: (f?.seq ?? 0) + 1 }));
               }}
               onExpand={setRadius}
               onClearFilters={filters.clear}
@@ -818,7 +878,19 @@ export function App() {
               ev={selected}
               now={now}
               followed={followedIds.has(selected.id)}
-              onClose={() => setSelectedId(null)}
+              onBack={
+                parked
+                  ? () => {
+                      setSelectedId(null);
+                      setParked(false);
+                      setView('list');
+                    }
+                  : undefined
+              }
+              onClose={() => {
+                setSelectedId(null);
+                setParked(false);
+              }}
               onDetails={() => openDetail(selected.id)}
               onGo={() => goThere(selected.id)}
             />
@@ -871,6 +943,9 @@ export function App() {
           window={filters.window}
           onWindow={(id) => {
             filters.setWindow(id);
+            // A step of the old range means nothing on the new one.
+            setDay(null);
+            setAt(null);
             setLiveOnly(false);
             clearCards();
           }}
@@ -886,7 +961,7 @@ export function App() {
             setDay(d);
             if (d !== null) setLiveOnly(false);
           }}
-          events={loaded.events}
+          events={future ? overview.events : loaded.events}
         />
       </div>
 

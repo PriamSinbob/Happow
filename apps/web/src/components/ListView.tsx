@@ -38,7 +38,7 @@ interface Props {
   onSelect: (id: string) => void;
   onExpand: (radius: number) => void;
   onClearFilters: () => void;
-  /** 7 / 14 days: rows by day, each day under a header. */
+  /** 14 days and the future: rows by day, each day under a header. */
   byDay?: boolean;
   /** Events that started earlier are listed from this day on (now, or the picked day). */
   dayFrom?: Date;

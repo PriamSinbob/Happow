@@ -9,6 +9,7 @@ import {
 import {
   dayBins,
   dayStarts,
+  monthStarts,
   snapTime,
   timeBins,
   windowRange,
@@ -17,7 +18,7 @@ import {
 } from '@happow/core';
 import { config } from '../config';
 import { useI18n } from '../i18n';
-import { RangeIcon } from './Icons';
+import { FAST_FORWARD, RangeIcon } from './Icons';
 import { windowLabel, windowRows } from '../windows';
 
 type Span = Pick<HappowEvent, 'startAt' | 'endAt'>;
@@ -30,7 +31,10 @@ interface Props {
   /** Today: the time looked at; null = now. */
   at: Date | null;
   onAt: (at: Date | null) => void;
-  /** 7 / 14 days: the selected day (0 = today); null = the whole range. */
+  /**
+   * 14 days: the selected day (0 = today); the future: the selected month (the last step is
+   * everything later); null = the whole range.
+   */
   day: number | null;
   onDay: (day: number | null) => void;
   /** Events in reach, for the histogram. */
@@ -44,7 +48,8 @@ const BAR_MAX = 24;
 
 /**
  * The time line under the map: range icons at its left end, then a track from
- * now to the end of the range with a histogram. Today moves in minutes, 7 / 14 days by day.
+ * now to the end of the range with a histogram. Today moves in minutes, 14 days by day, the future
+ * by month with one last step for everything later.
  */
 export function TimeLine(p: Props) {
   const { t, lang } = useI18n();
@@ -59,11 +64,21 @@ export function TimeLine(p: Props) {
     return () => ro.disconnect();
   }, []);
 
-  const days = 'days' in p.window ? p.window.days : 0;
-  const end = windowRange(p.window, p.now, p.timeZone).to;
+  const future = 'afterDays' in p.window ? p.window : null;
+  const range = windowRange(p.window, p.now, p.timeZone);
+  const end = range.to;
+  // Steps of a stepped line: days, or the future's months plus "later". 0 = Today's minutes.
+  const days = future ? future.months + 1 : 'days' in p.window ? p.window.days : 0;
+  const fromMs = range.from.getTime();
   const starts = useMemo(
-    () => (days ? dayStarts(p.now, p.timeZone, days) : []),
-    [days, p.now, p.timeZone],
+    () =>
+      future
+        ? monthStarts(new Date(fromMs), p.timeZone, future.months)
+        : days
+          ? dayStarts(p.now, p.timeZone, days)
+          : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [future, days, future ? fromMs : p.now, p.timeZone],
   );
   const span = Math.max(1, end.getTime() - p.now.getTime());
   const xw = Math.max(40, width - 2 * PAD);
@@ -72,11 +87,19 @@ export function TimeLine(p: Props) {
 
   const bins = useMemo(
     () =>
-      days
-        ? dayBins(p.events, starts, p.now, carryOverMin)
-        : timeBins(p.events, p.now, end, binMin),
+      future
+        ? starts.slice(0, -1).map((s, i) => {
+            const to = starts[i + 1]!.getTime();
+            return p.events.filter((e) => {
+              const at = Date.parse(e.startAt);
+              return at >= s.getTime() && at < to;
+            }).length;
+          })
+        : days
+          ? dayBins(p.events, starts, p.now, carryOverMin)
+          : timeBins(p.events, p.now, end, binMin),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.events, days, starts, p.now.getTime(), end.getTime()],
+    [p.events, future, days, starts, p.now.getTime(), end.getTime()],
   );
   const peak = Math.max(1, ...bins);
 
@@ -96,6 +119,24 @@ export function TimeLine(p: Props) {
   );
   const dayMonthFmt = useMemo(
     () => new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'numeric', timeZone: p.timeZone }),
+    [lang, p.timeZone],
+  );
+  const monthNumFmt = useMemo(
+    () => new Intl.DateTimeFormat('en-GB', { month: 'numeric', timeZone: p.timeZone }),
+    [p.timeZone],
+  );
+  const monthFmt = useMemo(
+    () => new Intl.DateTimeFormat(lang, { month: 'long', year: 'numeric', timeZone: p.timeZone }),
+    [lang, p.timeZone],
+  );
+  const fullDateFmt = useMemo(
+    () =>
+      new Intl.DateTimeFormat(lang, {
+        day: 'numeric',
+        month: 'numeric',
+        year: 'numeric',
+        timeZone: p.timeZone,
+      }),
     [lang, p.timeZone],
   );
   const dayFmt = useMemo(
@@ -124,13 +165,22 @@ export function TimeLine(p: Props) {
       : PAD + (p.day + 0.5) * dayW
     : xOfTime(p.at ?? p.now);
   const atNow = days ? p.day === null : p.at === null;
-  const label = days
+  // The future has no end: its whole range and its last step read "from this date on".
+  const label = future
     ? p.day === null
-      ? `${dateFmt.format(starts[0]!)}–${dayMonthFmt.format(new Date(starts[days]!.getTime() - 1))}`
-      : p.day === 0
-        ? t('window.today')
-        : dayFmt.format(starts[p.day]!)
-    : timeFmt.format(p.at ?? p.now);
+      ? `${dayMonthFmt.format(starts[0]!)} →`
+      : p.day === future.months
+        ? `${fullDateFmt.format(starts[p.day]!)} →`
+        : monthFmt.format(starts[p.day]!)
+    : days
+      ? p.day === null
+        ? `${dateFmt.format(starts[0]!)}–${dayMonthFmt.format(new Date(starts[days]!.getTime() - 1))}`
+        : p.day === 0
+          ? t('window.today')
+          : dayFmt.format(starts[p.day]!)
+      : timeFmt.format(p.at ?? p.now);
+
+  const pillHalf = Math.max(36, label.length * 3.8 + 14);
 
   const pick = (clientX: number) => {
     const r = box.current!.getBoundingClientRect();
@@ -207,7 +257,7 @@ export function TimeLine(p: Props) {
         className="timeline__track"
         role="slider"
         tabIndex={0}
-        aria-label={t('timeline.label')}
+        aria-label={t(future ? 'timeline.month' : 'timeline.label')}
         aria-valuetext={atNow && !days ? t('timeline.now') : label}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -241,10 +291,25 @@ export function TimeLine(p: Props) {
                     y1={TRACK_Y + 3}
                     y2={TRACK_Y + 7}
                   />
-                  {(days <= 7 || i % 2 === 0) && (
-                    <text className="timeline__num" x={PAD + (i + 0.5) * dayW} y={TRACK_Y + 21}>
-                      {dateFmt.format(s)}
-                    </text>
+                  {future ? (
+                    i === future.months ? (
+                      // Everything later: fast-forward, as on the range's icon.
+                      <path
+                        className="timeline__ff"
+                        d={FAST_FORWARD}
+                        transform={`translate(${PAD + (i + 0.5) * dayW - 12} ${TRACK_Y + 2})`}
+                      />
+                    ) : (
+                      <text className="timeline__num" x={PAD + (i + 0.5) * dayW} y={TRACK_Y + 21}>
+                        {monthNumFmt.format(s)}
+                      </text>
+                    )
+                  ) : (
+                    (days <= 7 || i % 2 === 0) && (
+                      <text className="timeline__num" x={PAD + (i + 0.5) * dayW} y={TRACK_Y + 21}>
+                        {dateFmt.format(s)}
+                      </text>
+                    )
                   )}
                 </g>
               ))
@@ -274,7 +339,8 @@ export function TimeLine(p: Props) {
         </svg>
         <div
           className="timeline__pill"
-          style={{ left: Math.max(36, Math.min(width - 36, thumbX)) }}
+          // Centred on the thumb, held inside the track: a long label needs more room at the ends.
+          style={{ left: Math.max(pillHalf, Math.min(width - pillHalf, thumbX)) }}
           aria-hidden
         >
           {atNow && !days && <span className="timeline__live" />}

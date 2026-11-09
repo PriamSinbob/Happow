@@ -20,7 +20,7 @@ export interface PinGroup {
 export interface PinProps {
   key: string;
   cluster: boolean;
-  /** 'day': an event of the day picked on the 7 / 14-day line (26 px, glyph, no live hue). */
+  /** 'day': an event of the day picked on the 14-day line (or the month on the future one) (26 px, glyph, no live hue). */
   kind: PinState['kind'] | 'day';
   glyph: string;
   /** Ring sprite id for live pins, '' otherwise. */
@@ -72,7 +72,7 @@ function lead(events: NearbyEvent[], states: Map<string, PinState>): NearbyEvent
 
 /**
  * How pins read the time: 'time' for Today at `now` (the time on the line);
- * 'range' for the whole 7 / 14 days, every pin a 10 px dot; 'day' for one picked day, every pin a
+ * 'range' for the whole 14 days or the future, every pin a 10 px dot; 'day' for one picked day, every pin a
  * 26 px glyph.
  */
 export type PinMode = 'time' | 'range' | 'day';
@@ -110,7 +110,7 @@ export function pinFeatures(
       // Future days carry no live, soon or late: those only mean something today.
       const s: Omit<PinState, 'kind'> & { kind: PinProps['kind'] } =
         mode === 'time'
-          ? live
+          ? { ...live }
           : {
               ...live,
               kind: mode === 'day' ? 'day' : 'later',
@@ -119,6 +119,8 @@ export function pinFeatures(
               late: false,
             };
       const selected = g.events.some((e) => e.id === ctx.selectedId);
+      // A selected "later" dot grows into a glyph pin: a 10 px dot can't show a selection.
+      if (selected && s.kind === 'later') s.kind = 'day';
       const age = Math.max(...g.events.map((e) => e.ageMin ?? -1));
       return {
         type: 'Feature',

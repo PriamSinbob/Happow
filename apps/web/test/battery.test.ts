@@ -73,7 +73,25 @@ describe('area repository', () => {
     expect(fetchArea).toHaveBeenCalledTimes(2);
   });
 
-  it('downloads the Week snapshot only when chosen, keeps it 30 minutes, and leaves the 24-hour one', async () => {
+  it('reads each month of the future as its own snapshot, kept while stepping back and forth', async () => {
+    t = Date.parse('2026-10-20T20:01:00Z');
+    const fetchArea = vi.fn(async (_url: string) => new Response(JSON.stringify(snapshot)));
+    const repo = new AreaEventRepository(db, fetchArea, () => t);
+    const q = { center, radiusM: 500, ...window, range: 'future' };
+    await repo.near(q);
+    await repo.near({ ...q, step: 2 });
+    await repo.near({ ...q, step: 3 });
+    expect(fetchArea.mock.calls.map((c) => c[0])).toEqual([
+      '/api/area?lat=51.1&lng=17.05&r=5000&range=future',
+      '/api/area?lat=51.1&lng=17.05&r=5000&range=future&step=2',
+      '/api/area?lat=51.1&lng=17.05&r=5000&range=future&step=3',
+    ]);
+    await repo.near({ ...q, step: 2 });
+    await repo.near(q);
+    expect(fetchArea).toHaveBeenCalledTimes(3);
+  });
+
+  it('downloads the 14-day snapshot only when chosen, keeps it 30 minutes, and leaves the 24-hour one', async () => {
     t = Date.parse('2026-10-20T20:01:00Z');
     const fetchArea = vi.fn(async (_url: string) => new Response(JSON.stringify(snapshot)));
     const repo = new AreaEventRepository(db, fetchArea, () => t);
@@ -81,20 +99,20 @@ describe('area repository', () => {
     await repo.near(q);
     expect(fetchArea).toHaveBeenCalledTimes(1);
 
-    await repo.near({ ...q, range: 'week' });
+    await repo.near({ ...q, range: 'later' });
     expect(fetchArea).toHaveBeenCalledTimes(2);
-    expect(fetchArea.mock.calls[1]![0]).toBe('/api/area?lat=51.1&lng=17.05&r=5000&range=week');
+    expect(fetchArea.mock.calls[1]![0]).toBe('/api/area?lat=51.1&lng=17.05&r=5000&range=later');
     // Switching back and forth costs nothing: each range keeps its own snapshot.
     await repo.near(q);
-    await repo.near({ ...q, range: 'week' });
+    await repo.near({ ...q, range: 'later' });
     expect(fetchArea).toHaveBeenCalledTimes(2);
 
-    // After the 5-minute step only the 24-hour snapshot is due; Week lasts 30 minutes.
+    // After the 5-minute step only the 24-hour snapshot is due; the 14 days last 30 minutes.
     t = Date.parse('2026-10-20T20:06:00Z');
-    await repo.near({ ...q, range: 'week' });
+    await repo.near({ ...q, range: 'later' });
     expect(fetchArea).toHaveBeenCalledTimes(2);
     t = Date.parse('2026-10-20T20:30:01Z');
-    await repo.near({ ...q, range: 'week' });
+    await repo.near({ ...q, range: 'later' });
     expect(fetchArea).toHaveBeenCalledTimes(3);
   });
 

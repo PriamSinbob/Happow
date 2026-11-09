@@ -431,6 +431,39 @@
       "priceMax": 120,
       "currency": "PLN",
       "ageMin": 0
+    },
+    {
+      "externalId": "seed-21",
+      "title": "Jarmark Bożonarodzeniowy — otwarcie",
+      "description": "Otwarcie jarmarku na Rynku.",
+      "categoryIds": ["market"],
+      "venueId": "rynek",
+      "startOffsetMin": 29400,
+      "durationMin": 240,
+      "isFree": true
+    },
+    {
+      "externalId": "seed-22",
+      "title": "Koncert noworoczny orkiestry symfonicznej",
+      "description": "Gala noworoczna.",
+      "categoryIds": ["music"],
+      "venueId": "nfm",
+      "startOffsetMin": 109140,
+      "durationMin": 150,
+      "isFree": false,
+      "priceMin": 60,
+      "priceMax": 180,
+      "currency": "PLN"
+    },
+    {
+      "externalId": "seed-23",
+      "title": "Festiwal światła — przyszłoroczna edycja",
+      "description": "Zapowiedź kolejnej edycji.",
+      "categoryIds": ["festival"],
+      "venueId": "rynek",
+      "startOffsetMin": 577080,
+      "durationMin": 300,
+      "isFree": true
     }
   ]
 }

@@ -24,7 +24,7 @@ describe.skipIf(!url)('events_near', () => {
     const { rows } = await db.query(
       `select count(*)::int as n from events where primary_source_id = 'seed'`,
     );
-    expect(rows[0].n).toBe(20);
+    expect(rows[0].n).toBe(23);
     const cats = await db.query('select count(*)::int as n from categories');
     expect(cats.rows[0].n).toBe(config.categories.length);
   });

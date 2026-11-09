@@ -60,6 +60,13 @@ describe('pin features', () => {
     expect(build([place('a', [ev('a', { flag })])])[0]!.flagged).toBe(true);
     expect(build([place('a', [ev('a')])])[0]!.flagged).toBe(false);
   });
+  it('a selected later dot becomes a glyph pin, so the selection shows', () => {
+    const groups = [place('l', [ev('l', { startAt: at(200), endAt: at(300) })])];
+    expect(build(groups)[0]).toMatchObject({ kind: 'later', selected: false });
+    expect(build(groups, 'l')[0]).toMatchObject({ kind: 'day', selected: true });
+    // The other pins keep their own state.
+    expect(build(groups)[0]!.kind).toBe('later');
+  });
   it('age badge only from 16+', () => {
     expect(build([place('a', [ev('a', { ageMin: 12 })])])[0]!.age).toBe('');
     expect(build([place('a', [ev('a', { ageMin: 16 })])])[0]!.age).toBe('16+');

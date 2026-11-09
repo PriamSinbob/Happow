@@ -32,7 +32,10 @@ import { useTheme } from '../theme';
 interface Props {
   center: LatLng;
   radiusM: number;
-  /** Events in reach plus the nearest ones beyond it (drawn faded, or as edge dots off screen). */
+  /**
+   * Events in reach, then the ones beyond it nearest first: all are pins; off screen, the nearest
+   * `density.maxEdgeDots` show as edge dots.
+   */
   events: NearbyEvent[];
   /** The time pins are drawn for: now, or the time picked on the line. */
   now: Date;
@@ -47,6 +50,11 @@ interface Props {
   recenter: number;
   /** A search result picked from the list: the map flies there once per `seq`. */
   flyTo?: { point: LatLng; seq: number } | null;
+  /**
+   * A list row picked: once per `seq`, the map makes sure this spot shows above the card, zooming
+   * out when it is outside the view.
+   */
+  focus?: { point: LatLng; seq: number } | null;
   hidden?: boolean;
   hotspot: Guidance['hotspot'];
   onHotspot: () => void;
@@ -87,6 +95,9 @@ const CITY_FACTOR = 1.6;
 const REFIT_AFTER_M = 30;
 
 const { atlas, refresh } = config.app;
+const { maxEdgeDots } = config.app.density;
+/** The share of the map's height a card may cover: a focused pin stays above it. */
+const CARD_SHARE = 0.56;
 
 /** The veil's canvas covers this box around the area snapshot's grid point. */
 function boxAround(center: LatLng) {
@@ -110,8 +121,13 @@ const CLUSTER_PX = 48;
 /**
  * Groups events by exact spot, then merges spots falling into the same CLUSTER_PX grid square of
  * the Web Mercator world at this zoom. A grid (not distance) keeps groups stable while panning.
+ * The selected event's spot never merges: its pin has to show the selection.
  */
-function groupMarkers(events: NearbyEvent[], zoom: number): MarkerItem[] {
+function groupMarkers(
+  events: NearbyEvent[],
+  zoom: number,
+  selectedId: string | null = null,
+): MarkerItem[] {
   const places = new Map<string, MarkerItem>();
   for (const ev of events) {
     const key = `p:${ev.point.lat.toFixed(5)},${ev.point.lng.toFixed(5)}`;
@@ -128,12 +144,16 @@ function groupMarkers(events: NearbyEvent[], zoom: number): MarkerItem[] {
   }
   const world = 512 * 2 ** zoom;
   const cells = new Map<string, MarkerItem[]>();
+  const out: MarkerItem[] = [];
   for (const place of places.values()) {
+    if (selectedId !== null && place.events.some((e) => e.id === selectedId)) {
+      out.push(place);
+      continue;
+    }
     const c = maplibregl.MercatorCoordinate.fromLngLat(place.point);
     const cell = `${Math.floor((c.x * world) / CLUSTER_PX)}:${Math.floor((c.y * world) / CLUSTER_PX)}`;
     cells.set(cell, [...(cells.get(cell) ?? []), place]);
   }
-  const out: MarkerItem[] = [];
   for (const [cell, group] of cells) {
     if (group.length === 1) {
       out.push(group[0]!);
@@ -188,6 +208,7 @@ function computeEdgeDots(m: maplibregl.Map, p: Props): EdgeDot[] {
   const c = m.project([p.center.lng, p.center.lat]);
   const out: EdgeDot[] = [];
   for (const ev of p.events) {
+    if (out.length >= maxEdgeDots) break;
     const pt = m.project([ev.point.lng, ev.point.lat]);
     const at = clampToEdge(pt, c, rect);
     if (!at) continue;
@@ -492,6 +513,38 @@ export function MapView(props: Props) {
     });
   }, [props.flyTo?.seq]);
 
+  // A list row opened: keep the view when its pin already shows above the card; otherwise widen
+  // the view just enough to hold it (never zooming in).
+  useEffect(() => {
+    const m = map.current;
+    const f = props.focus;
+    if (!m || !f) return;
+    const el = m.getContainer();
+    // The card this row opened sits on the time line (its height, not its place: it is still
+    // rising); before it is there, assume a tall one.
+    const card = document.querySelector<HTMLElement>('.sheet__card');
+    const covered = card
+      ? props.bottomInset + card.offsetHeight
+      : Math.round(el.clientHeight * CARD_SHARE);
+    const pad = {
+      top: TOP_INSET + 24,
+      bottom: Math.max(props.bottomInset + 40, Math.min(covered + 36, el.clientHeight - 200)),
+      left: 40,
+      right: RIGHT_INSET + 24,
+    };
+    const at = m.project([f.point.lng, f.point.lat]);
+    const right = el.clientWidth - pad.right;
+    const bottom = el.clientHeight - pad.bottom;
+    if (at.x >= pad.left && at.x <= right && at.y >= pad.top && at.y <= bottom) return;
+    const bounds = new maplibregl.LngLatBounds(
+      m.unproject([pad.left, bottom]),
+      m.unproject([right, pad.top]),
+    ).extend([f.point.lng, f.point.lat]);
+    userMoved.current = true;
+    m.fitBounds(bounds, { padding: pad, maxZoom: m.getZoom(), duration: 600 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.focus?.seq]);
+
   // A pinned search point gets its own marker, so it's clear what distances count from.
   useEffect(() => {
     const m = map.current;
@@ -528,7 +581,7 @@ export function MapView(props: Props) {
   // Pins: one GeoJSON source drawn by symbol layers. Places that would overlap at this
   // zoom merge into a count bubble that zooms in; rebuilt on data, selection, time or zoom.
   useEffect(() => {
-    const groups = groupMarkers(props.events, zoom);
+    const groups = groupMarkers(props.events, zoom, props.selectedId);
     groupsRef.current = groups;
     const src = map.current?.getSource(PIN_SOURCE) as GeoJSONSource | undefined;
     src?.setData(

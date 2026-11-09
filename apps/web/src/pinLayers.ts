@@ -13,14 +13,20 @@ const get = (p: string): ExpressionSpecification => ['get', p];
 const isKind = (k: string): ExpressionSpecification => ['==', get('kind'), k];
 const notCluster: ExpressionSpecification = ['!', get('cluster')];
 
-/** Sizes: live 34 px, soon 26 px, later 10 px; outside ×0.85; selected ×1.2. */
+/**
+ * Sizes: live 34 px, soon 26 px, later 10 px; outside ×0.85; selected ×1.3 (and never the
+ * smaller outside size). Pins beyond the reach keep full opacity: they must read through the veil.
+ */
 const scale = (base: ExpressionSpecification | number): ExpressionSpecification => [
   '*',
   base,
-  ['case', get('selected'), 1.2, 1],
-  ['case', get('outside'), 0.85, 1],
+  ['case', get('selected'), 1.3, get('outside'), 0.85, 1],
 ];
-const opacity: ExpressionSpecification = ['case', get('selected'), 1, get('outside'), 0.5, 1];
+const opacity = 1;
+/** The selected pin's ring and the paper under it: around the live ring, closer on smaller pins. */
+const selectScale = (live: number, other: number): ExpressionSpecification =>
+  scale(['match', get('kind'), 'live', live, other]);
+const isSelected: ExpressionSpecification = ['all', notCluster, get('selected')];
 const common = {
   'icon-allow-overlap': true,
   'icon-ignore-placement': true,
@@ -42,6 +48,18 @@ export function addPinLayers(m: maplibregl.Map) {
       source: PIN_SOURCE,
       ...spec,
     } as maplibregl.SymbolLayerSpecification);
+  // The selected pin: a paper disc and an ink ring around it, so it stands out among live pins.
+  layer({
+    id: 'pin-select-bed',
+    filter: isSelected,
+    layout: { ...common, 'icon-image': 'pin-disc', 'icon-size': selectScale(1.7, 1.2) },
+    paint: { 'icon-opacity': 0.6 },
+  });
+  layer({
+    id: 'pin-select',
+    filter: isSelected,
+    layout: { ...common, 'icon-image': 'pin-select', 'icon-size': selectScale(1, 0.7) },
+  });
   layer({
     id: 'pin-ring',
     filter: ['all', notCluster, isKind('live')],
@@ -149,6 +167,8 @@ export function pinPaint(
 ): [string, string, unknown][] {
   const { live, onLive } = preset[name];
   return [
+    ['pin-select-bed', 'icon-color', t.paper],
+    ['pin-select', 'icon-color', t.ink],
     ['pin-ring', 'icon-color', live],
     [
       'pin-disc',
@@ -157,7 +177,7 @@ export function pinPaint(
         'case',
         get('cluster'),
         t.ink,
-        ['match', get('kind'), 'live', live, ['soon', 'day'], t.paper, t.muted],
+        ['match', get('kind'), 'live', live, ['soon', 'day'], t.paper, t.ink],
       ],
     ],
     ['pin-outline', 'icon-color', ['match', get('kind'), 'live', onLive, 'day', t.muted, live]],

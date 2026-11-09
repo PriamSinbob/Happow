@@ -650,30 +650,63 @@ describe('GET /api/area', () => {
     expect((await createApi({}, { now: at })(get('lat=51.1&lng=17.05&r=5000'))).status).toBe(503);
   });
 
-  it('serves the Week and Later ranges to local midnight across the DST change, for 30 minutes', async () => {
+  it('serves the 14-day range to local midnight across the DST change, for 30 minutes', async () => {
     const web = backend({ rpc: { events_area: () => ({ body: rows }) } });
     const api = createApi(env, { config, fetch: web.fetch, now: at });
     // 22:03 on Tue 20 Oct in Wrocław (CEST); summer time ends on Sun 25 Oct.
-    const week = await api(get('lat=51.1&lng=17.05&r=5000&range=week'));
-    expect(week.status).toBe(200);
-    expect(await week.json()).toMatchObject({
-      from: '2026-10-20T20:00:00.000Z',
-      // End of Mon 26 Oct, local midnight in CET (UTC+1), not 7 × 24 h later.
-      to: '2026-10-26T22:59:59.999Z',
-    });
-    expect(week.headers.get('cache-control')).toBe('public, max-age=1590');
     const later = await api(get('lat=51.1&lng=17.05&r=5000&range=later'));
-    expect(await later.json()).toMatchObject({ to: '2026-11-02T22:59:59.999Z' });
+    expect(later.status).toBe(200);
+    expect(await later.json()).toMatchObject({
+      from: '2026-10-20T20:00:00.000Z',
+      // End of Mon 2 Nov, local midnight in CET (UTC+1), not 14 × 24 h later.
+      to: '2026-11-02T22:59:59.999Z',
+    });
+    expect(later.headers.get('cache-control')).toBe('public, max-age=1590');
     expect(web.calls.filter((c) => c.name === 'events_area').map((c) => c.args.to_ts)).toEqual([
-      '2026-10-26T22:59:59.999Z',
       '2026-11-02T22:59:59.999Z',
     ]);
+  });
+
+  it('serves the future range from the end of the 14 days on, with no end', async () => {
+    const web = backend({ rpc: { events_area: () => ({ body: rows }) } });
+    const api = createApi(env, { config, fetch: web.fetch, now: at });
+    const future = await api(get('lat=51.1&lng=17.05&r=5000&range=future'));
+    expect(future.status).toBe(200);
+    // `from` stays the cache step the phone counts from; the query starts after the 14 days.
+    expect(await future.json()).toMatchObject({ from: '2026-10-20T20:00:00.000Z' });
+    expect(future.headers.get('cache-control')).toBe('public, max-age=1590');
+    expect(web.calls.find((c) => c.name === 'events_area')?.args).toMatchObject({
+      from_ts: '2026-11-02T23:00:00.000Z',
+      to_ts: '9999-01-01T00:00:00.000Z',
+    });
+  });
+
+  it('serves one month of the future on its own, and everything later as the last step', async () => {
+    const web = backend({ rpc: { events_area: () => ({ body: rows }) } });
+    const api = createApi(env, { config, fetch: web.fetch, now: at });
+    const q = 'lat=51.1&lng=17.05&r=5000&range=future';
+    expect((await api(get(`${q}&step=1`))).status).toBe(200);
+    expect((await api(get(`${q}&step=12`))).status).toBe(200);
+    const args = web.calls.filter((c) => c.name === 'events_area').map((c) => c.args);
+    // December 2026, whole, in local time (CET).
+    expect(args[0]).toMatchObject({
+      from_ts: '2026-11-30T23:00:00.000Z',
+      to_ts: '2026-12-31T22:59:59.999Z',
+    });
+    expect(args[1]).toMatchObject({
+      from_ts: '2027-10-31T23:00:00.000Z',
+      to_ts: '9999-01-01T00:00:00.000Z',
+    });
+    for (const bad of ['13', '-1', '1.5', 'x'])
+      expect((await api(get(`${q}&step=${bad}`))).status).toBe(400);
+    // A step means nothing outside the future range.
+    expect((await api(get('lat=51.1&lng=17.05&r=5000&range=later&step=1'))).status).toBe(400);
   });
 
   it('refuses ranges that are not multi-day time windows', async () => {
     const web = backend({ rpc: { events_area: () => ({ body: [] }) } });
     const api = createApi(env, { config, fetch: web.fetch, now: at });
-    for (const range of ['today', '2h', 'month', ''])
+    for (const range of ['today', '2h', 'week', 'month', ''])
       expect((await api(get(`lat=51.1&lng=17.05&r=5000&range=${range}`))).status).toBe(400);
     expect(web.calls).toEqual([]);
   });

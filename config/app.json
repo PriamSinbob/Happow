@@ -74,12 +74,13 @@
       "endOfDay": true
     },
     {
-      "id": "week",
-      "days": 7
-    },
-    {
       "id": "later",
       "days": 14
+    },
+    {
+      "id": "future",
+      "afterDays": 14,
+      "months": 12
     }
   ],
   "timeline": {
@@ -98,7 +99,7 @@
   "ingest": {
     "descriptionMaxChars": 600,
     "lookbackHours": 8,
-    "lookaheadHours": 1440,
+    "lookaheadHours": 8760,
     "userAgent": "Happow/0.5 (+{siteUrl}/crawler; {contactEmail})",
     "politeness": {
       "conditionalRequests": true,
