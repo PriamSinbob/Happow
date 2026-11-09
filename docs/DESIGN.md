@@ -32,7 +32,7 @@ The ring is full at 2 h or more and shrinks in 10-minute steps (minimum 8 %); do
 
 - **Top left:** live counter `● N` (tap = live only, filled while on), then the shortcut chip.
 - **Top right:** add pill (circled plus with category glyphs, more of them from 380 and 410 px), settings, dice (two small dice mid-throw). A roll that finds nothing close and soon widens to the loaded area, then to anything still to come; only then a toast says so, in words.
-- **Right edge:** reach rail (inset ~20 px, stops 100 m–5 km on a log scale, walking minutes up to 2 km), then locate and one list-and-search button; opening the list focuses search.
+- **Right edge:** reach rail (inset ~20 px, glass thumb with an ink dot of half its width, stops 100 m–5 km on a log scale, walking minutes up to 2 km), then locate and one list-and-search button; opening the list focuses search.
 - **Bottom:** the time line, range icons at its left end.
 - The list is a window like the settings sheet (paper, no border, 26 px corners, at most 520 px wide) over the map dimmed and blurred by the same scrim; the scrim stays under the time line and map buttons, and tapping it returns to the map. The window shows no scroll bar. Tapping a row returns to the map with that pin selected and in view (the map zooms out when the pin is outside it); the card then carries a back arrow to the list, which kept its scroll position and search text. Off-screen events are 10 px dots on the screen edge (the nearest 24).
 - The map's cards (event, place, hotspot) are the same paper with no border, but with no scrim: the map stays usable around them, so another pin opens with one tap.

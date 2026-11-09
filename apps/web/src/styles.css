@@ -517,6 +517,15 @@ button {
   border-radius: 50%;
   background: var(--glass-solid);
 }
+/* The glass thumb alone is lost on the night map: an ink dot of half its width marks it
+   (white at night, dark by day). */
+.rail__thumb::after {
+  content: '';
+  position: absolute;
+  inset: 25%;
+  border-radius: 50%;
+  background: var(--ink);
+}
 .rail__pill {
   position: absolute;
   right: 46px;
