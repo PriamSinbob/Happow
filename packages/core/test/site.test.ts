@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { launchItems, loadConfig, siteTemplate } from '../src';
 import { uaFromTemplate } from '../../../apps/web/build/crawlerPage';
@@ -26,10 +29,8 @@ describe('siteTemplate', () => {
 });
 
 describe('no domain or contact address in code', () => {
-  it('keeps the site URL and the email in config only', async () => {
-    const { readdirSync, readFileSync, statSync } = await import('node:fs');
-    const { join } = await import('node:path');
-    const root = new URL('../../../', import.meta.url).pathname;
+  it('keeps the site URL and the email in config only', () => {
+    const root = fileURLToPath(new URL('../../../', import.meta.url));
     const dirs = [
       'packages/core/src',
       'packages/api/src',
@@ -105,8 +106,7 @@ describe('launchItems', () => {
     expect(ids).toContain('source:meetup-pages');
   });
 
-  it('blocks Cron Triggers on previews, and the real wrangler.jsonc has none', async () => {
-    const { readFileSync } = await import('node:fs');
+  it('blocks Cron Triggers on previews, and the real wrangler.jsonc has none', () => {
     const real = readFileSync(new URL('../../../wrangler.jsonc', import.meta.url), 'utf8');
     expect(launchItems(ready(), now, real)).toEqual([]);
     const bad = '{ // note\n "previews": { "triggers": { "crons": ["*/15 * * * *"] } } }';

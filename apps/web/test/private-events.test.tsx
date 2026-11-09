@@ -195,6 +195,9 @@ describe('private events in the app', () => {
 });
 
 describe('the private card', () => {
+  /** Answers are only offered before the event ends, so the card's event must stay ahead of the clock. */
+  const future = { start_at: '2099-01-01T18:00:00Z', end_at: '2099-01-01T20:00:00Z' };
+
   it('a pending invitee answers; declining closes the card', async () => {
     signIn();
     serve((url) => {
@@ -202,7 +205,7 @@ describe('the private card', () => {
       if (url.endsWith('/answer')) return ok({ status: 'declined' });
       return ok({}, 404);
     });
-    const ev = rowToPrivate(row('p1') as never);
+    const ev = rowToPrivate(row('p1', future) as never);
     privateEvents.set([ev]);
     const gone = vi.fn();
     wrap(<PrivatePanel ev={ev} center={null} onToast={vi.fn()} onGone={gone} />);
@@ -217,7 +220,7 @@ describe('the private card', () => {
 
   it('a link signed out offers sign-in instead of an answer', () => {
     serve(() => ok({}, 404));
-    const ev = rowToPrivate(row('p1', { link: true, invitation: null }) as never);
+    const ev = rowToPrivate(row('p1', { ...future, link: true, invitation: null }) as never);
     wrap(<PrivatePanel ev={ev} center={null} onToast={vi.fn()} onGone={vi.fn()} />);
     expect(screen.getByRole('button', { name: 'Sign in to accept' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: "I'm in" })).toBeNull();
@@ -232,14 +235,7 @@ describe('the private card', () => {
       if (url === '/api/contacts') return ok({ contacts: [], groups: [], link: null });
       return ok({}, 404);
     });
-    const ev = rowToPrivate(
-      row('p1', {
-        mine: true,
-        invitation: null,
-        start_at: '2099-01-01T18:00:00Z',
-        end_at: '2099-01-01T20:00:00Z',
-      }) as never,
-    );
+    const ev = rowToPrivate(row('p1', { ...future, mine: true, invitation: null }) as never);
     wrap(<PrivatePanel ev={ev} center={null} onToast={vi.fn()} onGone={vi.fn()} />);
     expect(await screen.findByText('1 of 1 accepted')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Invite people' }));
