@@ -7,7 +7,7 @@ import { plans } from './plans';
 import { storage } from './storage';
 
 /**
- * Reminders on this device (M10 §4, §5): web push from the installed app. Permission is asked
+ * Reminders on this device: web push from the installed app. Permission is asked
  * only when someone sets their first reminder. The server keeps the reminders and sends them; this
  * device keeps a copy (event id → lead) so the bell shows at once.
  */
@@ -146,7 +146,7 @@ export function useReminders(): Record<string, string> {
   return useSyncExternalStore(reminders.subscribe, snapshot, snapshot);
 }
 
-// Removing an event from your plans removes its reminder (§5).
+// Removing an event from your plans removes its reminder.
 plans.subscribe(() => {
   const drop = Object.keys(map).filter((id) => !plans.isSaved(id));
   if (!drop.length) return;

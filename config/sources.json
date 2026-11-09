@@ -9,7 +9,7 @@
       "rateLimit": null,
       "trustLevel": "community",
       "enabled": false,
-      "termsNotes": "Hand-entered demo events for the PoC skeleton (milestone 1). Fictional programmes at real venues."
+      "termsNotes": "Hand-entered demo events. Fictional programmes at real venues."
     },
     {
       "id": "ticketmaster",
@@ -110,7 +110,7 @@
       "republishDescription": false,
       "republishImages": false,
       "termsNotes": "Ticketing site; the city listing publishes schema.org Event JSON-LD (ItemList). Crawled page. Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; 1 request/s.",
-      "beforeLaunch": "eBilet's written consent or a partner feed: the owner emails them before launch (owner, 2026-11-05). Small yield (15 of 404 events in 7 days on 26 Oct) but events found nowhere else.",
+      "beforeLaunch": "eBilet's written consent or a partner feed: the owner emails them before launch. Small yield (15 of 404 events in 7 days on 26 Oct) but events found nowhere else.",
       "options": {
         "startUrls": ["https://www.ebilet.pl/miasto/wroclaw"],
         "followPattern": "^https://www\\.ebilet\\.pl/[a-z0-9-]+/[a-z0-9-]+/[a-z0-9-]+$",
@@ -287,8 +287,8 @@
       "maxCacheAgeHours": 72,
       "republishDescription": false,
       "republishImages": false,
-      "termsNotes": "PRIVATE TESTING ONLY (M7 §7). Meetup's ToS §5.4 forbids scraping for commercial purposes: switch this source off, or move to the Meetup API (Meetup Pro), before monetising. Starts from each listed group's /events/ page (event links are rendered from embedded JSON, hence followInText) and reads schema.org Event JSON-LD on each event page; no geo, so places are geocoded. Checked 2026-11-05: robots.txt allows group and event pages; search (?location=, ?distance=, keywords, …) and the atom/rss/xml event feeds are disallowed and never requested. Organisers (group hosts) are not stored. Store facts only and link back; no descriptions or images are republished. One request every 5 s.",
-      "beforeLaunch": "Keep during the PoC; switch off when the PoC closes, or move to the Meetup API (Meetup Pro): ToS §5.4 forbids scraping for commercial purposes (owner, 2026-11-05).",
+      "termsNotes": "PRIVATE TESTING ONLY. Meetup's ToS §5.4 forbids scraping for commercial purposes: switch this source off, or move to the Meetup API (Meetup Pro), before monetising. Starts from each listed group's /events/ page (event links are rendered from embedded JSON, hence followInText) and reads schema.org Event JSON-LD on each event page; no geo, so places are geocoded. Checked 2026-11-05: robots.txt allows group and event pages; search (?location=, ?distance=, keywords, …) and the atom/rss/xml event feeds are disallowed and never requested. Organisers (group hosts) are not stored. Store facts only and link back; no descriptions or images are republished. One request every 5 s.",
+      "beforeLaunch": "Keep during the PoC; switch off when the PoC closes, or move to the Meetup API (Meetup Pro): ToS §5.4 forbids scraping for commercial purposes.",
       "options": {
         "startUrls": [
           "https://www.meetup.com/wroclaw-english-speakers-group/events/",

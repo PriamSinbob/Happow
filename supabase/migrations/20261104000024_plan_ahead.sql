@@ -1,6 +1,5 @@
--- M10 plan ahead (docs/milestones/M10-plan-ahead.md).
--- Slice A: the agenda reads the events on someone's list by id, also beyond the map's 14 days.
--- Slice B: an account's saved list, synced across its devices (`saved.sync` in config/plans.json).
+-- Plan ahead: the agenda reads the events on someone's list by id, also beyond the map's 14 days;
+-- an account's saved list, synced across its devices (`saved.sync` in config/plans.json).
 
 -- The events among `ids` that are still listed (events_public leaves out hidden ones); ended
 -- ones are included, for the agenda's "Past". The same columns as event_by_id.
@@ -73,7 +72,7 @@ as $$
   from saved_events v where v.user_id = p_user
 $$;
 
--- Merges a device's list into the account's (M10 §2) and returns the account's whole list.
+-- Merges a device's list into the account's and returns the account's whole list.
 -- Per event the latest change wins; a time from the future counts as now. Removals older than
 -- p_keep_removed_days go, and of the saved ones the oldest go past p_max.
 create function saved_sync(p_user uuid, p_items jsonb, p_keep_removed_days integer, p_max integer)
@@ -121,7 +120,7 @@ revoke all on function saved_json(uuid), saved_sync(uuid, jsonb, integer, intege
 grant execute on function saved_json(uuid), saved_sync(uuid, jsonb, integer, integer)
   to service_role;
 
--- The account export (M8, GDPR art. 15/20) includes the saved list.
+-- The account export (GDPR art. 15/20) includes the saved list.
 create or replace function account_export(p_user uuid)
 returns jsonb
 language sql

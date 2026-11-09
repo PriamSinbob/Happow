@@ -5,7 +5,7 @@ import { ApiError, body, json } from './http.js';
 import type { Supabase } from './supabase.js';
 
 /**
- * Saved events across an account's devices (M10 §2, slice B). A device sends its whole list,
+ * Saved events across an account's devices. A device sends its whole list,
  * removals included; the server merges it into the account's (latest change per event wins) and
  * answers with the result, which the device then keeps. An empty list is a pull.
  */

@@ -19,7 +19,7 @@ import {
 import { config } from './config';
 import { storage } from './storage';
 
-/** GET /api/me (M8 §2–§5). */
+/** GET /api/me. */
 export interface Me {
   id: string;
   email: string;
@@ -29,10 +29,10 @@ export interface Me {
   plan: PlanId;
   planSource: PlanSource | null;
   planEndsAt: string | null;
-  /** "Show my name on events I add" and that name (M12 §5.5). */
+  /** "Show my name on events I add" and that name. */
   showName?: boolean;
   displayName?: string | null;
-  /** "Show my friends when I'm going" (M11 §5), and a moderator's stop on private events. */
+  /** "Show my friends when I'm going", and a moderator's stop on private events. */
   friendsVisible?: boolean;
   privateBlocked?: boolean;
   entitlements: Entitlements;
@@ -41,8 +41,8 @@ export interface Me {
     resetsAt: string;
     events: { used: number; limit: number };
     autofill: { used: number; limit: number };
-    /** Private events this month (M11 §1); missing from servers before M11. */
-    private?: { used: number; limit: number };
+    /** Private events this month. */
+    private: { used: number; limit: number };
   };
 }
 

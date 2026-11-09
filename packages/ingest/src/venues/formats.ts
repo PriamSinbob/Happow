@@ -2,7 +2,7 @@ import ICAL from 'ical.js';
 import { decodeEntities, type ExtractedEvent } from '@happow/extract';
 
 /**
- * Readers for the event formats venue sites publish (M12 §2.2): iCalendar feeds and The Events
+ * Readers for the event formats venue sites publish: iCalendar feeds and The Events
  * Calendar's REST API. Both become ExtractedEvent, the crawler's page format, so the crawler's
  * parse step places and times them the same way as JSON-LD from a page.
  */

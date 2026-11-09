@@ -1,27 +1,9 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import type { ExtractedEvent, Extractor, GeoQuery, Geocoder } from '@happow/extract';
 import { MemoryCache } from '@happow/extract';
 import { runIngest } from '../src';
 import { crawler } from '../src/adapters/crawler';
-import { config, noSleep, region } from './helpers';
-
-const page = (name: string) =>
-  readFileSync(new URL(`../../extract/test/fixtures/${name}`, import.meta.url), 'utf8');
-
-/** Serves the recorded pages by URL; anything else is a 404, like a vanished event page. */
-function site(pages: Record<string, string>) {
-  const requested: string[] = [];
-  const fetchMock = vi.fn(async (input: string | URL | Request) => {
-    const url = String(input);
-    requested.push(url);
-    const body = pages[url];
-    if (body === undefined) return new Response('not found', { status: 404 });
-    const type = url.endsWith('.txt') ? 'text/plain' : 'text/html; charset=utf-8';
-    return new Response(body, { status: 200, headers: { 'content-type': type } });
-  });
-  return { fetch: fetchMock as unknown as typeof fetch, requested };
-}
+import { config, noSleep, page, region, site } from './helpers';
 
 /** Puts every Wrocław address at a fixed spot in the centre; reports precision like Nominatim. */
 const geocoder: Geocoder & { calls: GeoQuery[] } = {

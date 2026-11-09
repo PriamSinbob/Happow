@@ -49,7 +49,7 @@ export function ReportDialog({
     setSending(true);
     setError(null);
     try {
-      // Signed in, the report carries the account: a private event needs it (M11 §4).
+      // Signed in, the report carries the account: a private event needs it.
       await api('reports', {
         token: await accessToken(),
         body: { deviceId: deviceId(), eventId, reason, note: note.trim() || null },

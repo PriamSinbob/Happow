@@ -1,7 +1,7 @@
 import { isoWeekday } from '@happow/core';
 
 /**
- * Regular services at places of worship (M12 §2.3): OSM's `service_times` tag, which uses the
+ * Regular services at places of worship: OSM's `service_times` tag, which uses the
  * `opening_hours` grammar, read as a weekly pattern. Only the plain part of that grammar is read:
  * weekdays and day ranges ("Mo-Sa", "Su,We"), then start times or time ranges
  * ("08:00,10:00", "18:00-19:00"). A rule with months, weeks, holidays only, "off" or a comment is

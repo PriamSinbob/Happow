@@ -12,8 +12,6 @@ import {
   type PlanEntry,
 } from '../src';
 
-/** M10 (docs/milestones/M10-plan-ahead.md): the saved list, the agenda's days, the evening queue. */
-
 const { app, categories } = loadConfig();
 const TZ = 'Europe/Warsaw';
 const DAY = 86_400_000;
@@ -26,7 +24,7 @@ const entry = (id: string, at: number, on = true, going = false): PlanEntry => (
   at,
 });
 
-describe('the saved list (§1, §2)', () => {
+describe('the saved list', () => {
   const cfg = { keepRemovedDays: 30, maxSaved: 3 };
 
   it('merges two lists: the latest change per event wins, the server on a tie', () => {
@@ -68,7 +66,7 @@ describe('the saved list (§1, §2)', () => {
     expect(list[0]!.at).toBe(T0 + 5001);
   });
 
-  it('views: everything is no filter; plans and saved are the bookmarks; private is M11', () => {
+  it('views: everything is no filter; plans and saved are the bookmarks; private is empty', () => {
     const list = [entry('a', 1), entry('b', 2, false)];
     expect(viewIds(list, 'all')).toBeNull();
     expect([...viewIds(list, 'plans')!]).toEqual(['a']);
@@ -76,7 +74,7 @@ describe('the saved list (§1, §2)', () => {
     expect(viewIds(list, 'private')!.size).toBe(0);
   });
 
-  it('my plans merges accepted invitations; only private ones show in Private (§6)', () => {
+  it('my plans merges accepted invitations; only private ones show in Private', () => {
     const list = [entry('a', 1), entry('b', 2, false)];
     const invited = [
       { id: 'inv-pub', private: false },
@@ -89,7 +87,7 @@ describe('the saved list (§1, §2)', () => {
     expect(viewIds(list, 'all', invited)).toBeNull();
   });
 
-  it('pending invitations are only in Private; your own private events are in both (M11 §4)', () => {
+  it('pending invitations are only in Private; your own private events are in both', () => {
     const invited = [
       { id: 'p', private: true, status: 'pending' as const },
       { id: 'o', private: true, status: 'owner' as const },
@@ -113,7 +111,7 @@ const ev = (id: string, start: string, end: string, over: Partial<HappowEvent> =
     ...over,
   }) as HappowEvent;
 
-describe('agenda days (§1)', () => {
+describe('agenda days', () => {
   const now = new Date(T0);
 
   it('groups by local day, a running event first today, ended ones under Past', () => {
@@ -145,7 +143,7 @@ describe('agenda days (§1)', () => {
   });
 });
 
-describe('the evening queue (§3)', () => {
+describe('the evening queue', () => {
   // 1 km apart along a meridian: 1000 × 1.3 ÷ 80 = 16.25 min, rounded up to 20.
   const near = { lat: 51.1, lng: 17.03 };
   const km = { lat: 51.1 + 1 / 111.2, lng: 17.03 };

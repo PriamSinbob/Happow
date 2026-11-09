@@ -4,7 +4,7 @@ import { createApi } from '../src';
 import { emailSender, resendSender, type EmailMessage, type EmailSender } from '../src/email';
 import { alertEmail, sendFollowAlerts, type DueAlert } from '../src/followAlerts';
 
-/** M13 §5: the email sender, sign-in codes by the app, and follow alerts by email. */
+/** The email sender, sign-in codes by the app, and follow alerts by email. */
 
 const config = loadConfig();
 const SB = 'https://proj.supabase.co';

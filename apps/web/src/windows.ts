@@ -10,7 +10,7 @@ export function windowLabel(t: T, w: TimeWindow): string {
   return t('window.hours', { hours: w.hours });
 }
 
-/** Calendar icon for whole-day windows (docs/design/icons): Today, ≤ 7 days, longer. Null for hours. */
+/** Calendar icon for whole-day windows: Today, ≤ 7 days, longer. Null for hours. */
 export function windowRows(w: TimeWindow): 0 | 1 | 2 | null {
   if ('endOfDay' in w) return 0;
   if ('days' in w) return w.days <= 7 ? 1 : 2;

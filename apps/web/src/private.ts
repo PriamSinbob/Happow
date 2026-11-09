@@ -7,10 +7,9 @@ import { invitations } from './invitations';
 import { storage } from './storage';
 
 /**
- * Private events (M11 §4): the ones you own or are invited to, read from the API with your
- * sign-in (never the public snapshot). They show locked on the map in every view (owner,
- * 2026-11-04), in the Private view, and in My plans once accepted. Kept in memory only, so
- * signing out clears them.
+ * Private events: the ones you own or are invited to, read from the API with your sign-in
+ * (never the public snapshot). They show locked on the map in every view, in the Private view,
+ * and in My plans once accepted. Kept in memory only, so signing out clears them.
  */
 
 export interface InvitationState {
@@ -57,7 +56,7 @@ export function rowToPrivate(r: PrivateRow): PrivateEvent {
 export const isPrivate = (e: NearbyEvent): e is PrivateEvent =>
   (e as Partial<PrivateEvent>).visibility === 'private';
 
-/** Something changed since you last opened it: a new time, a cancellation or a post (§3). */
+/** Something changed since you last opened it: a new time, a cancellation or a post. */
 export function hasNews(e: PrivateEvent): boolean {
   const seen = e.invitation?.seenAt;
   if (!seen || e.mine) return false;
@@ -68,7 +67,7 @@ export function hasNews(e: PrivateEvent): boolean {
 let list: readonly PrivateEvent[] = [];
 const listeners = new Set<() => void>();
 const emit = () => {
-  // My plans and Private read the same list (M10 §6).
+  // My plans and Private read the same list.
   invitations.set(
     list.map((e) => ({
       id: e.id,
@@ -163,7 +162,7 @@ function readInvites(): Record<string, string> {
 
 /**
  * An invite link's token (`/e/<id>?i=…`, already `/?i=…#/e/<id>`): remembered for that event
- * until it is accepted, then taken out of the address, as the share token is (M9 §5).
+ * until it is accepted, then taken out of the address, as the share token is.
  */
 export function captureInvite(): void {
   const params = new URLSearchParams(window.location.search);
@@ -188,7 +187,7 @@ export function captureInvite(): void {
 }
 
 export const inviteToken = (eventId: string): string | null => readInvites()[eventId] ?? null;
-export function forgetInvite(eventId: string): void {
+function forgetInvite(eventId: string): void {
   const map = readInvites();
   delete map[eventId];
   storage.set(INVITES, JSON.stringify(map));

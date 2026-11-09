@@ -9,7 +9,7 @@ export const RADIUS_SOURCE = 'radius';
  * Day ink in both themes: the raster tiles stay light at night, so the night ink (near white)
  * would not show on them. The theme does not recolour the circle.
  */
-export const RADIUS_COLOUR = config.theme.themes.day.ink;
+const RADIUS_COLOUR = config.theme.themes.day.ink;
 
 export function radiusFeature(center: LatLng, radiusM: number) {
   return {
@@ -24,15 +24,15 @@ export const DRAG_LAYER = 'reach-drag';
 
 /**
  * The drag ring's colour: bright on the night map, grey on the light day map, where white would
- * vanish into the roads (owner, 2026-10-24: "a bright grey/white dashed ring").
+ * vanish into the roads.
  */
 export const dragRingColour = (theme: keyof typeof config.theme.themes) =>
   theme === 'night' ? config.theme.themes.night.ink : config.theme.themes.day.muted;
 
 /**
  * The dashed ring shown on the vector map only while the reach rail is dragged: the veil redraws
- * at the rail's stops, so between them the ring shows the reach under the finger (owner,
- * 2026-10-24). Hidden until the first drag. The raster fallback has its circle instead.
+ * at the rail's stops, so between them the ring shows the reach under the finger. Hidden until
+ * the first drag. The raster fallback has its circle instead.
  */
 export function addDragRing(m: maplibregl.Map, colour: string) {
   if (!canVeil(m) || m.getSource(DRAG_SOURCE)) return;
@@ -55,7 +55,7 @@ export function showDragRing(m: maplibregl.Map, center: LatLng, radiusM: number 
 }
 
 /**
- * The dashed reach circle, only where no veil shows the reach: the raster fallback (M8 §1).
+ * The dashed reach circle, only where no veil shows the reach: the raster fallback.
  * On the vector map the veil's lit disc marks the reach instead.
  */
 export function addReachCircle(m: maplibregl.Map, center: LatLng, radiusM: number) {

@@ -5,7 +5,7 @@ export interface Performer {
 }
 
 /**
- * The form names are matched on (M7 §1): lowercase, without diacritics (NFD plus "ł" → "l",
+ * The form names are matched on: lowercase, without diacritics (NFD plus "ł" → "l",
  * which NFD leaves alone), whitespace collapsed. The SQL `f_norm` gives the same result.
  */
 export function normName(name: string): string {

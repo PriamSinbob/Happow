@@ -11,7 +11,7 @@ import { Screen } from './Screen';
 const { agenda } = config.app;
 const KEY = 'leaveAt';
 
-/** "Leave at" times chosen on this device (§3), by event id. */
+/** "Leave at" times chosen on this device, by event id. */
 function loadLeave(): Record<string, string> {
   try {
     const v: unknown = JSON.parse(storage.get(KEY) ?? '{}');
@@ -22,8 +22,8 @@ function loadLeave(): Record<string, string> {
 }
 
 /**
- * The evening queue (M10 §3): one day's events in start order, the walk between each pair
- * (rounded, owner 2026-11-04) and how it works out. Each event can be left earlier; nothing is
+ * The evening queue: one day's events in start order, the walk between each pair
+ * (rounded) and how it works out. Each event can be left earlier; nothing is
  * moved or dropped for you.
  */
 export function EveningQueue({

@@ -20,7 +20,7 @@ const positron = JSON.parse(
 ) as { layers: { id: string; type: string }[] };
 
 describe('colour maths', () => {
-  it('matches the WCAG contrast figures in the spec (§3.2)', () => {
+  it('matches the WCAG contrast figures', () => {
     expect(contrast('#FFFFFF', '#000000')).toBeCloseTo(21, 5);
     expect(contrast('#6A4CF5', '#FFFFFF')).toBeCloseTo(5.3, 1);
     expect(contrast('#6A4CF5', '#F1ECE2')).toBeCloseTo(4.5, 1);
@@ -35,14 +35,14 @@ describe('colour maths', () => {
   });
 });
 
-describe('contrast test: every shipped preset and theme meets §3.2', () => {
+describe('contrast test: every shipped preset and theme meets the contrast rules', () => {
   it.each(theme.presets.map((p) => [p.id, p] as const))('%s', (_id, preset) => {
     expect(checkPreset(preset, theme)).toEqual([]);
   });
   it.each(['day', 'night'] as const)('%s text tokens are readable', (name) => {
     expect(checkTokens(name, theme.themes[name], theme)).toEqual([]);
   });
-  it('rejects the candidates the spec ruled out', () => {
+  it('rejects candidate colours that clash with water or the glyph', () => {
     const candidate = (live: string) => ({
       id: 'x',
       labels: { pl: 'x', en: 'x' },
@@ -59,7 +59,7 @@ describe('contrast test: every shipped preset and theme meets §3.2', () => {
     expect(presetById(theme, 'mono').id).toBe('mono');
     const bad = { ...theme, themes: { ...theme.themes, day: { ...theme.themes.day, ink: 'red' } } };
     expect(themeConfigSchema.safeParse(bad).success).toBe(false);
-    // An "off" toggle's icon must stay readable on the track (§15).
+    // An "off" toggle's icon must stay readable on the track.
     const dim = { ...theme.themes.day, sunken: '#8A847C' };
     expect(checkTokens('day', dim, theme).join()).toMatch(/quiet on sunken/);
   });

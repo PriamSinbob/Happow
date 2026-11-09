@@ -33,9 +33,9 @@ export interface PinProps {
   flagged: boolean;
   /** "18+" for events with ageMin ≥ 16, '' otherwise. */
   age: string;
-  /** A private event at this place (M11 §4): the lock. */
+  /** A private event at this place: the lock. */
   locked: boolean;
-  /** A followed artist performs here (M7 §4): the ★ at the upper left. */
+  /** A followed artist performs here: the ★ at the upper left. */
   starred: boolean;
   /** symbol-sort-key: higher draws on top (selected > live > soon > later, inside > outside). */
   z: number;
@@ -58,8 +58,8 @@ export function glyphOf(ev: Pick<NearbyEvent, 'categoryIds' | 'title' | 'venue'>
   return eventGlyph(categoriesById.get(ev.categoryIds[0]!), [ev.title, ev.venue?.name ?? '']);
 }
 
-/** Age limits from this one up get the numeral badge (§4.4). */
-export const AGE_BADGE_MIN = 16;
+/** Age limits from this one up get the numeral badge. */
+const AGE_BADGE_MIN = 16;
 
 const RANK = { live: 0, soon: 1, day: 1, later: 2 } as const;
 
@@ -71,7 +71,7 @@ function lead(events: NearbyEvent[], states: Map<string, PinState>): NearbyEvent
 }
 
 /**
- * How pins read the time (§13.3, §13.5): 'time' for Today at `now` (the time on the line);
+ * How pins read the time: 'time' for Today at `now` (the time on the line);
  * 'range' for the whole 7 / 14 days, every pin a 10 px dot; 'day' for one picked day, every pin a
  * 26 px glyph.
  */

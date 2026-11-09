@@ -1,7 +1,7 @@
--- M12 slice N: district goals and season collections (docs/milestones/M12-more-events.md §6.2,
--- §6.3). The empty list and its guidance card may say how many events the district you're in has
--- this weekend; seasons are config, matched in the app, and the account card counts the adder's
--- events in a running season, so its events carry their end and categories.
+-- District goals and season collections. The empty list and its guidance card may say how many
+-- events the district you're in has this weekend; seasons are config, matched in the app, and the
+-- account card counts the adder's events in a running season, so its events carry their end and
+-- categories.
 
 -- The district containing a point and its live events overlapping [p_from, p_to). Public: it
 -- gives a count and a name, nothing about anyone.

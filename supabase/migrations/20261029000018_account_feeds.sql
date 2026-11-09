@@ -1,4 +1,4 @@
--- M12 slice L: calendar feed import for an account (docs/milestones/M12-more-events.md §4.6).
+-- Calendar feed import for an account.
 -- An account adds an iCal URL; the ingest job reads it on its schedule and its events come in as
 -- the account's submissions, counting against the monthly quota. The first batch goes to
 -- moderation; once a moderator approves one of its events, later ones follow the account's trust.

@@ -1,5 +1,6 @@
 /**
- * Runs due sources once. Meant for a cron (GitHub Actions every 15 min) or by hand:
+ * Runs due sources once. The Worker's cron dispatches it (with a daily fallback in
+ * .github/workflows/ingest.yml); by hand:
  *   pnpm ingest                       run every due source
  *   pnpm ingest --source ticketmaster --force
  *   pnpm ingest --dry-run             fetch + normalize, print, write nothing (no DATABASE_URL needed)

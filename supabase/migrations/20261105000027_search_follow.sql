@@ -1,9 +1,8 @@
--- M7 search and followed artists (docs/milestones/M7-search-follow.md).
--- Slice A: performers per event, written by ingestion and by publish_event (submissions).
--- Slice B: typo-tolerant search over titles, venues and performers (pg_trgm, unaccent).
--- Slice D: matching a device's follows (nothing is stored).
--- Slice E: a cache of nationwide Ticketmaster lookups per attraction, with no link to anyone.
--- Slice G: follows synced per account, and alerts when a followed artist gets a new date.
+-- Search and followed artists: performers per event, written by ingestion and by publish_event
+-- (submissions); typo-tolerant search over titles, venues and performers (pg_trgm, unaccent);
+-- matching a device's follows (nothing is stored); a cache of nationwide Ticketmaster lookups per
+-- attraction, with no link to anyone; follows synced per account, and alerts when a followed
+-- artist gets a new date.
 
 create extension if not exists pg_trgm with schema extensions;
 create extension if not exists unaccent with schema extensions;
@@ -33,7 +32,7 @@ as $$
   select btrim(regexp_replace(lower(f_unaccent(translate(t, 'łŁ', 'lL'))), '\s+', ' ', 'g'))
 $$;
 
--- ---------- Slice A: performers ----------
+-- ---------- Performers ----------
 
 create table event_performers (
   event_id text not null references events (id) on delete cascade,
@@ -48,7 +47,7 @@ create index event_performers_norm_trgm on event_performers using gin (norm exte
 create index event_performers_norm_idx on event_performers (norm);
 create index event_performers_ext_idx on event_performers (external_id) where external_id is not null;
 alter table event_performers enable row level security;
--- Readable with the event: public events only (M11 §1).
+-- Readable with the event: public events only.
 create policy "public read" on event_performers for select to anon, authenticated
   using (exists (select 1 from events e where e.id = event_id and e.visibility = 'public'));
 grant select on event_performers to anon, authenticated;
@@ -128,7 +127,7 @@ begin
   return eid;
 end $$;
 
--- ---------- Slice B: search text and indexes ----------
+-- ---------- Search text and indexes ----------
 
 -- Title and venue name, normalised. Kept by a trigger (the venue name lives in another table).
 alter table events add column search_text text not null default '';
@@ -322,9 +321,9 @@ $$;
 grant execute on function events_area(double precision, double precision, double precision, timestamptz, timestamptz, integer)
   to anon, authenticated;
 
--- ---------- Slice B: search ----------
+-- ---------- Search ----------
 
--- Upcoming public events in a region matching `q` (§2): an exact performer first, then similar
+-- Upcoming public events in a region matching `q`: an exact performer first, then similar
 -- performers, then title or venue; ties by start. No radius and no time window beyond [from, to].
 -- Nothing about the query is stored.
 create or replace function search_events(
@@ -398,7 +397,7 @@ begin
   limit least(greatest(max_results, 1), 100);
 end $$;
 
--- ---------- Slice D: matching follows (nothing stored) ----------
+-- ---------- Matching follows (nothing stored) ----------
 
 -- Upcoming public events in the region with a followed performer, by name or Ticketmaster id.
 create or replace function follows_match(
@@ -442,7 +441,7 @@ as $$
   limit least(greatest(max_results, 1), 300);
 $$;
 
--- ---------- Slice E: nationwide Ticketmaster lookups ----------
+-- ---------- Nationwide Ticketmaster lookups ----------
 
 -- One row per attraction: its upcoming events in the country, as the API answered. No user link.
 create table follow_lookups (
@@ -475,7 +474,7 @@ as $$
   delete from follow_lookups where fetched_at < now() - interval '7 days';
 $$;
 
--- ---------- Slice G: follows on the account, and new-date alerts ----------
+-- ---------- Follows on the account, and new-date alerts ----------
 
 -- One row per account and name; a removal stays as a tombstone so other devices learn of it.
 create table account_follows (
@@ -572,7 +571,7 @@ as $$
   delete from follow_alerts where user_id = p_user and sent_at is null and not p_on;
 $$;
 
--- New dates for followed performers (§5): public, upcoming events first stored after both the
+-- New dates for followed performers: public, upcoming events first stored after both the
 -- follow and the switch-on. Run by the Cron Trigger; returns how many alerts it made.
 create or replace function follow_alerts_queue(p_lookback_hours integer default 48)
 returns integer

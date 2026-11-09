@@ -68,7 +68,7 @@ interface Form {
   family: boolean;
   /** Null until the user picks one: the category default applies. */
   entry: EntryType | null;
-  /** "Who's performing" (M7 §1), one name per line or comma-separated. */
+  /** "Who's performing", one name per line or comma-separated. */
   performers: string;
   terms: boolean;
 }
@@ -93,7 +93,7 @@ const EMPTY: Form = {
   terms: false,
 };
 
-/** A submission's form as the server stored it, read back for "add again" (M12 §4.4). */
+/** A submission's form as the server stored it, read back for "add again". */
 interface SentForm {
   title: string;
   categoryIds: string[];
@@ -143,7 +143,7 @@ const AGE_CHOICES = [null, 0, 12, 16, 18] as const;
 const ENTRY_TYPES: EntryType[] = ['fixed', 'open'];
 const { submissions } = config.app;
 
-/** Where a fill came from: a link, or a poster photo (M12 slice G). */
+/** Where a fill came from: a link, or a poster photo. */
 type FillSource = 'link' | 'photo';
 
 type Autofill =
@@ -154,12 +154,12 @@ type Autofill =
 
 type Done = {
   status: 'published' | 'pending';
-  /** Nothing happened at its place lately: "first added by you" (M12 §6.1). */
+  /** Nothing happened at its place lately: "first added by you". */
   firstPlace?: boolean;
-  /** Every date of a weekly repeat (M12 §4.5). */
+  /** Every date of a weekly repeat. */
   dates?: { id: string; eventId: string | null }[];
   eventId: string | null;
-  /** Given at once to a trusted account's event (M12 §5.3). */
+  /** Given at once to a trusted account's event. */
   reward?: Reward;
 };
 
@@ -247,7 +247,7 @@ function Meter({
   );
 }
 
-/** This month's events and autofills (M8 §5, `docs/design/add.html`). */
+/** This month's events and autofills. */
 function Usage({ me }: { me: Me }) {
   const { t, lang } = useI18n();
   const resets = t('usage.resets', { date: resetDay(me.usage.resetsAt, lang) });
@@ -262,7 +262,7 @@ function Usage({ me }: { me: Me }) {
 
 /**
  * "Add an event": paste a link to prefill, check the fields, place the pin, submit. Signed out it
- * offers sign-in first (adding needs an account, M8 §2); signed in it shows this month's usage.
+ * offers sign-in first (adding needs an account); signed in it shows this month's usage.
  */
 export function AddEvent({
   again = null,
@@ -271,9 +271,9 @@ export function AddEvent({
   onOpenEvent,
   onOpenAccount,
 }: {
-  /** One of the account's submissions to copy for another date (M12 §4.4). */
+  /** One of the account's submissions to copy for another date. */
   again?: string | null;
-  /** A precise current location: offers "happening here, now" (M12 §4.3). */
+  /** A precise current location: offers "happening here, now". */
   here?: LatLng | null;
   onClose: () => void;
   onOpenEvent: (id: string) => void;
@@ -318,7 +318,7 @@ export function AddEvent({
   const gated = account.status === 'signedOut' && submissions.account === 'required';
   const autofillOn = submissions.autofill === 'account' && account.status !== 'signedOut';
   const autofillOut = me ? me.usage.autofill.used >= me.usage.autofill.limit : false;
-  // Once a submit is refused for the quota, a fill would spend an autofill on nothing (owner).
+  // Once a submit is refused for the quota, a fill would spend an autofill on nothing.
   const linkOff = autofillOut || ranOut;
   const eventsOut = me ? me.usage.events.used >= me.usage.events.limit : false;
   const resets = me ? resetDay(me.usage.resetsAt, lang) : '';
@@ -351,13 +351,12 @@ export function AddEvent({
     if (span !== null && form.start) setForm((f) => ({ ...f, end: shiftInput(f.start, span) }));
   }, [span, form.start]);
   const compact = quick === 'compact';
-  // "Repeats weekly" (M12 §4.5): one event per date, each counting against the month.
+  // "Repeats weekly": one event per date, each counting against the month.
   const [repeat, setRepeat] = useState<WeeklyRepeat | null>(null);
-  // Private (M11 §1): only the people you invite see it; it can't repeat. A free account has one
-  // a month (owner, 2026-11-04), and it counts against the month's events too.
+  // Private: only the people you invite see it; it can't repeat. A free account has one
+  // a month, and it counts against the month's events too.
   const [isPrivate, setPrivate] = useState(false);
   const privateUsage = me?.usage.private;
-  // Unknown (a server from before M11): the server's answer decides.
   const privateLeft = privateUsage ? Math.max(0, privateUsage.limit - privateUsage.used) : null;
   const canPrivate = !!me?.entitlements['private.create'] && !me?.privateBlocked;
   const { recurring } = submissions;
@@ -413,7 +412,7 @@ export function AddEvent({
     );
   }
 
-  /** Fills the form from a poster photo, shrunk on the device first (M12 §4.2). */
+  /** Fills the form from a poster photo, shrunk on the device first. */
   async function fillFromPhoto(file: File) {
     await runFill(
       'photo',
@@ -444,7 +443,7 @@ export function AddEvent({
       setAutofill({ state: 'found', events: res.events, from });
       if (res.events.length === 1) apply(res.events[0]!, 0);
       if (!res.events.length) onNothing();
-      // Only a fill that found something counts (M8 §5).
+      // Only a fill that found something counts.
       else void account.refresh();
     } catch (err) {
       onNothing();
@@ -461,7 +460,7 @@ export function AddEvent({
     }
   }
 
-  // A page shared into Happow (M12 §4.1): taken once the account is known, so a signed-out share
+  // A page shared into Happow: taken once the account is known, so a signed-out share
   // waits through sign-in. It fills from the link when an autofill is left; otherwise the link
   // and the shared title go straight into the form.
   const ready = !gated && account.status !== 'loading' && (!autofillOn || me !== null);
@@ -476,7 +475,7 @@ export function AddEvent({
     // Once, when the form becomes ready; fillFrom reads the latest state itself.
   }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Add again (M12 §4.4): the account's own submission, copied but for the date.
+  // Add again: the account's own submission, copied but for the date.
   useEffect(() => {
     if (!again || !ready) return;
     let live = true;
@@ -506,7 +505,7 @@ export function AddEvent({
     };
   }, [again, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** "Happening here, now" (M12 §4.3): the pin where you are, starting now. */
+  /** "Happening here, now": the pin where you are, starting now. */
   function startQuick() {
     if (!here) return;
     setQuick('compact');
@@ -654,7 +653,7 @@ export function AddEvent({
         <div className="notice notice--quota" role="status">
           <p>
             {t(me!.plan === 'premium' ? 'add.eventsOutPremium' : 'add.eventsOut', {
-              // The real count: it can pass the limit when premium ends mid-month (owner).
+              // The real count: it can pass the limit when premium ends mid-month.
               count: me!.usage.events.used,
               limit: me!.usage.events.limit,
               date: resets,

@@ -1,5 +1,5 @@
--- Happow milestone 3: density (H3 hotspots, off-screen hints, empty-radius guidance).
--- Weather is out of the PoC (brief, 2026-10-20), so its cache table goes.
+-- Density (H3 hotspots, off-screen hints, empty-radius guidance). Weather is out of scope, so its
+-- cache table goes.
 drop table if exists weather_cache;
 
 -- H3 cell at config h3.densityResolution (coarser than h3_r9), computed in code like h3_r9.

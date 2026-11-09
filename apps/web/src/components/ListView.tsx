@@ -22,11 +22,11 @@ interface Props {
   onSelect: (id: string) => void;
   onExpand: (radius: number) => void;
   onClearFilters: () => void;
-  /** 7 / 14 days: rows by day, each day under a header (§13.5). */
+  /** 7 / 14 days: rows by day, each day under a header. */
   byDay?: boolean;
   /** Events that started earlier are listed from this day on (now, or the picked day). */
   dayFrom?: Date;
-  /** The district goal for an empty reach (M12 §6.2). */
+  /** The district goal for an empty reach. */
   goal?: DistrictGoal | null;
   onAdd?: () => void;
 }
@@ -43,7 +43,7 @@ export function Row({
   onSelect: (id: string) => void;
   /** A short mark after the time (the agenda's "Going"). */
   tag?: string;
-  /** The agenda's bookmark beside the row (M10 §1). */
+  /** The agenda's bookmark beside the row. */
   onUnsave?: () => void;
 }) {
   const { running, when, price, distance, walk } = useEventText(ev, now);
@@ -124,7 +124,7 @@ const AROUND_PAGE = 30;
 export function ListView(props: Props) {
   const { t, lang } = useI18n();
   const [shown, setShown] = useState(AROUND_PAGE);
-  // A season collection (M12 §6.3): the loaded events that fit a running season, by time and
+  // A season collection: the loaded events that fit a running season, by time and
   // distance only.
   const [seasonId, setSeasonId] = useState<string | null>(null);
   const pool = [...props.events, ...props.around];

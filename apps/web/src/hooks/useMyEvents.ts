@@ -14,7 +14,7 @@ export interface MyEvents {
 const { agenda, refresh } = config.app;
 
 /**
- * The events on your list (M10 §1), read by id so plans beyond the map's 14 days and outside the
+ * The events on your list, read by id so plans beyond the map's 14 days and outside the
  * reach show too. Events the map already loaded fill in at once and when a read fails; the read
  * runs again when the list or the search point changes, and every `refresh.dataMinutes`.
  */

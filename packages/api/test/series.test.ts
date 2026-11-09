@@ -1,69 +1,15 @@
-import { describe, expect, it, vi } from 'vitest';
-import { loadConfig } from '@happow/core';
+import { describe, expect, it } from 'vitest';
 import { createApi } from '../src';
+import { config, env, fail, organiserRpc, req, submitRpc, supabase, type Rpc } from './helpers';
 
-/** M12 slice I: a weekly repeat stored as one submission and one event per date. */
+/** A weekly repeat stored as one submission and one event per date. */
 
-const SB = 'https://proj.supabase.co';
-const env = { SUPABASE_URL: SB, SUPABASE_SERVICE_ROLE_KEY: 'service-key', SUBMITTER_SALT: 'salt' };
 const now = () => new Date('2026-10-29T22:30:00Z');
-const config = loadConfig();
 
-type Rpc = (args: Record<string, unknown>) => { status?: number; body: unknown };
 function backend(rpc: Record<string, Rpc>) {
-  const calls: { name: string; args: Record<string, unknown> }[] = [];
-  const users: Record<string, { id: string; email: string }> = {
-    'user-token': { id: 'u1', email: 'ala@example.org' },
-    'mod-token': { id: 'u2', email: 'mod@example.org' },
-  };
-  const all: Record<string, Rpc> = {
-    rate_limit_hit: () => ({ body: true }),
-    staff_role: (a) => ({ body: a.p_email === 'mod@example.org' ? 'moderator' : null }),
-    grants_active: () => ({ body: [] }),
-    usage_get: () => ({ body: { events: 0, autofills: 0 } }),
-    contributor_trusted: () => ({ body: false }),
-    duplicate_candidates: () => ({ body: { title: 'Pchli targ na Ruskiej', others: [] } }),
-    contribution_award: () => ({ body: { kind: 'verified', days: 3, startsAt: null } }),
-    // M11: every event public, nobody an organiser, empty organiser queues.
-    event_visibility: () => ({ body: 'public' }),
-    organiser_at: () => ({ body: false }),
-    claims_queue: () => ({ body: [] }),
-    edits_queue: () => ({ body: [] }),
-    post_reports_queue: () => ({ body: [] }),
-    ...rpc,
-  };
-  const f = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
-    const url = String(input);
-    if (url.startsWith(`${SB}/rest/v1/rpc/`)) {
-      const name = url.slice(`${SB}/rest/v1/rpc/`.length);
-      const args = JSON.parse(String(init.body ?? '{}'));
-      calls.push({ name, args });
-      const h = all[name];
-      if (!h) return new Response('{}', { status: 404 });
-      const { status = 200, body } = h(args);
-      return new Response(JSON.stringify(body), { status });
-    }
-    if (url === `${SB}/auth/v1/user`) {
-      const token = new Headers(init.headers).get('authorization')?.replace('Bearer ', '') ?? '';
-      const u = users[token];
-      return u ? Response.json(u) : new Response('{}', { status: 401 });
-    }
-    return new Response('not found', { status: 404 });
-  });
-  const api = createApi(env, { config, fetch: f as typeof fetch, now, extractor: null });
-  const call = (name: string) => calls.filter((c) => c.name === name);
-  return { api, call };
+  const sb = supabase({ ...submitRpc, ...organiserRpc, ...rpc });
+  return { ...sb, api: createApi(env, { config, fetch: sb.fetch, now, extractor: null }) };
 }
-const req = (path: string, init: { token?: string; body?: unknown } = {}) =>
-  new Request(`https://happow.example/api/${path}`, {
-    method: init.body === undefined ? 'GET' : 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'cf-connecting-ip': '203.0.113.7',
-      ...(init.token && { authorization: `Bearer ${init.token}` }),
-    },
-    ...(init.body !== undefined && { body: JSON.stringify(init.body) }),
-  });
 
 const SERIES = '5d1c7a3e-2f4d-4e5a-9b6c-7d8e9f0a1b2c';
 const event = {
@@ -91,11 +37,8 @@ const series: Record<string, Rpc> = {
     body: (a.p_items as Item[]).map((i) => ({ id: i.id, eventId: `submissions:${i.id}` })),
   }),
 };
-const fail =
-  (code: string): Rpc =>
-  () => ({ status: 400, body: { code, message: code } });
 
-describe('POST /api/submissions with a weekly repeat (M12 §4.5)', () => {
+describe('POST /api/submissions with a weekly repeat', () => {
   it('stores one submission per date in one call, each with its own times on the region clock', async () => {
     const b = backend(series);
     const res = await send(b, { days: [6], until: '2026-11-28' });
@@ -143,7 +86,7 @@ describe('POST /api/submissions with a weekly repeat (M12 §4.5)', () => {
   });
 });
 
-describe('moderating a series (M12 §4.5)', () => {
+describe('moderating a series', () => {
   const path = `moderation/series/${SERIES}`;
 
   it('approves every pending date at once and rewards the first', async () => {

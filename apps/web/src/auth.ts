@@ -1,5 +1,5 @@
 /**
- * Sign-in with Supabase Auth over plain fetch (no SDK in the bundle), M8 §2: a 6-digit email
+ * Sign-in with Supabase Auth over plain fetch (no SDK in the bundle): a 6-digit email
  * code or Google (PKCE). Sessions live in localStorage with refresh-token rotation, so an
  * installed app stays signed in.
  */
@@ -39,8 +39,6 @@ function save(s: Session | null) {
   try {
     if (s) localStorage.setItem(KEY, JSON.stringify(s));
     else localStorage.removeItem(KEY);
-    // Sessions before M8 lived in sessionStorage.
-    sessionStorage.removeItem(KEY);
   } catch {
     /* storage blocked */
   }
@@ -49,7 +47,7 @@ function save(s: Session | null) {
 
 export function loadSession(): Session | null {
   try {
-    const raw = localStorage.getItem(KEY) ?? sessionStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY);
     return raw ? (JSON.parse(raw) as Session) : null;
   } catch {
     return null;
@@ -93,11 +91,11 @@ async function gotrue(path: string, body: unknown): Promise<Response> {
 const appUrl = () => `${window.location.origin}${window.location.pathname}`;
 
 /**
- * Asks for a sign-in code. With manual delivery the Worker files the request and the owner emails
+ * Asks for a sign-in code. With manual delivery the Worker files the request and the admin emails
  * the code by hand; with "app" delivery the Worker emails it; with "supabase", Supabase does.
  */
 export async function requestCode(email: string, locale: string): Promise<void> {
-  // "app" (M13 §5): the Worker makes the code and emails it itself.
+  // "app": the Worker makes the code and emails it itself.
   if (config.app.auth.emailDelivery === 'manual' || config.app.auth.emailDelivery === 'app') {
     await api('auth/code-request', { body: { email, locale } });
     return;

@@ -1,5 +1,5 @@
 /**
- * District boundaries from OpenStreetMap (M12 slice A): an Overpass answer (`out geom`) for
+ * District boundaries from OpenStreetMap: an Overpass answer (`out geom`) for
  * `boundary=administrative` relations becomes a small GeoJSON file the seed loads. OSM stores a
  * boundary as separate ways, so they are joined into closed rings here. Each way is simplified
  * before joining: neighbouring districts share their border ways, so both get the same

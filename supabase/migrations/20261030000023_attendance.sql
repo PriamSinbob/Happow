@@ -1,7 +1,6 @@
--- M9 slices E and F: "I'm going", co-presence and the sharer's link counts
--- (docs/milestones/M9-sharing-attendance.md §5, §6). Anonymous: one row per device (salted hash,
--- as for submissions), event and signal. A signed-in account is kept with the row, unused until
--- M11's friends' view. Rows live until the event ends plus a margin, or a shorter signal's window.
+-- "I'm going", co-presence and the sharer's link counts. Anonymous: one row per device (salted
+-- hash, as for submissions), event and signal. A signed-in account is kept with the row, for the
+-- friends' view. Rows live until the event ends plus a margin, or a shorter signal's window.
 -- Read and written only by the Worker (service role); the API buckets the counts and leaves them
 -- out for categories with publicAttendance: false.
 

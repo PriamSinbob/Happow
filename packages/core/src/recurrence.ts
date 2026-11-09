@@ -1,5 +1,5 @@
 /**
- * Weekly repeats for the add form (M12 §4.5). Wall-clock values ("2026-11-07T19:00", the form's
+ * Weekly repeats for the add form. Wall-clock values ("2026-11-07T19:00", the form's
  * own format, in the region's time zone): the server turns each date into an instant on its own,
  * so 19:00 stays 19:00 across a change of clocks.
  */

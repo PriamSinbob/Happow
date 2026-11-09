@@ -7,15 +7,15 @@ export interface EventRepository {
   /** One event for the detail screen or a shared link; distance measured from `from`. */
   byId(id: string, from: LatLng, signal?: AbortSignal): Promise<NearbyEvent | null>;
   /**
-   * The listed events among `ids` (M10 §1: the agenda), ended ones included, any distance or date;
+   * The listed events among `ids` (the agenda), ended ones included, any distance or date;
    * hidden and unknown ids are left out.
    */
   byIds(ids: readonly string[], from: LatLng, signal?: AbortSignal): Promise<NearbyEvent[]>;
   /** Matching events around the user counted per density cell (hotspot, chevrons, guidance). */
   density(query: DensityQuery, signal?: AbortSignal): Promise<DensityCluster[]>;
-  /** "Added by" on a community event: only while its adder has the credit on (M12 §5.5). */
+  /** "Added by" on a community event: only while its adder has the credit on. */
   credit(eventId: string, signal?: AbortSignal): Promise<Credit | null>;
-  /** The district a point is in and its live events from `from` to `to` (M12 §6.2). */
+  /** The district a point is in and its live events from `from` to `to`. */
   districtGoal(
     regionId: string,
     at: LatLng,

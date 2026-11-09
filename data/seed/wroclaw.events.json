@@ -1,5 +1,5 @@
 {
-  "$comment": "Hand-entered demo events for milestone 1. Real venues, fictional programmes. Times are offsets in minutes from the moment the seed is applied, so the demo always has something running now, soon and later today.",
+  "$comment": "Hand-entered demo events. Real venues, fictional programmes. Times are offsets in minutes from the moment the seed is applied, so the demo always has something running now, soon and later today.",
   "region": "wroclaw",
   "venues": [
     {

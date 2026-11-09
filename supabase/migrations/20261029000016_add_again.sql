@@ -1,6 +1,6 @@
--- M12 slice H: "add again" (docs/milestones/M12-more-events.md §4.4). The account's own submission
--- read back as the form it was sent with, to open the add form for another date. Only its owner
--- gets it, and never for a rejected submission or a hidden event.
+-- "Add again": the account's own submission read back as the form it was sent with, to open the
+-- add form for another date. Only its owner gets it, and never for a rejected submission or a
+-- hidden event.
 create function submission_form(p_user uuid, p_id uuid)
 returns jsonb
 language sql

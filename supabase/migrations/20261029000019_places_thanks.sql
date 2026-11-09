@@ -1,7 +1,6 @@
--- M12 slice M: places first and thanks from visitors (docs/milestones/M12-more-events.md §6.1,
--- §6.4). An event added where nothing happened lately is marked "first added by you" for its adder
--- (nobody else sees it); a visitor who arrived with GoThere can say thanks once per device, and
--- only the adder sees the total, in their impact.
+-- Places first and thanks from visitors. An event added where nothing happened lately is marked
+-- "first added by you" for its adder (nobody else sees it); a visitor who arrived with GoThere can
+-- say thanks once per device, and only the adder sees the total, in their impact.
 
 alter table submissions add column first_place boolean not null default false;
 

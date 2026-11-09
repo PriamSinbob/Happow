@@ -2,7 +2,7 @@ import { api, deviceId } from './api';
 import { storage } from './storage';
 
 /**
- * "Thanks" after arriving with GoThere (M12 §6.4): anonymous, once per device and event. The
+ * "Thanks" after arriving with GoThere: anonymous, once per device and event. The
  * device remembers what it thanked so the button doesn't come back; the server counts each
  * device once anyway. Only the event's adder sees the total.
  */

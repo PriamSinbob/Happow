@@ -1,6 +1,5 @@
--- M9 slice B: the map on a shared event's preview image (docs/milestones/M9-sharing-attendance.md
--- §2, owner's answer to §9.1). The Worker draws the district outlines around the event's point
--- instead of map tiles, so the image needs no tile service.
+-- The map on a shared event's preview image. The Worker draws the district outlines around the
+-- event's point instead of map tiles, so the image needs no tile service.
 
 -- The districts within p_radius_m of a point, simplified to about 10 m, as GeoJSON geometries.
 -- `here` marks the district the point is in. Read only by the Worker (service role).

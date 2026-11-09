@@ -1,7 +1,7 @@
 import { useI18n } from '../i18n';
 import { Glyph, Icon } from './Icons';
 
-/** The add motif's category glyphs either side of the plus, nearest the plus first (§15). */
+/** The add motif's category glyphs either side of the plus, nearest the plus first. */
 const ADD_LEFT = ['note', 'mask'];
 const ADD_RIGHT = ['basket', 'beer'];
 

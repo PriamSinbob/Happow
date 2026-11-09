@@ -46,18 +46,13 @@ export function isLate(
   return t >= new Date(event.endAt).getTime() - app.arrival.openLastEntryMin * 60_000;
 }
 
-/** Whole minutes the arrival is after the start ("+N min" on the card); 0 when not after. */
-export function minutesAfterStart(event: Pick<HappowEvent, 'startAt'>, arrival: Date): number {
-  return Math.max(0, Math.ceil((arrival.getTime() - new Date(event.startAt).getTime()) / 60_000));
-}
-
 export type FamilyMatch = 'show' | 'unconfirmed' | 'hide';
 
 /** Oldest `ageMin` that family mode still shows. */
 export const FAMILY_MAX_AGE_MIN = 12;
 
 /**
- * Family mode (§4.4). Hides 13+ events, starts after `family.latestEnd` and categories marked
+ * Family mode. Hides 13+ events, starts after `family.latestEnd` and categories marked
  * "no"; shows family events, "yes" categories and `ageMin` ≤ 12; shows events with no age data
  * in "likely" categories that end by `latestEnd` as not confirmed; hides the rest.
  */

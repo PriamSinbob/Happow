@@ -1,6 +1,6 @@
 /**
  * `pnpm districts [region] [--from overpass.json]` writes a region's district boundaries (config/regions.json →
- * `districts`) from OpenStreetMap through Overpass, for the M12 metrics. Run by hand when the
+ * `districts`) from OpenStreetMap through Overpass, for the metrics. Run by hand when the
  * districts change; the file is committed and `pnpm db:seed` loads it. Never runs in CI.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';

@@ -89,7 +89,7 @@ export interface HappowEvent {
   verified?: boolean;
   /** Open community reports that the event is off or changed, not yet confirmed by a moderator. */
   flag?: EventFlag | null;
-  /** Who performs (M7 §1); the area snapshot carries at most 5 names, without ids. */
+  /** Who performs; the area snapshot carries at most 5 names, without ids. */
   performers?: Performer[];
 }
 

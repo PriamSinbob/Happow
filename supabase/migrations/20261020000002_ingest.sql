@@ -1,4 +1,4 @@
--- Happow milestone 2: source ingestion (raw payloads, runs, dedup ownership) and filtered geo queries.
+-- Source ingestion (raw payloads, runs, dedup ownership) and filtered geo queries.
 
 -- The listing (source + external id) whose data fills the event's primary fields. On a merge the
 -- highest-trust source wins; among equals the first listing keeps it, so re-runs never flip-flop.

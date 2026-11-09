@@ -1,4 +1,4 @@
--- M12 slice E: contributions on the server (docs/milestones/M12-more-events.md §5). A ledger of
+-- Contributions on the server. A ledger of
 -- verified events every reward reads from: premium days (grants with source 'contribution'),
 -- trusted publishing, levels; per-event counts for "your impact"; the opt-in public credit.
 -- The Worker passes the numbers from config/plans.json; nothing here is region- or city-specific.
@@ -267,7 +267,7 @@ as $$
   select count(*)::int from added
 $$;
 
--- The contributor's side for the account card (slice F): totals, this month's days, the stored
+-- The contributor's side for the account card: totals, this month's days, the stored
 -- level and the account's events with their counts, newest first.
 create function contributions_get(p_user uuid, p_month date, p_trusted_after integer)
 returns jsonb

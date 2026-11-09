@@ -5,7 +5,7 @@ import { useI18n } from '../i18n';
 import { Icon } from './Icons';
 
 /**
- * The friends' view on an event card (M11 §5, M9 §6): friends who are going, on the way or here,
+ * The friends' view on an event card: friends who are going, on the way or here,
  * by name, for every category, sensitive ones included. Both sides opt in: the account switch,
  * or "show friends I'm going to this" on the event, either way.
  */

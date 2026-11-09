@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { AppConfig, LatLng } from './types.js';
 
 /**
- * The local atlas (§6): which H3 cells the user has been in, kept on the device only. Pure
+ * The local atlas: which H3 cells the user has been in, kept on the device only. Pure
  * helpers for recording, the veil drawing and the JSON export; no DOM and no h3-js (the web app
  * loads h3-js lazily and passes cell ids and centres in).
  */
@@ -98,7 +98,7 @@ export function cellBlobs(cell: string, count: number): Blob[] {
   });
 }
 
-/** Four blobs on the rim of the reach, so its edge is a cloud and not a circle (prototype). */
+/** Four blobs on the rim of the reach, so its edge is a cloud and not a circle. */
 export function rimBlobs(seed: string): Blob[] {
   const rnd = seededRandom(seed);
   return [0, 1, 2, 3].map((i) => {

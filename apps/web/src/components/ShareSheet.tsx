@@ -7,7 +7,7 @@ import { canShareFiles, previewFile, qrPath, shareText } from '../shareEvent';
 import { Icon } from './Icons';
 
 /**
- * Sharing an event (M9 §3): the clean link with a short text, the preview card as an image where
+ * Sharing an event: the clean link with a short text, the preview card as an image where
  * the phone can share files, and a QR code to scan from a screen or a printed flyer.
  */
 export function ShareSheet({
@@ -24,7 +24,7 @@ export function ShareSheet({
   const { t, lang } = useI18n();
   const sheet = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
-  // The link carries this device's share token, so it can see how many came through it (§5).
+  // The link carries this device's share token, so it can see how many came through it.
   const [token, setToken] = useState<string | null>(null);
   useEffect(() => {
     let live = true;

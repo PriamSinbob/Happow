@@ -2,7 +2,7 @@ import type { Season } from './types.js';
 import { localToInstant, zonedTime } from './time.js';
 
 /**
- * Season collections and district goals (M12 §6.2–6.3): which events fit a season, which seasons
+ * Season collections and district goals: which events fit a season, which seasons
  * run now, and the weekend a district goal counts.
  */
 

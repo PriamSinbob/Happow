@@ -29,7 +29,7 @@ export interface Guidance {
 
 const { minM, maxM } = config.app.radius;
 
-export function pointerTo(from: LatLng, to: LatLng, distance = distanceM(from, to)): Pointer {
+function pointerTo(from: LatLng, to: LatLng, distance = distanceM(from, to)): Pointer {
   return { point: to, distanceM: distance, direction: compassPoint(bearing(from, to)) };
 }
 

@@ -1,7 +1,7 @@
--- M12 slice I: recurring events by pattern (docs/milestones/M12-more-events.md §4.5). A weekly
--- pattern is stored as one submission and one event per date, linked by series_id. The dates go
--- in together or not at all (each counts against the monthly quota); moderators decide a series
--- once; everything after that (reports, cancelling, hiding) stays per date.
+-- Recurring events by pattern. A weekly pattern is stored as one submission and one event per
+-- date, linked by series_id. The dates go in together or not at all (each counts against the
+-- monthly quota); moderators decide a series once; everything after that (reports, cancelling,
+-- hiding) stays per date.
 
 alter table submissions add column series_id uuid;
 create index submissions_series_idx on submissions (series_id) where series_id is not null;

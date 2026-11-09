@@ -1,6 +1,6 @@
 import type { HappowEvent } from './types.js';
 
-/** Per-category weights on this device (§7): re-rolls lower one, opens and Going there raise it. */
+/** Per-category weights on this device: re-rolls lower one, opens and Going there raise it. */
 export type DiceWeights = Record<string, number>;
 export type DiceSignal = 'reroll' | 'open' | 'go';
 
@@ -17,7 +17,7 @@ export function reweigh(weights: DiceWeights, category: string, signal: DiceSign
 }
 
 /**
- * Who can be rolled (§7): live, or starting within `soonMin` (only live with live-only on), within
+ * Who can be rolled: live, or starting within `soonMin` (only live with live-only on), within
  * `maxDistanceM`, and worth going to (`late` says the user would arrive too late).
  */
 export function dicePool<T extends Pick<HappowEvent, 'startAt' | 'endAt'> & { distanceM: number }>(

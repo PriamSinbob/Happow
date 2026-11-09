@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 export type Route =
   | { name: 'event'; id: string }
   | { name: 'go'; id: string }
-  /** `again`: one of the account's submissions to add for another date (M12 §4.4). */
+  /** `again`: one of the account's submissions to add for another date. */
   | { name: 'add'; again?: string }
   | { name: 'moderate' }
-  /** Someone's contact link, /c/<token> (M11 §2). */
+  /** Someone's contact link, /c/<token>. */
   | { name: 'contact'; token: string }
   | { name: 'about' };
 
@@ -54,11 +54,11 @@ export function eventHref(id: string): string {
   return routeHref({ name: 'event', id });
 }
 
-/** This visit started from a shared /e/<id> link (for the iOS install hint, M9 §7). */
+/** This visit started from a shared /e/<id> link (for the iOS install hint). */
 export let openedFromLink = false;
 
 /**
- * A shared link /e/<id> (M9 §1; the Worker gave crawlers its preview tags) opens as the app's own
+ * A shared link /e/<id> (the Worker gave crawlers its preview tags) opens as the app's own
  * event route on the map's address, so closing the card leaves the map at "/". The query (a share
  * token) is kept. Runs once, before the app reads the URL.
  */
@@ -69,7 +69,7 @@ export function adoptEventPath(): void {
   window.history.replaceState(null, '', `/${window.location.search}${WITH_ID.event}${m[1]}`);
 }
 
-/** A contact link /c/<token> (M11 §2) opens as the app's contact route over the map. */
+/** A contact link /c/<token> opens as the app's contact route over the map. */
 export function adoptContactPath(): void {
   const m = /^\/c\/([A-Za-z0-9_-]{16,64})\/?$/.exec(window.location.pathname);
   if (!m) return;
@@ -78,7 +78,7 @@ export function adoptContactPath(): void {
 
 /**
  * Absolute link to an event, for sharing: the clean /e/<id> form, which the Worker answers with
- * the event's preview tags (M9 §1) and the app opens as the event's card.
+ * the event's preview tags and the app opens as the event's card.
  */
 export function eventUrl(id: string): string {
   return `${window.location.origin}/e/${encodeURIComponent(id)}`;

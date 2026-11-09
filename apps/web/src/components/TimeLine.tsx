@@ -43,7 +43,7 @@ const TRACK_Y = 46;
 const BAR_MAX = 24;
 
 /**
- * The time line under the map (§5, §13.2, §13.3): range icons at its left end, then a track from
+ * The time line under the map: range icons at its left end, then a track from
  * now to the end of the range with a histogram. Today moves in minutes, 7 / 14 days by day.
  */
 export function TimeLine(p: Props) {

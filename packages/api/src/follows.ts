@@ -13,7 +13,7 @@ import { ApiError, body, json } from './http.js';
 import type { Supabase } from './supabase.js';
 
 /**
- * Search and followed artists (M7 §2, §4, §5).
+ * Search and followed artists.
  * - GET /api/search?q=&lat=&lng=&region= — typo-tolerant search of the region's upcoming events.
  * - POST /api/follows/match — a device's follows against upcoming events, plus nationwide
  *   Ticketmaster dates for follows with an attraction id. The list is used and forgotten.
@@ -75,7 +75,7 @@ interface HitRow {
   matched_external_id?: string | null;
 }
 
-export function rowToHit(r: HitRow): EventHit {
+function rowToHit(r: HitRow): EventHit {
   return {
     id: r.id,
     title: r.title,
@@ -96,7 +96,7 @@ export function rowToHit(r: HitRow): EventHit {
   };
 }
 
-/** A Ticketmaster date outside the region (§4): shown in the list with its city, not on the map. */
+/** A Ticketmaster date outside the region: shown in the list with its city, not on the map. */
 export interface NationwideDate {
   id: string;
   attractionId: string;
@@ -212,8 +212,8 @@ export function followRoutes(deps: FollowDeps) {
   });
 
   /**
-   * Nationwide dates for attraction ids (§4, slice E): the 24-hour cache first, then at most
-   * `perRequest` new Discovery calls, within the daily cap shared by everyone.
+   * Nationwide dates for attraction ids: the 24-hour cache first, then at most `perRequest` new
+   * Discovery calls, within the daily cap shared by everyone.
    */
   async function nationwide(
     db: Supabase,
@@ -334,7 +334,7 @@ export function followRoutes(deps: FollowDeps) {
       const input = await body(req, z.object({ on: z.boolean(), email: z.boolean().optional() }));
       if ((input.on || input.email) && !can(entitlements, 'alerts.newDates'))
         throw new ApiError(403, 'forbidden', 'alerts.newDates is not in this plan');
-      // Email needs the app's sender (M13 §5).
+      // Email needs the app's sender.
       if (input.email && config.app.email.provider === 'none')
         throw new ApiError(503, 'not_configured');
       await db.rpc('follow_alerts_set', { p_user: user.id, p_on: input.on });

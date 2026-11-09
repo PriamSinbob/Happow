@@ -2,7 +2,7 @@ import type { Language, NearbyEvent } from '@happow/core';
 import qrcode from 'qrcode-generator';
 import { formatDay, formatTime } from './format';
 
-/** "Title · Sat 31 Oct 19:00 · Venue": the short text sent with a shared link (M9 §3). */
+/** "Title · Sat 31 Oct 19:00 · Venue": the short text sent with a shared link. */
 export function shareText(ev: NearbyEvent, lang: Language): string {
   return [
     ev.title,
@@ -23,7 +23,7 @@ export function canShareFiles(): boolean {
   }
 }
 
-/** The event's preview card (the Worker draws it, M9 §2) as a file to share. */
+/** The event's preview card (the Worker draws it) as a file to share. */
 export async function previewFile(id: string): Promise<File> {
   const res = await fetch(`/e/${encodeURIComponent(id)}/preview.png`);
   if (!res.ok) throw new Error(`preview ${res.status}`);

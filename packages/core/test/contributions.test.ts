@@ -5,7 +5,6 @@ import {
   higherLevel,
   levelFor,
   loadConfig,
-  premiumDaysFor,
   type PlanGrant,
 } from '../src';
 
@@ -22,15 +21,7 @@ const days = (startsAt: string, n: number): PlanGrant => ({
 const plan = (grants: PlanGrant[], now: string, earlyAccess: typeof promo | null = promo) =>
   effectivePlan({ signedIn: true, grants, now: new Date(now), earlyAccess, timeZone: tz });
 
-describe('premium days for verified events (M12 §5.2)', () => {
-  it('gives the configured days, never past the monthly cap', () => {
-    expect([cfg.premiumDaysPerEvent, cfg.premiumDaysPerMonth]).toEqual([3, 30]);
-    expect(premiumDaysFor(0, cfg)).toBe(3);
-    expect(premiumDaysFor(28, cfg)).toBe(2);
-    expect(premiumDaysFor(30, cfg)).toBe(0);
-    expect(premiumDaysFor(45, cfg)).toBe(0);
-  });
-
+describe('premium days for verified events', () => {
   it('shows premium until the end of days banked behind the promotion', () => {
     // Earned in November, starting when the promotion ends (midnight, 1 Dec, Warsaw).
     const banked = [days('2026-11-30T23:00:00.000Z', 3), days('2026-12-03T23:00:00.000Z', 3)];
@@ -55,7 +46,7 @@ describe('premium days for verified events (M12 §5.2)', () => {
   });
 });
 
-describe('levels (M12 §5.4)', () => {
+describe('levels', () => {
   it('needs both thresholds, in config order', () => {
     expect(levelFor(0, 0, cfg)).toBeNull();
     expect(levelFor(1, 0, cfg)).toBe('neighbour');

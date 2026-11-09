@@ -1,16 +1,12 @@
-/**
- * Integration test: ingestion against DATABASE_URL (after `pnpm db:reset`), replaying the adapter
- * fixtures. Cleans up after itself. Skipped when no database is set.
- */
-import 'dotenv/config';
+/** Ingestion into Postgres, replaying the adapter fixtures. Cleans up after itself. */
 import { readFileSync } from 'node:fs';
 import { generateKeyPairSync } from 'node:crypto';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getRegion, loadConfig } from '@happow/core';
 import { EventStore, runIngest, type IngestOptions } from '@happow/ingest';
+import { url } from './dbtest';
 
-const url = process.env.DATABASE_URL;
 const config = loadConfig();
 const region = getRegion(config);
 const fixture = (p: string) =>
@@ -105,7 +101,7 @@ describe.skipIf(!url)('ingestion into Postgres', () => {
     expect(cells.rows[0].n).toBe(0);
   });
 
-  it('stores Ticketmaster attractions as performers, with their ids (M7 §1)', async () => {
+  it('stores Ticketmaster attractions as performers, with their ids', async () => {
     const { rows } = await db.query(
       `select p.name, p.norm, p.external_id, p.source_id from event_performers p
        join events e on e.id = p.event_id where e.title in ('Dawid Podsiadło', 'Mayday')

@@ -12,7 +12,7 @@ import { ApiError, body, json, sha256 } from './http.js';
 import { SupabaseError, type Supabase } from './supabase.js';
 
 /**
- * Contributions on the server (M12 §5, slice E): rewards for events that passed moderation or were
+ * Contributions on the server: rewards for events that passed moderation or were
  * published by a trusted account, per-event counts for "your impact", and the contributor's side
  * of the account. Rewards come only from the `contributions` ledger.
  */
@@ -76,7 +76,7 @@ export function contributionRoutes({ config, timeZone, need, now, limit }: Contr
         p_per_event: cfg.premiumDaysPerEvent,
         p_cap: cfg.premiumDaysPerMonth,
         p_month: usageMonth(t, timeZone).month,
-        // Days earned during the promotion start when it ends (M12 §5.2).
+        // Days earned during the promotion start when it ends.
         p_not_before: promoEnd && promoEnd > t ? promoEnd.toISOString() : null,
       },
     );
@@ -85,7 +85,7 @@ export function contributionRoutes({ config, timeZone, need, now, limit }: Contr
   const trusted = (userId: string) =>
     need().db.rpc<boolean>('contributor_trusted', { p_user: userId, p_after: cfg.trustedAfter });
 
-  /** POST /api/counts {deviceId, items}: opens, routes and arrivals, totals only (M12 §5.1). */
+  /** POST /api/counts {deviceId, items}: opens, routes and arrivals, totals only. */
   async function counts(req: Request): Promise<Response> {
     const { db, salt } = need();
     const input = await body(req, countsSchema);
@@ -139,7 +139,7 @@ export function contributionRoutes({ config, timeZone, need, now, limit }: Contr
 
   /**
    * POST /api/thanks {deviceId, eventId}: a visitor who arrived says thanks, once per device and
-   * event (M12 §6.4). Only the adder sees the total, in their impact; the card never shows it.
+   * event. Only the adder sees the total, in their impact; the card never shows it.
    */
   async function thanks(req: Request): Promise<Response> {
     const { db, salt } = need();
@@ -160,8 +160,8 @@ export function contributionRoutes({ config, timeZone, need, now, limit }: Contr
   }
 
   /**
-   * Marks a new submission "first added by you" when nothing happened at its place lately
-   * (M12 §6.1). A failure only loses the mark.
+   * Marks a new submission "first added by you" when nothing happened at its place lately. A
+   * failure only loses the mark.
    */
   async function firstPlace(submissionId: string): Promise<boolean> {
     try {

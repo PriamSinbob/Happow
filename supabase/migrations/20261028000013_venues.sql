@@ -1,7 +1,6 @@
--- M12 slice C1: OpenStreetMap venues, links to the venues events use, the website check's
--- candidates and the accepted sites the `venue-sites` source reads
--- (docs/milestones/M12-more-events.md §2.2). Written by the ingest jobs with the service role;
--- the admin tab (slice C2) reads and decides candidates through the API.
+-- OpenStreetMap venues, links to the venues events use, the website check's candidates and the
+-- accepted sites the `venue-sites` source reads. Written by the ingest jobs with the service role;
+-- the admin tab reads and decides candidates through the API.
 
 -- Venues as OSM lists them, whether or not an event uses them yet.
 create table osm_venues (
@@ -16,7 +15,7 @@ create table osm_venues (
   website text,
   opening_hours text,
   wheelchair text,
-  -- Regular services (slice J reads it).
+  -- Regular services (the worship-services source reads it).
   service_times text,
   seen_at timestamptz not null default now(),
   website_checked_at timestamptz,

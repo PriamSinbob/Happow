@@ -5,7 +5,7 @@ type Span = Pick<HappowEvent, 'startAt' | 'endAt'>;
 
 const MIN = 60_000;
 
-/* ---------- Reach rail (§5) ---------- */
+/* ---------- Reach rail ---------- */
 
 /** Rail position 0 (bottom, first detent) … 1 (top, last detent) → metres, on a log scale. */
 export function railToRadius(p: number, detentsM: readonly number[]): number {
@@ -42,7 +42,7 @@ export function reachLabel(
   return { kind: 'km', value: Math.round(radiusM / 1000) };
 }
 
-/* ---------- Time line (§5, §13.3) ---------- */
+/* ---------- Time line ---------- */
 
 /**
  * A dragged time on the Today line: never before now or past the end, back to now when within
@@ -84,14 +84,6 @@ export function dayStarts(now: Date, timeZone: string, days: number): Date[] {
   return out;
 }
 
-/** Index of the day an instant falls in, or -1 outside the range. */
-export function dayIndex(at: Date, starts: readonly Date[]): number {
-  const t = at.getTime();
-  for (let i = 0; i < starts.length - 1; i++)
-    if (t >= starts[i]!.getTime() && t < starts[i + 1]!.getTime()) return i;
-  return -1;
-}
-
 /**
  * Whether an event is on the day [from, to): it starts that day, or it started earlier and runs at
  * least `carryOverMin` into it. A festival counts on every day; a show from 22:15 to 0:15 only on
@@ -117,7 +109,7 @@ export function dayBins(
   });
 }
 
-/* ---------- Edge dots (§5) ---------- */
+/* ---------- Edge dots ---------- */
 
 export interface ScreenRect {
   left: number;

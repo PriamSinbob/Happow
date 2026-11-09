@@ -48,7 +48,7 @@ export function GoThere({
   now: Date;
   /** Reads the event fresh (flags, time changes) while on the way. */
   refresh: (id: string, from: LatLng) => Promise<NearbyEvent | null>;
-  /** Arrived: the event's place goes into the local atlas (§6). */
+  /** Arrived: the event's place goes into the local atlas. */
   onArrive?: (eventId: string, point: LatLng) => void;
   onClose: () => void;
 }) {
@@ -117,7 +117,7 @@ export function GoThere({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, ev?.id, refresh]);
 
-  // Co-presence (M9 §6): "on the way" while the route runs, taken back when this screen closes
+  // Co-presence: "on the way" while the route runs, taken back when this screen closes
   // (arrived, stopped or given up); "here" is the walker's own tap on arrival.
   const onWay = useRef<string | null>(null);
   useEffect(() => {
@@ -230,7 +230,7 @@ export function GoThere({
 }
 
 /**
- * "Thanks" for an event someone added, once you're there (M12 §6.4): one tap, anonymous, once
+ * "Thanks" for an event someone added, once you're there: one tap, anonymous, once
  * per device. Nobody sees a count on the card; the adder sees the total in their impact.
  */
 export function ThanksButton({ eventId }: { eventId: string }) {
@@ -266,7 +266,7 @@ export function ThanksButton({ eventId }: { eventId: string }) {
   );
 }
 
-/** On arrival: "I'm here", an explicit tap, never sent from location alone (M9 §6). */
+/** On arrival: "I'm here", an explicit tap, never sent from location alone. */
 export function HereButton({ eventId }: { eventId: string }) {
   const { t } = useI18n();
   const [state, setState] = useState<'idle' | 'sending' | 'done'>('idle');

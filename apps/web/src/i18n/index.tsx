@@ -11,9 +11,9 @@ type Params = Record<string, string | number>;
 /**
  * Tiny ICU-ish formatter: {name} substitution and {n, plural, =0 {...} one {...} few {...} other {...}}
  * with `#`.
- * Enough for the PoC without pulling in a full i18n runtime.
+ * Enough without pulling in a full i18n runtime.
  */
-export function format(template: string, params: Params, lang: Language): string {
+function format(template: string, params: Params, lang: Language): string {
   const plural = new Intl.PluralRules(lang);
   return template.replace(
     /\{(\w+), plural,((?:\s*=?\w+\s*\{[^{}]*\})+)\s*\}|\{(\w+)\}/g,

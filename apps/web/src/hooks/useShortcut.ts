@@ -3,7 +3,7 @@ import { categoriesById } from '../config';
 import { storage } from '../storage';
 import type { FiltersState } from './useFilters';
 
-/** What the chip beside the live counter switches: family mode or one category (slice G). */
+/** What the chip beside the live counter switches: family mode or one category. */
 export type ShortcutId = 'family' | (string & {});
 
 export interface Shortcut {
@@ -29,9 +29,8 @@ function savedPrevious(): string[] | null {
 }
 
 /**
- * The map shortcut (docs/design/map-shortcut.html). It works on the shared filter state, so the
- * settings sheet shows what it does. A category shortcut on = only that category; off = back to
- * the categories chosen before it was turned on.
+ * The map shortcut, on the shared filter state. A category shortcut on = only that category;
+ * off = back to the categories chosen before it was turned on.
  */
 export function useShortcut(filters: FiltersState): Shortcut {
   const [id, setId] = useState(savedId);

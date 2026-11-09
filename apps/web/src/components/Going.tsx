@@ -10,11 +10,11 @@ import { Icon } from './Icons';
 const { lookingMinutes, hereRadiusM } = config.app.attendance;
 
 /**
- * "I'm going" on the event card (M9 §5): one tap, again to undo, anonymous. The count shows only
+ * "I'm going" on the event card: one tap, again to undo, anonymous. The count shows only
  * from the threshold up and in buckets (the server decides), never "be the first". A sharer also
  * sees how many people who came through their link are going.
  *
- * Co-presence (§6): opening the card says "looking" for a while; "here" is offered near a live
+ * Co-presence: opening the card says "looking" for a while; "here" is offered near a live
  * event. The line under the button shows here, on the way and looking, each only from the
  * threshold up and never for sensitive categories.
  */
@@ -29,7 +29,7 @@ export function Going({ ev, now }: { ev: NearbyEvent; now: Date }) {
       .then((v) => {
         if (!live) return;
         setView(v);
-        // Marked going before M10, or on this device without saving: it joins your plans once.
+        // Marked going earlier, or on this device without saving: it joins your plans once.
         if (v.mine?.going) plans.adoptGoing(ev.id);
       })
       .catch(() => {
@@ -46,7 +46,7 @@ export function Going({ ev, now }: { ev: NearbyEvent; now: Date }) {
     setBusy(true);
     try {
       setView(await setAttendance(ev.id, kind, on));
-      // "I'm going" also saves the event (M10 §1, owner 2026-11-04).
+      // "I'm going" also saves the event.
       if (kind === 'going') plans.setGoing(ev.id, on);
       track(kind === 'going' ? 'Going' : 'Here', { on: String(on) });
     } catch {

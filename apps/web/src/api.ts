@@ -22,7 +22,6 @@ export type ApiErrorCode =
   | 'account_required'
   | 'auth_failed'
   | 'email_failed'
-  // M11
   | 'name_required'
   | 'blocked'
   | 'too_many_invitations'

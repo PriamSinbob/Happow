@@ -1,5 +1,4 @@
 export const en = {
-  'app.tagline': 'Happening now',
   'header.locate': 'Centre on my location',
   'view.list': 'List',
   'radius.label': 'Radius',
@@ -21,7 +20,6 @@ export const en = {
   'event.walk': '{minutes} min walk',
   'event.website': 'Website',
   'event.tickets': 'Tickets',
-  'event.navigate': 'Navigate',
   'event.close': 'Close',
   'event.source.community': 'Community',
   'event.source.api': 'Official API',
@@ -41,8 +39,6 @@ export const en = {
   'location.outside': "You're outside {region}. Showing its centre.",
   'location.useMine': 'Use my location',
   'location.dismiss': 'OK',
-  'map.attribution': 'Map',
-  'map.you': 'You are here',
   'window.label': 'When',
   'window.today': 'Today',
   'window.hours': '{hours} h',
@@ -107,11 +103,8 @@ export const en = {
   'guide.busiestTitle': 'Busiest nearby',
   'guide.place': 'a busy spot',
   'guide.takeMeThere': 'Take me there',
-  'guide.showOnMap': 'Show on map',
   'guide.nothingAround':
     'Nothing within {distance} either. Try another time window or fewer filters.',
-  'place.label': '{place}: {count, plural, one {# event} other {# events}}',
-  'place.zoom': '{count, plural, one {# event} other {# events}} close together. Zoom in.',
   'place.title': '{count, plural, one {# event} other {# events}} here',
   'hotspot.label': 'Busiest nearby: {place}, {count, plural, one {# event} other {# events}}',
   'header.add': 'Add an event',
@@ -191,7 +184,7 @@ export const en = {
     'Fixed start: be there when it begins (a play, a concert). Come and go: drop in any time while it runs (a fair, a club night).',
   'add.field.url': 'Website or tickets (optional)',
   'add.field.description': 'Short description (optional)',
-  // M7 search and followed artists
+  // Search and followed artists
   'view.listSearch': 'List and search',
   'search.label': 'Search',
   'search.placeholder': 'Artist, event or place',
@@ -322,7 +315,7 @@ export const en = {
   'admin.grants.end': 'End',
   'admin.tab.sources': 'Sources',
   'admin.tab.coverage': 'Coverage',
-  // Coverage (M12 slice O)
+  // Coverage
   'coverage.metrics': 'The five measures',
   'coverage.week': 'Week of',
   'coverage.now': 'Now',
@@ -489,7 +482,6 @@ export const en = {
   'nav.close': 'Close',
   'nav.noLocation': 'Location is off. Turn it on, or use Google Maps.',
   'nav.you': 'You',
-  offline: 'Offline — showing cached data',
   'settings.open': 'Settings',
   'settings.title': 'Settings',
   'settings.language': 'Language',
@@ -518,7 +510,7 @@ export const en = {
   'atlas.imported': '{count, plural, one {Added # area} other {Added # areas}}',
   'atlas.badFile': 'Not a Happow places file',
   'atlas.cleared': 'Places forgotten',
-  // M12 slice F: the contributor's side
+  // The contributor's side
   'add.done.toEarn':
     'Once a moderator approves it, you earn {count, plural, one {# premium day} other {# premium days}}.',
   'add.done.earned': '+{count, plural, one {# premium day} other {# premium days}} for this event.',
@@ -568,12 +560,12 @@ export const en = {
   'admin.trust.confirm': 'Restore',
   'admin.trust.done': 'Trust restored for {email}.',
   'admin.trust.notFound': 'No account with this email.',
-  // M12 slice G: poster photo
+  // Poster photo
   'add.photo': 'Photo of a poster',
   'add.photo.reading': 'Reading the poster…',
   'add.photo.notFound': "Couldn't read an event from this photo. Fill in the form below.",
   'add.photo.unreadable': "This photo couldn't be opened. Try another one.",
-  // Quick add and add again (M12 slice H)
+  // Quick add and add again
   'add.quick.title': 'Happening here, now?',
   'add.quick.text': 'Add it in a few taps: the pin goes where you are, and it starts now.',
   'add.quick.start': 'Add it here',
@@ -585,7 +577,7 @@ export const en = {
   'add.again.gone': "This event can't be added again.",
   'contrib.again': 'Add again',
   'contrib.againFor': 'Add “{title}” again',
-  // Recurring events (M12 slice I)
+  // Recurring events
   'add.repeat': 'Repeats',
   'add.repeat.once': 'Does not repeat',
   'add.repeat.weekly': 'Weekly',
@@ -600,7 +592,7 @@ export const en = {
   'mod.series': '{count, plural, one {# date} other {# dates}}: {dates}',
   'contrib.series': '{count, plural, one {# date} other {# dates}}',
   'contrib.seriesNext': '{count, plural, one {# date} other {# dates}} · next {date}',
-  // Calendar feeds (M12 slice L)
+  // Calendar feeds
   'feeds.title': 'Calendar feeds',
   'feeds.intro':
     'Add your calendar’s iCal link once: its upcoming events come in as yours, counting against the month’s events. The first ones wait for a moderator.',
@@ -620,14 +612,14 @@ export const en = {
   'mod.feed': 'From a calendar feed: {host}',
   'mod.feedStop': 'Stop this feed',
   'mod.feedStopped': 'Feed stopped',
-  // Places first and thanks (M12 slice M)
+  // Places first and thanks
   'contrib.stat.thanks': 'Thanks',
   'contrib.firstPlace': 'first added by you',
   'add.done.firstPlace':
     'Nothing has happened here for a while: on your card it says first added by you.',
   'nav.thanks': 'Thanks',
   'nav.thanked': 'Thanks sent to whoever added it',
-  // District goals and seasons (M12 slice N)
+  // District goals and seasons
   'goal.line':
     '{district} has {count, plural, =0 {no events} one {# event} other {# events}} this weekend: know something on?',
   'goal.add': 'Add it',
@@ -640,14 +632,13 @@ export const en = {
   'error.photo_too_large': 'This photo is too large. Try another one.',
   'about.privacy.autofill':
     'When you fill the form from a link or a poster photo, the page text or the photo is sent to an AI service only to be read. It is not kept.',
-  // M10 plan ahead
+  // Plan ahead
   'view.label': 'Show: {name}. Hold to choose',
   'view.pick': 'Show',
   'view.all': 'Everything',
   'view.plans': 'My plans',
   'view.saved': 'Saved',
   'view.private': 'Private',
-  'agenda.title': 'My plans',
   'agenda.empty': 'Nothing saved yet: tap the bookmark on an event',
   'agenda.noneNow': 'None of your plans at this time. The list shows them all.',
   'agenda.openList': 'Open the list',
@@ -710,7 +701,7 @@ export const en = {
   'mod.disagree.source': 'source',
   'mod.organiserAnswer': '{name} answered: {text}',
   'mod.blockPrivate': 'Block private events of this account',
-  // M11: private events, contacts, friends, organisers.
+  // Private events, contacts, friends, organisers.
   'add.visibility': 'Who sees it',
   'add.public': 'Everyone',
   'add.private': 'Only people I invite',

@@ -59,7 +59,7 @@ export class HttpClient {
   }
 
   /**
-   * A page with its validators (M13 §3): sends If-None-Match / If-Modified-Since when given, and
+   * A page with its validators: sends If-None-Match / If-Modified-Since when given, and
    * answers `{ status: 304 }` when the server says nothing changed.
    */
   async page(

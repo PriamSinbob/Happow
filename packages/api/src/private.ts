@@ -5,9 +5,9 @@ import { ApiError, body, json, sha256 } from './http.js';
 import { SupabaseError, type Supabase } from './supabase.js';
 
 /**
- * Private events, contacts and invitations (M11 §1–§5). Everything here needs an account; nothing
- * is cached anywhere but the person's own device. Links are shared through the phone's share sheet
- * (owner, 2026-11-04: messengers first; email invitations wait for an email sender).
+ * Private events, contacts and invitations. Everything here needs an account; nothing
+ * is cached anywhere but the person's own device. Links are shared through the phone's share
+ * sheet, not by email.
  *
  *   GET    /api/private                     the private events you own or are invited to
  *   GET    /api/private/:id?i=<token>       one, for you or for a live invite link
@@ -23,7 +23,7 @@ import { SupabaseError, type Supabase } from './supabase.js';
  *   POST   /api/contacts/:id                {action: remove | block | unblock}
  *   POST   /api/contacts/groups             {id?, name, members?}
  *   DELETE /api/contacts/groups/:id
- *   POST   /api/friends                     {eventId, deviceId}: friends going (§5)
+ *   POST   /api/friends                     {eventId, deviceId}: friends going
  *   PUT    /api/friends                     {eventId, show: true | false | null}
  */
 
@@ -79,7 +79,7 @@ export function privateRoutes({ config, need, requireUser, limit }: PrivateDeps)
     }
   };
   const guard = (user: User) => limit('private', user.id, 3600, cfg.perHourPerAccount);
-  /** Contacts and invitations show your name: it has to be set first (§2). */
+  /** Contacts and invitations show your name: it has to be set first. */
   async function named(user: User) {
     const p = await rpc<{ displayName: string | null }>('profile_get', { p_user: user.id });
     if (!p.displayName) throw new ApiError(409, 'name_required');
@@ -98,7 +98,7 @@ export function privateRoutes({ config, need, requireUser, limit }: PrivateDeps)
     }
     if (!id || !eventId.safeParse(id).success) throw new ApiError(404, 'not_found');
     if (!action && req.method === 'GET') {
-      // A link invitation opens the card before signing in (§4); otherwise an account.
+      // A link invitation opens the card before signing in; otherwise an account.
       const linkToken = u.searchParams.get('i');
       const user = req.headers.has('authorization') ? await requireUser(req) : null;
       if (!user && !linkToken) throw new ApiError(401, 'unauthorized');

@@ -1,5 +1,5 @@
 /**
- * Text and data mining reservations (EU DSM Directive art. 4; W3C TDMRep, M13 §3). A reserved
+ * Text and data mining reservations (EU DSM Directive art. 4; W3C TDMRep). A reserved
  * page is never sent to the LLM; its published structured data is still read.
  */
 

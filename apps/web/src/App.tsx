@@ -100,7 +100,7 @@ const familyCell = (e: HappowEvent) => {
   return `${Math.floor(e.point.lat / lat)}:${Math.floor(e.point.lng / lng)}`;
 };
 
-/** The icon of each view on the switcher (M10 §1); the bookmark and calendar the card uses. */
+/** The icon of each view on the switcher; the bookmark and calendar the card uses. */
 const VIEW_ICON: Record<PlanView, IconName> = {
   all: 'map',
   plans: 'calendar',
@@ -121,7 +121,7 @@ export function App() {
   const { t, lang } = useI18n();
   const repo = useMemo(createRepository, []);
   const location = useGeolocation(region);
-  // The local atlas (§6): on this device only; a "from here" point is never recorded.
+  // The local atlas: on this device only; a "from here" point is never recorded.
   const atlas = useAtlas(location.status === 'ok' ? location.position : null, location.accuracy);
   const [radius, setRadius] = useRadius();
   const [previewRadius, setPreviewRadius] = useState<number | null>(null);
@@ -136,7 +136,7 @@ export function App() {
   const shortcut = useShortcut(filters);
   // The grid a hold opens: the shortcut's choices, or the dice's categories.
   const [grid, setGrid] = useState<'shortcut' | 'dice' | 'view' | null>(null);
-  // What the map and list show (M10 §1): everything, your plans, saved.
+  // What the map and list show: everything, your plans, saved.
   const planView = useView();
   const inPlans = planView.view !== 'all';
   const myList = usePlans();
@@ -150,12 +150,12 @@ export function App() {
     const id = setTimeout(() => setToast(null), 2200);
     return () => clearTimeout(id);
   }, [toast]);
-  // The time line (§5, §13.3): a time today (null = now), or a day of the 7 / 14 days.
+  // The time line: a time today (null = now), or a day of the 7 / 14 days.
   const [at, setAt] = useState<Date | null>(null);
   const [day, setDay] = useState<number | null>(null);
   const [liveOnly, setLiveOnly] = useState(false);
   // Searches move only after ~100 m; labels and windows follow a minute clock, not downloads.
-  // Quick add offers "happening here" only with a precise fix (M12 §4.3).
+  // Quick add offers "happening here" only with a precise fix.
   const here =
     location.status === 'ok' &&
     location.position &&
@@ -171,13 +171,13 @@ export function App() {
   // walking times then count from it. The locate button returns to the user.
   const [point, setPoint] = useState<LatLng | null>(null);
   const searchCenter = point ?? userCenter;
-  // Followed artists (M7 §4): matches on open and hourly; their events get the ★.
+  // Followed artists: matches on open and hourly; their events get the ★.
   const followMatches = useFollowMatches(searchCenter);
   const followedIds = useMemo(
     () => new Set(followMatches.matches.map((m) => m.id)),
     [followMatches.matches],
   );
-  // The list's search field (§2) and the Followed screen; opening the list focuses the field.
+  // The list's search field and the Followed screen; opening the list focuses the field.
   const [searchFocus, setSearchFocus] = useState(0);
   const [followedOpen, setFollowedOpen] = useState(false);
   const [flyTo, setFlyTo] = useState<{ point: LatLng; seq: number } | null>(null);
@@ -200,7 +200,7 @@ export function App() {
     [myReports],
   );
 
-  // Family mode (§4.4) first, so map, list, counter, hotspot, edge dots and dice agree. Likely
+  // Family mode first, so map, list, counter, hotspot, edge dots and dice agree. Likely
   // family events without age data stay, marked "not confirmed" on their cards.
   const familyOnly = useCallback(
     (list: NearbyEvent[]): NearbyEvent[] => {
@@ -239,9 +239,9 @@ export function App() {
     () => flagged(familyAround.filter(visible)),
     [flagged, familyAround, visible],
   );
-  // Your events (M10 §1), read by id: any day and distance. The map's copies fill in at once.
+  // Your events, read by id: any day and distance. The map's copies fill in at once.
   const invited = useAcceptedInvitations();
-  // Private events you own or are invited to (M11 §4), from the API with your sign-in.
+  // Private events you own or are invited to, from the API with your sign-in.
   const priv = usePrivateEvents();
   const myIds = useMemo(
     () => [...(viewIds(myList, planView.view, invited) ?? [])],
@@ -267,8 +267,8 @@ export function App() {
       ),
     );
   }, [inPlans, mine.events, filters, now, familyOnly, flagged, visible]);
-  // Private events show locked in every view, so none is missed (owner, 2026-11-04), on the
-  // time line and the filters like the rest.
+  // Private events show locked in every view, so none is missed, on the time line and the
+  // filters like the rest.
   const privOnMap = useMemo(() => {
     const range = windowRange(filters.window, now, region.timezone);
     return flagged(
@@ -286,7 +286,7 @@ export function App() {
     const base = inPlans ? mineOnMap : [...events, ...around.slice(0, maxEdgeDots)];
     const ids = new Set(base.map((e) => e.id));
     const out = [...base, ...privOnMap.filter((e) => !ids.has(e.id))];
-    // ★ on a followed artist's pin (M7 §4).
+    // ★ on a followed artist's pin.
     return followedIds.size
       ? out.map((e) => (followedIds.has(e.id) ? { ...e, followed: true } : e))
       : out;
@@ -332,7 +332,7 @@ export function App() {
   const [route, go] = useRoute();
   const { needsTerms, status: accountStatus } = useAccount();
   usePrivateSync(accountStatus === 'signedIn', searchCenter, config.app.refresh.dataMinutes);
-  // Reminders (M10 §5): the server's pending ones, and the subscription tied to the account.
+  // Reminders: the server's pending ones, and the subscription tied to the account.
   useEffect(() => {
     if (accountStatus === 'loading') return;
     void reminders
@@ -342,11 +342,11 @@ export function App() {
         /* offline: the bell shows this device's copy */
       });
   }, [accountStatus, lang]);
-  // Adding needs an account (M8 §2): signed out, Add opens a sign-in sheet over the map.
+  // Adding needs an account: signed out, Add opens a sign-in sheet over the map.
   const [addGate, setAddGate] = useState(false);
   const detailId = route?.name === 'event' ? route.id : null;
   const goId = route?.name === 'go' ? route.id : null;
-  // Dice (§7): weights on this device; no repeats this session.
+  // Dice: weights on this device; no repeats this session.
   const [diceWeights, setDiceWeights] = useState(savedWeights);
   useEffect(() => storage.set('diceWeights', JSON.stringify(diceWeights)), [diceWeights]);
   const diceSeen = useRef<string[]>([]);
@@ -372,9 +372,9 @@ export function App() {
       setAddGate(true);
     else go({ name: 'add' });
   };
-  // The district goal, only while the reach is empty (M12 §6.2).
+  // The district goal, only while the reach is empty.
   const goal = useDistrictGoal(repo, !loading && events.length === 0 ? searchCenter : null, now);
-  // An edit or an answer on the card reads the event again (M11 §3, §8).
+  // An edit or an answer on the card reads the event again.
   const [detailVersion, setDetailVersion] = useState(0);
   const detailKnown = useMemo(() => [...events, ...priv], [events, priv]);
   const publicDetail = useEventDetail(
@@ -385,7 +385,7 @@ export function App() {
     detailVersion,
   );
   // Not public and not in your list: a private event through an invite link, or one you were
-  // invited to since the last read (M11 §4).
+  // invited to since the last read.
   const [linkEv, setLinkEv] = useState<{ id: string; ev: PrivateEvent | null } | null>(null);
   const wantId = detailId ?? goId;
   useEffect(() => {
@@ -414,7 +414,7 @@ export function App() {
     (id: string, signal: AbortSignal) => repo.credit(id, signal),
     [repo],
   );
-  // What's on now around an ended event's place, within the map's reach (M9 §4).
+  // What's on now around an ended event's place, within the map's reach.
   const loadNearby = useCallback(
     (at: LatLng, signal: AbortSignal) => {
       const t = new Date();
@@ -445,7 +445,7 @@ export function App() {
       ? t(`location.${location.status}`, { region: region.name[lang] })
       : null;
   const nextRadius = radius < maxM ? snapRadius(radius * 2.5, minM, maxM) : null;
-  // Locate: back to the user, the default reach and now (§5).
+  // Locate: back to the user, the default reach and now.
   const locate = () => {
     setBannerDismissed(false);
     setPoint(null);
@@ -763,7 +763,7 @@ export function App() {
             onFollowed={() => setFollowedOpen(true)}
             onOpen={(hit) => {
               // In the loaded snapshot: back to the map with its card, flying there; otherwise
-              // the event's page (§2).
+              // the event's page.
               if (all.some((e) => e.id === hit.id)) {
                 setView('map');
                 setPlaceIds(null);
@@ -794,7 +794,7 @@ export function App() {
               filtered={filtered}
               byDay={days > 0}
               dayFrom={days && day !== null ? starts[day]! : now}
-              // A row returns to the map with its pin selected (§5, list style B).
+              // A row returns to the map with its pin selected.
               onSelect={(id) => {
                 setView('map');
                 setPlaceIds(null);

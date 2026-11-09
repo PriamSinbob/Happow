@@ -6,7 +6,7 @@ import { errorText } from '../errors';
 import { formatDay } from '../format';
 import { useI18n } from '../i18n';
 
-/** One calendar feed the account imports from (GET /api/me/feeds, M12 §4.6). */
+/** One calendar feed the account imports from (GET /api/me/feeds). */
 export interface Feed {
   id: number;
   url: string;
@@ -34,7 +34,7 @@ export function feedHost(url: string): string {
 }
 
 /**
- * Calendar feeds on the account card (slice L): paste an iCal link once; its upcoming events come
+ * Calendar feeds on the account card: paste an iCal link once; its upcoming events come
  * in as the account's own, counting against the month. Removing a feed keeps what it brought.
  */
 export function FeedsSection() {

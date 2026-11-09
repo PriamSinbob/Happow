@@ -3,7 +3,7 @@ import type { ExpressionSpecification } from 'maplibre-gl';
 import type { ThemePreset, ThemeName, ThemeTokens } from '@happow/core';
 import { addPinSprites, PIN_PX } from './pinSprites';
 
-/** Event pins: one GeoJSON source, a few symbol layers (§4.3). */
+/** Event pins: one GeoJSON source, a few symbol layers. */
 export const PIN_SOURCE = 'pins';
 /** Layers a tap can hit, top first. */
 export const PIN_HIT_LAYERS = ['pin-disc', 'pin-ring'];
@@ -13,7 +13,7 @@ const get = (p: string): ExpressionSpecification => ['get', p];
 const isKind = (k: string): ExpressionSpecification => ['==', get('kind'), k];
 const notCluster: ExpressionSpecification = ['!', get('cluster')];
 
-/** §4.1 sizes: live 34 px, soon 26 px, later 10 px; outside ×0.85; selected ×1.2. */
+/** Sizes: live 34 px, soon 26 px, later 10 px; outside ×0.85; selected ×1.2. */
 const scale = (base: ExpressionSpecification | number): ExpressionSpecification => [
   '*',
   base,
@@ -112,21 +112,21 @@ export function addPinLayers(m: maplibregl.Map) {
     },
     paint: { 'text-opacity': opacity, 'text-halo-width': 3 },
   });
-  // M11 §4: a private event (yours, or one you're invited to) carries a lock at the lower left.
+  // A private event (yours, or one you're invited to) carries a lock at the lower left.
   layer({
     id: 'pin-lock',
     filter: ['all', notCluster, get('locked')],
     layout: { ...common, 'icon-image': 'pin-lock', 'icon-offset': [-13, 11] },
     paint: { 'icon-opacity': opacity, 'icon-halo-width': 2 },
   });
-  // M7 §4: a followed artist's event carries a star at the upper left.
+  // A followed artist's event carries a star at the upper left.
   layer({
     id: 'pin-star',
     filter: ['all', notCluster, get('starred')],
     layout: { ...common, 'icon-image': 'pin-star', 'icon-offset': [-13, -11] },
     paint: { 'icon-opacity': opacity, 'icon-halo-width': 2 },
   });
-  // §4.4: "16+" / "18+" at the upper right. Numerals only, no translation.
+  // "16+" / "18+" at the upper right. Numerals only, no translation.
   layer({
     id: 'pin-age',
     filter: ['all', notCluster, ['!=', get('age'), '']],
@@ -141,7 +141,7 @@ export function addPinLayers(m: maplibregl.Map) {
   });
 }
 
-/** Pin colours for a theme and preset: the live hue only on live pins (§3.2). */
+/** Pin colours for a theme and preset: the live hue only on live pins. */
 export function pinPaint(
   t: ThemeTokens,
   preset: ThemePreset,

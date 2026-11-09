@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   clampToEdge,
   dayBins,
-  dayIndex,
   dayStarts,
   isOnDay,
   loadConfig,
@@ -85,8 +84,6 @@ describe('time line', () => {
     expect(starts[2]!.toISOString()).toBe('2026-10-24T22:00:00.000Z'); // Sunday 00:00 CEST
     expect(starts[3]!.toISOString()).toBe('2026-10-25T23:00:00.000Z'); // Monday 00:00 CET
     expect((starts[3]!.getTime() - starts[2]!.getTime()) / 3_600_000).toBe(25);
-    expect(dayIndex(new Date('2026-10-25T22:30:00Z'), starts)).toBe(2); // 23:30 on Sunday
-    expect(dayIndex(new Date('2026-11-01T00:00:00Z'), starts)).toBe(-1);
   });
 
   it('counts each day an event runs, from now on', () => {

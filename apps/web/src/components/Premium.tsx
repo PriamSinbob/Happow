@@ -5,7 +5,7 @@ import { useI18n } from '../i18n';
 import { Icon } from './Icons';
 import { Sheet } from './Sheet';
 
-/** Tabler sparkles, filled: the premium mark (owner, 2026-10-24, `docs/design/account.html`). */
+/** Tabler sparkles, filled: the premium mark. */
 export function PremiumMark({ size = 14, label }: { size?: number; label?: string }) {
   return (
     <svg
@@ -42,7 +42,7 @@ export function planLastDay(endsAt: string, lang: 'pl' | 'en'): string {
 
 const premium = entitlementsFor(config.plans, 'premium');
 
-/** What premium unlocks (M8 §4). No buy button while no payment provider is configured. */
+/** What premium unlocks. No buy button while no payment provider is configured. */
 export function PremiumSheet({ onClose }: { onClose: () => void }) {
   const { t, lang } = useI18n();
   const { me } = useAccount();
@@ -71,9 +71,7 @@ export function PremiumSheet({ onClose }: { onClose: () => void }) {
       {early ? (
         <p className="account-note">{t('premium.early', { date: planLastDay(early, lang) })}</p>
       ) : (
-        config.app.premium.providers.length === 0 && (
-          <p className="account-note">{t('premium.notOnSale')}</p>
-        )
+        <p className="account-note">{t('premium.notOnSale')}</p>
       )}
       <div className="account-sheet__foot">
         <button type="button" className="btn" onClick={onClose}>

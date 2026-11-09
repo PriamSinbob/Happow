@@ -20,7 +20,7 @@ interface Props {
   onExpand: (radius: number) => void;
   onClearFilters: () => void;
   onClose?: () => void;
-  /** The district the reach is in, with its events this weekend (M12 §6.2): empty mode only. */
+  /** The district the reach is in, with its events this weekend: empty mode only. */
   goal?: DistrictGoal | null;
   onAdd?: () => void;
 }

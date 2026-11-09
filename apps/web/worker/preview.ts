@@ -4,8 +4,8 @@ import { initWasm, Resvg } from '@resvg/resvg-wasm';
 import { GLYPHS, isGlyphId, type Glyph } from '../src/glyphs';
 
 /**
- * The shared-link preview image (M9 §2): our own 1200×630 card, never the source's picture. A
- * map drawn from the district outlines around the event (owner's answer to §9.1, so no tile
+ * The shared-link preview image: our own 1200×630 card, never the source's picture. A
+ * map drawn from the district outlines around the event (so no tile
  * service), the pin with the category glyph, the category, title, day and time, and venue. No
  * prices and no counts. Built as SVG and turned into a PNG by resvg (WebAssembly).
  */

@@ -40,10 +40,9 @@ function GoogleG() {
 }
 
 /**
- * Sign-in (M8 §2, `docs/design/account.html`): Google, or a 6-digit code by email. With manual
- * delivery the sheet says plainly that a person sends the code. `forAdd` is the variant the add
- * form opens signed out (`docs/design/add.html`): its own title and lead, "Not now", and the
- * add form after sign-in.
+ * Sign-in: Google, or a 6-digit code by email. With manual delivery the sheet says plainly that a
+ * person sends the code. `forAdd` is the variant the add form opens signed out: its own title and
+ * lead, "Not now", and the add form after sign-in.
  */
 export function SignInSheet({
   onClose,
@@ -204,7 +203,7 @@ export function SignInSheet({
   );
 }
 
-/** Once per terms version, right after sign-in: the interim account terms (M8 §2, consent). */
+/** Once per terms version, right after sign-in: the interim account terms. */
 export function TermsSheet() {
   const { t, lang } = useI18n();
   const { acceptTerms, signOut } = useAccount();

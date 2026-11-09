@@ -1,5 +1,4 @@
--- M13 launch readiness (docs/milestones/M13-launch-readiness.md).
--- Slice C: the crawler's page cache (conditional requests, unchanged pages skipped).
+-- Launch readiness. The crawler's page cache (conditional requests, unchanged pages skipped).
 
 create table page_cache (
   source_id text not null,
@@ -16,7 +15,7 @@ create index page_cache_fetched_idx on page_cache (fetched_at);
 alter table page_cache enable row level security;
 revoke all on table page_cache from public, anon, authenticated;
 
--- Slice D: the export covers every table that refers to an account (a DB test enforces it).
+-- The export covers every table that refers to an account (a DB test enforces it).
 alter function account_export(uuid) rename to account_export_m7;
 create function account_export(p_user uuid)
 returns jsonb
@@ -53,7 +52,7 @@ $$;
 revoke all on function account_export(uuid), account_export_m7(uuid) from public, anon, authenticated;
 grant execute on function account_export(uuid), account_export_m7(uuid) to service_role;
 
--- Slice E: follow alerts by email too, once the app has a sender (M7 §5, M13 §5).
+-- Follow alerts by email too, once the app has a sender.
 alter table follow_settings add column email boolean not null default false;
 
 create or replace function follow_settings_get(p_user uuid)
@@ -116,9 +115,9 @@ $$;
 revoke all on function follow_alerts_email(uuid, boolean) from public, anon, authenticated;
 grant execute on function follow_alerts_email(uuid, boolean) to service_role;
 
--- Slice F (HARDENING): coverage places each event in its district once and splits by category
--- from that, instead of testing every event against every polygon twice. It also counts public
--- events only, like the other counts since M11 (private events were counted here before).
+-- Coverage places each event in its district once and splits by category from that, instead of
+-- testing every event against every polygon twice. It also counts public events only, like the
+-- other counts (private events were counted here before).
 create or replace function coverage(p_region text, p_at timestamptz, p_evening_hour integer default 18,
   p_weeks integer default 12)
 returns jsonb

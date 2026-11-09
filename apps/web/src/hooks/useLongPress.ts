@@ -3,7 +3,7 @@ import { useEffect, useRef, type MouseEvent } from 'react';
 const HOLD_MS = 500;
 
 /**
- * Tap and hold on one button (the map shortcut and the dice, slice G). A hold of 500 ms (or a
+ * Tap and hold on one button (the map shortcut and the dice). A hold of 500 ms (or a
  * right-click / the context-menu key) calls `onHold` with `vibrate(6)`; the click that follows a
  * hold is swallowed, so a hold never also counts as a tap.
  */

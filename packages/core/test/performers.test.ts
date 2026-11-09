@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mergePerformers, normName, splitPerformers } from '../src';
 
-describe('normName (M7 §1)', () => {
+describe('normName', () => {
   it('lowercases, drops Polish diacritics (ł too) and collapses whitespace', () => {
     expect(normName('  Dawid   Podsiadło ')).toBe('dawid podsiadlo');
     expect(normName('ŁÓDŹ Żółć Ęą Ńś')).toBe('lodz zolc ea ns');

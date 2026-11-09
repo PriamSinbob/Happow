@@ -27,7 +27,7 @@ import { Icon } from './Icons';
 import { Sheet } from './Sheet';
 
 /**
- * The organiser's part of an event card (M11 §6–§8). For everyone: "Organiser: X ✓" and the
+ * The organiser's part of an event card. For everyone: "Organiser: X ✓" and the
  * posts, important ones pinned on top; loaded with the card, never with the map. For the
  * organiser (or a private event's owner): posting, editing, and the reports people sent. For a
  * signed-in person with no role yet: "I organise this".
@@ -263,7 +263,7 @@ function Reports({
   );
 }
 
-/** A post: schedule change (moves the event), important (pinned) or info (§7). */
+/** A post: schedule change (moves the event), important (pinned) or info. */
 function PostSheet({
   ev,
   infoPosts,
@@ -395,8 +395,8 @@ function PostSheet({
   );
 }
 
-/** Edit your event (§8): owner and organiser at once; a contributor's edit may wait for review. */
-export function EditSheet({
+/** Edit your event: owner and organiser at once; a contributor's edit may wait for review. */
+function EditSheet({
   ev,
   role,
   onClose,
@@ -534,7 +534,7 @@ export function EditSheet({
 }
 
 /**
- * "I organise this" (§6): the organiser's public name, then a code to put on the event's or
+ * "I organise this": the organiser's public name, then a code to put on the event's or
  * venue's own page ("Check"), or a note for a moderator.
  */
 function ClaimSheet({

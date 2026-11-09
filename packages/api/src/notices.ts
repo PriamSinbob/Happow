@@ -5,7 +5,7 @@ import { Supabase } from './supabase.js';
 import { sendPush, type PushOutcome } from './webpush.js';
 
 /**
- * Push notices to everyone interested in an event (M11 §7, owner 2026-11-04): an organiser's
+ * Push notices to everyone interested in an event: an organiser's
  * schedule change or important post, and a private event's change or cancellation. The audience
  * is fixed when the notice is made (notice_enqueue: devices that allowed notifications and set a
  * reminder, marked going / on the way / here, saved it on a synced account, or accepted an
@@ -34,10 +34,7 @@ const LABEL = {
 } as const;
 
 /** What a notice says: "Ważne: Koncert" and the organiser's words; tapping opens the event. */
-export function noticeMessage(
-  n: Pick<DueNotice, 'eventId' | 'kind' | 'body' | 'title'>,
-  lang: string,
-) {
+function noticeMessage(n: Pick<DueNotice, 'eventId' | 'kind' | 'body' | 'title'>, lang: string) {
   const l = LABEL[lang === 'en' ? 'en' : 'pl'];
   return {
     title: `${l[n.kind]}: ${n.title}`,
@@ -106,7 +103,7 @@ export async function sendNotices(
   return { sent, gone: gone.length, failed };
 }
 
-/** Cron Trigger: queued notices, and the private events' retention (M11 §9). */
+/** Cron Trigger: queued notices, and the private events' retention. */
 export async function sendDueNotices(
   env: ScheduleEnv,
   now: Date,

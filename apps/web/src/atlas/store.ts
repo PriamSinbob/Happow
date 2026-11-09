@@ -1,7 +1,7 @@
 import type { AtlasCell } from '@happow/core';
 
 /**
- * The local atlas in IndexedDB (§6): one record per H3 cell, on this device only. Never throws:
+ * The local atlas in IndexedDB: one record per H3 cell, on this device only. Never throws:
  * private mode or blocked storage gives an empty atlas, and the veil then lights the reach only.
  */
 const DB = 'happow';

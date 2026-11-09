@@ -1,5 +1,5 @@
 /**
- * Share into Happow (M12 slice D, docs/milestones/M12-more-events.md §4.1). The installed app is a
+ * Share into Happow. The installed app is a
  * share target (manifest `share_target`, Android): sharing a page opens `/share?title=&text=&url=`.
  * On start the app keeps what was shared for the add form, then swaps the address for `/#/add`,
  * so a reload or Back never fills the form again and the shared link leaves the address bar.
@@ -8,7 +8,7 @@
 export interface Shared {
   /** The page to fill the add form from; null when only text was shared. */
   link: string | null;
-  /** For the event title when the page gives nothing (owner, 2026-10-28). */
+  /** For the event title when the page gives nothing. */
   title: string | null;
 }
 

@@ -18,7 +18,7 @@ await withClient(async (db) => {
   try {
     await new EventStore(db).syncConfig(config);
 
-    // District boundaries for the M12 metrics, replaced as a whole from each region's file.
+    // District boundaries for the metrics, replaced as a whole from each region's file.
     for (const region of config.regions) {
       if (!region.districts) continue;
       const file = JSON.parse(await readFile(root + region.districts.file, 'utf8')) as {

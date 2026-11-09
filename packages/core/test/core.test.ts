@@ -10,9 +10,7 @@ import {
   isRunning,
   loadConfig,
   nearby,
-  radiusToSlider,
   resolveEnd,
-  sliderToRadius,
 } from '../src/index.js';
 import { materializeSeed } from '../src/seed.js';
 
@@ -40,21 +38,6 @@ describe('geo', () => {
     expect(ring).toHaveLength(33);
     expect(ring[0]).toEqual(ring[32]);
     for (const [lng, lat] of ring) expect(distanceM(c, { lat, lng })).toBeCloseTo(500, 0);
-  });
-});
-
-describe('radius slider', () => {
-  const { minM, maxM, defaultM } = config.app.radius;
-  it('round-trips the default and hits both ends', () => {
-    expect(sliderToRadius(radiusToSlider(defaultM, minM, maxM), minM, maxM)).toBe(defaultM);
-    expect(sliderToRadius(0, minM, maxM)).toBe(minM);
-    expect(sliderToRadius(1, minM, maxM)).toBe(maxM);
-  });
-  it('snaps to readable values', () => {
-    for (let t = 0; t <= 1; t += 0.01) {
-      const r = sliderToRadius(t, minM, maxM);
-      expect(r % 50).toBe(0);
-    }
   });
 });
 

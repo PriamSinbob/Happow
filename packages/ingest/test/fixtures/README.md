@@ -18,7 +18,7 @@ Recording writes `<source>/page-N.json`, masks `apikey=` values, and never store
 responses. Recorded pages hold real event times, so after re-recording, update the test's
 `now` and the expected values.
 
-`venues/` (M12 slice C):
+`venues/`:
 
 - `tec-demo.ics` and `tribe-demo.json` are real recordings (2026-10-28) from The Events
   Calendar's own demo site (demo.theeventscalendar.com), trimmed to a few events. Its venues
@@ -27,10 +27,16 @@ responses. Recorded pages hold real event times, so after re-recording, update t
   three all-day events.
 - `wroclaw-club.ics`, `overpass-venues.json` and the `site-*.html` pages are hand-built in the
   real formats: no Wrocław venue site checked so far publishes a feed, and Overpass refused
-  this machine when the slice was written. The club, parish and museum are made up; the NFM
+  this machine when they were written. The club, parish and museum are made up; the NFM
   entry uses the real address.
 
-Meetup public pages (M7 slice F): `packages/extract/test/fixtures/meetup-*.html` were recorded on
-2026-11-05 from a Wrocław group's `/events/` page and one of its event pages, then trimmed to the
-JSON-LD as served plus the event URLs from the embedded page data. Member names, photos and RSVPs
-are removed: the repository is public. `meetup-robots.txt` is unchanged.
+Meetup public pages: `packages/extract/test/fixtures/meetup-*.html` were recorded on 2026-11-05
+from a Wrocław group's `/events/` page and one of its event pages, then trimmed to the JSON-LD as
+served plus the event URLs from the embedded page data. Member names, photos and RSVPs are
+removed: the repository is public. `meetup-robots.txt` is unchanged.
+
+The other crawled pages in `packages/extract/test/fixtures/*.html` (eBilet, wroclaw.pl GO, NFM,
+Biletyna, the city library, the university) are real recordings trimmed to the parts the tests
+read: the `<head>` metadata and JSON-LD as served, the links, and the visible text. Scripts,
+styles, images and attributes are removed, except one inline script on `nfm-event.html` that
+the text-extraction test expects to be dropped. The `*-robots.txt` files are unchanged.

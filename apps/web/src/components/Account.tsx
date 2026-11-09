@@ -11,9 +11,9 @@ import { Sheet } from './Sheet';
 import { YourEventsSection } from './YourEvents';
 
 /**
- * The account card at the top of About (M8 §2, §4, `docs/design/account.html`): signed out, what
- * a free account gives and the way in; signed in, the email, the plan and its end, export, sign
- * out and delete. M12 slice F adds the contributor's section.
+ * The account card at the top of About: signed out, what a free account gives and the way in;
+ * signed in, the email, the plan and its end, export, sign out, delete and the contributor's
+ * section.
  */
 export function AccountCard({
   onSignIn,
@@ -125,7 +125,7 @@ export function AccountCard({
   );
 }
 
-/** "Delete your account?" (M8 §2): DELETE /api/me, then signed out. */
+/** "Delete your account?": DELETE /api/me, then signed out. */
 export function DeleteAccountSheet({ onClose }: { onClose: () => void }) {
   const { t, lang } = useI18n();
   const { deleteAccount } = useAccount();

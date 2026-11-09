@@ -3,15 +3,15 @@ import { Glyph, Icon, type IconName } from './Icons';
 
 export interface PickOption {
   id: string;
-  /** A category glyph, or `icon` for a control (the views, M10 §1). */
+  /** A category glyph, or `icon` for a control (the views). */
   glyph?: string;
   icon?: IconName;
   label: string;
 }
 
 /**
- * The grid a hold opens under the top row (docs/design/map-shortcut.html): glyphs only, the
- * current one ringed. A tap outside or Escape closes it.
+ * The grid a hold opens under the top row: glyphs only, the current one ringed. A tap outside or
+ * Escape closes it.
  */
 export function PickGrid({
   label,

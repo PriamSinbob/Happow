@@ -1,4 +1,4 @@
--- M8 slice C: monthly quotas per account (docs/milestones/M8-accounts-premium.md §5). The Worker
+-- Monthly quotas per account. The Worker
 -- works out the calendar month in the region's time zone and the limit from the user's plan, and
 -- passes both in; the count is checked and raised in the same statement, so parallel requests at
 -- the limit can't both pass.

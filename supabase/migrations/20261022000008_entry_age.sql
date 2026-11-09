@@ -1,4 +1,4 @@
--- Happow M6 slice C: entry type and age data (spec §4.2, §4.4).
+-- Entry type and age data.
 -- Four typed columns replace the free-text rules.age. All are nullable: null means the source
 -- did not say, and the app applies the category defaults from config/categories.json when it
 -- reads the event, so a config change reaches every stored event without re-ingesting.
@@ -133,7 +133,7 @@ as $$
   where e.id = event_id;
 $$;
 
--- The area snapshot carries the fields so family mode can filter on the phone (§4.4).
+-- The area snapshot carries the fields so family mode can filter on the phone.
 create function events_area(
   lat double precision,
   lng double precision,

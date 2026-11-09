@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { launchItems, loadConfig, siteTemplate } from '../src';
 import { uaFromTemplate } from '../../../apps/web/build/crawlerPage';
 
-/** M13 §2: the site's address and contact come from config only. */
 describe('siteTemplate', () => {
   const app = { site: { url: 'https://happow.app' }, legal: { contactEmail: 'hi@happow.app' } };
 
@@ -26,7 +25,7 @@ describe('siteTemplate', () => {
   });
 });
 
-describe('no domain or contact address in code (M13 §2)', () => {
+describe('no domain or contact address in code', () => {
   it('keeps the site URL and the email in config only', async () => {
     const { readdirSync, readFileSync, statSync } = await import('node:fs');
     const { join } = await import('node:path');
@@ -60,7 +59,7 @@ describe('no domain or contact address in code (M13 §2)', () => {
   });
 });
 
-describe('launchItems (M13 §7)', () => {
+describe('launchItems', () => {
   const now = new Date('2026-11-05T12:00:00Z');
   const ready = () => {
     const c = loadConfig();

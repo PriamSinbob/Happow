@@ -15,7 +15,7 @@ describe('crawler policy page', () => {
   it('shows the exact User-Agent the crawler sends, which links back to this page', () => {
     const ua = uaFromTemplate(appConfig.ingest.userAgent, appConfig);
     expect(html).toContain(ua.replace(/&/g, '&amp;'));
-    // The crawler page's address, then the contact (M13 §3).
+    // The crawler page's address, then the contact.
     expect(ua).toMatch(/\(\+https:\/\/[^);]+\/crawler(; [^)]+@[^)]+)?\)$/);
   });
 

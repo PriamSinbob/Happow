@@ -1,5 +1,5 @@
 /**
- * Web Push from the Worker (M10 §4, slice D) with WebCrypto only: message encryption as in
+ * Web Push from the Worker with WebCrypto only: message encryption as in
  * RFC 8291 (aes128gcm, RFC 8188) and the VAPID signature of RFC 8292. No Node library, so it runs
  * in the Cron Trigger. The private key is a P-256 JWK in the secret named by `push.secret`; the
  * public key the browser needs is worked out from it (GET /api/push/key).

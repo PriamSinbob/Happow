@@ -5,7 +5,7 @@ import type { Plugin } from 'vite';
 import appJson from '../../../config/app.json';
 
 /**
- * Server-rendered pages from Markdown in docs/ (M13 §1): the crawler policy at /crawler (its
+ * Server-rendered pages from Markdown in docs/: the crawler policy at /crawler (its
  * User-Agent links here) and the legal texts at /legal/<name> (Polish) and /legal/<name>.en.
  * Rendered at build time with `{{…}}` values from config; no JavaScript on the pages, so they can
  * be linked from emails and store listings, and read when the repository is private.
@@ -61,7 +61,7 @@ th{color:var(--muted);font-weight:500}
 const TODO = { pl: '[do uzupełnienia przed startem]', en: '[to be completed before launch]' };
 
 /** The `{{name}}` values the pages may use, all from config. */
-export function pageValues(lang: Lang = 'en'): Record<string, string> {
+function pageValues(lang: Lang = 'en'): Record<string, string> {
   const app = appJson;
   const todo = `<span class="todo">${TODO[lang]}</span>`;
   return {
@@ -113,7 +113,7 @@ ${opts.nav ?? ''}${opts.body}</main>
 }
 
 /** Full HTML document for the crawler policy's Markdown. */
-export function crawlerHtml(markdown: string): string {
+function crawlerHtml(markdown: string): string {
   return page({
     lang: 'en',
     title: 'Happow crawler',
@@ -127,7 +127,7 @@ export function renderCrawlerPage(): string {
 }
 
 /** Path of a legal page: /legal/terms (Polish, the default language) or /legal/terms.en. */
-export function legalPath(name: LegalPage, lang: Lang): string {
+function legalPath(name: LegalPage, lang: Lang): string {
   return `/legal/${name}${lang === 'pl' ? '' : `.${lang}`}`;
 }
 

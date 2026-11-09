@@ -7,7 +7,7 @@ import { config, region } from './config';
 import { storage } from './storage';
 
 /**
- * Followed artists (M7 §4, §5). Kept on the device with no account: `{ name, norm,
+ * Followed artists. Kept on the device with no account: `{ name, norm,
  * tmAttractionId? }`, at most `follows.max`. A removal stays a while as a tombstone, so an
  * account's other devices drop it too (follows sync, premium). Never throws: storage may be off.
  */
@@ -186,7 +186,7 @@ function storedMatches(key: string): Stored | null {
 }
 
 /**
- * Matches for the followed names (§4): asked on open and then at most every
+ * Matches for the followed names: asked on open and then at most every
  * `follows.matchEveryMinutes`; the last answer is kept for that long, also across reloads.
  * The server keeps no copy of the list.
  */
@@ -246,7 +246,7 @@ export function useFollowMatches(center: LatLng | null): Matches & { loading: bo
 }
 
 /**
- * Follows across an account's devices (§5, premium `follows.sync`): on sign-in, after each change
+ * Follows across an account's devices (premium `follows.sync`): on sign-in, after each change
  * (batched) and every `refresh.dataMinutes`. Otherwise nothing leaves the device but the match.
  */
 export function useFollowSync(): void {

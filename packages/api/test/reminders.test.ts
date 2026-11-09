@@ -1,80 +1,23 @@
 import { createECDH, generateKeyPairSync } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { loadConfig } from '@happow/core';
 import { createApi } from '../src';
 import { reminderMessage, sendDueReminders, type DueReminder } from '../src/reminders';
 import { b64url, fromB64url } from '../src/webpush';
+import { config, env, req, SB, submitRpc, supabase, type Rpc } from './helpers';
 
-/** M10 slices D and E: push subscriptions, reminders and the cron that sends them. */
+/** Push subscriptions, reminders and the cron that sends them. */
 
 const jwk = JSON.stringify(
   generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey.export({ format: 'jwk' }),
 );
-const SB = 'https://proj.supabase.co';
-const baseEnv = {
-  SUPABASE_URL: SB,
-  SUPABASE_SERVICE_ROLE_KEY: 'service-key',
-  SUBMITTER_SALT: 'salt',
-};
 const now = () => new Date('2026-10-29T22:30:00Z');
-const config = loadConfig();
 
-type Rpc = (args: Record<string, unknown>) => { status?: number; body: unknown };
-function backend(rpc: Record<string, Rpc>, env: Record<string, string> = baseEnv) {
-  const calls: { name: string; args: Record<string, unknown> }[] = [];
-  const users: Record<string, { id: string; email: string }> = {
-    'user-token': { id: 'u1', email: 'ala@example.org' },
-    'mod-token': { id: 'u2', email: 'mod@example.org' },
-    'admin-token': { id: 'u3', email: 'owner@example.org' },
-  };
-  const all: Record<string, Rpc> = {
-    rate_limit_hit: () => ({ body: true }),
-    staff_role: (a) => ({
-      body:
-        { 'mod@example.org': 'moderator', 'owner@example.org': 'admin' }[a.p_email as string] ??
-        null,
-    }),
-    grants_active: () => ({ body: [] }),
-    usage_get: () => ({ body: { events: 0, autofills: 0 } }),
-    contributor_trusted: () => ({ body: false }),
-    duplicate_candidates: () => ({ body: { title: 'Pchli targ na Ruskiej', others: [] } }),
-    contribution_award: () => ({ body: { kind: 'verified', days: 3, startsAt: null } }),
-    ...rpc,
-  };
-  const f = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
-    const url = String(input);
-    if (url.startsWith(`${SB}/rest/v1/rpc/`)) {
-      const name = url.slice(`${SB}/rest/v1/rpc/`.length);
-      const args = JSON.parse(String(init.body ?? '{}'));
-      calls.push({ name, args });
-      const h = all[name];
-      if (!h) return new Response('{}', { status: 404 });
-      const { status = 200, body } = h(args);
-      return new Response(JSON.stringify(body), { status });
-    }
-    if (url === `${SB}/auth/v1/user`) {
-      const token = new Headers(init.headers).get('authorization')?.replace('Bearer ', '') ?? '';
-      const u = users[token];
-      return u ? Response.json(u) : new Response('{}', { status: 401 });
-    }
-    return new Response('not found', { status: 404 });
-  });
-  const api = createApi(env, { config, fetch: f as typeof fetch, now, extractor: null });
-  const call = (name: string) => calls.filter((c) => c.name === name);
-  return { api, call };
+function backend(rpc: Record<string, Rpc>, e: Record<string, string> = env) {
+  const sb = supabase({ ...submitRpc, ...rpc });
+  return { ...sb, api: createApi(e, { config, fetch: sb.fetch, now, extractor: null }) };
 }
-const req = (path: string, init: { token?: string; body?: unknown; method?: string } = {}) =>
-  new Request(`https://happow.example/api/${path}`, {
-    method: init.method ?? (init.body === undefined ? 'GET' : 'POST'),
-    headers: {
-      'content-type': 'application/json',
-      'cf-connecting-ip': '203.0.113.7',
-      ...(init.token && { authorization: `Bearer ${init.token}` }),
-    },
-    ...(init.body !== undefined && { body: JSON.stringify(init.body) }),
-  });
 
-const withKey = { ...baseEnv, VAPID_PRIVATE_KEY: jwk };
+const withKey = { ...env, VAPID_PRIVATE_KEY: jwk };
 const ua = createECDH('prime256v1');
 ua.generateKeys();
 const subscription = {
@@ -82,7 +25,7 @@ const subscription = {
   keys: { p256dh: b64url(ua.getPublicKey()), auth: b64url(new Uint8Array(16).fill(7)) },
 };
 
-describe('push subscriptions (M10 §4)', () => {
+describe('push subscriptions', () => {
   it('serves the public key worked out from the secret, or 503 without it', async () => {
     const res = await backend({}, withKey).api(req('push/key'));
     expect(res.status).toBe(200);
@@ -117,7 +60,7 @@ describe('push subscriptions (M10 §4)', () => {
   });
 });
 
-describe('reminders (M10 §5)', () => {
+describe('reminders', () => {
   it('sets one with a configured lead, and refuses a lead not in config', async () => {
     const b = backend({ reminder_set: () => ({ body: true }) });
     const ok = await b.api(
@@ -171,7 +114,7 @@ const due = (over: Partial<DueReminder> = {}): DueReminder => ({
 });
 const NOW = new Date('2026-11-06T17:00:00Z');
 
-describe('what a reminder says (§5)', () => {
+describe('what a reminder says', () => {
   it('the real time left, the venue and the link', () => {
     expect(reminderMessage(due(), 'en', NOW)).toEqual({
       title: 'Koncert',
@@ -194,7 +137,7 @@ describe('what a reminder says (§5)', () => {
   });
 });
 
-describe('the cron tick (§5)', () => {
+describe('the cron tick', () => {
   const sub = (endpoint: string) => ({
     endpoint,
     p256dh: subscription.keys.p256dh,

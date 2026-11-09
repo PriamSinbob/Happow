@@ -52,7 +52,7 @@ export function hueDistance(a: number, b: number): number {
 const ACHROMATIC = 0.1;
 
 /**
- * The §3.2 rules for a live-hue preset, in both themes: glyph on the live colour ≥ 3:1, live
+ * The rules for a live-hue preset, in both themes: glyph on the live colour ≥ 3:1, live
  * colour against the land ≥ 3:1, and ≥ 40° of hue away from park green and water blue (taken
  * from the day tokens). Returns one line per broken rule; empty means the preset may ship.
  */
@@ -99,7 +99,7 @@ export function checkTokens(name: ThemeName, t: ThemeTokens, config: ThemeConfig
     ['quiet', 'sunken', t.sunken, ink],
     ['quiet', 'paper', t.paper, ink],
     ['warnInk', 'warn', t.warn, ink],
-    // A used-up meter on the add form (M8 slice G).
+    // A used-up meter on the add form.
     ['warnInk', 'paper', t.paper, ink],
     ['errorInk', 'error', t.error, ink],
   ];

@@ -1,7 +1,7 @@
--- M12 slice A: how we know M12 worked (docs/milestones/M12-more-events.md §1). Districts come from
+-- Metrics. Districts come from
 -- data/districts/<region>.geojson (loaded by `pnpm db:seed`); m12_metrics() computes the five
 -- numbers for one moment, and metrics_save() keeps one row per region and week, called by the
--- Worker's cron and by `pnpm metrics --save`.
+-- Worker's cron.
 
 create table districts (
   region_id text not null references regions (id) on delete cascade,

@@ -1,7 +1,7 @@
 /**
  * Cloudflare Worker for /api/* (same origin as the PWA, so no CORS) and for shared event links
- * /e/<id>, which get the app's index.html with that event's preview tags (M9 §1). Everything else is a static
- * file from apps/web/dist, served by Workers Static Assets without running this code, and
+ * /e/<id>, which get the app's index.html with that event's preview tags. Everything else is a
+ * static file from apps/web/dist, served by Workers Static Assets without running this code, and
  * cacheable API responses (area snapshots) are served by Workers Caching in front of it (see
  * wrangler.jsonc). Secrets come from the Worker's Variables and Secrets: SUPABASE_URL,
  * SUPABASE_SERVICE_ROLE_KEY, SUBMITTER_SALT, optionally ANTHROPIC_API_KEY, and GITHUB_DISPATCH_TOKEN
@@ -9,8 +9,8 @@
  *
  * The Cron Trigger (`triggers.crons` in wrangler.jsonc) starts the GitHub ingest workflow when a
  * source is due (packages/api/src/schedule.ts, docs/SETUP.md), and on Mondays it saves the week's
- * M12 metrics row (packages/api/src/metrics.ts), and it sends the reminders due before the next tick
- * (M10 §5, packages/api/src/reminders.ts). VAPID_PRIVATE_KEY signs those pushes.
+ * metrics row (packages/api/src/metrics.ts), and it sends the reminders due before the next tick
+ * (packages/api/src/reminders.ts). VAPID_PRIVATE_KEY signs those pushes.
  */
 import {
   createApi,
@@ -48,7 +48,7 @@ const fonts = [new Uint8Array(interRegular), new Uint8Array(interBold)];
 let theme: ThemeConfig | null = null;
 
 /**
- * GET /e/<id>/preview.png: the event's 1200×630 preview image (M9 §2). Its URL carries a version
+ * GET /e/<id>/preview.png: the event's 1200×630 preview image. Its URL carries a version
  * of what's drawn, so a long edge cache is safe: an edited event links to a new image.
  */
 async function previewImage(pages: NonNullable<typeof eventPage>, id: string): Promise<Response> {
@@ -91,9 +91,9 @@ export default {
       dispatchDueIngest(env, now),
       saveWeeklyMetrics(env, now),
       sendDueReminders(env, now),
-      // Organisers' notices and the private events' retention (M11 §7, §9).
+      // Organisers' notices and the private events' retention.
       sendDueNotices(env, now),
-      // New dates of followed artists (M7 §5).
+      // New dates of followed artists.
       sendFollowAlerts(env, now),
     ]);
     const out = (r: PromiseSettledResult<object>) =>
