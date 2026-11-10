@@ -634,7 +634,8 @@ export function App() {
           events={mapEvents}
           now={pinTime}
           pinMode={pinMode}
-          selectedId={selectedId}
+          // A pin with several events is selected through any one of them.
+          selectedId={selectedId ?? placeIds?.[0] ?? null}
           onSelect={(id) => {
             setSelectedId(id);
             setOpenPlaceId(null);
