@@ -108,8 +108,9 @@ export function FlagNotice({
 }
 
 /**
- * Getting there: a small button for the route inside Happow (live location, event updates on the
- * way) and a wide one handing off to Google Maps, which most people prefer.
+ * Getting there: a wide button handing off to Google Maps, the default, and a small icon button
+ * for the route inside Happow, for people who do not use Google Maps or would rather not share
+ * the trip with it.
  */
 export function GoButtons({ ev, onGo }: { ev: NearbyEvent; onGo: () => void }) {
   const { t } = useI18n();
@@ -117,23 +118,25 @@ export function GoButtons({ ev, onGo }: { ev: NearbyEvent; onGo: () => void }) {
     <>
       <button
         type="button"
-        className="btn btn--primary"
+        className="btn btn--square"
+        aria-label={t('nav.inApp')}
+        title={t('nav.inApp')}
         onClick={() => {
           track('Directions', { via: 'happow' });
           countEvent(ev.id, 'route');
           onGo();
         }}
       >
-        <Icon name="navigate" size={16} /> {t('nav.inApp')}
+        <Icon name="walk" size={18} />
       </button>
       <a
-        className="btn"
+        className="btn btn--primary"
         href={navigationUrl(ev.point.lat, ev.point.lng)}
         target="_blank"
         rel="noreferrer"
         onClick={() => track('Directions', { via: 'google' })}
       >
-        {t('nav.googleMaps')}
+        <Icon name="navigate" size={16} /> {t('nav.googleMaps')}
       </a>
     </>
   );

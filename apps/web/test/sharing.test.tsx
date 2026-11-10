@@ -118,7 +118,7 @@ describe('sharing', () => {
     expect(screen.getByText(url)).toBeTruthy();
   });
 
-  it('puts the in-app route first and Google Maps second', () => {
+  it('makes Google Maps the main way there, the in-app route a small icon button', () => {
     render(
       <I18nProvider initial="en">
         <GoButtons ev={ev} onGo={() => {}} />
@@ -129,7 +129,8 @@ describe('sharing', () => {
       screen.getByRole('link', { name: /google maps/i }),
     ];
     expect(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(first.className).toContain('btn--primary');
-    expect(second.className).not.toContain('btn--primary');
+    expect(first.className).toContain('btn--square');
+    expect(first.textContent).toBe('');
+    expect(second.className).toContain('btn--primary');
   });
 });

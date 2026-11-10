@@ -242,6 +242,15 @@ export const appConfigSchema = z.object({
     maxMinutes: z.number().positive(),
     /** How often the event itself is re-read while on the way (flags, time changes). */
     eventRefreshSeconds: z.number().positive(),
+    /** The trip map turns to face along the route while the walker moves. */
+    heading: z.object({
+      /** A fix this far from the last one counts as moving. */
+      minMoveM: z.number().positive(),
+      /** The route's direction is read this far ahead of the walker. */
+      aheadM: z.number().positive(),
+      /** After a hand moves or turns the map, following starts again this much later. */
+      resumeSeconds: z.number().nonnegative(),
+    }),
   }),
   extraction: z.object({
     provider: z.literal('anthropic'),

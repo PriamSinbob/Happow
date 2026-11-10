@@ -1468,6 +1468,13 @@ div.settings-row {
   opacity: 0.45;
   cursor: default;
 }
+/* Icon only: as wide as it is high, beside the wide buttons. */
+.btn--square,
+.event-card__actions .btn--square {
+  flex: none;
+  width: 44px;
+  padding: 0;
+}
 .btn--primary {
   background: var(--ink);
   border-color: var(--ink);
