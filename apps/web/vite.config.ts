@@ -143,8 +143,10 @@ export default defineConfig(({ mode }) => {
               urlPattern: ({ url }: { url: URL }) => url.pathname === '/api/places',
               handler: 'StaleWhileRevalidate' as const,
               options: {
-                cacheName: 'places',
+                cacheName: 'places-2',
                 expiration: { maxEntries: 10, maxAgeSeconds: 7 * 24 * 3600 },
+                // Never an empty answer (the API marks the ones with places).
+                cacheableResponse: { statuses: [200], headers: { 'x-places': 'some' } },
               },
             },
             ...(apiHost
