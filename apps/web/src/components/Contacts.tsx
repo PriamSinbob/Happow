@@ -150,16 +150,18 @@ export function ContactsSection() {
           type="checkbox"
           checked={!!me.friendsVisible}
           disabled={busy}
-          onChange={(e) =>
+          onChange={(e) => {
+            // Read now: once this handler returns, React puts the box back to the stored value.
+            const on = e.target.checked;
             void run(async () => {
               await api('me', {
                 token: await accessToken(),
                 method: 'PUT',
-                body: { friendsVisible: e.target.checked },
+                body: { friendsVisible: on },
               });
               await account.refresh();
-            })
-          }
+            });
+          }}
         />
         <span>
           {t('friends.switch')}

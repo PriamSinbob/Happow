@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useLiveLocation } from '../src/hooks/useLiveLocation';
-import { pathLength, progress } from '../src/nav';
+import { headingAlong, pathLength, pointAt, progress } from '../src/nav';
 
 describe('route progress', () => {
   // An L-shaped route: ~111 m north, then ~70 m east.
@@ -16,6 +16,25 @@ describe('route progress', () => {
     const halfway = progress({ lat: 51.1005, lng: 17.0 }, path);
     expect(halfway.offRouteM).toBeLessThan(1);
     expect(halfway.remainingM).toBeCloseTo(55 + 70, -1);
+  });
+
+  it('finds the point a distance along the route', () => {
+    expect(pointAt(path, 0)).toEqual(path[0]);
+    expect(pointAt(path, 55).lat).toBeCloseTo(51.1005, 4);
+    expect(pointAt(path, 9999)).toEqual(path[2]);
+  });
+
+  it('faces the way the route runs ahead of the walker', () => {
+    // On the first leg: north. Near the corner: turning east. On the second leg: east.
+    expect(headingAlong({ lat: 51.1002, lng: 17.0 }, path, 30)).toBeCloseTo(0, 0);
+    const corner = headingAlong({ lat: 51.1009, lng: 17.0 }, path, 30)!;
+    expect(corner).toBeGreaterThan(20);
+    expect(corner).toBeLessThan(90);
+    expect(headingAlong({ lat: 51.101, lng: 17.0005 }, path, 30)).toBeCloseTo(90, 0);
+    // A walker beside the route faces along it, not towards it.
+    expect(headingAlong({ lat: 51.1002, lng: 17.0003 }, path, 30)).toBeCloseTo(0, 0);
+    // At the end there is no way ahead.
+    expect(headingAlong(path[2]!, path, 30)).toBeNull();
   });
 
   it('notices when the walker leaves the route', () => {

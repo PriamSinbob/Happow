@@ -42,3 +42,36 @@ export function progress(p: LatLng, path: LatLng[]): { offRouteM: number; remain
   }
   return { offRouteM: best.d, remainingM: Math.max(0, along - best.along) };
 }
+
+/** The point `alongM` metres from the start of the path (its end when the path is shorter). */
+export function pointAt(path: LatLng[], alongM: number): LatLng {
+  let left = Math.max(0, alongM);
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1]!;
+    const b = path[i]!;
+    const seg = pathLength([a, b]);
+    if (left <= seg && seg > 0) {
+      const t = left / seg;
+      return { lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t };
+    }
+    left -= seg;
+  }
+  return path[path.length - 1]!;
+}
+
+/**
+ * Which way the route runs from where the walker is: the compass bearing (0 = north, 90 = east)
+ * from the nearest point on the route to the point `aheadM` further along. Null at the route's
+ * end, where there is no way ahead.
+ */
+export function headingAlong(p: LatLng, path: LatLng[], aheadM: number): number | null {
+  if (path.length < 2) return null;
+  const along = pathLength(path) - progress(p, path).remainingM;
+  const from = pointAt(path, along);
+  const to = pointAt(path, along + aheadM);
+  const { kx, ky } = scale(from.lat);
+  const dx = (to.lng - from.lng) * kx;
+  const dy = (to.lat - from.lat) * ky;
+  if (Math.hypot(dx, dy) < 1) return null;
+  return ((Math.atan2(dx, dy) * 180) / Math.PI + 360) % 360;
+}

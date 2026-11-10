@@ -66,7 +66,8 @@
     "rerouteMinSeconds": 30,
     "maxReroutes": 10,
     "maxMinutes": 45,
-    "eventRefreshSeconds": 60
+    "eventRefreshSeconds": 60,
+    "heading": { "minMoveM": 8, "aheadM": 30, "resumeSeconds": 8 }
   },
   "timeWindows": [
     {

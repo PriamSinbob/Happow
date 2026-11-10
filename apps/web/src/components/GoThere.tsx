@@ -8,7 +8,7 @@ import { formatDistance, navigationUrl } from '../format';
 import { useLiveLocation } from '../hooks/useLiveLocation';
 import { useI18n } from '../i18n';
 import { useMapTheme, type OwnLayerPaint } from '../mapTheme';
-import { pathLength, progress } from '../nav';
+import { headingAlong, pathLength, progress } from '../nav';
 import { sendThanks, thanked } from '../thanks';
 import { FlagNotice } from './EventMeta';
 import { glyphSvg, Icon } from './Icons';
@@ -297,7 +297,12 @@ export function HereButton({ eventId }: { eventId: string }) {
   );
 }
 
-/** The trip map: route line, the venue's pin and the walker's dot. Fits the trip once. */
+/**
+ * The trip map: route line, the venue's pin and the walker's dot. Fits the trip once; then, while
+ * the walker moves, it follows them facing along the route. It turns by hand too (two fingers),
+ * which is all there is without a position or while standing still; after a hand moves or turns
+ * it, following waits `heading.resumeSeconds`.
+ */
 function TripMap({
   ev,
   here,
@@ -314,6 +319,9 @@ function TripMap({
   const venue = useRef<maplibregl.Marker | null>(null);
   const you = useRef<maplibregl.Marker | null>(null);
   const fitted = useRef(false);
+  // Following: the fix the map last turned at, and when a hand last touched the map.
+  const turnedAt = useRef<LatLng | null>(null);
+  const touchedAt = useRef(0);
 
   useEffect(() => {
     const m = new maplibregl.Map({
@@ -322,12 +330,17 @@ function TripMap({
       center: ev ? [ev.point.lng, ev.point.lat] : [0, 0],
       zoom: 16,
       attributionControl: false,
-      dragRotate: false,
       pitchWithRotate: false,
       refreshExpiredTiles: false,
       fadeDuration: 0,
     });
-    m.touchZoomRotate.disableRotation();
+    m.touchPitch.disable();
+    // Only a hand's own move counts, not the map following.
+    const touched = (e: { originalEvent?: unknown }) => {
+      if (e.originalEvent) touchedAt.current = Date.now();
+    };
+    m.on('movestart', touched);
+    m.on('move', touched);
     m.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
     let fellBack = false;
     m.on('error', () => {
@@ -405,6 +418,30 @@ function TripMap({
     }
     you.current.setLngLat([here.lng, here.lat]);
   }, [here, label]);
+
+  // Moving: keep the walker in view, the way ahead pointing up.
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !here || !route || !fitted.current) return;
+    const { minMoveM, aheadM, resumeSeconds } = nav.heading;
+    if (!turnedAt.current) {
+      // The first fix only marks where the walk starts: the whole trip stays in view.
+      turnedAt.current = here;
+      return;
+    }
+    if (distanceM(turnedAt.current, here) < minMoveM) return;
+    turnedAt.current = here;
+    if (Date.now() - touchedAt.current < resumeSeconds * 1000) return;
+    const bearing = headingAlong(here, route.path, aheadM);
+    m.easeTo({
+      center: [here.lng, here.lat],
+      ...(bearing !== null && { bearing }),
+      zoom: Math.max(m.getZoom(), 16),
+      // The walker sits low on the screen, so more of the way ahead shows.
+      offset: [0, 120],
+      duration: 600,
+    });
+  }, [here, route]);
 
   useEffect(() => {
     const m = map.current;
