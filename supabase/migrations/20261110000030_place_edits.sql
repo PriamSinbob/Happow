@@ -182,3 +182,27 @@ revoke all on function places_area(double precision, double precision, double pr
   from public;
 grant execute on function places_area(double precision, double precision, double precision, integer)
   to service_role;
+
+-- The export covers the places an account added and every change it made to places.
+alter function account_export(uuid) rename to account_export_m28;
+create function account_export(p_user uuid)
+returns jsonb
+language sql
+security definer
+set search_path = public
+as $$
+  select account_export_m28(p_user) || jsonb_build_object(
+    'places', jsonb_build_object(
+      'added', (
+        select coalesce(jsonb_agg(jsonb_build_object('id', p.osm_id, 'name', p.name,
+          'kind', p.kind, 'address', p.address, 'website', p.website,
+          'openingHours', p.opening_hours) order by p.osm_id), '[]'::jsonb)
+        from places p where p.added_by = p_user),
+      'changes', (
+        select coalesce(jsonb_agg(jsonb_build_object('placeId', l.place_id, 'action', l.action,
+          'value', l.value, 'at', l.at) order by l.at), '[]'::jsonb)
+        from place_log l where l.user_id = p_user)))
+$$;
+revoke all on function account_export(uuid), account_export_m28(uuid)
+  from public, anon, authenticated;
+grant execute on function account_export(uuid), account_export_m28(uuid) to service_role;
