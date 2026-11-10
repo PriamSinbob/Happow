@@ -103,11 +103,12 @@ export function TimeLine(p: Props) {
   );
   const peak = Math.max(1, ...bins);
 
-  const hourFmt = useMemo(
-    () =>
-      new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: p.timeZone }),
-    [p.timeZone],
-  );
+  // The axis counts hours the way the language's clock does (19 in Polish, 7 in English), so it
+  // agrees with the times on the thumb, the cards and the list. Bare numerals: no AM/PM here.
+  const hourFmt = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(lang, { hour: 'numeric', timeZone: p.timeZone });
+    return (h: Date) => fmt.formatToParts(h).find((x) => x.type === 'hour')?.value ?? '';
+  }, [lang, p.timeZone]);
   const dateFmt = useMemo(
     () => new Intl.DateTimeFormat(lang, { day: 'numeric', timeZone: p.timeZone }),
     [lang, p.timeZone],
@@ -324,7 +325,7 @@ export function TimeLine(p: Props) {
                   />
                   {i % hourEvery === 0 && (
                     <text className="timeline__num" x={xOfTime(h)} y={TRACK_Y + 21}>
-                      {Number(hourFmt.format(h))}
+                      {Number(hourFmt(h))}
                     </text>
                   )}
                 </g>

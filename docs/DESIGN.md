@@ -55,7 +55,7 @@ A grey veil over the full-colour basemap, with soft cloud-like holes for the rea
 
 ## Range icons and time line
 
-24 × 24, 1.6 stroke, round caps, `currentColor`: Today a filled square, 14 days two bars, the future fast-forward on the calendar (geometry in `Icons.tsx`). 36 px touch area; the active one is ink-filled, tapping it again shows the whole range. Today steps by hour with a 30-min histogram; 14 days step by day.
+24 × 24, 1.6 stroke, round caps, `currentColor`: Today a filled square, 14 days two bars, the future fast-forward on the calendar (geometry in `Icons.tsx`). 36 px touch area; the active one is ink-filled, tapping it again shows the whole range. Today steps by hour with a 30-min histogram; 14 days step by day. The hour numbers on the line follow the language's clock, like every other time on screen: 19, 20, 21 in Polish, 7, 8, 9 in English (bare numerals; the thumb's label carries AM/PM).
 
 The future has no end: it starts where the 14 days end and shows only events starting from then on, never today's or the 14 days'. Its line has 13 steps: 12 calendar months (numbered; the first is the rest of the month the 14 days end in), then fast-forward alone for everything later. Today's map never shows events further than the 14 days.
 
