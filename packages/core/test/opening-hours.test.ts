@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { openState, parseOpeningHours } from '../src';
+import { openState, formatOpeningHours, parseOpeningHours } from '../src';
 
 const tz = 'Europe/Warsaw';
 /** A local wall-clock time in the week of Mon 9 Nov 2026 (CET, UTC+1). */
@@ -74,5 +74,22 @@ describe('opening hours', () => {
       'Xx 10:00-12:00',
     ])
       expect(parseOpeningHours(hours)).toBeNull();
+  });
+
+  it('writes a week back as opening hours it reads the same', () => {
+    for (const hours of [
+      'Mo-Fr 10:00-22:00; Sa,Su 12:00-02:00',
+      'Mo,We,Fr-Su 08:00-12:00,14:00-18:00',
+      'Tu-Su 16:00-24:00',
+      '24/7',
+    ]) {
+      const week = parseOpeningHours(hours)!;
+      expect(parseOpeningHours(formatOpeningHours(week))).toEqual(week);
+    }
+    expect(formatOpeningHours(parseOpeningHours('Mo-Fr 10:00-22:00; Sa,Su 12:00-02:00')!)).toBe(
+      'Mo-Fr 10:00-22:00; Sa,Su 12:00-02:00',
+    );
+    expect(formatOpeningHours(parseOpeningHours('Mo-Su 00:00-24:00')!)).toBe('24/7');
+    expect(formatOpeningHours(parseOpeningHours('Mo off')!)).toBe('off');
   });
 });

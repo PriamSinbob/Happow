@@ -121,7 +121,7 @@ How the Worker routes /api/* (packages/api/src/handler.ts), including submission
 flowchart LR
   REQ(["Request /api/..."]) --> R{"route head"}
   R -- "GET area" --> AREA["events_area RPC<br/>grid-snapped key, ETag,<br/>public cache 5 / 30 min<br/>range: 14 days · future"]
-  R -- "GET places" --> PLACES["places_area RPC<br/>same grid key, ETag,<br/>public cache 24 h"]
+  R -- "GET places" --> PLACES["places_area RPC<br/>same grid key, ETag,<br/>corrections applied,<br/>public cache 30 min"]
   R -- "POST autofill" --> AF["Sign-in + monthly allowance<br/>fetchPage → JSON-LD<br/>→ LLM (daily cap) → prefills"]
   R -- "POST autofill/photo" --> AFP["Poster photo → LLM prefill"]
   R -- "POST geocode" --> GC["Address → point in region"]

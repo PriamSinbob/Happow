@@ -78,6 +78,74 @@ describe.skipIf(!url || !local)('places in Postgres', () => {
     expect((await area(5000)).length).toBe(3);
   });
 
+  it('keeps a place someone added through the import, and applies corrections', async () => {
+    const user = (
+      await db.query(
+        `insert into auth.users (id, email) values (gen_random_uuid(), $1) returning id`,
+        [`${tag}-places@example.org`],
+      )
+    ).rows[0].id;
+    try {
+      const add = (name: string, hours: string) =>
+        db.query(
+          `select place_add($1, $2, $3, 'amenity=pub', 0.5004, 1, null, null, $4, 50) as id`,
+          [user, region, name, hours],
+        );
+      const added = (await add(`Mine ${tag}`, 'Mo-Su 10:00-20:00')).rows[0].id as string;
+      expect(added.startsWith('user/')).toBe(true);
+      // The same name at the same spot: the stored place gets the hours instead.
+      expect((await add(`mine ${tag}`, 'Mo-Su 12:00-20:00')).rows[0].id).toBe(added);
+      const mine = async () =>
+        (await db.query('select * from places_area(0.5, 1, 5000)')).rows.find(
+          (r) => r.id === added,
+        );
+      expect((await mine()).opening_hours).toBe('Mo-Su 12:00-20:00');
+
+      // The weekly import neither updates nor removes it.
+      await store().replacePlaces(region, [
+        place('far', 0.52, 1, 'Mo-Su 12:00-20:00'),
+        place('near', 0.5001, 1, 'Mo-Su 16:00-02:00'),
+        place('new', 0.5003, 1, '24/7'),
+      ]);
+      expect(await mine()).toBeTruthy();
+
+      // Corrected hours hold until OSM changes the value they replaced.
+      const near = `node/${tag}pnear`;
+      const read = async () => (await area(5000)).find((r) => r.id === near);
+      await db.query(`select place_change($1, $2, p_hours => 'Mo-Su 18:00-23:00')`, [user, near]);
+      expect((await read()).opening_hours).toBe('Mo-Su 18:00-23:00');
+      await store().replacePlaces(region, [
+        place('far', 0.52, 1, 'Mo-Su 12:00-20:00'),
+        place('near', 0.5001, 1, 'Mo-Su 17:00-01:00'),
+        place('new', 0.5003, 1, '24/7'),
+      ]);
+      expect((await read()).opening_hours).toBe('Mo-Su 17:00-01:00');
+
+      // A private party that is on shows; one that is over does not.
+      await db.query(
+        `select place_change($1, $2, p_private => true, p_private_until => now() + interval '2 hours')`,
+        [user, near],
+      );
+      expect((await read()).private_until).toBeTruthy();
+      await db.query(`select place_change($1, $2, p_private => false)`, [user, near]);
+      expect((await read()).private_until).toBeNull();
+
+      // Closed for good: not served; every change is logged.
+      await db.query(`select place_change($1, $2, p_closed => true)`, [user, near]);
+      expect(await read()).toBeUndefined();
+      const log = await db.query('select action from place_log where place_id = $1 order by id', [
+        near,
+      ]);
+      expect(log.rows.map((r) => r.action)).toEqual(['hours', 'private', 'public', 'closed']);
+      await expect(
+        db.query(`select place_change($1, 'node/none', p_closed => true)`, [user]),
+      ).rejects.toMatchObject({ code: 'P0002' });
+    } finally {
+      await db.query('delete from places where added_by = $1', [user]);
+      await db.query('delete from auth.users where id = $1', [user]);
+    }
+  });
+
   it('is not readable directly by the anon role', async () => {
     await db.query('begin; set local role anon');
     try {

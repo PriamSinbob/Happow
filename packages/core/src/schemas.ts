@@ -372,8 +372,15 @@ export const appConfigSchema = z.object({
     minZoom: z.number().min(0).max(22),
     /** Places in one area snapshot, nearest first. */
     maxPerArea: z.number().int().positive(),
-    /** Phones and caches keep an area's places this long: they change weekly at most. */
-    cacheHours: z.number().positive(),
+    /** Phones and caches keep an area's places this long; a change by someone else shows after it. */
+    cacheMinutes: z.number().positive(),
+    /** Places one account may add in a day, and changes it may make to places. */
+    addsPerDayPerAccount: z.number().int().positive(),
+    changesPerDayPerAccount: z.number().int().positive(),
+    /** Adding a place with this name this close to a stored one updates that one instead. */
+    sameWithinM: z.number().nonnegative(),
+    /** A private party can be marked this far ahead at most. */
+    privateMaxHours: z.number().positive(),
     /** A place this close to a shown event gives way to the event's pin. */
     nearEventM: z.number().nonnegative(),
     /** Closing within this many minutes is said on the card. */

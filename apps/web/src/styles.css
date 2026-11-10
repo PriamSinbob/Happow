@@ -4199,3 +4199,73 @@ a.row {
 .about__link:active {
   background: var(--fill-strong);
 }
+
+/* Opening hours: day toggles, then from–to. */
+.hours {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+.hours__row {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+.hours__days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.hours__day {
+  height: 36px;
+  padding: 0;
+  border: 1.5px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.hours__day.is-on {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+.hours__times {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+.hours__times input[type='time'] {
+  flex: 1;
+  min-width: 118px;
+}
+.hours__all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 13px;
+}
+.hours__all {
+  white-space: nowrap;
+}
+.hours__all input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--ink);
+}
+.open-pill.is-private {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}

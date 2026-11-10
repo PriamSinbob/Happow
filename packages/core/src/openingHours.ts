@@ -73,6 +73,39 @@ export function parseOpeningHours(value: string | null | undefined): OpeningWeek
   return any ? week : null;
 }
 
+const clock = (min: number) =>
+  `${String(Math.floor((min % DAY_MIN) / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+
+/**
+ * A week written as `opening_hours`, days with the same hours together ("Mo-Fr 10:00-22:00;
+ * Sa,Su 12:00-02:00"); days without hours are left out, a week without any is "off".
+ * `parseOpeningHours` reads it back to the same week.
+ */
+export function formatOpeningHours(week: OpeningWeek): string {
+  const text = week.map((spans) =>
+    spans
+      .map(([s, e]) => (s === 0 && e === DAY_MIN ? '00:00-24:00' : `${clock(s)}-${clock(e)}`))
+      .join(','),
+  );
+  if (text.every((t) => t === '00:00-24:00')) return '24/7';
+  const rules: string[] = [];
+  for (const hours of new Set(text.filter(Boolean))) {
+    const days = text.flatMap((t, d) => (t === hours ? [d] : []));
+    // Runs of days in a row: "Mo-Fr", "Sa,Su".
+    const runs: number[][] = [];
+    for (const d of days) {
+      const run = runs[runs.length - 1];
+      if (run && run[run.length - 1] === d - 1) run.push(d);
+      else runs.push([d]);
+    }
+    const names = runs.map((r) =>
+      r.length > 2 ? `${DAYS[r[0]!]}-${DAYS[r[r.length - 1]!]}` : r.map((d) => DAYS[d]).join(','),
+    );
+    rules.push(`${names.join(',')} ${hours}`);
+  }
+  return rules.length ? rules.join('; ') : 'off';
+}
+
 /** Monday-based weekday and minutes since local midnight of an instant in a time zone. */
 function localMinute(at: Date, timeZone: string): { day: number; minute: number } {
   const p = Object.fromEntries(
