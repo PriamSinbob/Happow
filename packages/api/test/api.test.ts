@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import type { Extractor, Geocoder } from '@happow/extract';
-import { createApi } from '../src';
+import { appLinkFile, createApi } from '../src';
 import { config as base, env, organiserRpc, SB, type Rpc } from './helpers';
 
 const page = (name: string) =>
@@ -996,5 +996,102 @@ describe('public event reads', () => {
       p_lat: 51.11,
     });
     expect((await api(get('district-goal?lat=x'))).status).toBe(400);
+  });
+});
+
+describe('what native apps and embeds need', () => {
+  const get = (path: string, headers: Record<string, string> = {}) =>
+    new Request(`https://happow.example/api/${path}`, { headers });
+  const nativeConfig = (android: string, ios = '0.0.0') => ({
+    ...base,
+    app: {
+      ...base.app,
+      native: {
+        ...base.app.native,
+        android: { ...base.app.native.android, minVersion: android },
+        ios: { ...base.app.native.ios, minVersion: ios },
+      },
+    },
+  });
+
+  it('serves the client config without the server-only parts, cached with an ETag', async () => {
+    const api = createApi(env, { fetch: backend({ rpc: allow }).fetch, now });
+    const res = await api(get('config'));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('cache-control')).toMatch(/^public, max-age=\d+$/);
+    const body = await res.json();
+    expect(body.categories.length).toBe(base.categories.length);
+    expect(body.regions[0]).not.toHaveProperty('enabledSources');
+    expect(body.app).not.toHaveProperty('ingest');
+    expect(body.app.extraction).toEqual({ photo: base.app.extraction.photo });
+    expect(body).not.toHaveProperty('sources');
+    const again = await api(get('config', { 'if-none-match': res.headers.get('etag')! }));
+    expect(again.status).toBe(304);
+  });
+
+  it('tells an outdated app build to update, and still gives it the config', async () => {
+    const api = createApi(env, {
+      fetch: backend({ rpc: allow }).fetch,
+      now,
+      config: nativeConfig('1.10.0'),
+    });
+    const old = await api(post('route', {}, { 'x-happow-client': 'android/1.9.3' }));
+    expect(old.status).toBe(426);
+    expect(await old.json()).toMatchObject({ error: 'client_outdated', minVersion: '1.10.0' });
+    expect((await api(get('config', { 'x-happow-client': 'android/1.9.3' }))).status).toBe(200);
+    // At or above the minimum, another platform, the web or no header: served.
+    for (const client of ['android/1.10.0', 'android/2.0.0', 'ios/0.1.0', 'web/1.0.0', ''])
+      expect(
+        (await api(get('area?lat=0&lng=0&r=1', { 'x-happow-client': client }))).status,
+        client,
+      ).not.toBe(426);
+  });
+
+  it('names the contract on every answer and opens public reads to embeds only', async () => {
+    const api = createApi(env, { fetch: backend({ rpc: allow }).fetch, now });
+    const config = await api(get('config'));
+    expect(config.headers.get('x-happow-api')).toBe('1');
+    expect(config.headers.get('access-control-allow-origin')).toBe('*');
+    const me = await api(get('me'));
+    expect(me.headers.get('x-happow-api')).toBe('1');
+    expect(me.headers.get('access-control-allow-origin')).toBeNull();
+  });
+});
+
+describe('app links', () => {
+  const withIds = {
+    ...base,
+    app: {
+      ...base.app,
+      native: {
+        android: {
+          package: 'app.happow',
+          sha256: [Array.from({ length: 32 }, () => 'AB').join(':')],
+          minVersion: '0.0.0',
+        },
+        ios: { appId: 'ABCDE12345.app.happow', minVersion: '0.0.0' },
+        linkPaths: ['/e/*', '/c/*'],
+      },
+    },
+  };
+
+  it('publishes nothing until the app ids are configured', () => {
+    expect(appLinkFile(base, '/.well-known/assetlinks.json')).toBeNull();
+    expect(appLinkFile(base, '/.well-known/apple-app-site-association')).toBeNull();
+  });
+
+  it('lets the installed apps open event and contact links', () => {
+    expect(appLinkFile(withIds, '/.well-known/assetlinks.json')).toEqual([
+      expect.objectContaining({
+        target: expect.objectContaining({ package_name: 'app.happow' }),
+      }),
+    ]);
+    expect(appLinkFile(withIds, '/.well-known/apple-app-site-association')).toEqual({
+      applinks: {
+        details: [
+          { appIDs: ['ABCDE12345.app.happow'], components: [{ '/': '/e/*' }, { '/': '/c/*' }] },
+        ],
+      },
+    });
   });
 });

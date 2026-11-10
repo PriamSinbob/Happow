@@ -6,6 +6,18 @@ import type { EntryType, LatLng } from './types.js';
  * reads the same contract.
  */
 
+/**
+ * The API's contract version, sent as `x-happow-api` on every answer. It changes only for a
+ * change an installed app could not read; adding fields or endpoints never changes it.
+ */
+export const API_VERSION = 1;
+
+/**
+ * How an app names itself on every request: `x-happow-client: android/1.4.0` (or `ios/…`,
+ * `web/…`). The server answers 426 client_outdated to builds below the configured minimum.
+ */
+export const CLIENT_HEADER = 'x-happow-client';
+
 /** Every `error` code an /api response can carry. */
 export const API_ERROR_CODES = [
   'invalid_input',
@@ -36,6 +48,8 @@ export const API_ERROR_CODES = [
   'already_claimed',
   'own_item',
   'reminder_refused',
+  /** This app build is older than `native.<platform>.minVersion`: it should ask to update. */
+  'client_outdated',
   'server_error',
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

@@ -1,4 +1,4 @@
-import { getRegion, loadConfig, type HappowConfig } from '@happow/core';
+import { API_VERSION, CLIENT_HEADER, getRegion, loadConfig, type HappowConfig } from '@happow/core';
 import {
   boundFetch,
   CachedGeocoder,
@@ -12,12 +12,13 @@ import { accountRoutes } from './accounts.js';
 import { areaRoutes } from './area.js';
 import { attendanceRoutes } from './attendance.js';
 import { autofillRoutes } from './autofill.js';
+import { clientConfig, versionBelow } from './clientConfig.js';
 import { contributionRoutes } from './contributions.js';
 import { emailSender, type EmailSender } from './email.js';
 import { eventRoutes } from './events.js';
 import { feedRoutes } from './feeds.js';
 import { followRoutes } from './follows.js';
-import { ApiError, json, sha256, type Limit, type Need } from './http.js';
+import { ApiError, cached, json, sha256, type Limit, type Need } from './http.js';
 import { moderationRoutes } from './moderation.js';
 import { organiserRoutes } from './organisers.js';
 import { placeEditRoutes } from './placeEdits.js';
@@ -50,6 +51,9 @@ export interface ApiDeps {
   /** Instead of the sender named in config (email.provider); null = email off. */
   email?: EmailSender | null;
 }
+
+/** GET endpoints anyone may read from another site (embeds): public data, no account. */
+const PUBLIC_READS = new Set(['area', 'places', 'events', 'district-goal', 'config']);
 
 /**
  * The /api fetch handler. This file only builds what the routes share (config, the database
@@ -184,7 +188,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   const placeEdits = placeEditRoutes({ config, need, requireUser, limit, now });
   const privateApi = privateRoutes({ config, need, requireUser, limit });
   const reminders = reminderRoutes({ config, need, limit, userOf: optionalUser, pushSecret });
-  const route = routingRoutes({
+  const walkingRoute = routingRoutes({
     config,
     need,
     limit,
@@ -221,7 +225,23 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     return json({ checkedAt: t.toISOString(), ...r });
   }
 
-  /** The path under /api as decoded segments: event ids carry ':' , which clients percent-encode. */
+  /** GET /api/config: the client's config, public and cached like the area snapshot. */
+  const configBody = JSON.stringify(clientConfig(config));
+  const appConfig = (req: Request) =>
+    cached(req, configBody, {
+      'cache-control': `public, max-age=${config.app.refresh.longCacheMinutes * 60}`,
+    });
+
+  /** 426 for an app build below its platform's minimum; web and unnamed clients pass. */
+  function checkClient(req: Request) {
+    const [platform, version] = (req.headers.get(CLIENT_HEADER) ?? '').split('/');
+    const min =
+      platform === 'android' || platform === 'ios' ? config.app.native[platform].minVersion : null;
+    if (min && version && versionBelow(version, min))
+      throw new ApiError(426, 'client_outdated', undefined, { minVersion: min });
+  }
+
+  /** The path under /api as decoded segments: event ids carry ':', which clients percent-encode. */
   function segments(req: Request): string[] {
     try {
       return new URL(req.url).pathname
@@ -237,8 +257,23 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
 
   /** Routes /api/*. Everything else is 404. */
   return async function handle(req: Request): Promise<Response> {
+    const res = await route(req);
+    // Every answer names the contract it follows.
+    const headers = new Headers(res.headers);
+    headers.set('x-happow-api', String(API_VERSION));
+    // Public reads can be embedded on other sites; they carry no sign-in and no cookies.
+    const head = new URL(req.url).pathname.split('/')[2] ?? '';
+    if (req.method === 'GET' && PUBLIC_READS.has(head))
+      headers.set('access-control-allow-origin', '*');
+    return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+  };
+
+  async function route(req: Request): Promise<Response> {
     try {
       const [head, ...rest] = segments(req);
+      // The config is how an outdated app learns it should update, so it is never refused.
+      if (head === 'config' && req.method === 'GET' && !rest.length) return await appConfig(req);
+      checkClient(req);
       const sub = rest.join('/');
       const { method } = req;
       if (head === 'moderation') return await moderation(req, rest);
@@ -291,7 +326,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'reports') return await submissions.report(req);
       if (head === 'thanks') return await contributions.thanks(req);
       if (head === 'counts') return await contributions.counts(req);
-      if (head === 'route') return await route(req);
+      if (head === 'route') return await walkingRoute(req);
       throw new ApiError(404, 'not_found');
     } catch (err) {
       if (err instanceof ApiError)
@@ -299,5 +334,5 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       console.error(err);
       return json({ error: 'server_error' }, 500);
     }
-  };
+  }
 }

@@ -67,3 +67,16 @@ export const deviceHash = (salt: string, id: string) => sha256(`${salt}:device:$
 
 /** Headers for an answer about one account: never kept by a shared cache. */
 export const noStore = { 'cache-control': 'private, no-store' };
+
+/** A public JSON answer with an ETag of its content; a revalidation that still matches gets a 304. */
+export async function cached(
+  req: Request,
+  body: string,
+  cache: Record<string, string>,
+): Promise<Response> {
+  const etag = `"${(await sha256(body)).slice(0, 16)}"`;
+  const headers = { 'content-type': 'application/json', etag, ...cache };
+  if (req.headers.get('if-none-match') === etag)
+    return new Response(null, { status: 304, headers });
+  return new Response(body, { status: 200, headers });
+}

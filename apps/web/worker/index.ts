@@ -13,6 +13,7 @@
  * (packages/api/src/reminders.ts). VAPID_PRIVATE_KEY signs those pushes.
  */
 import {
+  appLinkFile,
   createApi,
   createEventPage,
   dispatchDueIngest,
@@ -46,6 +47,7 @@ let api: ReturnType<typeof createApi> | null = null;
 let eventPage: ReturnType<typeof createEventPage> | null = null;
 const fonts = [new Uint8Array(interRegular), new Uint8Array(interBold)];
 let theme: ThemeConfig | null = null;
+let config: ReturnType<typeof loadConfig> | null = null;
 
 /**
  * GET /e/<id>/preview.png: the event's 1200×630 preview image. Its URL carries a version
@@ -59,7 +61,11 @@ async function previewImage(pages: NonNullable<typeof eventPage>, id: string): P
         status: 404,
         headers: { 'cache-control': 'public, max-age=60' },
       });
-    const png = await renderPng(previewSvg(data, (theme ??= loadConfig().theme)), resvgWasm, fonts);
+    const png = await renderPng(
+      previewSvg(data, (theme ??= (config ??= loadConfig()).theme)),
+      resvgWasm,
+      fonts,
+    );
     return new Response(png as Uint8Array<ArrayBuffer>, {
       headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=604800' },
     });
@@ -79,6 +85,16 @@ export default {
       if (id && /^\/e\/[^/]+\/preview\.png$/.test(pathname)) return previewImage(eventPage, id);
       const index = await env.ASSETS.fetch(new Request(new URL('/', request.url)));
       return eventPage.page(request, await index.text());
+    }
+    // Android App Links and iOS Universal Links: shared links open in the installed app.
+    if (pathname.startsWith('/.well-known/')) {
+      const file = appLinkFile((config ??= loadConfig()), pathname);
+      return file
+        ? Response.json(file, { headers: { 'cache-control': 'public, max-age=3600' } })
+        : new Response('not found', {
+            status: 404,
+            headers: { 'cache-control': 'public, max-age=300' },
+          });
     }
     api ??= createApi(env);
     return api(request);

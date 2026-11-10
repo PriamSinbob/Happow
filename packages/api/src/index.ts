@@ -5,3 +5,4 @@ export { sendDueReminders } from './reminders.js';
 export { sendDueNotices } from './notices.js';
 export { createEventPage, eventIdFromPath, type Outline, type PreviewData } from './eventPage.js';
 export { sendFollowAlerts } from './followAlerts.js';
+export { appLinkFile, clientConfig, type ClientConfig } from './clientConfig.js';

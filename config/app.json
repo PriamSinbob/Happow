@@ -404,6 +404,11 @@
     "eveningFromHour": 18,
     "weekly": { "weekday": 1, "hour": 8 }
   },
+  "native": {
+    "android": { "package": "", "sha256": [], "minVersion": "0.0.0" },
+    "ios": { "appId": "", "minVersion": "0.0.0" },
+    "linkPaths": ["/e/*", "/c/*"]
+  },
   "site": {
     "url": "https://happow.krasnoroda.workers.dev",
     "name": "Happow"

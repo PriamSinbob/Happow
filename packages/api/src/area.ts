@@ -9,7 +9,7 @@ import {
   monthStarts,
   type HappowConfig,
 } from '@happow/core';
-import { ApiError, sha256 } from './http.js';
+import { ApiError, cached } from './http.js';
 import type { Supabase } from './supabase.js';
 
 /**
@@ -46,19 +46,6 @@ export function areaRoutes({ config, db, now }: AreaDeps) {
     if (!Object.values(key).every(Number.isFinite) || !isAreaKey(key, refresh) || !region)
       throw new ApiError(400, 'invalid_input', 'area');
     return { u, key, region };
-  }
-
-  /** A JSON answer with an ETag of its content; a revalidation that still matches gets a 304. */
-  async function cached(
-    req: Request,
-    body: string,
-    cache: Record<string, string>,
-  ): Promise<Response> {
-    const etag = `"${(await sha256(body)).slice(0, 16)}"`;
-    const headers = { 'content-type': 'application/json', etag, ...cache };
-    if (req.headers.get('if-none-match') === etag)
-      return new Response(null, { status: 304, headers });
-    return new Response(body, { status: 200, headers });
   }
 
   /**
