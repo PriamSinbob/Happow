@@ -11,8 +11,8 @@ import {
 } from '@happow/core';
 import { z } from 'zod';
 import type { EmailSender } from './email.js';
-import { ApiError, body, json, sha256 } from './http.js';
-import { SupabaseError, type AuthUser, type Supabase } from './supabase.js';
+import { ApiError, body, json, sha256, type Limit, uuid, noStore, type Need } from './http.js';
+import { SupabaseError, type AuthUser } from './supabase.js';
 
 /** A checked user, with their staff role (null for everyone who isn't staff). */
 export interface User extends AuthUser {
@@ -24,10 +24,9 @@ export interface AccountDeps {
   plans: PlansConfig;
   /** The default region's time zone: the promotion ends at midnight there. */
   timeZone: string;
-  /** Throws 503 when Supabase or the salt are not configured. */
-  need: () => { db: Supabase; salt: string };
+  need: Need;
   now: () => Date;
-  limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
+  limit: Limit;
   clientHash: (req: Request, salt: string) => Promise<string>;
   /** The app's email sender, null while email is off. */
   email?: EmailSender | null;
@@ -49,7 +48,6 @@ const codeRequestSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   locale: languageSchema,
 });
-const uuid = z.string().uuid();
 const grantSchema = z
   .object({
     email: z.string().trim().toLowerCase().email().max(254),
@@ -112,6 +110,10 @@ export function accountRoutes({
     }
     return user;
   }
+
+  /** The signed-in user when the request carries a token (a bad token is 401), else null. */
+  const optionalUser = (req: Request): Promise<User | null> =>
+    req.headers.has('authorization') ? requireUser(req) : Promise.resolve(null);
 
   const forget = (userId: string) => {
     for (const [k, v] of cache) if (v.user.id === userId) cache.delete(k);
@@ -206,7 +208,7 @@ export function accountRoutes({
       if (!uuid.safeParse(id).success) throw new ApiError(404, 'not_found');
       const form = await db.rpc<object | null>('submission_form', { p_user: user.id, p_id: id });
       if (!form) throw new ApiError(404, 'not_found');
-      return json({ form }, 200, { 'cache-control': 'private, no-store' });
+      return json({ form }, 200, noStore);
     }
     if (req.method === 'GET' && sub === 'export') {
       const data = await db.rpc<object>('account_export', { p_user: user.id });
@@ -224,7 +226,7 @@ export function accountRoutes({
       await db.rpc('account_forget', { p_user: user.id, p_email: user.email });
       await db.deleteUser(user.id);
       forget(user.id);
-      return new Response(null, { status: 204, headers: { 'cache-control': 'private, no-store' } });
+      return new Response(null, { status: 204, headers: noStore });
     }
     throw new ApiError(404, 'not_found');
   }
@@ -361,7 +363,7 @@ export function accountRoutes({
             p_evening_hour: app.metrics.eveningFromHour,
           }),
           200,
-          { 'cache-control': 'private, no-store' },
+          noStore,
         );
       } catch (err) {
         if (err instanceof SupabaseError && err.code === 'P0002')
@@ -415,5 +417,5 @@ export function accountRoutes({
     throw new ApiError(404, 'not_found');
   }
 
-  return { requireUser, planOf, usageOf, me, auth: authRoutes, admin };
+  return { requireUser, optionalUser, planOf, usageOf, me, auth: authRoutes, admin };
 }

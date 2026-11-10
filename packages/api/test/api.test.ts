@@ -600,6 +600,13 @@ it('answers 404 for unknown routes', async () => {
   expect((await api(new Request('https://happow.example/api/autofill'))).status).toBe(404);
 });
 
+it('answers 400, not 500, for a path with a broken escape', async () => {
+  const api = createApi(env, { fetch: backend({ rpc: allow }).fetch, now });
+  const res = await api(new Request('https://happow.example/api/events/%zz/posts'));
+  expect(res.status).toBe(400);
+  expect(await res.json()).toMatchObject({ error: 'invalid_input' });
+});
+
 describe('GET /api/area', () => {
   const get = (q: string, headers: Record<string, string> = {}) =>
     new Request(`https://happow.example/api/area?${q}`, { headers });

@@ -73,6 +73,14 @@ export class Supabase {
     return (text ? JSON.parse(text) : null) as T;
   }
 
+  /** Rows of a table (PostgREST filters as query parameters). */
+  async select<T>(table: string, query: Record<string, string>): Promise<T[]> {
+    const res = await this.doFetch(`${this.base}/rest/v1/${table}?${new URLSearchParams(query)}`, {
+      headers: this.headers(),
+    });
+    return (await (await this.check(res)).json()) as T[];
+  }
+
   /** The signed-in user behind an access token, or null when the token is not valid. */
   async user(accessToken: string): Promise<AuthUser | null> {
     const res = await this.doFetch(`${this.base}/auth/v1/user`, {
@@ -127,17 +135,11 @@ export class Supabase {
     return {
       get: async (key) => {
         const since = new Date(Date.now() - maxAgeDays * 86_400_000).toISOString();
-        const q = new URLSearchParams({
+        const rows = await this.select<{ result: GeoResult | null }>('geocode_cache', {
           query_key: `eq.${key}`,
           fetched_at: `gt.${since}`,
           select: 'result',
         });
-        const res = await this.check(
-          await this.doFetch(`${this.base}/rest/v1/geocode_cache?${q}`, {
-            headers: this.headers(),
-          }),
-        );
-        const rows = (await res.json()) as { result: GeoResult | null }[];
         return rows.length ? rows[0]!.result : undefined;
       },
       set: async (key, value) => {
@@ -156,4 +158,17 @@ export class Supabase {
       },
     };
   }
+}
+
+/** Why a scheduled job did nothing while the database is not configured. */
+export const NO_DATABASE = 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set';
+
+/** The service-role client from the host's env, or null while it is not configured. */
+export function serviceDb(
+  env: { SUPABASE_URL?: string; SUPABASE_SERVICE_ROLE_KEY?: string },
+  customFetch?: typeof fetch,
+): Supabase | null {
+  return env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
+    ? new Supabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, customFetch)
+    : null;
 }

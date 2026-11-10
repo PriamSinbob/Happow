@@ -2,8 +2,8 @@ import { getRegion, isInBbox, parseOpeningHours, type HappowConfig } from '@happ
 import { checkPublicUrl } from '@happow/extract';
 import { z } from 'zod';
 import type { User } from './accounts.js';
-import { ApiError, body, json } from './http.js';
-import { SupabaseError, type Supabase } from './supabase.js';
+import { ApiError, body, json, type Limit, type Need } from './http.js';
+import { SupabaseError } from './supabase.js';
 
 /**
  * Places people add and correct. Both need an account and show at once (no moderation):
@@ -12,9 +12,9 @@ import { SupabaseError, type Supabase } from './supabase.js';
 
 export interface PlaceEditDeps {
   config: HappowConfig;
-  need: () => { db: Supabase };
+  need: Need;
   requireUser: (req: Request) => Promise<User>;
-  limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
+  limit: Limit;
   now: () => Date;
 }
 

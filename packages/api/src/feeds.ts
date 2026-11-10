@@ -2,8 +2,8 @@ import { getRegion, type HappowConfig } from '@happow/core';
 import { checkPublicUrl } from '@happow/extract';
 import { z } from 'zod';
 import type { User } from './accounts.js';
-import { ApiError, body, json } from './http.js';
-import { SupabaseError, type Supabase } from './supabase.js';
+import { ApiError, body, json, type Limit, noStore, type Need } from './http.js';
+import { SupabaseError } from './supabase.js';
 
 /**
  * Calendar feeds an account imports its events from. The account adds and
@@ -12,9 +12,9 @@ import { SupabaseError, type Supabase } from './supabase.js';
 
 export interface FeedDeps {
   config: HappowConfig;
-  need: () => { db: Supabase };
+  need: Need;
   requireUser: (req: Request) => Promise<User>;
-  limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
+  limit: Limit;
 }
 
 const addSchema = z.object({
@@ -23,7 +23,6 @@ const addSchema = z.object({
 });
 const statusSchema = z.object({ action: z.enum(['stop', 'resume']) });
 const id = z.coerce.number().int().positive();
-const noStore = { 'cache-control': 'private, no-store' };
 
 /** "webcal://…" is how calendars hand out feeds; it is plain https. */
 function feedUrl(raw: string): string {

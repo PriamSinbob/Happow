@@ -3,7 +3,7 @@ import type { AppConfig } from '@happow/core';
 import { emailSender, type EmailSender } from './email.js';
 import { cachedKey } from './reminders.js';
 import type { ScheduleEnv } from './schedule.js';
-import { Supabase } from './supabase.js';
+import { NO_DATABASE, serviceDb } from './supabase.js';
 import { sendPush, type PushOutcome } from './webpush.js';
 
 /**
@@ -87,12 +87,11 @@ export async function sendFollowAlerts(
 ): Promise<AlertTickResult> {
   const app = deps.app ?? appJson;
   const none = { queued: 0, due: 0, sent: 0, gone: 0, failed: 0 };
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)
-    return { ...none, reason: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set' };
+  const db = serviceDb(env, deps.fetch);
+  if (!db) return { ...none, reason: NO_DATABASE };
   const secret = env[app.push.secret];
   if (typeof secret !== 'string' || !secret)
     return { ...none, reason: `${app.push.secret} not set` };
-  const db = new Supabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, deps.fetch);
   const mail =
     deps.email !== undefined
       ? deps.email

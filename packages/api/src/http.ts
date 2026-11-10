@@ -1,9 +1,11 @@
-import type { z } from 'zod';
+import type { ApiErrorCode } from '@happow/core';
+import { z } from 'zod';
+import type { Supabase } from './supabase.js';
 
 export class ApiError extends Error {
   constructor(
     readonly status: number,
-    readonly code: string,
+    readonly code: ApiErrorCode,
     message?: string,
     /** Extra fields for the error body. */
     readonly details?: Record<string, unknown>,
@@ -38,3 +40,30 @@ export async function body<T>(req: Request, schema: z.ZodType<T>): Promise<T> {
   if (!parsed.success) throw new ApiError(400, 'invalid_input', parsed.error.issues[0]?.message);
   return parsed.data;
 }
+
+/** Throws 503 when Supabase or the salt are not configured. */
+export type Need = () => { db: Supabase; salt: string };
+
+/** Counts one hit in a rate-limit bucket; throws 429 past `max` per window. */
+export type Limit = (
+  bucket: string,
+  actor: string,
+  windowSeconds: number,
+  max: number,
+) => Promise<void>;
+
+/** The random id a device makes for itself (apps/web `deviceId()`); only its salted hash is kept. */
+export const deviceId = z.string().min(8).max(100);
+/** An event id: "source:external id". */
+export const eventId = z.string().min(1).max(300);
+export const uuid = z.string().uuid();
+export const latLng = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+});
+
+/** A device as the database knows it: hashed with the salt, so rotating the salt forgets them. */
+export const deviceHash = (salt: string, id: string) => sha256(`${salt}:device:${id}`);
+
+/** Headers for an answer about one account: never kept by a shared cache. */
+export const noStore = { 'cache-control': 'private, no-store' };
