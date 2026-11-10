@@ -1,0 +1,185 @@
+{
+  "region": "wroclaw",
+  "places": [
+    {
+      "id": "seed/1",
+      "name": "Pierogarnia pod Ratuszem",
+      "kind": "amenity=restaurant",
+      "lat": 51.1101,
+      "lng": 17.0316,
+      "address": "Rynek 26, 50-101 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Su 11:00-23:00"
+    },
+    {
+      "id": "seed/2",
+      "name": "Bistro Solny",
+      "kind": "amenity=restaurant",
+      "lat": 51.1093,
+      "lng": 17.0289,
+      "address": "pl. Solny 14, 50-062 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Th 12:00-22:00; Fr,Sa 12:00-24:00; Su 12:00-21:00"
+    },
+    {
+      "id": "seed/3",
+      "name": "Kawa na Kurzym",
+      "kind": "amenity=cafe",
+      "lat": 51.1108,
+      "lng": 17.0306,
+      "address": "Kurzy Targ 3, 50-103 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Fr 07:30-20:00; Sa,Su 09:00-20:00"
+    },
+    {
+      "id": "seed/4",
+      "name": "Cukiernia Świdnicka",
+      "kind": "amenity=cafe",
+      "lat": 51.1076,
+      "lng": 17.0318,
+      "address": "ul. Świdnicka 12, 50-068 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Su 08:00-21:00"
+    },
+    {
+      "id": "seed/5",
+      "name": "Pub Pod Latarnią",
+      "kind": "amenity=pub",
+      "lat": 51.1112,
+      "lng": 17.0283,
+      "address": "ul. Kiełbaśnicza 20, 50-110 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Th 16:00-24:00; Fr,Sa 16:00-03:00; Su 16:00-23:00"
+    },
+    {
+      "id": "seed/6",
+      "name": "Piwnica Rzemieślnicza",
+      "kind": "amenity=pub",
+      "lat": 51.1096,
+      "lng": 17.0337,
+      "address": "ul. Kuźnicza 10, 50-138 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Su 14:00-02:00"
+    },
+    {
+      "id": "seed/7",
+      "name": "Bar Nocny Ruska",
+      "kind": "amenity=bar",
+      "lat": 51.1099,
+      "lng": 17.0262,
+      "address": "ul. Ruska 46, 50-079 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Su 18:00-04:00"
+    },
+    {
+      "id": "seed/8",
+      "name": "Koktajle na Odrzańskiej",
+      "kind": "amenity=bar",
+      "lat": 51.1118,
+      "lng": 17.0299,
+      "address": "ul. Odrzańska 7, 50-113 Wrocław",
+      "website": null,
+      "opening_hours": "Tu-Sa 18:00-02:00"
+    },
+    {
+      "id": "seed/9",
+      "name": "Zapiekanki całą dobę",
+      "kind": "amenity=fast_food",
+      "lat": 51.1084,
+      "lng": 17.0345,
+      "address": "ul. Oławska 9, 50-123 Wrocław",
+      "website": null,
+      "opening_hours": "24/7"
+    },
+    {
+      "id": "seed/10",
+      "name": "Lody Rzemieślnicze",
+      "kind": "amenity=ice_cream",
+      "lat": 51.1104,
+      "lng": 17.0331,
+      "address": "ul. Wita Stwosza 3, 50-148 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Su 10:00-21:00"
+    },
+    {
+      "id": "seed/11",
+      "name": "Galeria na Odwachu",
+      "kind": "tourism=gallery",
+      "lat": 51.1089,
+      "lng": 17.0304,
+      "address": "ul. Świdnicka 2, 50-067 Wrocław",
+      "website": null,
+      "opening_hours": "Tu-Su 11:00-19:00"
+    },
+    {
+      "id": "seed/12",
+      "name": "Galeria Miejska Kiełbaśnicza",
+      "kind": "tourism=gallery",
+      "lat": 51.1107,
+      "lng": 17.0279,
+      "address": "ul. Kiełbaśnicza 28, 50-109 Wrocław",
+      "website": null,
+      "opening_hours": "Tu-Fr 12:00-20:00; Sa,Su 12:00-18:00"
+    },
+    {
+      "id": "seed/13",
+      "name": "Muzeum w Ratuszu",
+      "kind": "tourism=museum",
+      "lat": 51.1097,
+      "lng": 17.0321,
+      "address": "Rynek, Stary Ratusz, 50-107 Wrocław",
+      "website": null,
+      "opening_hours": "We-Sa 10:00-17:00; Su 10:00-18:00"
+    },
+    {
+      "id": "seed/14",
+      "name": "Klub Piwnica",
+      "kind": "amenity=nightclub",
+      "lat": 51.1087,
+      "lng": 17.0271,
+      "address": "ul. Kazimierza Wielkiego 19, 50-077 Wrocław",
+      "website": null,
+      "opening_hours": "Th-Sa 21:00-05:00"
+    },
+    {
+      "id": "seed/15",
+      "name": "Kino Stare Miasto",
+      "kind": "amenity=cinema",
+      "lat": 51.1069,
+      "lng": 17.0296,
+      "address": "ul. Piłsudskiego 4, 50-049 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Su 10:00-23:30"
+    },
+    {
+      "id": "seed/16",
+      "name": "Hala Targowa — stoiska",
+      "kind": "amenity=marketplace",
+      "lat": 51.1127,
+      "lng": 17.0398,
+      "address": "ul. Piaskowa 17, 50-158 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Fr 08:00-18:30; Sa 09:00-15:00"
+    },
+    {
+      "id": "seed/17",
+      "name": "Ogródek nad Fosą",
+      "kind": "amenity=biergarten",
+      "lat": 51.1061,
+      "lng": 17.0331,
+      "address": "Podwale 37, 50-040 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Su 12:00-24:00"
+    },
+    {
+      "id": "seed/18",
+      "name": "Restauracja na Wyspie",
+      "kind": "amenity=restaurant",
+      "lat": 51.1158,
+      "lng": 17.0372,
+      "address": "Wyspa Słodowa 10, 50-266 Wrocław",
+      "website": null,
+      "opening_hours": "Mo-Su 12:00-23:00"
+    }
+  ]
+}

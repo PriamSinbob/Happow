@@ -30,7 +30,7 @@ flowchart TB
     TM["Ticketmaster API"]
     MU["Meetup GraphQL"]
     CRAWL["Crawl targets<br/>ebilet · wroclaw-go · nfm<br/>biletyna · mbp · uwr"]
-    OSM["OpenStreetMap / Overpass"]
+    OSM["OpenStreetMap / Overpass<br/>venues · open places"]
     VS["Venue websites"]
     FEEDS["Account iCal feeds"]
     TH["Threads (off)"]
@@ -85,7 +85,7 @@ flowchart TB
   DUE -- yes --> RUN["store.startRun → source_runs"]
   RUN --> JOBQ{"Venue / feed job?"}
 
-  JOBQ -- "osm-venues · venue-probe<br/>account-feeds" --> JOB["Job writes venues,<br/>site candidates, feed events"] --> FIN
+  JOBQ -- "osm-venues · osm-places<br/>venue-probe · account-feeds" --> JOB["Job writes venues, places,<br/>site candidates, feed events"] --> FIN
 
   JOBQ -- "event adapter" --> FETCH["adapter.fetch(window)<br/>rate-limited HttpClient<br/>ticketmaster · meetup · crawler<br/>venue-sites · worship-services · threads"]
   FETCH --> EXTR{"Crawled page has<br/>schema.org JSON-LD?"}
@@ -121,6 +121,7 @@ How the Worker routes /api/* (packages/api/src/handler.ts), including submission
 flowchart LR
   REQ(["Request /api/..."]) --> R{"route head"}
   R -- "GET area" --> AREA["events_area RPC<br/>grid-snapped key, ETag,<br/>public cache 5 / 30 min<br/>range: 14 days · future"]
+  R -- "GET places" --> PLACES["places_area RPC<br/>same grid key, ETag,<br/>public cache 24 h"]
   R -- "POST autofill" --> AF["Sign-in + monthly allowance<br/>fetchPage → JSON-LD<br/>→ LLM (daily cap) → prefills"]
   R -- "POST autofill/photo" --> AFP["Poster photo → LLM prefill"]
   R -- "POST geocode" --> GC["Address → point in region"]
@@ -145,7 +146,7 @@ flowchart LR
   MOD -- "report: hide" --> REVOKE["Hide event,<br/>revoke reward"]
   MOD -- "report: cancel" --> CANC["Mark cancelled"]
 
-  AREA & AF & SUB & REP & CON & MOD & ME & ADM & FOL & ORG & PRIV & IST --> DB[("Supabase<br/>service-role RPCs")]
+  AREA & PLACES & AF & SUB & REP & CON & MOD & ME & ADM & FOL & ORG & PRIV & IST --> DB[("Supabase<br/>service-role RPCs")]
 ```
 
 ## PWA user journey (apps/web)
@@ -166,6 +167,8 @@ flowchart TB
   HOME --> EMPTY{"Anything in radius?"}
   EMPTY -- no --> GUIDE["Guidance: nearest + busiest<br/>expand radius / take me there"]
   EMPTY -- yes --> PINS["Pins, edge chevrons,<br/>hotspot, timeline"]
+  HOME --> OPENP["Open places today<br/>GET /api/places (or seed)<br/>open now from opening hours"]
+  OPENP --> PCARD["Place card: open until,<br/>time left, Google Maps"]
   HOME --> SET["Settings sheet<br/>language PL/EN, theme"]
   HOME --> ACC["Account: sign in, plan,<br/>premium, feeds, contributions"]
   PINS --> DET["#/e/:id Event detail"]

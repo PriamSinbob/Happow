@@ -51,6 +51,7 @@ import {
 } from './private';
 import { ContactLinkSheet } from './components/Contacts';
 import { useView } from './hooks/useView';
+import { openPlaces, usePlaces } from './places';
 import { plans, usePlans, usePlanSync } from './plans';
 import { reminders } from './reminders';
 import { formatRelativeDay } from './format';
@@ -75,6 +76,7 @@ import { MapView } from './components/MapView';
 import { Moderation } from './components/Moderation';
 import { SignInSheet, TermsSheet } from './components/SignIn';
 import { PickGrid } from './components/PickGrid';
+import { OpenPlaceCard } from './components/OpenPlaceCard';
 import { PlaceCard } from './components/PlaceCard';
 import { ReachRail } from './components/ReachRail';
 import { SettingsSheet } from './components/SettingsSheet';
@@ -329,6 +331,35 @@ export function App() {
       ? out.map((e) => (followedIds.has(e.id) ? { ...e, followed: true } : e))
       : out;
   }, [inPlans, mineOnMap, events, around, privOnMap, followedIds]);
+  // Open places (restaurants, pubs, galleries) at the time looked at today: not on a day or month
+  // of the line, not in "my plans", not with live-only on. An event at a place takes its pin.
+  const showPlaces = !stepped && !inPlans && !liveOnly;
+  const allPlaces = usePlaces(searchCenter, showPlaces);
+  const placesOnMap = useMemo(
+    () =>
+      showPlaces
+        ? openPlaces(
+            allPlaces,
+            pinTime,
+            region.timezone,
+            searchCenter,
+            filters,
+            mapEvents.map((e) => e.point),
+          )
+        : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      showPlaces,
+      allPlaces,
+      pinTime.getTime(),
+      searchCenter,
+      filters.categories,
+      filters.excluded,
+      mapEvents,
+    ],
+  );
+  const [openPlaceId, setOpenPlaceId] = useState<string | null>(null);
+  const openPlace = placesOnMap.find((p) => p.id === openPlaceId) ?? null;
   // Ended long ago: off the list (a removal, so the account's other devices drop them too).
   const myDays = useMemo(
     () => agendaDays(mine.events, now, region.timezone, config.app.agenda.keepPastDays),
@@ -474,6 +505,7 @@ export function App() {
   }, []);
 
   const clearCards = () => {
+    setOpenPlaceId(null);
     setSelectedId(null);
     setPlaceIds(null);
     setHotspotOpen(false);
@@ -594,12 +626,21 @@ export function App() {
           selectedId={selectedId}
           onSelect={(id) => {
             setSelectedId(id);
+            setOpenPlaceId(null);
             setPlaceIds(null);
             setHotspotOpen(false);
             setParked(false);
           }}
+          places={placesOnMap}
+          selectedPlaceId={openPlaceId}
+          onSelectOpenPlace={(id) => {
+            clearCards();
+            setParked(false);
+            setOpenPlaceId(id);
+          }}
           onSelectPlace={(ids) => {
             setParked(false);
+            setOpenPlaceId(null);
             setSelectedId(null);
             setPlaceIds(ids);
             setHotspotOpen(false);
@@ -610,6 +651,7 @@ export function App() {
           focus={focus}
           hotspot={inPlans ? null : guidance.hotspot}
           onHotspot={() => {
+            setOpenPlaceId(null);
             setSelectedId(null);
             setHotspotOpen(true);
           }}
@@ -893,6 +935,15 @@ export function App() {
               }}
               onDetails={() => openDetail(selected.id)}
               onGo={() => goThere(selected.id)}
+            />
+          </div>
+        ) : view === 'map' && openPlace ? (
+          <div className="sheet__card">
+            <OpenPlaceCard
+              place={openPlace}
+              now={pinTime}
+              timeZone={region.timezone}
+              onClose={() => setOpenPlaceId(null)}
             />
           </div>
         ) : view === 'map' && placeEvents.length > 0 ? (

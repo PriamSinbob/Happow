@@ -1,4 +1,10 @@
-import { rateLimitIntervalMs, type HappowConfig, type Region, type Source } from '@happow/core';
+import {
+  parseOpeningHours,
+  rateLimitIntervalMs,
+  type HappowConfig,
+  type Region,
+  type Source,
+} from '@happow/core';
 import { HttpClient } from '../http.js';
 import { overpass } from '../overpass.js';
 import { robotsGate } from '../robots.js';
@@ -52,6 +58,34 @@ export const osmVenuesJob: VenueJob = async (ctx) => {
   return stats;
 };
 
+/**
+ * Places to go to while they are open (restaurants, pubs, galleries: `places.kinds`), from OSM in
+ * the region's bbox. Separate from the venues above, which the website check walks through.
+ */
+export const osmPlacesJob: VenueJob = async (ctx) => {
+  const { osm, places: cfg } = ctx.config.app;
+  const tags: Record<string, string[]> = {};
+  for (const k of cfg.kinds) {
+    const [key, value] = k.tag.split('=') as [string, string];
+    (tags[key] ??= []).push(value);
+  }
+  const elements = await overpass(venueQuery(tags, ctx.region.bbox), {
+    urls: osm.overpassUrls,
+    userAgent: osm.userAgent,
+    fetch: ctx.fetch,
+  });
+  const places = parseOsmVenues(elements, tags);
+  const stats: JobStats = {
+    places: places.length,
+    withHours: places.filter((p) => parseOpeningHours(p.openingHours)).length,
+  };
+  if (!ctx.store) return stats;
+  const { removed, kept } = await ctx.store.venues().replacePlaces(ctx.region.id, places);
+  stats.removed = removed;
+  if (kept) ctx.log('  far fewer places than stored: nothing removed this run');
+  return stats;
+};
+
 /** Up to `probe.perRun` venue websites, never checked first, then the oldest checks. */
 export const venueProbeJob: VenueJob = async (ctx) => {
   if (!ctx.store) return { skipped: 'dry run: the check reads its list from the database' };
@@ -91,5 +125,6 @@ export const venueProbeJob: VenueJob = async (ctx) => {
 /** Jobs by the `adapter` name used in config/sources.json. */
 export const venueJobs: Record<string, VenueJob> = {
   'osm-venues': osmVenuesJob,
+  'osm-places': osmPlacesJob,
   'venue-probe': venueProbeJob,
 };

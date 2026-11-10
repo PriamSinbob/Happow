@@ -35,6 +35,7 @@
         "meetup-pages",
         "threads",
         "osm-venues",
+        "osm-places",
         "venue-probe",
         "venue-sites",
         "worship-services",
@@ -42,6 +43,7 @@
         "submissions"
       ],
       "seedFile": "data/seed/wroclaw.events.json",
+      "seedPlacesFile": "data/seed/wroclaw.places.json",
       "districts": {
         "file": "data/districts/wroclaw.geojson",
         "adminLevel": 9

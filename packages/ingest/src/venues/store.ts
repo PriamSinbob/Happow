@@ -14,6 +14,9 @@ export interface SiteToCheck {
 
 const point = (lat: number, lng: number): LatLng => ({ lat, lng });
 
+/** An answer with fewer places than this share of the stored ones removes nothing. */
+const PLACES_KEEP_SHARE = 0.7;
+
 /** Postgres for OSM venues, links, the website check and accepted sites. */
 export class VenueStore {
   constructor(private readonly db: pg.ClientBase) {}
@@ -49,6 +52,58 @@ export class VenueStore {
           ],
         );
       await this.db.query('commit');
+    } catch (err) {
+      await this.db.query('rollback');
+      throw err;
+    }
+  }
+
+  /**
+   * The region's places as OSM lists them now, in one statement. Places OSM no longer lists are
+   * removed, unless the answer is much shorter than what is stored (a cut-off Overpass reply).
+   */
+  async replacePlaces(
+    regionId: string,
+    places: OsmVenue[],
+  ): Promise<{ removed: number; kept: boolean }> {
+    await this.db.query('begin');
+    try {
+      const before = await this.db.query(
+        'select count(*)::int as n from places where region_id = $1',
+        [regionId],
+      );
+      await this.db.query(
+        `insert into places (osm_id, region_id, name, kind, point, address, website,
+           opening_hours, seen_at)
+         select t.osm_id, $1, t.name, t.kind, st_point(t.lng, t.lat)::geography, t.address,
+           t.website, t.opening_hours, now()
+         from unnest($2::text[], $3::text[], $4::text[], $5::float8[], $6::float8[], $7::text[],
+           $8::text[], $9::text[])
+           as t (osm_id, name, kind, lng, lat, address, website, opening_hours)
+         on conflict (osm_id) do update set region_id = excluded.region_id, name = excluded.name,
+           kind = excluded.kind, point = excluded.point, address = excluded.address,
+           website = excluded.website, opening_hours = excluded.opening_hours, seen_at = now()`,
+        [
+          regionId,
+          places.map((p) => p.osmId),
+          places.map((p) => p.name),
+          places.map((p) => p.kind),
+          places.map((p) => p.point.lng),
+          places.map((p) => p.point.lat),
+          places.map((p) => p.address),
+          places.map((p) => p.website),
+          places.map((p) => p.openingHours),
+        ],
+      );
+      // now() is the transaction's start: rows this run did not touch are older.
+      const complete = places.length >= before.rows[0].n * PLACES_KEEP_SHARE;
+      const gone = complete
+        ? await this.db.query('delete from places where region_id = $1 and seen_at < now()', [
+            regionId,
+          ])
+        : { rowCount: 0 };
+      await this.db.query('commit');
+      return { removed: gone.rowCount ?? 0, kept: !complete };
     } catch (err) {
       await this.db.query('rollback');
       throw err;

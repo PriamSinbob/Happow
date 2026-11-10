@@ -224,6 +224,99 @@
     },
     "pauseAfterFailures": 3
   },
+  "places": {
+    "kinds": [
+      {
+        "tag": "amenity=restaurant",
+        "glyph": "utensils",
+        "category": "food",
+        "labels": { "pl": "Restauracja", "en": "Restaurant" }
+      },
+      {
+        "tag": "amenity=fast_food",
+        "glyph": "utensils",
+        "category": "food",
+        "labels": { "pl": "Bar szybkiej obsługi", "en": "Fast food" }
+      },
+      {
+        "tag": "amenity=food_court",
+        "glyph": "utensils",
+        "category": "food",
+        "labels": { "pl": "Strefa gastronomiczna", "en": "Food court" }
+      },
+      {
+        "tag": "amenity=cafe",
+        "glyph": "cup",
+        "category": "food",
+        "labels": { "pl": "Kawiarnia", "en": "Café" }
+      },
+      {
+        "tag": "amenity=ice_cream",
+        "glyph": "cup",
+        "category": "food",
+        "labels": { "pl": "Lodziarnia", "en": "Ice cream" }
+      },
+      {
+        "tag": "amenity=pub",
+        "glyph": "beer",
+        "category": "food",
+        "labels": { "pl": "Pub", "en": "Pub" }
+      },
+      {
+        "tag": "amenity=bar",
+        "glyph": "beer",
+        "category": "food",
+        "labels": { "pl": "Bar", "en": "Bar" }
+      },
+      {
+        "tag": "amenity=biergarten",
+        "glyph": "beer",
+        "category": "food",
+        "labels": { "pl": "Ogródek piwny", "en": "Beer garden" }
+      },
+      {
+        "tag": "amenity=nightclub",
+        "glyph": "note",
+        "category": "music",
+        "labels": { "pl": "Klub", "en": "Club" }
+      },
+      {
+        "tag": "amenity=cinema",
+        "glyph": "film",
+        "category": "cinema",
+        "labels": { "pl": "Kino", "en": "Cinema" }
+      },
+      {
+        "tag": "amenity=theatre",
+        "glyph": "mask",
+        "category": "theatre",
+        "labels": { "pl": "Teatr", "en": "Theatre" }
+      },
+      {
+        "tag": "tourism=gallery",
+        "glyph": "frame",
+        "category": "exhibition",
+        "labels": { "pl": "Galeria", "en": "Gallery" }
+      },
+      {
+        "tag": "tourism=museum",
+        "glyph": "frame",
+        "category": "exhibition",
+        "labels": { "pl": "Muzeum", "en": "Museum" }
+      },
+      {
+        "tag": "amenity=marketplace",
+        "glyph": "basket",
+        "category": "market",
+        "labels": { "pl": "Targowisko", "en": "Market" }
+      }
+    ],
+    "minZoom": 14,
+    "maxPerArea": 3000,
+    "cacheHours": 24,
+    "nearEventM": 30,
+    "closingSoonMin": 60
+  },
   "counts": { "maxBatch": 50, "perHourPerDevice": 240 },
   "attendance": {
     "publicMin": 5,

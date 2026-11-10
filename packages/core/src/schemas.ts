@@ -72,6 +72,8 @@ export const regionSchema = z.object({
   bbox: z.object({ west: z.number(), south: z.number(), east: z.number(), north: z.number() }),
   enabledSources: z.array(z.string()),
   seedFile: z.string().optional(),
+  /** Demo places (the shape /api/places answers with) for running without a backend. */
+  seedPlacesFile: z.string().optional(),
   /**
    * District boundaries for the metrics: a GeoJSON file written by `pnpm districts` from
    * OSM `boundary=administrative` relations at this `admin_level`, inside the bbox.
@@ -349,6 +351,33 @@ export const appConfigSchema = z.object({
     }),
     /** Runs in a row an accepted site may fail before it is paused. */
     pauseAfterFailures: z.number().int().positive(),
+  }),
+  /**
+   * Places to go to while they are open (restaurants, pubs, galleries), with or without an event.
+   * An event at a place takes its pin over for as long as it lasts.
+   */
+  places: z.object({
+    /** OSM tags that make a place, each with its glyph, name and the category whose filter it follows. */
+    kinds: z
+      .array(
+        z.object({
+          tag: z.string().regex(/^[a-z_:]+=[a-z_]+$/),
+          glyph: z.string().min(1),
+          category: z.string().min(1),
+          labels: z.object({ pl: z.string().min(1), en: z.string().min(1) }),
+        }),
+      )
+      .min(1),
+    /** Places show from this zoom in; further out there would be too many. */
+    minZoom: z.number().min(0).max(22),
+    /** Places in one area snapshot, nearest first. */
+    maxPerArea: z.number().int().positive(),
+    /** Phones and caches keep an area's places this long: they change weekly at most. */
+    cacheHours: z.number().positive(),
+    /** A place this close to a shown event gives way to the event's pin. */
+    nearEventM: z.number().nonnegative(),
+    /** Closing within this many minutes is said on the card. */
+    closingSoonMin: z.number().int().nonnegative(),
   }),
   /** Per-event opens, routes and arrivals for "your impact". */
   counts: z.object({

@@ -37,9 +37,38 @@ const common = {
   'symbol-z-order': 'auto',
 } as const;
 
-/** Adds the sprites, the source and the layers once per style (first load, raster fallback). */
+/** Open places: their own source, drawn under the event pins. */
+export const PLACE_SOURCE = 'places';
+export const PLACE_HIT_LAYERS = ['place-disc'];
+/** A place is a 22 px paper pin with a muted outline: smaller than any event with a glyph. */
+const PLACE_PX = 22;
+
+function addPlaceLayers(m: maplibregl.Map) {
+  if (m.getSource(PLACE_SOURCE)) return;
+  m.addSource(PLACE_SOURCE, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  const size = (base: number): ExpressionSpecification => [
+    '*',
+    base,
+    ['case', get('selected'), 1.3, 1],
+  ];
+  const selectedOnTop: ExpressionSpecification = ['case', get('selected'), 1, 0];
+  const layout = { ...common, 'symbol-sort-key': selectedOnTop };
+  const layer = (id: string, image: ExpressionSpecification | string, base: number) =>
+    m.addLayer({
+      id,
+      type: 'symbol',
+      source: PLACE_SOURCE,
+      layout: { ...layout, 'icon-image': image, 'icon-size': size(base) },
+    } as maplibregl.SymbolLayerSpecification);
+  layer('place-disc', 'pin-disc', PLACE_PX / PIN_PX);
+  layer('place-outline', 'pin-outline', PLACE_PX / PIN_PX);
+  layer('place-glyph', ['concat', 'glyph-', get('glyph')], 0.66);
+}
+
+/** Adds the sprites, the sources and the layers once per style (first load, raster fallback). */
 export function addPinLayers(m: maplibregl.Map) {
   addPinSprites(m);
+  addPlaceLayers(m);
   if (m.getSource(PIN_SOURCE)) return;
   m.addSource(PIN_SOURCE, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
   const layer = (spec: Omit<maplibregl.SymbolLayerSpecification, 'type' | 'source'>) =>
@@ -167,6 +196,9 @@ export function pinPaint(
 ): [string, string, unknown][] {
   const { live, onLive } = preset[name];
   return [
+    ['place-disc', 'icon-color', t.paper],
+    ['place-outline', 'icon-color', ['case', get('selected'), t.ink, t.muted]],
+    ['place-glyph', 'icon-color', t.ink],
     ['pin-select-bed', 'icon-color', t.paper],
     ['pin-select', 'icon-color', t.ink],
     ['pin-ring', 'icon-color', live],

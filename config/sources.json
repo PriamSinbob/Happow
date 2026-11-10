@@ -355,6 +355,17 @@
       "termsNotes": "Venues (theatres, clubs, cinemas, community centres, libraries, places of worship, museums) from OpenStreetMap through Overpass, weekly. ODbL: attribution in About. Writes venues and links, never events."
     },
     {
+      "id": "osm-places",
+      "name": "OpenStreetMap places",
+      "adapter": "osm-places",
+      "regionIds": ["wroclaw"],
+      "schedule": "168h",
+      "rateLimit": null,
+      "trustLevel": "crawled",
+      "enabled": true,
+      "termsNotes": "Places to go to while they are open (restaurants, cafés, pubs, bars, clubs, cinemas, theatres, galleries, museums, markets) with their opening hours, from OpenStreetMap through Overpass, weekly. ODbL: attribution in About. Writes places, never events."
+    },
+    {
       "id": "venue-probe",
       "name": "Venue website check",
       "adapter": "venue-probe",

@@ -117,6 +117,11 @@ export const pl: Record<MessageKey, string> = {
   'guide.place': 'ruchliwe miejsce',
   'guide.takeMeThere': 'Zaprowadź mnie',
   'guide.nothingAround': 'W promieniu {distance} też nic. Zmień okno czasu lub filtry.',
+  'place.open': 'Otwarte',
+  'place.until': 'do {time}',
+  'place.left': 'zamknięcie za {time}',
+  'place.allDay': 'całą dobę',
+  'place.website': 'Strona',
   'place.title':
     '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} w tym miejscu',
   'hotspot.label':
