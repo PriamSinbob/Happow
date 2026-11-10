@@ -113,6 +113,11 @@ export const en = {
   'guide.takeMeThere': 'Take me there',
   'guide.nothingAround':
     'Nothing within {distance} either. Try another time window or fewer filters.',
+  'place.open': 'Open',
+  'place.until': 'until {time}',
+  'place.left': 'closes in {time}',
+  'place.allDay': 'around the clock',
+  'place.website': 'Website',
   'place.title': '{count, plural, one {# event} other {# events}} here',
   'hotspot.label': 'Busiest nearby: {place}, {count, plural, one {# event} other {# events}}',
   'header.add': 'Add an event',

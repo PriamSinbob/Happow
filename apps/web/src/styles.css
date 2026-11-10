@@ -1419,6 +1419,27 @@ div.settings-row {
   letter-spacing: 0.01em;
   box-shadow: var(--live-glow);
 }
+/* An open place: the same pill in ink, since the live colour means an event on now. */
+.open-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+.open-place__left {
+  margin-left: auto;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.open-place__left.is-soon {
+  color: var(--ink);
+  font-weight: 650;
+}
 .now-pill::before {
   content: '';
   width: 5px;

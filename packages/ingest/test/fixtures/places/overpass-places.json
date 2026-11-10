@@ -1,0 +1,84 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API (shape of a real answer; values written by hand, the live server was unreachable when this was made)",
+  "elements": [
+    {
+      "type": "node",
+      "id": 2001,
+      "lat": 51.1099,
+      "lon": 17.0318,
+      "tags": {
+        "amenity": "restaurant",
+        "name": "Pierogarnia Rynek",
+        "cuisine": "polish",
+        "opening_hours": "Mo-Su 11:00-23:00",
+        "addr:street": "Rynek",
+        "addr:housenumber": "26",
+        "addr:postcode": "50-101",
+        "addr:city": "Wrocław",
+        "website": "pierogarnia.example"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2002,
+      "lat": 51.1094,
+      "lon": 17.0302,
+      "tags": {
+        "amenity": "pub",
+        "name": "Pod Latarnią",
+        "opening_hours": "Mo-Th 16:00-24:00; Fr,Sa 16:00-03:00; Su off"
+      }
+    },
+    {
+      "type": "way",
+      "id": 2003,
+      "center": { "lat": 51.1102, "lon": 17.0325 },
+      "tags": {
+        "tourism": "gallery",
+        "name": "Galeria na Odwachu",
+        "opening_hours": "Tu-Su 12:00-18:00",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2004,
+      "lat": 51.1091,
+      "lon": 17.0311,
+      "tags": { "amenity": "cafe", "name": "Kawa i Tyle" }
+    },
+    {
+      "type": "node",
+      "id": 2005,
+      "lat": 51.1105,
+      "lon": 17.0296,
+      "tags": { "amenity": "fast_food", "name": "Zapiekanki 24", "opening_hours": "24/7" }
+    },
+    {
+      "type": "node",
+      "id": 2006,
+      "lat": 51.1097,
+      "lon": 17.0329,
+      "tags": {
+        "amenity": "biergarten",
+        "name": "Ogródek nad Fosą",
+        "opening_hours": "Apr-Oct: Mo-Su 12:00-22:00"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2007,
+      "lat": 51.109,
+      "lon": 17.03,
+      "tags": { "amenity": "restaurant", "opening_hours": "Mo-Su 10:00-20:00" }
+    },
+    {
+      "type": "node",
+      "id": 2008,
+      "lat": 51.1093,
+      "lon": 17.0322,
+      "tags": { "amenity": "bank", "name": "Bank przy Rynku", "opening_hours": "Mo-Fr 09:00-17:00" }
+    }
+  ]
+}

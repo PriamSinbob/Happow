@@ -113,6 +113,9 @@ export function loadConfig(): HappowConfig {
       if (label !== label.toLowerCase())
         errors.push(`source "${s.id}" categoryMap key "${label}" must be lower-case`);
   }
+  for (const k of app.places.kinds)
+    if (!categoryIds.has(k.category))
+      errors.push(`place kind "${k.tag}" follows unknown category "${k.category}"`);
   for (const [type, c] of Object.entries(app.extraction.schemaTypeMap))
     if (!categoryIds.has(c))
       errors.push(`extraction.schemaTypeMap maps "${type}" to unknown category "${c}"`);

@@ -25,8 +25,13 @@ How the UI looks and behaves today. Any deviation, and every new icon or glyph, 
 | Later                | 10 px | ink dot                                       |
 | Outside reach        | ×0.85 | full opacity: pins read through the veil      |
 | Selected             | ×1.3  | ink ring on a paper disc, on top              |
+| Open place           | 22 px | paper fill, ink glyph, muted outline          |
 
 The ring is full at 2 h or more and shrinks in 10-minute steps (minimum 8 %); dotted means no fixed end. A dashed outline means you would arrive late or after closing. Age badges sit top right. Live draws over soon over later. Every loaded event is a pin, in the reach or beyond it. The selected pin never merges into a count bubble, and a selected later dot grows into a 26 px glyph pin.
+
+## Open places
+
+Restaurants, cafés, pubs, bars, clubs, cinemas, theatres, galleries, museums and markets (`places.kinds` in `config/app.json`) show on Today's map while they are open at the time looked at, under the event pins and never in the live colour. A place whose hours are unknown or unreadable is not shown. From zoom 14 in, one place per 34 px square (the nearest to you); none in "my plans", with live-only on, or on a day or month of the line. Each kind follows its category's filter. An event at a place takes its pin over for as long as it lasts. Selected: ×1.3 with an ink outline. The card is an event card without the live pill: an ink "Open" pill, "until 23:00", the time left (bold within 60 min), address, distance and walk, Google Maps and the website.
 
 ## Layout (portrait)
 

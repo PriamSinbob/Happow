@@ -965,6 +965,48 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   }
 
   /**
+   * GET /api/places?lat&lng&r → the places with opening hours within r of a grid point, nearest
+   * first (the same grid as /api/area). The phone works out "open now" itself, and places change
+   * weekly at most, so the answer is public and cached for `places.cacheHours`.
+   */
+  async function places(req: Request): Promise<Response> {
+    if (!db) throw new ApiError(503, 'not_configured');
+    const u = new URL(req.url);
+    const key = {
+      lat: Number(u.searchParams.get('lat')),
+      lng: Number(u.searchParams.get('lng')),
+      radiusM: Number(u.searchParams.get('r')),
+    };
+    const region = config.regions.find((r) =>
+      isInBbox(key, {
+        west: r.bbox.west - refresh.areaGridDeg,
+        south: r.bbox.south - refresh.areaGridDeg,
+        east: r.bbox.east + refresh.areaGridDeg,
+        north: r.bbox.north + refresh.areaGridDeg,
+      }),
+    );
+    if (!Object.values(key).every(Number.isFinite) || !isAreaKey(key, refresh) || !region)
+      throw new ApiError(400, 'invalid_input', 'area');
+    const { maxPerArea, cacheHours } = config.app.places;
+    const rows = await db.rpc<unknown>('places_area', {
+      lat: key.lat,
+      lng: key.lng,
+      radius_m: key.radiusM + areaSlackM(key.lat, refresh),
+      max_places: maxPerArea,
+    });
+    const body = JSON.stringify({ places: rows });
+    const etag = `"${(await sha256(body)).slice(0, 16)}"`;
+    const headers = {
+      'content-type': 'application/json',
+      etag,
+      'cache-control': `public, max-age=${Math.round(cacheHours * 3600)}`,
+    };
+    if (req.headers.get('if-none-match') === etag)
+      return new Response(null, { status: 304, headers });
+    return new Response(body, { status: 200, headers });
+  }
+
+  /**
    * POST /api/route {from, to} → a walking route for "Going there". One call per trip (plus a
    * few re-routes); the app draws a direct line when this answers 503 or 429.
    */
@@ -1066,6 +1108,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'reminders') return await reminders.reminders(req, rest);
       if (head === 'attendance' || head === 'share') return await attendance.route(req, head, rest);
       if (head === 'area' && req.method === 'GET' && !rest.length) return await area(req);
+      if (head === 'places' && req.method === 'GET' && !rest.length) return await places(req);
       if (head === 'ingest' && req.method === 'GET' && rest.join('/') === 'status')
         return await ingestStatus();
       if (head === 'autofill' && req.method === 'POST' && rest.join('/') === 'photo')

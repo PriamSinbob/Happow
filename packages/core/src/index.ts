@@ -25,3 +25,4 @@ export * from './attendance.js';
 export * from './agenda.js';
 export * from './performers.js';
 export * from './launch.js';
+export * from './openingHours.js';

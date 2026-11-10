@@ -138,6 +138,15 @@ export default defineConfig(({ mode }) => {
                 expiration: { maxEntries: 10, maxAgeSeconds: 24 * 3600 },
               },
             },
+            {
+              // Places change weekly at most: the cached copy at once, refreshed behind it.
+              urlPattern: ({ url }: { url: URL }) => url.pathname === '/api/places',
+              handler: 'StaleWhileRevalidate' as const,
+              options: {
+                cacheName: 'places',
+                expiration: { maxEntries: 10, maxAgeSeconds: 7 * 24 * 3600 },
+              },
+            },
             ...(apiHost
               ? [
                   {

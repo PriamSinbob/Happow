@@ -712,6 +712,50 @@ describe('GET /api/area', () => {
   });
 });
 
+describe('GET /api/places', () => {
+  const get = (q: string, headers: Record<string, string> = {}) =>
+    new Request(`https://happow.example/api/places?${q}`, { headers });
+  const rows = [
+    {
+      id: 'node/1',
+      name: 'Pod Latarnią',
+      kind: 'amenity=pub',
+      lat: 51.11,
+      lng: 17.03,
+      address: null,
+      website: null,
+      opening_hours: 'Mo-Su 16:00-24:00',
+    },
+  ];
+
+  it("serves an area's places publicly, cached for a day, with an ETag", async () => {
+    const web = backend({ rpc: { places_area: () => ({ body: rows }) } });
+    const api = createApi(env, { config, fetch: web.fetch });
+    const res = await api(get('lat=51.1&lng=17.05&r=5000'));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ places: rows });
+    expect(res.headers.get('cache-control')).toBe('public, max-age=86400');
+    expect(web.calls.find((c) => c.name === 'places_area')!.args).toMatchObject({
+      lat: 51.1,
+      lng: 17.05,
+      max_places: 3000,
+    });
+    const again = await api(
+      get('lat=51.1&lng=17.05&r=5000', { 'if-none-match': res.headers.get('etag')! }),
+    );
+    expect(again.status).toBe(304);
+  });
+
+  it('refuses keys off the grid and places outside every region', async () => {
+    const web = backend({ rpc: { places_area: () => ({ body: [] }) } });
+    const api = createApi(env, { config, fetch: web.fetch });
+    for (const q of ['lat=51.11&lng=17.05&r=5000', 'lat=40&lng=-74&r=5000', 'lat=x&lng=1&r=5000'])
+      expect((await api(get(q))).status).toBe(400);
+    expect(web.calls).toEqual([]);
+    expect((await createApi({}, {})(get('lat=51.1&lng=17.05&r=5000'))).status).toBe(503);
+  });
+});
+
 describe('POST /api/route', () => {
   const from = { lat: 51.1085, lng: 17.03 };
   const to = { lat: 51.1101, lng: 17.0325 };

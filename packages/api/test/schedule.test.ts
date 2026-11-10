@@ -25,6 +25,7 @@ const allFresh = [
   'wroclaw-go',
   'nfm',
   'osm-venues',
+  'osm-places',
   'venue-probe',
   'venue-sites',
   'account-feeds',

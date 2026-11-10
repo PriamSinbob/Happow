@@ -16,7 +16,16 @@ import { config, region } from '../config';
 import type { Guidance } from '../hooks/useGuidance';
 import { useI18n } from '../i18n';
 import { useMapTheme } from '../mapTheme';
-import { addPinLayers, applyPinPaint, PIN_HIT_LAYERS, PIN_SOURCE, pinPaint } from '../pinLayers';
+import {
+  addPinLayers,
+  applyPinPaint,
+  PIN_HIT_LAYERS,
+  PIN_SOURCE,
+  pinPaint,
+  PLACE_HIT_LAYERS,
+  PLACE_SOURCE,
+} from '../pinLayers';
+import type { OpenPlace } from '../places';
 import { pinFeatures, type PinMode } from '../pins';
 import {
   addDragRing,
@@ -42,6 +51,10 @@ interface Props {
   pinMode: PinMode;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  /** Open places (restaurants, pubs, galleries), drawn under the events from `places.minZoom` in. */
+  places: OpenPlace[];
+  selectedPlaceId: string | null;
+  onSelectOpenPlace: (id: string) => void;
   /** Tapped a pin that holds several events at one place (cinema screenings, a festival stage). */
   onSelectPlace: (ids: string[]) => void;
   /** Pixels covered at the bottom (time line, cards), kept clear when fitting and for edge dots. */
@@ -172,6 +185,31 @@ function groupMarkers(
     });
   }
   return out;
+}
+
+/** Places closer than this on screen: only the nearest to the user shows. */
+const PLACE_CELL_PX = 34;
+
+/**
+ * The places drawn at this zoom: none further out than `places.minZoom`; closer in, one per
+ * PLACE_CELL_PX square of the map, the nearest to the user (the selected one always).
+ */
+export function thinPlaces(
+  places: OpenPlace[],
+  zoom: number,
+  selectedId: string | null,
+): OpenPlace[] {
+  if (zoom < config.app.places.minZoom) return places.filter((p) => p.id === selectedId);
+  const world = 512 * 2 ** zoom;
+  const cells = new Map<string, OpenPlace>();
+  for (const p of places) {
+    const c = maplibregl.MercatorCoordinate.fromLngLat(p.point);
+    const cell = `${Math.floor((c.x * world) / PLACE_CELL_PX)}:${Math.floor((c.y * world) / PLACE_CELL_PX)}`;
+    const held = cells.get(cell);
+    if (!held || p.id === selectedId || (held.id !== selectedId && p.distanceM < held.distanceM))
+      cells.set(cell, p);
+  }
+  return [...cells.values()];
 }
 
 export function rasterStyle(): StyleSpecification {
@@ -405,6 +443,15 @@ export function MapView(props: Props) {
           return { f, d: Math.hypot(pt.x - e.point.x, pt.y - e.point.y) };
         })
         .sort((a, b) => a.d - b.d)[0]?.f;
+      const place = hit
+        ? undefined
+        : (m.getLayer('place-disc')
+            ? m.queryRenderedFeatures(box, { layers: PLACE_HIT_LAYERS })
+            : [])[0];
+      if (place) {
+        latest.current.onSelectOpenPlace(place.properties.id as string);
+        return;
+      }
       if (hit) {
         const key = hit.properties.key as string;
         const group = groupsRef.current.find((g) => g.key === key);
@@ -603,6 +650,19 @@ export function MapView(props: Props) {
     zoom,
     styleReady,
   ]);
+
+  // Open places: thinned per zoom, redrawn on data, selection or zoom.
+  useEffect(() => {
+    const src = map.current?.getSource(PLACE_SOURCE) as GeoJSONSource | undefined;
+    src?.setData({
+      type: 'FeatureCollection',
+      features: thinPlaces(props.places, zoom, props.selectedPlaceId).map((p) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [p.point.lng, p.point.lat] },
+        properties: { id: p.id, glyph: p.kind.glyph, selected: p.id === props.selectedPlaceId },
+      })),
+    });
+  }, [props.places, props.selectedPlaceId, zoom, styleReady]);
 
   // The veil follows the snapshot's grid point; its canvas is redrawn only when the lit cells, the
   // reach (a detent released, locate, long-press) or the theme change. Pan and zoom never redraw
