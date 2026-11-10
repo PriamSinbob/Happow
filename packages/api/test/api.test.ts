@@ -735,6 +735,7 @@ describe('GET /api/places', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ places: rows });
     expect(res.headers.get('cache-control')).toBe('public, max-age=86400');
+    expect(res.headers.get('x-places')).toBe('some');
     expect(web.calls.find((c) => c.name === 'places_area')!.args).toMatchObject({
       lat: 51.1,
       lng: 17.05,
@@ -744,6 +745,15 @@ describe('GET /api/places', () => {
       get('lat=51.1&lng=17.05&r=5000', { 'if-none-match': res.headers.get('etag')! }),
     );
     expect(again.status).toBe(304);
+  });
+
+  it('lets nothing keep an empty answer', async () => {
+    const web = backend({ rpc: { places_area: () => ({ body: [] }) } });
+    const api = createApi(env, { config, fetch: web.fetch });
+    const res = await api(get('lat=51.1&lng=17.05&r=5000'));
+    expect(await res.json()).toEqual({ places: [] });
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    expect(res.headers.get('x-places')).toBeNull();
   });
 
   it('refuses keys off the grid and places outside every region', async () => {

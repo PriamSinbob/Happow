@@ -967,7 +967,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   /**
    * GET /api/places?lat&lng&r → the places with opening hours within r of a grid point, nearest
    * first (the same grid as /api/area). The phone works out "open now" itself, and places change
-   * weekly at most, so the answer is public and cached for `places.cacheHours`.
+   * weekly at most, so the answer is public and cached for `places.cacheHours`. An empty answer
+   * (before the first import) is not kept anywhere, or the map would stay empty for a day.
    */
   async function places(req: Request): Promise<Response> {
     if (!db) throw new ApiError(503, 'not_configured');
@@ -996,10 +997,13 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     });
     const body = JSON.stringify({ places: rows });
     const etag = `"${(await sha256(body)).slice(0, 16)}"`;
-    const headers = {
+    const some = Array.isArray(rows) && rows.length > 0;
+    const headers: Record<string, string> = {
       'content-type': 'application/json',
       etag,
-      'cache-control': `public, max-age=${Math.round(cacheHours * 3600)}`,
+      'cache-control': some ? `public, max-age=${Math.round(cacheHours * 3600)}` : 'no-store',
+      // The service worker keeps only answers with this header.
+      ...(some ? { 'x-places': 'some' } : {}),
     };
     if (req.headers.get('if-none-match') === etag)
       return new Response(null, { status: 304, headers });

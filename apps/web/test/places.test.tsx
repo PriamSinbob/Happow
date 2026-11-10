@@ -1,8 +1,8 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OpenPlaceCard } from '../src/components/OpenPlaceCard';
 import { I18nProvider } from '../src/i18n';
-import { openPlaces, toPlaces, type PlaceRow } from '../src/places';
+import { loadPlaces, openPlaces, toPlaces, type PlaceRow } from '../src/places';
 
 /** Open places: what shows at a given time, and what its card says. */
 
@@ -87,5 +87,29 @@ describe('the open place card', () => {
     cleanup();
     card('04:00', 'always');
     expect(screen.getByText('around the clock')).toBeTruthy();
+  });
+});
+
+describe('loading places', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('asks past the caches when the answer is empty, and does not keep an empty one', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://db.example');
+    const answers: PlaceRow[][] = [[], [], [], rows];
+    const inits: (RequestInit | undefined)[] = [];
+    const doFetch = async (_url: string, init?: RequestInit) => {
+      inits.push(init);
+      return new Response(JSON.stringify({ places: answers.shift() }));
+    };
+    // Before the first import: empty both times.
+    expect(await loadPlaces(here, doFetch)).toEqual([]);
+    expect(inits).toEqual([undefined, { cache: 'reload' }]);
+    // The next look asks again: a kept empty copy first, then the fresh answer.
+    const places = await loadPlaces(here, doFetch);
+    expect(places.length).toBeGreaterThan(0);
+    expect(inits).toHaveLength(4);
+    // A full answer is kept.
+    await loadPlaces(here, doFetch);
+    expect(inits).toHaveLength(4);
   });
 });

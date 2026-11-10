@@ -114,24 +114,30 @@ const cache = new Map<string, { at: number; places: Promise<Place[]> }>();
 /** The area's places: the API with a backend, the demo seed without one. Kept `cacheHours`. */
 export function loadPlaces(
   center: LatLng,
-  doFetch: (url: string) => Promise<Response> = (url) => fetch(url),
+  doFetch: (url: string, init?: RequestInit) => Promise<Response> = (url, init) => fetch(url, init),
   now: () => number = Date.now,
 ): Promise<Place[]> {
   const k = areaKey(center, density.searchRadiusM, refresh);
   const key = `lat=${k.lat}&lng=${k.lng}&r=${k.radiusM}`;
   const hit = cache.get(key);
   if (hit && now() < hit.at + cfg.cacheHours * 3_600_000) return hit.places;
+  const read = async (init?: RequestInit) => {
+    const res = await doFetch(`/api/places?${key}`, init);
+    if (!res.ok) throw new Error(`places failed: ${res.status}`);
+    return ((await res.json()) as { places: PlaceRow[] }).places;
+  };
   const places = (
     import.meta.env.VITE_SUPABASE_URL
-      ? doFetch(`/api/places?${key}`).then(async (res) => {
-          if (!res.ok) throw new Error(`places failed: ${res.status}`);
-          return ((await res.json()) as { places: PlaceRow[] }).places;
-        })
+      ? // An empty answer may be a copy kept from before the first import: ask past the caches.
+        read().then((rows) => (rows.length ? rows : read({ cache: 'reload' })))
       : seedRows()
   ).then(toPlaces);
   cache.set(key, { at: now(), places });
-  // A failed read is not kept: the next look tries again.
-  places.catch(() => cache.delete(key));
+  // A failed or empty read is not kept: the next look tries again.
+  places.then(
+    (p) => p.length || cache.delete(key),
+    () => cache.delete(key),
+  );
   return places;
 }
 
