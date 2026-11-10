@@ -7,6 +7,7 @@ import {
   type EntryType,
   type Language,
   type LatLng,
+  type Prefill,
   type WeeklyRepeat,
 } from '@happow/core';
 import { useAccount, type Me } from '../account';
@@ -27,28 +28,6 @@ import { AfterAdd } from './Contributor';
 import type { Reward } from '../contributions';
 import { shrinkPhoto } from '../photo';
 import { minutesBetween, nowInput, shiftInput } from '../formTime';
-
-/** What /api/autofill returns per event found on the page (mirrors packages/api `Prefill`). */
-interface Prefill {
-  title: string;
-  categoryIds: string[];
-  start: string | null;
-  end: string | null;
-  venueName: string | null;
-  address: string | null;
-  point: LatLng | null;
-  isFree: boolean | null;
-  priceMin: number | null;
-  currency: string | null;
-  /** None for a poster photo. */
-  url: string | null;
-  ticketUrl: string | null;
-  ageMin: number | null;
-  family: boolean | null;
-  entry: EntryType | null;
-  /** Older servers leave it out. */
-  performers?: string[];
-}
 
 interface Form {
   title: string;

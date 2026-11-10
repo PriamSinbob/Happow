@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { can, normName, type LatLng } from '@happow/core';
+import { can, normName, type EventHit, type LatLng, type NationwideDate } from '@happow/core';
 import { useAccount } from './account';
 import { api } from './api';
 import { accessToken } from './auth';
@@ -140,29 +140,8 @@ export function useFollows(): Follow[] {
 }
 
 /** An upcoming event with a followed performer in the region (from /api/follows/match). */
-export interface FollowMatch {
-  id: string;
-  title: string;
-  categoryIds: string[];
-  startAt: string;
-  endAt: string;
-  venueName: string | null;
-  point: LatLng;
-  distanceM: number | null;
-  matchedPerformer: string | null;
-}
-
-/** A Ticketmaster date elsewhere in the country: in the list with its city, never on the map. */
-export interface NationwideDate {
-  id: string;
-  performer: string;
-  title: string;
-  startAt: string | null;
-  localDate: string | null;
-  city: string | null;
-  venueName: string | null;
-  url: string | null;
-}
+export type FollowMatch = EventHit;
+export type { NationwideDate };
 
 export interface Matches {
   matches: FollowMatch[];

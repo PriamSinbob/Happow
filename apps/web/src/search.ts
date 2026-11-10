@@ -1,25 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { LatLng } from '@happow/core';
+import type { EventHit, LatLng } from '@happow/core';
 import { track } from './analytics';
 import { config, region } from './config';
 
 /** A search hit (GET /api/search). */
-export interface SearchHit {
-  id: string;
-  title: string;
-  categoryIds: string[];
-  startAt: string;
-  endAt: string;
-  venueName: string | null;
-  point: LatLng;
-  distanceM: number | null;
-  isFree: boolean;
-  status: string;
-  performers: string[];
-  matchedPerformer: string | null;
-  matchedExternalId?: string | null;
-  match?: 'performer' | 'performer_similar' | 'title';
-}
+export type SearchHit = EventHit;
 
 export type SearchState =
   | { state: 'idle' }

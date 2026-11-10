@@ -1,36 +1,8 @@
+import type { ApiErrorCode as ServerErrorCode } from '@happow/core';
 import { storage } from './storage';
 
-/** Error codes the /api endpoints return (see packages/api). */
-export type ApiErrorCode =
-  | 'invalid_input'
-  | 'invalid_json'
-  | 'unsafe_url'
-  | 'page_unavailable'
-  | 'outside_region'
-  | 'rate_limited'
-  | 'not_configured'
-  | 'unauthorized'
-  | 'forbidden'
-  | 'unknown_event'
-  | 'already_reviewed'
-  | 'not_found'
-  | 'quota_exceeded'
-  | 'photo_unavailable'
-  | 'photo_too_large'
-  | 'too_many_feeds'
-  | 'feed_stopped'
-  | 'account_required'
-  | 'auth_failed'
-  | 'email_failed'
-  | 'name_required'
-  | 'blocked'
-  | 'too_many_invitations'
-  | 'too_many_groups'
-  | 'too_many_contacts'
-  | 'already_claimed'
-  | 'own_item'
-  | 'server_error'
-  | 'network';
+/** What an /api call can fail with: the server's codes, and `network` when it never answered. */
+export type ApiErrorCode = ServerErrorCode | 'network';
 
 export class ApiError extends Error {
   constructor(

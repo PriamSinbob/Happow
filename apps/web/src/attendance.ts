@@ -1,3 +1,4 @@
+import type { AttendanceSignal, AttendanceView } from '@happow/core';
 import { api, deviceId } from './api';
 import { accessToken } from './auth';
 import { storage } from './storage';
@@ -7,15 +8,7 @@ import { storage } from './storage';
  * sees this device's random id (hashed there), and the account only when signed in.
  */
 
-export type Signal = 'going' | 'looking' | 'onway' | 'here';
-
-export interface AttendanceView {
-  /** Bucketed (5, 10, 25 …); null = don't show (below the threshold, or a sensitive category). */
-  counts: Record<Signal, number | null>;
-  mine: Record<Signal, boolean>;
-  /** People who came through this device's links and are going; null where counts are off. */
-  fromMyLinks: number | null;
-}
+export type { AttendanceView, AttendanceSignal as Signal };
 
 /** Small JSON maps in local storage, never throwing. */
 function readMap(key: string): Record<string, string> {
@@ -71,7 +64,7 @@ async function getAttendance(eventId: string): Promise<AttendanceView> {
 
 export async function setAttendance(
   eventId: string,
-  kind: Signal,
+  kind: AttendanceSignal,
   on: boolean,
   forSeconds?: number,
 ): Promise<AttendanceView> {
@@ -107,7 +100,7 @@ export async function lookAt(eventId: string, minutes: number): Promise<Attendan
 }
 
 /** A signal sent without waiting for it (GoThere's "on the way"); failures are ignored. */
-export function signalQuietly(eventId: string, kind: Signal, on: boolean): void {
+export function signalQuietly(eventId: string, kind: AttendanceSignal, on: boolean): void {
   setAttendance(eventId, kind, on).catch(() => {
     /* offline: the count just won't include this device */
   });
