@@ -1,5 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { formatOpeningHours, parseOpeningHours } from '@happow/core';
+import { newHoursRow, rowsToWeek, weekToRows } from '../src/components/HoursEditor';
 import { OpenPlaceCard } from '../src/components/OpenPlaceCard';
 import { I18nProvider } from '../src/i18n';
 import { loadPlaces, openPlaces, toPlaces, type PlaceRow } from '../src/places';
@@ -66,7 +68,13 @@ describe('the open place card', () => {
     const place = openPlaces(toPlaces(rows), at(time), tz, here, {}, []).find((p) => p.id === id)!;
     render(
       <I18nProvider initial="en">
-        <OpenPlaceCard place={place} now={at(time)} timeZone={tz} onClose={() => {}} />
+        <OpenPlaceCard
+          place={place}
+          now={at(time)}
+          timeZone={tz}
+          onClose={() => {}}
+          onEdit={() => {}}
+        />
       </I18nProvider>,
     );
   };
@@ -111,5 +119,57 @@ describe('loading places', () => {
     // A full answer is kept.
     await loadPlaces(here, doFetch);
     expect(inits).toHaveLength(4);
+  });
+});
+
+describe('a private party', () => {
+  const party = (until: string) =>
+    toPlaces([{ ...row('pub', 'amenity=pub', 'Mo-Su 16:00-02:00'), private_until: until }]);
+
+  it('shows the place as closed to the public until the party ends, even outside its hours', () => {
+    const until = at('23:00').toISOString();
+    const [evening] = openPlaces(party(until), at('20:00'), tz, here, {}, []);
+    expect(evening).toMatchObject({ privateParty: true, closesAt: at('23:00') });
+    const [noon] = openPlaces(party(at('14:00').toISOString()), at('12:00'), tz, here, {}, []);
+    expect(noon).toMatchObject({ privateParty: true });
+    // Over: the place is open as usual.
+    const [late] = openPlaces(party(until), at('23:30'), tz, here, {}, []);
+    expect(late!.privateParty).toBe(false);
+    render(
+      <I18nProvider initial="en">
+        <OpenPlaceCard
+          place={evening!}
+          now={at('20:00')}
+          timeZone={tz}
+          onClose={() => {}}
+          onEdit={() => {}}
+        />
+      </I18nProvider>,
+    );
+    expect(screen.getByText('Private party')).toBeTruthy();
+    expect(screen.queryByText('Open')).toBeNull();
+  });
+});
+
+describe('the hours editor', () => {
+  it('turns its rows into opening hours and back', () => {
+    const weekdays = { ...newHoursRow([true, true, true, true, true, false, false]) };
+    const rows = [
+      { ...weekdays, from: '10:00', to: '22:00' },
+      {
+        ...newHoursRow([false, false, false, false, false, true, true]),
+        from: '12:00',
+        to: '02:00',
+      },
+    ];
+    const week = rowsToWeek(rows)!;
+    expect(formatOpeningHours(week)).toBe('Mo-Fr 10:00-22:00; Sa,Su 12:00-02:00');
+    expect(weekToRows(parseOpeningHours('Mo-Fr 10:00-22:00; Sa,Su 12:00-02:00')!)).toEqual(rows);
+  });
+
+  it('is not ready while a row has no day or no times', () => {
+    expect(rowsToWeek([newHoursRow()])).toBeNull();
+    expect(rowsToWeek([{ ...newHoursRow(), days: Array(7).fill(false), allDay: true }])).toBeNull();
+    expect(formatOpeningHours(rowsToWeek([{ ...newHoursRow(), allDay: true }])!)).toBe('24/7');
   });
 });

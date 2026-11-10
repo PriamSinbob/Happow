@@ -728,13 +728,13 @@ describe('GET /api/places', () => {
     },
   ];
 
-  it("serves an area's places publicly, cached for a day, with an ETag", async () => {
+  it("serves an area's places publicly, cached for half an hour, with an ETag", async () => {
     const web = backend({ rpc: { places_area: () => ({ body: rows }) } });
     const api = createApi(env, { config, fetch: web.fetch });
     const res = await api(get('lat=51.1&lng=17.05&r=5000'));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ places: rows });
-    expect(res.headers.get('cache-control')).toBe('public, max-age=86400');
+    expect(res.headers.get('cache-control')).toBe('public, max-age=1800');
     expect(res.headers.get('x-places')).toBe('some');
     expect(web.calls.find((c) => c.name === 'places_area')!.args).toMatchObject({
       lat: 51.1,
@@ -831,5 +831,109 @@ describe('POST /api/route', () => {
     expect((await api(routed)(post('route', { from, to: { lat: 40, lng: -74 } }))).status).toBe(
       400,
     );
+  });
+});
+
+describe('adding and correcting places', () => {
+  const post = (path: string, body: unknown, headers: Record<string, string> = auth) =>
+    new Request(`https://happow.example/api/${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: JSON.stringify(body),
+    });
+  const NOW = '2026-11-10T12:00:00.000Z';
+  const place = {
+    name: 'Pod Latarnią',
+    kind: 'amenity=pub',
+    point: { lat: 51.11, lng: 17.03 },
+    openingHours: 'Mo-Su 16:00-02:00',
+    address: 'Rynek 1',
+    website: 'podlatarnia.example',
+  };
+  const rpc = {
+    rate_limit_hit: () => ({ body: true }),
+    place_add: () => ({ body: 'user/1' }),
+    place_change: () => ({ body: null }),
+  };
+  const run = (path: string, body: unknown, headers?: Record<string, string>) => {
+    const web = backend({ rpc });
+    const api = createApi(env, { config, fetch: web.fetch, now: () => new Date(NOW) });
+    return { web, res: api(post(path, body, headers)) };
+  };
+
+  it('adds a place for a signed-in account, at once, within its daily limit', async () => {
+    const { web, res } = run('places', place);
+    expect((await res).status).toBe(201);
+    expect(await (await res).json()).toEqual({ id: 'user/1' });
+    expect(web.calls.find((c) => c.name === 'place_add')!.args).toMatchObject({
+      p_user: 'id-user-token',
+      p_name: 'Pod Latarnią',
+      p_kind: 'amenity=pub',
+      p_hours: 'Mo-Su 16:00-02:00',
+      p_website: 'https://podlatarnia.example/',
+      p_same_m: 50,
+    });
+    expect(web.calls.find((c) => c.name === 'rate_limit_hit')!.args).toMatchObject({
+      p_actor: 'id-user-token',
+      p_max: 10,
+    });
+  });
+
+  it('needs an account, a known kind, a spot in the region and hours it can read', async () => {
+    expect((await run('places', place, {}).res).status).toBe(401);
+    for (const bad of [
+      { kind: 'amenity=bank' },
+      { point: { lat: 52.2, lng: 21 } },
+      { openingHours: 'Mo-Fr sunrise-sunset' },
+      { openingHours: 'Mo-Su off' },
+      { website: 'http://127.0.0.1/' },
+    ]) {
+      const { web, res } = run('places', { ...place, ...bad });
+      expect((await res).status).toBe(400);
+      expect(web.calls.some((c) => c.name === 'place_add')).toBe(false);
+    }
+  });
+
+  it('takes one correction at a time: hours, closed for good, or a private party', async () => {
+    const hours = run('places/change', { id: 'node/1', openingHours: 'Mo-Su 12:00-20:00' });
+    expect((await hours.res).status).toBe(200);
+    expect(hours.web.calls.find((c) => c.name === 'place_change')!.args).toEqual({
+      p_user: 'id-user-token',
+      p_place: 'node/1',
+      p_hours: 'Mo-Su 12:00-20:00',
+      p_closed: null,
+      p_private: null,
+      p_private_until: null,
+    });
+    const until = new Date(Date.parse(NOW) + 3 * 3_600_000).toISOString();
+    const party = run('places/change', { id: 'node/1', privateUntil: until });
+    expect((await party.res).status).toBe(200);
+    expect(party.web.calls.find((c) => c.name === 'place_change')!.args).toMatchObject({
+      p_private: true,
+      p_private_until: until,
+    });
+    const over = run('places/change', { id: 'node/1', privateUntil: null });
+    await over.res;
+    expect(over.web.calls.find((c) => c.name === 'place_change')!.args).toMatchObject({
+      p_private: false,
+      p_private_until: null,
+    });
+    const closed = run('places/change', { id: 'node/1', closed: true });
+    await closed.res;
+    expect(closed.web.calls.find((c) => c.name === 'place_change')!.args).toMatchObject({
+      p_closed: true,
+    });
+  });
+
+  it('refuses no change, two changes, a party too far ahead and a signed-out caller', async () => {
+    const far = new Date(Date.parse(NOW) + 30 * 3_600_000).toISOString();
+    for (const bad of [
+      { id: 'node/1' },
+      { id: 'node/1', closed: true, openingHours: '24/7' },
+      { id: 'node/1', privateUntil: far },
+      { id: 'node/1', privateUntil: new Date(Date.parse(NOW) - 60_000).toISOString() },
+    ])
+      expect((await run('places/change', bad).res).status).toBe(400);
+    expect((await run('places/change', { id: 'node/1', closed: true }, {}).res).status).toBe(401);
   });
 });

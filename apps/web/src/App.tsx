@@ -62,6 +62,9 @@ import { About } from './components/About';
 import { Agenda } from './components/Agenda';
 import { EveningQueue } from './components/EveningQueue';
 import { AddEvent } from './components/AddEvent';
+import { AddPlace } from './components/AddPlace';
+import { PlaceEdit } from './components/PlaceEdit';
+import { Sheet } from './components/Sheet';
 import { EventCard } from './components/EventCard';
 import { EventDetail } from './components/EventDetail';
 import { GoThere } from './components/GoThere';
@@ -412,7 +415,11 @@ export function App() {
       });
   }, [accountStatus, lang]);
   // Adding needs an account: signed out, Add opens a sign-in sheet over the map.
-  const [addGate, setAddGate] = useState(false);
+  // The plus asks first what to add; signed out, sign-in comes before the form.
+  const [addChoice, setAddChoice] = useState(false);
+  const [addGate, setAddGate] = useState<'event' | 'place' | null>(null);
+  // Correcting the open place; signed out, sign-in first.
+  const [placeEdit, setPlaceEdit] = useState<'edit' | 'signIn' | null>(null);
   const detailId = route?.name === 'event' ? route.id : null;
   const goId = route?.name === 'go' ? route.id : null;
   // Dice: weights on this device; no repeats this session.
@@ -435,11 +442,15 @@ export function App() {
     go({ name: 'go', id });
   };
   const close = useCallback(() => go(null), [go]);
-  /** The add form, or sign-in first where adding needs an account. */
-  const startAdd = () => {
-    if (accountStatus === 'signedOut' && config.app.submissions.account === 'required')
-      setAddGate(true);
-    else go({ name: 'add' });
+  /** The add form, or sign-in first where adding needs an account (a place always does). */
+  const startAdd = (what: 'event' | 'place') => {
+    setAddChoice(false);
+    if (
+      accountStatus === 'signedOut' &&
+      (what === 'place' || config.app.submissions.account === 'required')
+    )
+      setAddGate(what);
+    else go({ name: what === 'place' ? 'addPlace' : 'add' });
   };
   // The district goal, only while the reach is empty.
   const goal = useDistrictGoal(repo, !loading && events.length === 0 ? searchCenter : null, now);
@@ -704,7 +715,7 @@ export function App() {
           </span>
         )}
         <span className="hud-top__end">
-          <MapAddButton onClick={startAdd} />
+          <MapAddButton onClick={() => setAddChoice(true)} />
           <button
             type="button"
             className={`map-btn${filtered ? ' has-active' : ''}`}
@@ -907,7 +918,7 @@ export function App() {
               onExpand={setRadius}
               onClearFilters={filters.clear}
               goal={goal}
-              onAdd={startAdd}
+              onAdd={() => setAddChoice(true)}
             />
           </SearchPanel>
         </section>
@@ -944,6 +955,7 @@ export function App() {
               now={pinTime}
               timeZone={region.timezone}
               onClose={() => setOpenPlaceId(null)}
+              onEdit={() => setPlaceEdit(accountStatus === 'signedOut' ? 'signIn' : 'edit')}
             />
           </div>
         ) : view === 'map' && placeEvents.length > 0 ? (
@@ -1072,6 +1084,17 @@ export function App() {
           onOpenAccount={() => go({ name: 'about' }, true)}
         />
       )}
+      {route?.name === 'addPlace' && (
+        <AddPlace
+          onClose={close}
+          onShow={(id, point) => {
+            close();
+            clearCards();
+            setOpenPlaceId(id);
+            setFocus((f) => ({ point, seq: (f?.seq ?? 0) + 1 }));
+          }}
+        />
+      )}
       {route?.name === 'moderate' && <Moderation onClose={close} />}
       {route?.name === 'about' && (
         <About
@@ -1082,14 +1105,39 @@ export function App() {
           onAddAgain={(again) => go({ name: 'add', again }, true)}
         />
       )}
+      {addChoice && (
+        <Sheet title={t('addChoice.title')} onClose={() => setAddChoice(false)}>
+          <div className="choices">
+            <button type="button" className="choice" onClick={() => startAdd('event')}>
+              {t('addChoice.event')}
+              <span>{t('addChoice.eventHint')}</span>
+            </button>
+            <button type="button" className="choice" onClick={() => startAdd('place')}>
+              {t('addChoice.place')}
+              <span>{t('addChoice.placeHint')}</span>
+            </button>
+          </div>
+        </Sheet>
+      )}
       {addGate && (
         <SignInSheet
-          forAdd
-          onClose={() => setAddGate(false)}
+          forAdd={addGate === 'event'}
+          onClose={() => setAddGate(null)}
           onSignedIn={() => {
-            setAddGate(false);
-            go({ name: 'add' });
+            go({ name: addGate === 'place' ? 'addPlace' : 'add' });
+            setAddGate(null);
           }}
+        />
+      )}
+      {placeEdit === 'signIn' && (
+        <SignInSheet onClose={() => setPlaceEdit(null)} onSignedIn={() => setPlaceEdit('edit')} />
+      )}
+      {placeEdit === 'edit' && openPlace && (
+        <PlaceEdit
+          place={openPlace}
+          now={pinTime}
+          timeZone={region.timezone}
+          onClose={() => setPlaceEdit(null)}
         />
       )}
       {queueDay && (

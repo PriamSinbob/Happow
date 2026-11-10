@@ -17,19 +17,23 @@ function duration(minutes: number): string {
 
 /**
  * A place that is open now, with no event on: what it is, until when it is open and how long
- * that leaves, and the way there. An event at the place shows the event's card instead.
+ * that leaves, and the way there; or that a private party is on. An event at the place shows the
+ * event's card instead.
  */
 export function OpenPlaceCard({
   place,
   now,
   timeZone,
   onClose,
+  onEdit,
 }: {
   place: OpenPlace;
   /** The time looked at: now, or the time picked on the line. */
   now: Date;
   timeZone: string;
   onClose: () => void;
+  /** Correct the place: hours, a private party, closed for good. */
+  onEdit: () => void;
 }) {
   const { t, lang } = useI18n();
   const left = place.closesAt
@@ -51,8 +55,12 @@ export function OpenPlaceCard({
         </button>
       </header>
       <p className="event-card__when">
-        <span className="open-pill">{t('place.open')}</span>
-        {place.closesAt === null || left === null ? (
+        <span className={`open-pill${place.privateParty ? ' is-private' : ''}`}>
+          {t(place.privateParty ? 'place.private' : 'place.open')}
+        </span>
+        {place.privateParty && place.closesAt ? (
+          t('place.until', { time: formatTime(place.closesAt.toISOString(), timeZone, lang) })
+        ) : place.closesAt === null || left === null ? (
           t('place.allDay')
         ) : (
           <>
@@ -82,6 +90,9 @@ export function OpenPlaceCard({
             <Icon name="link" size={16} /> {t('place.website')}
           </a>
         )}
+        <button type="button" className="btn" onClick={onEdit}>
+          <Icon name="pencil" size={16} /> {t('place.edit')}
+        </button>
       </div>
     </article>
   );

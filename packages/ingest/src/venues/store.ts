@@ -69,7 +69,7 @@ export class VenueStore {
     await this.db.query('begin');
     try {
       const before = await this.db.query(
-        'select count(*)::int as n from places where region_id = $1',
+        `select count(*)::int as n from places where region_id = $1 and source = 'osm'`,
         [regionId],
       );
       await this.db.query(
@@ -98,9 +98,11 @@ export class VenueStore {
       // now() is the transaction's start: rows this run did not touch are older.
       const complete = places.length >= before.rows[0].n * PLACES_KEEP_SHARE;
       const gone = complete
-        ? await this.db.query('delete from places where region_id = $1 and seen_at < now()', [
-            regionId,
-          ])
+        ? // Places people added are not OSM's to remove.
+          await this.db.query(
+            `delete from places where region_id = $1 and seen_at < now() and source = 'osm'`,
+            [regionId],
+          )
         : { rowCount: 0 };
       await this.db.query('commit');
       return { removed: gone.rowCount ?? 0, kept: !complete };

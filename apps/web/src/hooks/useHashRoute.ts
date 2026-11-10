@@ -6,6 +6,7 @@ export type Route =
   | { name: 'go'; id: string }
   /** `again`: one of the account's submissions to add for another date. */
   | { name: 'add'; again?: string }
+  | { name: 'addPlace' }
   | { name: 'moderate' }
   /** Someone's contact link, /c/<token>. */
   | { name: 'contact'; token: string }
@@ -27,6 +28,7 @@ function read(): Route | null {
     }
   }
   if (h === '#/add') return { name: 'add' };
+  if (h === '#/addPlace') return { name: 'addPlace' };
   if (h.startsWith(AGAIN)) {
     try {
       const again = decodeURIComponent(h.slice(AGAIN.length));

@@ -47,6 +47,7 @@ import { z } from 'zod';
 import { accountRoutes, quotaExceeded } from './accounts.js';
 import { attendanceRoutes } from './attendance.js';
 import { contributionRoutes } from './contributions.js';
+import { placeEditRoutes } from './placeEdits.js';
 import { feedRoutes } from './feeds.js';
 import { organiserRoutes } from './organisers.js';
 import { privateRoutes } from './private.js';
@@ -277,6 +278,13 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   };
 
   const feeds = feedRoutes({ config, need, requireUser: accounts.requireUser, limit });
+  const placeEdits = placeEditRoutes({
+    config,
+    need,
+    requireUser: accounts.requireUser,
+    limit,
+    now,
+  });
   const pushSecret = (env as Record<string, unknown>)[config.app.push.secret];
   const reminders = reminderRoutes({
     config,
@@ -966,9 +974,9 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
 
   /**
    * GET /api/places?lat&lng&r → the places with opening hours within r of a grid point, nearest
-   * first (the same grid as /api/area). The phone works out "open now" itself, and places change
-   * weekly at most, so the answer is public and cached for `places.cacheHours`. An empty answer
-   * (before the first import) is not kept anywhere, or the map would stay empty for a day.
+   * first (the same grid as /api/area), with people's corrections applied. The phone works out
+   * "open now" itself, so the answer is public and cached for `places.cacheMinutes`. An empty
+   * answer (before the first import) is not kept anywhere, or the map would stay empty.
    */
   async function places(req: Request): Promise<Response> {
     if (!db) throw new ApiError(503, 'not_configured');
@@ -988,7 +996,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     );
     if (!Object.values(key).every(Number.isFinite) || !isAreaKey(key, refresh) || !region)
       throw new ApiError(400, 'invalid_input', 'area');
-    const { maxPerArea, cacheHours } = config.app.places;
+    const { maxPerArea, cacheMinutes } = config.app.places;
     const rows = await db.rpc<unknown>('places_area', {
       lat: key.lat,
       lng: key.lng,
@@ -1001,7 +1009,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     const headers: Record<string, string> = {
       'content-type': 'application/json',
       etag,
-      'cache-control': some ? `public, max-age=${Math.round(cacheHours * 3600)}` : 'no-store',
+      'cache-control': some ? `public, max-age=${Math.round(cacheMinutes * 60)}` : 'no-store',
       // The service worker keeps only answers with this header.
       ...(some ? { 'x-places': 'some' } : {}),
     };
@@ -1113,6 +1121,10 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'attendance' || head === 'share') return await attendance.route(req, head, rest);
       if (head === 'area' && req.method === 'GET' && !rest.length) return await area(req);
       if (head === 'places' && req.method === 'GET' && !rest.length) return await places(req);
+      if (head === 'places' && req.method === 'POST' && !rest.length)
+        return await placeEdits.add(req);
+      if (head === 'places' && req.method === 'POST' && rest.join('/') === 'change')
+        return await placeEdits.change(req);
       if (head === 'ingest' && req.method === 'GET' && rest.join('/') === 'status')
         return await ingestStatus();
       if (head === 'autofill' && req.method === 'POST' && rest.join('/') === 'photo')

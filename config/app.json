@@ -313,7 +313,11 @@
     ],
     "minZoom": 14,
     "maxPerArea": 3000,
-    "cacheHours": 24,
+    "cacheMinutes": 30,
+    "addsPerDayPerAccount": 10,
+    "changesPerDayPerAccount": 20,
+    "sameWithinM": 50,
+    "privateMaxHours": 24,
     "nearEventM": 30,
     "closingSoonMin": 60
   },
