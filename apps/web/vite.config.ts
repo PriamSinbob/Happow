@@ -139,11 +139,14 @@ export default defineConfig(({ mode }) => {
               },
             },
             {
-              // Places change weekly at most: the cached copy at once, refreshed behind it.
+              // The network first (the browser's own cache answers within `places.cacheMinutes`),
+              // so a place you just added or corrected is read back at once; the kept copy is
+              // for offline.
               urlPattern: ({ url }: { url: URL }) => url.pathname === '/api/places',
-              handler: 'StaleWhileRevalidate' as const,
+              handler: 'NetworkFirst' as const,
               options: {
                 cacheName: 'places-2',
+                networkTimeoutSeconds: 8,
                 expiration: { maxEntries: 10, maxAgeSeconds: 7 * 24 * 3600 },
                 // Never an empty answer (the API marks the ones with places).
                 cacheableResponse: { statuses: [200], headers: { 'x-places': 'some' } },
