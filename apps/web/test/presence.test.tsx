@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { lookAt } from '../src/attendance';
 import { HereButton } from '../src/components/GoThere';
 import { Going } from '../src/components/Going';
-import { rowToEvent, type Row } from '../src/data/supabase';
+import { rowToEvent, type EventRow as Row } from '@happow/core';
 import { I18nProvider } from '../src/i18n';
 
 /** Co-presence (looking, on the way, here). */

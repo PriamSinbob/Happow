@@ -7,7 +7,7 @@ import { entitlementsFor } from '@happow/core';
 import { materializeSeed } from '@happow/core/seed';
 import { RuleList } from '../src/components/EventCard';
 import { config, region } from '../src/config';
-import { rowToEvent } from '../src/data/supabase';
+import { rowToEvent } from '@happow/core';
 import { I18nProvider } from '../src/i18n';
 
 const row = {

@@ -944,3 +944,57 @@ describe('adding and correcting places', () => {
     expect((await run('places/change', { id: 'node/1', closed: true }, {}).res).status).toBe(401);
   });
 });
+
+describe('public event reads', () => {
+  const row = { id: 'tm:1', title: 'Koncert', lat: 51.1, lng: 17.03 };
+  const reads = {
+    ...allow,
+    event_by_id: (a: Record<string, unknown>) => ({ body: a.event_id === 'tm:1' ? [row] : [] }),
+    events_by_ids: (a: Record<string, unknown>) => ({
+      body: (a.ids as string[]).filter((id) => id === 'tm:1').map(() => row),
+    }),
+    event_credit: () => ({ body: { name: 'Ola', level: null } }),
+    district_goal: () => ({ body: { id: 'rynek', name: 'Rynek', count: 4 } }),
+  };
+  const get = (path: string) => new Request(`https://happow.example/api/${path}`);
+
+  it('answers one event, briefly cached and public, and 404 for one that is not listed', async () => {
+    const web = backend({ rpc: reads });
+    const api = createApi(env, { fetch: web.fetch, now });
+    const res = await api(get('events/tm%3A1'));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('cache-control')).toBe(
+      `public, max-age=${base.app.refresh.eventSeconds}`,
+    );
+    expect(await res.json()).toEqual({ event: row });
+    // Never measured from a point: one cached answer serves everyone.
+    expect(web.calls.find((c) => c.name === 'event_by_id')!.args).toEqual({ event_id: 'tm:1' });
+    const gone = await api(get('events/nope'));
+    expect(gone.status).toBe(404);
+    expect(await gone.json()).toMatchObject({ error: 'unknown_event' });
+  });
+
+  it('looks up a device’s plans by id, up to 500', async () => {
+    const api = createApi(env, { fetch: backend({ rpc: reads }).fetch, now });
+    const res = await api(post('events/lookup', { ids: ['tm:1', 'gone'] }));
+    expect(await res.json()).toEqual({ events: [row] });
+    const tooMany = Array.from({ length: 501 }, (_, i) => `x:${i}`);
+    expect((await api(post('events/lookup', { ids: tooMany }))).status).toBe(400);
+  });
+
+  it('gives the credit uncached and the district goal for a span', async () => {
+    const web = backend({ rpc: reads });
+    const api = createApi(env, { fetch: web.fetch, now });
+    const credit = await api(get('events/tm%3A1/credit'));
+    expect(credit.headers.get('cache-control')).toBe('no-store');
+    expect(await credit.json()).toEqual({ credit: { name: 'Ola', level: null } });
+    const q = 'lat=51.11&lng=17.03&from=2026-10-24T00:00:00Z&to=2026-10-26T00:00:00Z';
+    const goal = await api(get(`district-goal?${q}`));
+    expect(await goal.json()).toEqual({ goal: { id: 'rynek', name: 'Rynek', count: 4 } });
+    expect(web.calls.find((c) => c.name === 'district_goal')!.args).toMatchObject({
+      p_region: 'wroclaw',
+      p_lat: 51.11,
+    });
+    expect((await api(get('district-goal?lat=x'))).status).toBe(400);
+  });
+});

@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { NearbyEvent } from '@happow/core';
 import { EventDetail } from '../src/components/EventDetail';
 import { liveNearby } from '../src/components/NearbyNow';
-import { rowToEvent, type Row } from '../src/data/supabase';
+import { rowToEvent, type EventRow as Row } from '@happow/core';
 import { I18nProvider } from '../src/i18n';
 
 /** A link to an ended event still leads somewhere live. */

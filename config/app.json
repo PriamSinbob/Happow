@@ -50,7 +50,8 @@
     "areaRadiiM": [5000, 10000, 25000],
     "areaHours": 24,
     "areaMaxEvents": 1000,
-    "longCacheMinutes": 30
+    "longCacheMinutes": 30,
+    "eventSeconds": 60
   },
   "navigation": {
     "routing": {

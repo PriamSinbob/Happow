@@ -1,9 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NearbyEvent } from '@happow/core';
 import { region } from '../src/config';
 import { AreaEventRepository } from '../src/data/area';
-import type { SupabaseEventRepository } from '../src/data/supabase';
 import { useMinuteClock } from '../src/hooks/useClock';
 import { useGeolocation, useStableCenter } from '../src/hooks/useGeolocation';
 
@@ -33,11 +31,6 @@ describe('area repository', () => {
   const center = { lat: 51.11, lng: 17.032 };
   const window = { from: new Date('2026-10-20T20:00:00Z'), to: new Date('2026-10-20T21:00:00Z') };
   let t = Date.parse('2026-10-20T20:01:00Z');
-  const db = {
-    near: vi.fn(async () => [] as NearbyEvent[]),
-    density: vi.fn(async () => []),
-    byId: vi.fn(async () => null),
-  } as unknown as SupabaseEventRepository;
   const snapshot = {
     from: '2026-10-20T20:00:00Z',
     events: [
@@ -49,7 +42,7 @@ describe('area repository', () => {
 
   it('answers the list and the hotspot counts from one download, then filters locally', async () => {
     const fetchArea = vi.fn(async (_url: string) => new Response(JSON.stringify(snapshot)));
-    const repo = new AreaEventRepository(db, fetchArea, () => t);
+    const repo = new AreaEventRepository(fetchArea, () => t);
     const q = { center, radiusM: 500, ...window };
     const [list, clusters] = await Promise.all([
       repo.near(q),
@@ -76,7 +69,7 @@ describe('area repository', () => {
   it('reads each month of the future as its own snapshot, kept while stepping back and forth', async () => {
     t = Date.parse('2026-10-20T20:01:00Z');
     const fetchArea = vi.fn(async (_url: string) => new Response(JSON.stringify(snapshot)));
-    const repo = new AreaEventRepository(db, fetchArea, () => t);
+    const repo = new AreaEventRepository(fetchArea, () => t);
     const q = { center, radiusM: 500, ...window, range: 'future' };
     await repo.near(q);
     await repo.near({ ...q, step: 2 });
@@ -94,7 +87,7 @@ describe('area repository', () => {
   it('downloads the 14-day snapshot only when chosen, keeps it 30 minutes, and leaves the 24-hour one', async () => {
     t = Date.parse('2026-10-20T20:01:00Z');
     const fetchArea = vi.fn(async (_url: string) => new Response(JSON.stringify(snapshot)));
-    const repo = new AreaEventRepository(db, fetchArea, () => t);
+    const repo = new AreaEventRepository(fetchArea, () => t);
     const q = { center, radiusM: 500, ...window };
     await repo.near(q);
     expect(fetchArea).toHaveBeenCalledTimes(1);
@@ -116,13 +109,44 @@ describe('area repository', () => {
     expect(fetchArea).toHaveBeenCalledTimes(3);
   });
 
-  it('falls back to direct queries on servers without the area endpoint', async () => {
-    const fetchArea = vi.fn(async (_url: string) => new Response('{}', { status: 404 }));
-    const repo = new AreaEventRepository(db, fetchArea, () => t);
-    await repo.near({ center, radiusM: 500, ...window });
-    await repo.near({ center, radiusM: 500, ...window });
-    expect(fetchArea).toHaveBeenCalledTimes(1);
-    expect(db.near).toHaveBeenCalledTimes(2);
+  it('reads single events, plans, credit and the district goal through /api, never the database', async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const api = vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, init });
+      if (url === '/api/events/tm%3A1') return Response.json({ event: row('tm:1', 51.12, 17.032) });
+      if (url === '/api/events/gone')
+        return Response.json({ error: 'unknown_event' }, { status: 404 });
+      if (url === '/api/events/lookup')
+        return Response.json({ events: [row('a', 51.11, 17.032), row('b', 51.12, 17.032)] });
+      if (url === '/api/events/tm%3A1/credit')
+        return Response.json({ credit: { name: 'Ola', level: 'regular' } });
+      if (url.startsWith('/api/district-goal?'))
+        return Response.json({ goal: { id: 'rynek', name: 'Rynek', count: 4 } });
+      return new Response('{}', { status: 500 });
+    });
+    const repo = new AreaEventRepository(api, () => t);
+
+    const one = await repo.byId('tm:1', center);
+    // Rows carry no distance: the phone measures from where it is (~1.1 km north).
+    expect(one?.distanceM).toBeGreaterThan(1000);
+    expect(one?.distanceM).toBeLessThan(1200);
+    expect(await repo.byId('gone', center)).toBeNull();
+
+    const plans = await repo.byIds(['a', 'b'], center);
+    expect(plans.map((e) => e.id)).toEqual(['a', 'b']);
+    const lookup = calls.find((c) => c.url === '/api/events/lookup')!;
+    expect(lookup.init?.method).toBe('POST');
+    expect(JSON.parse(lookup.init!.body as string)).toEqual({ ids: ['a', 'b'] });
+    expect(await repo.byIds([], center)).toEqual([]);
+
+    expect(await repo.credit('tm:1')).toEqual({ name: 'Ola', level: 'regular' });
+    const goal = await repo.districtGoal('wroclaw', center, window.from, window.to);
+    expect(goal).toEqual({ id: 'rynek', name: 'Rynek', count: 4 });
+    const q = new URLSearchParams(calls.at(-1)!.url.split('?')[1]);
+    expect(Object.fromEntries(q)).toMatchObject({ region: 'wroclaw', lat: '51.11', lng: '17.032' });
+
+    // No call left the app's own origin.
+    expect(calls.every((c) => c.url.startsWith('/api/'))).toBe(true);
   });
 });
 

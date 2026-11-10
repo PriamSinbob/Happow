@@ -27,3 +27,4 @@ export * from './performers.js';
 export * from './launch.js';
 export * from './openingHours.js';
 export * from './wire.js';
+export * from './eventRow.js';

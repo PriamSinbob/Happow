@@ -16,7 +16,7 @@ import {
   SearchPanel,
 } from '../src/components/Follow';
 import { config } from '../src/config';
-import { rowToEvent, type Row } from '../src/data/supabase';
+import { rowToEvent, type EventRow as Row } from '@happow/core';
 import {
   follows,
   mergeFollows,

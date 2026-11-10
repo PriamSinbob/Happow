@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ReminderSheet } from '../src/components/ReminderSheet';
-import { rowToEvent, type Row } from '../src/data/supabase';
+import { rowToEvent, type EventRow as Row } from '@happow/core';
 import { I18nProvider } from '../src/i18n';
 import { plans } from '../src/plans';
 import { pushSupport, reminders } from '../src/reminders';

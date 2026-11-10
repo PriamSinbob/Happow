@@ -14,6 +14,7 @@ import { attendanceRoutes } from './attendance.js';
 import { autofillRoutes } from './autofill.js';
 import { contributionRoutes } from './contributions.js';
 import { emailSender, type EmailSender } from './email.js';
+import { eventRoutes } from './events.js';
 import { feedRoutes } from './feeds.js';
 import { followRoutes } from './follows.js';
 import { ApiError, json, sha256, type Limit, type Need } from './http.js';
@@ -152,6 +153,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   });
 
   const { area, places } = areaRoutes({ config, db, now });
+  const events = eventRoutes({ config, db });
   const attendance = attendanceRoutes({ config, need, now, limit, userOf: optionalUser });
   const autofill = autofillRoutes({
     config,
@@ -254,6 +256,14 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'invitations') return await privateApi.invitations(req, rest);
       if (head === 'contacts') return await privateApi.contacts(req, rest);
       if (head === 'friends') return await privateApi.friends(req, rest);
+      if (head === 'events' && method === 'GET' && rest.length === 1)
+        return await events.byId(rest[0]!);
+      if (head === 'events' && method === 'POST' && sub === 'lookup')
+        return await events.lookup(req);
+      if (head === 'events' && method === 'GET' && rest.length === 2 && rest[1] === 'credit')
+        return await events.credit(rest[0]!);
+      if (head === 'district-goal' && method === 'GET' && !rest.length)
+        return await events.districtGoal(req);
       if (head === 'events' && rest.length >= 2)
         return await organisers.events(req, rest[0]!, rest.slice(1));
       if (head === 'posts') return await organisers.posts(req, rest);

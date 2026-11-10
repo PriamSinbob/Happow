@@ -1,8 +1,8 @@
 import type { DensityCluster, DensityQuery, EventQuery, LatLng, NearbyEvent } from '@happow/core';
 
-/** Where the app gets events from. Swappable: Supabase in production, bundled seed offline/dev. */
+/** Where the app gets events from. Swappable: /api in production, the bundled seed offline/dev. */
 export interface EventRepository {
-  readonly kind: 'supabase' | 'static';
+  readonly kind: 'api' | 'static';
   near(query: EventQuery, signal?: AbortSignal): Promise<NearbyEvent[]>;
   /** One event for the detail screen or a shared link; distance measured from `from`. */
   byId(id: string, from: LatLng, signal?: AbortSignal): Promise<NearbyEvent | null>;

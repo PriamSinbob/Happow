@@ -1,10 +1,9 @@
 import { renderHook } from '@testing-library/react';
 import { COMPASS, distanceM, type DensityCluster } from '@happow/core';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import seed from '../../../data/seed/wroclaw.events.json';
 import { config, region } from '../src/config';
 import { StaticEventRepository } from '../src/data/static';
-import { rowToCluster, SupabaseEventRepository } from '../src/data/supabase';
 import { useGuidance } from '../src/hooks/useGuidance';
 import { en } from '../src/i18n/en';
 import { pl } from '../src/i18n/pl';
@@ -40,65 +39,6 @@ describe('static density', () => {
     expect(music.reduce((n, c) => n + c.count, 0)).toBeLessThan(
       all.reduce((n, c) => n + c.count, 0),
     );
-  });
-});
-
-describe('Supabase density', () => {
-  it('calls density_near with the radius, search radius and filters, and maps rows', async () => {
-    const fetchMock = vi.fn(
-      async (_url: string, _init: RequestInit) =>
-        new Response(
-          JSON.stringify([
-            {
-              cell: '881e204',
-              center_lat: 51.11,
-              center_lng: 17.03,
-              event_count: 5,
-              outside_count: 2,
-              nearest_lat: 51.112,
-              nearest_lng: 17.031,
-              nearest_m: 640,
-              top_venue: 'Rynek',
-            },
-          ]),
-        ),
-    );
-    vi.stubGlobal('fetch', fetchMock);
-    const r = new SupabaseEventRepository('https://example.supabase.co', 'anon');
-    const [c] = await r.density({ ...q, categories: ['music'], price: 'free' });
-    expect(fetchMock.mock.calls[0]![0]).toBe(
-      'https://example.supabase.co/rest/v1/rpc/density_near',
-    );
-    expect(JSON.parse(fetchMock.mock.calls[0]![1].body as string)).toMatchObject({
-      radius_m: 300,
-      search_m: q.searchRadiusM,
-      categories: ['music'],
-      price: 'free',
-    });
-    expect(c).toEqual({
-      cell: '881e204',
-      center: { lat: 51.11, lng: 17.03 },
-      count: 5,
-      outsideCount: 2,
-      nearestOutside: { point: { lat: 51.112, lng: 17.031 }, distanceM: 640 },
-      topVenue: 'Rynek',
-    });
-    vi.unstubAllGlobals();
-  });
-
-  it('maps a cell with nothing outside the radius', () => {
-    const c = rowToCluster({
-      cell: 'x',
-      center_lat: 1,
-      center_lng: 2,
-      event_count: 1,
-      outside_count: 0,
-      nearest_lat: null,
-      nearest_lng: null,
-      nearest_m: null,
-      top_venue: null,
-    });
-    expect(c.nearestOutside).toBeNull();
   });
 });
 

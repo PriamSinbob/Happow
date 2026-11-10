@@ -220,6 +220,8 @@ export const appConfigSchema = z.object({
     areaMaxEvents: z.number().int().positive(),
     /** Snapshot step for the multi-day windows: future events change slowly. */
     longCacheMinutes: z.number().positive(),
+    /** How long one event's answer (/api/events/:id) may be shared: a cancellation shows this late at most. */
+    eventSeconds: z.number().int().positive().max(3600),
   }),
   /** "Going there": in-app walking route with live location, only while the user asks for it. */
   navigation: z.object({
