@@ -6,7 +6,7 @@ import { formatAgo, formatDay, formatTime, isSameDay } from '../format';
 import { eventUrl } from '../hooks/useHashRoute';
 import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
-import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
+import { FlagNotice, GoButtons, useEventText } from './EventMeta';
 import { Going } from './Going';
 import { InstallHint } from './InstallHint';
 import { NearbyNow } from './NearbyNow';

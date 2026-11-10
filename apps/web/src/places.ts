@@ -132,7 +132,7 @@ let version = 0;
 const watchers = new Set<() => void>();
 
 /** Reads the area again, past the caches: after adding or correcting a place. */
-export function refreshPlaces(): void {
+function refreshPlaces(): void {
   cache.clear();
   fresh = true;
   version++;

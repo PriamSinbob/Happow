@@ -115,7 +115,7 @@ flowchart TB
 
 ## API request routing (/api/*)
 
-How the Worker routes /api/* (packages/api/src/handler.ts), including submission → moderation → reward.
+How the Worker routes /api/* (packages/api/src/handler.ts builds what the routes share and sends each request to its feature module), including submission → moderation → reward. Response shapes and error codes that the server and the app both name live in packages/core/src/wire.ts.
 
 ```mermaid
 flowchart LR

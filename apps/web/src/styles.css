@@ -1359,9 +1359,6 @@ div.settings-row {
 .event-card__distance {
   color: var(--muted);
 }
-.event-card__desc {
-  color: var(--ink);
-}
 .event-card__actions {
   display: flex;
   gap: 8px;
@@ -2914,21 +2911,6 @@ button.account-card__plan {
   display: inline-block;
   margin-left: 6px;
   vertical-align: -1px;
-}
-/* Staff only: the shield row at the end of About. */
-.mod-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  margin-top: 8px;
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--quiet);
 }
 .account-sheet {
   padding-bottom: calc(18px + var(--safe-bottom));

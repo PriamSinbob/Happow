@@ -15,10 +15,10 @@ Happening Now: a map-first PWA that shows every nearby event of any kind happeni
 | ---------------------- | ------------------------------------------------------------------------ |
 | `apps/web`             | React + Vite PWA (MapLibre GL, OpenFreeMap tiles), Polish and English UI |
 | `apps/web/worker`      | Cloudflare Worker: serves the app, `/api/*` from `packages/api`, cron    |
-| `packages/core`        | Shared types, config schemas, geo/time/filter helpers                    |
+| `packages/core`        | Shared types, config schemas, geo/time/filter helpers, API contract      |
 | `packages/ingest`      | Source adapters, normalizer, dedup, `pnpm ingest`                        |
 | `packages/extract`     | JSON-LD parsing, robots.txt, SSRF-safe fetch, geocoder, Claude extractor |
-| `packages/api`         | The `/api` fetch handler (area, submissions, accounts, moderation, …)    |
+| `packages/api`         | The `/api` fetch handler: `handler.ts` routes, one module per feature    |
 | `config/`              | Regions, categories, sources, plans, map, theme, app defaults            |
 | `data/`                | Seed events per region, districts                                        |
 | `supabase/migrations/` | Postgres + PostGIS schema and RPCs                                       |

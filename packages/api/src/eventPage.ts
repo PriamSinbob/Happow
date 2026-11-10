@@ -26,7 +26,7 @@ interface EventRow {
 }
 
 /** How far around the event the preview image's map reaches, in metres. */
-export const PREVIEW_MAP_RADIUS_M = 1500;
+const PREVIEW_MAP_RADIUS_M = 1500;
 
 /** A district on the preview map, from district_outlines(). */
 export interface Outline {
