@@ -5,7 +5,7 @@ import { errorText } from '../src/errors';
 import { visibleFlag, withFlag } from '../src/flags';
 import { routeHref, useRoute } from '../src/hooks/useHashRoute';
 import { translate } from '../src/i18n';
-import { rowToEvent } from '../src/data/supabase';
+import { rowToEvent } from '@happow/core';
 
 describe('routes', () => {
   it('round-trips event ids with source prefixes', () => {

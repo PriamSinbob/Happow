@@ -14,7 +14,7 @@ import { EveningQueue } from '../src/components/EveningQueue';
 import { Going } from '../src/components/Going';
 import { config } from '../src/config';
 import type { EventRepository } from '../src/data';
-import { rowToEvent, type Row } from '../src/data/supabase';
+import { rowToEvent, type EventRow as Row } from '@happow/core';
 import { useMyEvents } from '../src/hooks/useMyEvents';
 import { useView } from '../src/hooks/useView';
 import { I18nProvider } from '../src/i18n';

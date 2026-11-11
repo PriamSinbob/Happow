@@ -2,9 +2,20 @@ import { can, type Entitlements, type HappowConfig } from '@happow/core';
 import { fetchPage, parseRobots, productToken } from '@happow/extract';
 import { z } from 'zod';
 import type { User } from './accounts.js';
-import { ApiError, body, json, sha256 } from './http.js';
+import {
+  ApiError,
+  body,
+  json,
+  type Limit,
+  eventId,
+  uuid,
+  noStore,
+  deviceId,
+  deviceHash,
+  type Need,
+} from './http.js';
 import { sendNotices, type NoticeKind } from './notices.js';
-import { SupabaseError, type Supabase } from './supabase.js';
+import { SupabaseError } from './supabase.js';
 
 /**
  * Organisers: claims on events and venues, posts on the event page, edits by owners
@@ -25,20 +36,17 @@ import { SupabaseError, type Supabase } from './supabase.js';
 
 export interface OrganiserDeps {
   config: HappowConfig;
-  need: () => { db: Supabase; salt: string };
+  need: Need;
   requireUser: (req: Request) => Promise<User>;
   planOf: (user: { id: string }) => Promise<{ entitlements: Entitlements }>;
-  limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
+  limit: Limit;
   trusted: (userId: string) => Promise<boolean>;
   now: () => Date;
   fetch: typeof fetch;
   pushSecret: string | undefined;
 }
 
-const eventId = z.string().min(1).max(300);
-const uuid = z.string().uuid();
 const instant = z.string().datetime({ offset: true });
-const noStore = { 'cache-control': 'private, no-store' };
 const url = z.string().url().max(500).startsWith('http').nullable();
 
 const fieldsSchema = z
@@ -298,12 +306,12 @@ export function organiserRoutes(deps: OrganiserDeps) {
       const input = await body(
         req,
         z.object({
-          deviceId: z.string().min(8).max(100),
+          deviceId,
           reason: z.enum(['inappropriate', 'unlawful', 'wrong_info', 'other']),
           note: z.string().trim().max(500).nullable().optional(),
         }),
       );
-      const reporter = await sha256(`${salt}:device:${input.deviceId}`);
+      const reporter = await deviceHash(salt, input.deviceId);
       await limit('report', reporter, 86_400, config.app.submissions.reportsPerDayPerDevice);
       await rpc('post_report', {
         p_post: id,

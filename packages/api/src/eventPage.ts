@@ -7,10 +7,10 @@ import {
   type LatLng,
   type Region,
 } from '@happow/core';
-import { boundFetch } from '@happow/extract';
+
 import type { ApiDeps, ApiEnv } from './handler.js';
 import { sha256 } from './http.js';
-import { Supabase } from './supabase.js';
+import { serviceDb, type Supabase } from './supabase.js';
 
 /** The event_by_id columns a link preview needs. */
 interface EventRow {
@@ -26,7 +26,7 @@ interface EventRow {
 }
 
 /** How far around the event the preview image's map reaches, in metres. */
-export const PREVIEW_MAP_RADIUS_M = 1500;
+const PREVIEW_MAP_RADIUS_M = 1500;
 
 /** A district on the preview map, from district_outlines(). */
 export interface Outline {
@@ -150,10 +150,7 @@ const PRIVATE_TEXT = {
 export function createEventPage(env: ApiEnv, deps: Pick<ApiDeps, 'fetch' | 'config' | 'now'> = {}) {
   const config = deps.config ?? loadConfig();
   const now = deps.now ?? (() => new Date());
-  const db =
-    env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
-      ? new Supabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, boundFetch(deps.fetch))
-      : null;
+  const db = serviceDb(env, deps.fetch);
   const fallback = config.app.fallbackLanguage;
 
   const page = (html: string, status: number, cacheS: number) =>

@@ -8,8 +8,17 @@ import {
 } from '@happow/core';
 import { titleSimilarity } from '@happow/ingest/dedup';
 import { z } from 'zod';
-import { ApiError, body, json, sha256 } from './http.js';
-import { SupabaseError, type Supabase } from './supabase.js';
+import {
+  ApiError,
+  body,
+  json,
+  type Limit,
+  deviceId,
+  eventId,
+  deviceHash,
+  type Need,
+} from './http.js';
+import { SupabaseError } from './supabase.js';
 
 /**
  * Contributions on the server: rewards for events that passed moderation or were
@@ -21,17 +30,17 @@ export interface ContributionDeps {
   config: HappowConfig;
   /** The default region's time zone: months and the promotion end count there. */
   timeZone: string;
-  need: () => { db: Supabase; salt: string };
+  need: Need;
   now: () => Date;
-  limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
+  limit: Limit;
 }
 
 const countsSchema = z.object({
-  deviceId: z.string().min(8).max(100),
+  deviceId,
   items: z
     .array(
       z.object({
-        eventId: z.string().min(1).max(300),
+        eventId,
         kind: z.enum(['open', 'route', 'arrival']),
       }),
     )
@@ -41,8 +50,8 @@ const countsSchema = z.object({
 const FIELD = { open: 'opens', route: 'routes', arrival: 'arrivals' } as const;
 
 const thanksSchema = z.object({
-  deviceId: z.string().min(8).max(100),
-  eventId: z.string().min(1).max(300),
+  deviceId,
+  eventId,
 });
 
 export function contributionRoutes({ config, timeZone, need, now, limit }: ContributionDeps) {
@@ -91,7 +100,7 @@ export function contributionRoutes({ config, timeZone, need, now, limit }: Contr
     const input = await body(req, countsSchema);
     if (input.items.length > config.app.counts.maxBatch)
       throw new ApiError(400, 'invalid_input', 'items');
-    const device = await sha256(`${salt}:device:${input.deviceId}`);
+    const device = await deviceHash(salt, input.deviceId);
     await limit('counts', device, 3600, config.app.counts.perHourPerDevice);
     const per = new Map<
       string,
@@ -144,7 +153,7 @@ export function contributionRoutes({ config, timeZone, need, now, limit }: Contr
   async function thanks(req: Request): Promise<Response> {
     const { db, salt } = need();
     const input = await body(req, thanksSchema);
-    const device = await sha256(`${salt}:device:${input.deviceId}`);
+    const device = await deviceHash(salt, input.deviceId);
     await limit('thanks', device, 3600, config.app.counts.perHourPerDevice);
     try {
       const added = await db.rpc<boolean>('thanks_add', {

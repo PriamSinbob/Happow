@@ -4,7 +4,7 @@ Four Mermaid charts of the whole app. GitHub renders them; keep them in step wit
 
 ## Happow — whole system overview
 
-Where everything runs and how data moves: config drives the Worker cron, the GitHub ingest job and the API; Supabase sits in the middle.
+Where everything runs and how data moves: config drives the Worker cron, the GitHub ingest job and the API; Supabase sits in the middle. Every client reads and writes through `/api` ([API.md](API.md)) and signs in with Supabase Auth; only the Worker and the ingest job touch the database.
 
 ```mermaid
 flowchart TB
@@ -15,8 +15,8 @@ flowchart TB
     SCHED{"Any source due?<br/>(source_runs)"}
     METRICS["Mondays:<br/>saveWeeklyMetrics"]
     API["/api/* router<br/>packages/api"]
-    CACHE[("Workers Cache<br/>/api/area 5–30 min")]
-    STATIC["Static assets<br/>apps/web/dist (PWA)"]
+    CACHE[("Workers Cache<br/>/api/area 5–30 min<br/>events 1 min · config")]
+    STATIC["Static assets<br/>apps/web/dist (web app)"]
   end
 
   subgraph GH["GitHub Actions"]
@@ -40,7 +40,8 @@ flowchart TB
   GEO["Nominatim geocoder"]
   DB[("Supabase Postgres<br/>events · raw payloads · venues<br/>submissions · reports · accounts<br/>plans · contributions · metrics")]
 
-  USER(("User phone<br/>PWA"))
+  USER(("Android / iOS app<br/>(own repositories)"))
+  WEB(("Web: shared links,<br/>embeds, reference app"))
   MOD(("Moderator /<br/>Admin"))
 
   CFG --> SCHED
@@ -56,7 +57,9 @@ flowchart TB
   INGEST -- "upsert, dedup, flag missing" --> DB
   MIGRATE --> DB
 
-  USER -- "loads app" --> STATIC
+  WEB -- "loads" --> STATIC
+  WEB -- "/api, same as the apps" --> API
+  USER -- "GET /api/config" --> CACHE
   USER -- "GET /api/area" --> CACHE
   CACHE -- "miss" --> API
   USER -- "submit · report · autofill<br/>sign-in · plans · route" --> API
@@ -115,11 +118,13 @@ flowchart TB
 
 ## API request routing (/api/*)
 
-How the Worker routes /api/* (packages/api/src/handler.ts), including submission → moderation → reward.
+How the Worker routes /api/* (packages/api/src/handler.ts builds what the routes share and sends each request to its feature module), including submission → moderation → reward. Response shapes and error codes that the server and the app both name live in packages/core/src/wire.ts.
 
 ```mermaid
 flowchart LR
   REQ(["Request /api/..."]) --> R{"route head"}
+  R -- "GET config" --> CONF2["Client config<br/>public, cached"]
+  R -- "GET events/:id · POST events/lookup<br/>credit · district-goal" --> EVR["Public event reads<br/>events_public"]
   R -- "GET area" --> AREA["events_area RPC<br/>grid-snapped key, ETag,<br/>public cache 5 / 30 min<br/>range: 14 days · future"]
   R -- "GET places" --> PLACES["places_area RPC<br/>same grid key, ETag,<br/>corrections applied,<br/>public cache 30 min"]
   R -- "POST autofill" --> AF["Sign-in + monthly allowance<br/>fetchPage → JSON-LD<br/>→ LLM (daily cap) → prefills"]
@@ -146,17 +151,17 @@ flowchart LR
   MOD -- "report: hide" --> REVOKE["Hide event,<br/>revoke reward"]
   MOD -- "report: cancel" --> CANC["Mark cancelled"]
 
-  AREA & PLACES & AF & SUB & REP & CON & MOD & ME & ADM & FOL & ORG & PRIV & IST --> DB[("Supabase<br/>service-role RPCs")]
+  EVR & AREA & PLACES & AF & SUB & REP & CON & MOD & ME & ADM & FOL & ORG & PRIV & IST --> DB[("Supabase<br/>service-role RPCs")]
 ```
 
-## PWA user journey (apps/web)
+## Web app user journey (apps/web)
 
-What a person can do in the PWA (apps/web/src/App.tsx, hash routes in useHashRoute.ts).
+What a person can do in the web app, the reference for the native apps ([NATIVE.md](NATIVE.md)) (apps/web/src/App.tsx, hash routes in useHashRoute.ts).
 
 ```mermaid
 flowchart TB
   OPEN(["Open app"]) --> REPO{"Supabase env set?"}
-  REPO -- yes --> AREAR["AreaEventRepository<br/>GET /api/area"]
+  REPO -- yes --> AREAR["AreaEventRepository<br/>/api/area · /api/events"]
   REPO -- no --> SEED["Static seed file<br/>data/seed/*.json"]
   AREAR --> HOME
   SEED --> HOME

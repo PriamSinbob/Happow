@@ -4,8 +4,6 @@ import {
   agendaDays,
   dayStarts,
   densityClusters,
-  diceCategory,
-  dicePool,
   familyMatch,
   isOnDay,
   isRunning,
@@ -14,14 +12,9 @@ import {
   overlaps,
   pinState,
   reachForRoll,
-  reweigh,
-  rollDice,
   snapRadius,
-  topCategories,
   viewIds,
   windowRange,
-  type DiceSignal,
-  type DiceWeights,
   type HappowEvent,
   type LatLng,
   type NearbyEvent,
@@ -32,7 +25,7 @@ import { useAtlas } from './atlas/useAtlas';
 import { categoriesById, config, region } from './config';
 import { createRepository } from './data';
 import { withFlag, useMyReports } from './flags';
-import { useEventDetail } from './hooks/useEventDetail';
+import { useDice } from './hooks/useDice';
 import { useEvents } from './hooks/useEvents';
 import { useGuidance } from './hooks/useGuidance';
 import { useFilters } from './hooks/useFilters';
@@ -41,14 +34,9 @@ import { useMinuteClock } from './hooks/useClock';
 import { useRoute } from './hooks/useHashRoute';
 import { useRadius } from './hooks/useRadius';
 import { useMyEvents } from './hooks/useMyEvents';
+import { useOpenEvent } from './hooks/useOpenEvent';
 import { invitations, useAcceptedInvitations } from './invitations';
-import {
-  fetchPrivateEvent,
-  refreshPrivate,
-  usePrivateEvents,
-  usePrivateSync,
-  type PrivateEvent,
-} from './private';
+import { refreshPrivate, usePrivateEvents, usePrivateSync } from './private';
 import { ContactLinkSheet } from './components/Contacts';
 import { useView } from './hooks/useView';
 import { openPlaces, usePlaces } from './places';
@@ -113,14 +101,16 @@ const VIEW_ICON: Record<PlanView, IconName> = {
   private: 'lock',
 };
 
-function savedWeights(): DiceWeights {
-  try {
-    const v: unknown = JSON.parse(storage.get('diceWeights') ?? '{}');
-    return v && typeof v === 'object' ? (v as DiceWeights) : {};
-  } catch {
-    return {};
-  }
-}
+/**
+ * The one card over the map: an event, an open place, a pin with several events at one place, or
+ * the hotspot. One value, so opening any of them closes the others.
+ */
+type MapCard =
+  | { kind: 'event'; id: string }
+  | { kind: 'place'; id: string }
+  | { kind: 'venue'; eventIds: string[] }
+  | { kind: 'hotspot' }
+  | null;
 
 export function App() {
   const { t, lang } = useI18n();
@@ -131,7 +121,12 @@ export function App() {
   const [radius, setRadius] = useRadius();
   const [previewRadius, setPreviewRadius] = useState<number | null>(null);
   const [view, setView] = useState<View>('map');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [card, setCard] = useState<MapCard>(null);
+  const selectedId = card?.kind === 'event' ? card.id : null;
+  const openPlaceId = card?.kind === 'place' ? card.id : null;
+  const placeIds = card?.kind === 'venue' ? card.eventIds : null;
+  const hotspotOpen = card?.kind === 'hotspot';
+  const clearCards = useCallback(() => setCard(null), []);
   // "OK" on the location notice is remembered on this device; the locate button shows it again.
   const [bannerDismissed, setBannerDismissed] = useState(
     () => storage.get('locationNoticeDismissed') === '1',
@@ -159,6 +154,12 @@ export function App() {
   const [at, setAt] = useState<Date | null>(null);
   const [day, setDay] = useState<number | null>(null);
   const [liveOnly, setLiveOnly] = useState(false);
+  /** The line back to today, at the present moment. */
+  const backToNow = () => {
+    filters.setWindow('today');
+    setAt(null);
+    setDay(null);
+  };
   // Searches move only after ~100 m; labels and windows follow a minute clock, not downloads.
   // Quick add offers "happening here" only with a precise fix.
   const here =
@@ -296,33 +297,28 @@ export function App() {
   const mine = useMyEvents(repo, myIds, searchCenter, known, inPlans);
   // On the map, a view keeps the time line and the filters: "this evening" plus "my plans" shows
   // tonight's plans. Outside the reach they still show: they're yours.
-  const mineOnMap = useMemo(() => {
-    if (!inPlans) return [];
-    const range = windowRange(filters.window, now, region.timezone);
-    return flagged(
-      familyOnly(mine.events).filter(
-        (e) =>
-          e.status !== 'cancelled' &&
-          matchesFilters(e, filters) &&
-          overlaps(e, range.from, range.to) &&
-          visible(e),
-      ),
-    );
-  }, [inPlans, mine.events, filters, now, familyOnly, flagged, visible]);
+  const shownNow = useCallback(
+    (list: readonly NearbyEvent[]) => {
+      const range = windowRange(filters.window, now, region.timezone);
+      return flagged(
+        familyOnly([...list]).filter(
+          (e) =>
+            e.status !== 'cancelled' &&
+            matchesFilters(e, filters) &&
+            overlaps(e, range.from, range.to) &&
+            visible(e),
+        ),
+      );
+    },
+    [filters, now, familyOnly, flagged, visible],
+  );
+  const mineOnMap = useMemo(
+    () => (inPlans ? shownNow(mine.events) : []),
+    [inPlans, mine.events, shownNow],
+  );
   // Private events show locked in every view, so none is missed, on the time line and the
   // filters like the rest.
-  const privOnMap = useMemo(() => {
-    const range = windowRange(filters.window, now, region.timezone);
-    return flagged(
-      familyOnly([...priv]).filter(
-        (e) =>
-          e.status !== 'cancelled' &&
-          matchesFilters(e, filters) &&
-          overlaps(e, range.from, range.to) &&
-          visible(e),
-      ),
-    );
-  }, [priv, filters, now, familyOnly, flagged, visible]);
+  const privOnMap = useMemo(() => shownNow(priv), [priv, shownNow]);
   // The map shows the reach and everything loaded beyond it, as pins everywhere (the nearest
   // off-screen ones as edge dots).
   const mapEvents = useMemo(() => {
@@ -361,7 +357,6 @@ export function App() {
       mapEvents,
     ],
   );
-  const [openPlaceId, setOpenPlaceId] = useState<string | null>(null);
   const openPlace = placesOnMap.find((p) => p.id === openPlaceId) ?? null;
   // Ended long ago: off the list (a removal, so the account's other devices drop them too).
   const myDays = useMemo(
@@ -388,7 +383,6 @@ export function App() {
   );
   const selected = all.find((e) => e.id === selectedId) ?? null;
   // A pin with several events at one place lists them; ids that left the results drop out.
-  const [placeIds, setPlaceIds] = useState<string[] | null>(null);
   const placeEvents = placeIds ? all.filter((e) => placeIds.includes(e.id)) : [];
   const shownClusters = useMemo(
     () =>
@@ -398,7 +392,6 @@ export function App() {
     [filters.family, familyEvents, familyAround, radius, clusters],
   );
   const guidance = useGuidance(shownClusters, searchCenter, radius);
-  const [hotspotOpen, setHotspotOpen] = useState(false);
   const [recenter, setRecenter] = useState(0);
   const filtered = filters.activeCount > 0;
   const [route, go] = useRoute();
@@ -422,23 +415,23 @@ export function App() {
   const [placeEdit, setPlaceEdit] = useState<'edit' | 'signIn' | null>(null);
   const detailId = route?.name === 'event' ? route.id : null;
   const goId = route?.name === 'go' ? route.id : null;
-  // Dice: weights on this device; no repeats this session.
-  const [diceWeights, setDiceWeights] = useState(savedWeights);
-  useEffect(() => storage.set('diceWeights', JSON.stringify(diceWeights)), [diceWeights]);
-  const diceSeen = useRef<string[]>([]);
-  const [rolledId, setRolledId] = useState<string | null>(null);
-  // Opening the rolled event or going there raises its category.
-  const signal = (id: string, s: DiceSignal) => {
-    if (id !== rolledId) return;
-    const e = all.find((x) => x.id === id);
-    if (e) setDiceWeights((w) => reweigh(w, diceCategory(e), s));
-  };
+  const diceEvents = useMemo(
+    () => flagged([...familyEvents, ...familyAround]),
+    [flagged, familyEvents, familyAround],
+  );
+  const dice = useDice({ events: diceEvents, now, radiusM: radius, liveOnly });
   const openDetail = (id: string) => {
-    signal(id, 'open');
+    dice.signal(
+      all.find((e) => e.id === id),
+      'open',
+    );
     go({ name: 'event', id });
   };
   const goThere = (id: string) => {
-    signal(id, 'go');
+    dice.signal(
+      all.find((e) => e.id === id),
+      'go',
+    );
     go({ name: 'go', id });
   };
   const close = useCallback(() => go(null), [go]);
@@ -457,39 +450,14 @@ export function App() {
   // An edit or an answer on the card reads the event again.
   const [detailVersion, setDetailVersion] = useState(0);
   const detailKnown = useMemo(() => [...events, ...priv], [events, priv]);
-  const publicDetail = useEventDetail(
+  const detail = useOpenEvent(
     repo,
     detailId ?? goId,
     detailKnown,
     searchCenter,
     detailVersion,
+    accountStatus,
   );
-  // Not public and not in your list: a private event through an invite link, or one you were
-  // invited to since the last read.
-  const [linkEv, setLinkEv] = useState<{ id: string; ev: PrivateEvent | null } | null>(null);
-  const wantId = detailId ?? goId;
-  useEffect(() => {
-    if (!wantId || publicDetail.ev || publicDetail.loading) return;
-    let live = true;
-    fetchPrivateEvent(wantId, searchCenter).then(
-      (ev) => live && setLinkEv({ id: wantId, ev }),
-      () => live && setLinkEv({ id: wantId, ev: null }),
-    );
-    return () => {
-      live = false;
-    };
-    // Once per id (and after an answer); the centre moving must not refetch.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wantId, publicDetail.ev, publicDetail.loading, detailVersion, accountStatus]);
-  const viaLink = linkEv && linkEv.id === wantId ? linkEv.ev : null;
-  const detail = publicDetail.ev
-    ? publicDetail
-    : viaLink
-      ? { ev: viaLink, loading: false }
-      : {
-          ev: null,
-          loading: publicDetail.loading || (!!wantId && linkEv?.id !== wantId),
-        };
   const loadCredit = useCallback(
     (id: string, signal: AbortSignal) => repo.credit(id, signal),
     [repo],
@@ -515,12 +483,6 @@ export function App() {
     return () => ro.disconnect();
   }, []);
 
-  const clearCards = () => {
-    setOpenPlaceId(null);
-    setSelectedId(null);
-    setPlaceIds(null);
-    setHotspotOpen(false);
-  };
   const banner =
     !bannerDismissed && location.status !== 'ok' && location.status !== 'locating'
       ? t(`location.${location.status}`, { region: region.name[lang] })
@@ -531,9 +493,7 @@ export function App() {
     setBannerDismissed(false);
     setPoint(null);
     setRadius(defaultM);
-    filters.setWindow('today');
-    setAt(null);
-    setDay(null);
+    backToNow();
     setLiveOnly(false);
     setView('map');
     setParked(false);
@@ -541,49 +501,34 @@ export function App() {
     setRecenter((n) => n + 1);
     location.retry();
   };
-  // Events reported cancelled or moved are never rolled. The pool widens until it has something:
-  // close and soon first, then anywhere in the loaded area, then anything still to come in the
-  // range shown. Only when all three are empty does the dice say so.
-  const dicePools = useMemo(() => {
-    const candidates = flagged([...familyEvents, ...familyAround]).filter((e) => !e.flag);
-    const late = (e: NearbyEvent) =>
-      pinState(e, now, e.distanceM, radius, config.categories, config.app).late;
-    const pool = (maxDistanceM: number, soonMin: number) =>
-      dicePool(candidates, now, { maxDistanceM, soonMin, liveOnly, late });
-    const { maxDistanceM, soonMin } = config.app.dice;
-    return [pool(maxDistanceM, soonMin), pool(Infinity, soonMin), pool(Infinity, Infinity)];
-  }, [flagged, familyEvents, familyAround, now, liveOnly, radius]);
-  const dicePoolNow = dicePools.find((p) => p.length > 0) ?? [];
   const roll = (category?: string) => {
-    const pool =
-      dicePools.find((p) =>
-        category ? p.some((e) => e.categoryIds.includes(category)) : p.length,
-      ) ?? [];
-    // Rolling again while the last result is open counts as "not this one".
-    let weights = diceWeights;
-    const last = rolledId === selectedId ? pool.find((e) => e.id === rolledId) : undefined;
-    if (last) {
-      weights = reweigh(weights, diceCategory(last), 'reroll');
-      setDiceWeights(weights);
-    }
-    const e = rollDice(pool, { seen: diceSeen.current, weights, category });
+    const e = dice.roll(category, selectedId);
     if (!e) {
       setToast(t('dice.empty'));
       return;
     }
-    diceSeen.current = [...diceSeen.current, e.id];
-    setRolledId(e.id);
-    filters.setWindow('today');
-    setAt(null);
-    setDay(null);
+    backToNow();
     setView('map');
     setParked(false);
     setRadius(
       reachForRoll(e.distanceM, radius, config.app.radius.detentsM, config.app.dice.reachMargin),
     );
-    setPlaceIds(null);
-    setHotspotOpen(false);
-    setSelectedId(e.id);
+    setCard({ kind: 'event', id: e.id });
+  };
+  /** A list row opens on the map with its card; the list waits behind the card's back arrow. */
+  const showOnMap = (id: string) => {
+    setView('map');
+    setParked(true);
+    setCard({ kind: 'event', id });
+  };
+  /**
+   * A search hit or a followed artist's date. In the loaded snapshot: back to the map with its
+   * card, flying there; otherwise the event's page.
+   */
+  const openHit = (hit: { id: string; point: LatLng }) => {
+    if (!all.some((e) => e.id === hit.id)) return openDetail(hit.id);
+    showOnMap(hit.id);
+    setFlyTo((f) => ({ point: hit.point, seq: (f?.seq ?? 0) + 1 }));
   };
   const dicePress = useLongPress(
     () => roll(),
@@ -604,24 +549,14 @@ export function App() {
     ...config.categories.map((c) => ({ id: c.id, glyph: c.glyph, label: c.labels[lang] })),
   ];
   // Only categories the dice can roll right now, by weight.
-  const diceOptions = topCategories(
-    config.categories
-      .map((c) => c.id)
-      .filter((id) => dicePoolNow.some((e) => e.categoryIds.includes(id))),
-    diceWeights,
-    config.app.dice.fanSize,
-  ).map((id) => {
+  const diceOptions = dice.categories.map((id) => {
     const c = categoriesById.get(id)!;
     return { id, glyph: c.glyph, label: c.labels[lang] };
   });
 
   const toggleLive = () => {
     // Live-only is about right now: from a later time or day, it returns to now.
-    if (!liveOnly) {
-      filters.setWindow('today');
-      setAt(null);
-      setDay(null);
-    }
+    if (!liveOnly) backToNow();
     setLiveOnly((v) => !v);
   };
 
@@ -636,37 +571,27 @@ export function App() {
           pinMode={pinMode}
           // A pin with several events is selected through any one of them.
           selectedId={selectedId ?? placeIds?.[0] ?? null}
+          // A tap on the bare map (null) closes whatever card is open.
           onSelect={(id) => {
-            setSelectedId(id);
-            setOpenPlaceId(null);
-            setPlaceIds(null);
-            setHotspotOpen(false);
+            setCard(id ? { kind: 'event', id } : null);
             setParked(false);
           }}
           places={placesOnMap}
           selectedPlaceId={openPlaceId}
           onSelectOpenPlace={(id) => {
-            clearCards();
+            setCard({ kind: 'place', id });
             setParked(false);
-            setOpenPlaceId(id);
           }}
-          onSelectPlace={(ids) => {
+          onSelectPlace={(eventIds) => {
+            setCard({ kind: 'venue', eventIds });
             setParked(false);
-            setOpenPlaceId(null);
-            setSelectedId(null);
-            setPlaceIds(ids);
-            setHotspotOpen(false);
           }}
           bottomInset={timelineHeight}
           recenter={recenter}
           flyTo={flyTo}
           focus={focus}
           hotspot={inPlans ? null : guidance.hotspot}
-          onHotspot={() => {
-            setOpenPlaceId(null);
-            setSelectedId(null);
-            setHotspotOpen(true);
-          }}
+          onHotspot={() => setCard({ kind: 'hotspot' })}
           previewRadiusM={previewRadius}
           onCity={() => setRadius(maxM)}
           pinned={point !== null}
@@ -868,33 +793,9 @@ export function App() {
             now={now}
             autoFocus={searchFocus > 0}
             onFollowed={() => setFollowedOpen(true)}
-            onOpen={(hit) => {
-              // In the loaded snapshot: back to the map with its card, flying there; otherwise
-              // the event's page.
-              if (all.some((e) => e.id === hit.id)) {
-                setView('map');
-                setParked(true);
-                setPlaceIds(null);
-                setHotspotOpen(false);
-                setSelectedId(hit.id);
-                setFlyTo((f) => ({ point: hit.point, seq: (f?.seq ?? 0) + 1 }));
-              } else openDetail(hit.id);
-            }}
+            onOpen={openHit}
           >
-            <FollowedGroup
-              matches={followMatches}
-              now={now}
-              onOpen={(m) => {
-                if (all.some((e) => e.id === m.id)) {
-                  setView('map');
-                  setParked(true);
-                  setPlaceIds(null);
-                  setHotspotOpen(false);
-                  setSelectedId(m.id);
-                  setFlyTo((f) => ({ point: m.point, seq: (f?.seq ?? 0) + 1 }));
-                } else openDetail(m.id);
-              }}
-            />
+            <FollowedGroup matches={followMatches} now={now} onOpen={openHit} />
             <ListView
               events={events}
               now={now}
@@ -908,12 +809,8 @@ export function App() {
               // A row returns to the map with its pin selected and in view; the list waits
               // behind the card's back arrow.
               onSelect={(id) => {
+                showOnMap(id);
                 const ev = all.find((e) => e.id === id);
-                setView('map');
-                setParked(true);
-                setPlaceIds(null);
-                setHotspotOpen(false);
-                setSelectedId(id);
                 if (ev) setFocus((f) => ({ point: ev.point, seq: (f?.seq ?? 0) + 1 }));
               }}
               onExpand={setRadius}
@@ -935,14 +832,14 @@ export function App() {
               onBack={
                 parked
                   ? () => {
-                      setSelectedId(null);
+                      clearCards();
                       setParked(false);
                       setView('list');
                     }
                   : undefined
               }
               onClose={() => {
-                setSelectedId(null);
+                clearCards();
                 setParked(false);
               }}
               onDetails={() => openDetail(selected.id)}
@@ -955,18 +852,13 @@ export function App() {
               place={openPlace}
               now={pinTime}
               timeZone={region.timezone}
-              onClose={() => setOpenPlaceId(null)}
+              onClose={clearCards}
               onEdit={() => setPlaceEdit(accountStatus === 'signedOut' ? 'signIn' : 'edit')}
             />
           </div>
         ) : view === 'map' && placeEvents.length > 0 ? (
           <div className="sheet__card">
-            <PlaceCard
-              events={placeEvents}
-              now={now}
-              onSelect={openDetail}
-              onClose={() => setPlaceIds(null)}
-            />
+            <PlaceCard events={placeEvents} now={now} onSelect={openDetail} onClose={clearCards} />
           </div>
         ) : view === 'map' && hotspotOpen && guidance.hotspot ? (
           <div className="sheet__card">
@@ -978,10 +870,10 @@ export function App() {
               fallbackRadiusM={null}
               onExpand={(r) => {
                 setRadius(r);
-                setHotspotOpen(false);
+                clearCards();
               }}
               onClearFilters={filters.clear}
-              onClose={() => setHotspotOpen(false)}
+              onClose={clearCards}
             />
           </div>
         ) : (
@@ -1090,8 +982,7 @@ export function App() {
           onClose={close}
           onShow={(id, point) => {
             close();
-            clearCards();
-            setOpenPlaceId(id);
+            setCard({ kind: 'place', id });
             setFocus((f) => ({ point, seq: (f?.seq ?? 0) + 1 }));
           }}
         />

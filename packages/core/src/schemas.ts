@@ -220,6 +220,8 @@ export const appConfigSchema = z.object({
     areaMaxEvents: z.number().int().positive(),
     /** Snapshot step for the multi-day windows: future events change slowly. */
     longCacheMinutes: z.number().positive(),
+    /** How long one event's answer (/api/events/:id) may be shared: a cancellation shows this late at most. */
+    eventSeconds: z.number().int().positive().max(3600),
   }),
   /** "Going there": in-app walking route with live location, only while the user asks for it. */
   navigation: z.object({
@@ -554,6 +556,27 @@ export const appConfigSchema = z.object({
       weekday: z.number().int().min(1).max(7),
       hour: z.number().int().min(0).max(23),
     }),
+  }),
+  /**
+   * The native apps (built in their own repositories): which builds the API still serves, and
+   * what the site publishes so its links open in the installed app. Empty ids publish nothing.
+   */
+  native: z.object({
+    android: z.object({
+      /** Application id, e.g. "app.happow". */
+      package: z.string(),
+      /** SHA-256 fingerprints of the signing certificates ("AB:CD:…"), Play App Signing's included. */
+      sha256: z.array(z.string().regex(/^([0-9A-F]{2}:){31}[0-9A-F]{2}$/)),
+      /** Older builds get 426 client_outdated and ask to update. */
+      minVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
+    }),
+    ios: z.object({
+      /** "<Team ID>.<bundle id>", e.g. "ABCDE12345.app.happow". */
+      appId: z.string(),
+      minVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
+    }),
+    /** Paths the installed app opens instead of the browser. */
+    linkPaths: z.array(z.string().startsWith('/')).min(1),
   }),
   /** The public site: its origin is the one place the domain is written. */
   site: z.object({

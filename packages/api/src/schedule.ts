@@ -3,6 +3,7 @@ import { dispatchLookbackMs, dueForDispatch, type RunRecord } from '@happow/inge
 import appJson from '../../../config/app.json';
 import regionsJson from '../../../config/regions.json';
 import sourcesJson from '../../../config/sources.json';
+import { NO_DATABASE, serviceDb } from './supabase.js';
 
 /**
  * Cloudflare Cron Trigger → GitHub ingest workflow. The Worker reads the latest `source_runs`
@@ -73,31 +74,16 @@ export async function dispatchDueIngest(
   const userAgent = siteTemplate(app.ingest.userAgent, app);
   const token = env[dispatch.tokenSecret];
   const tokenSet = typeof token === 'string' && token.length > 0;
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)
-    return {
-      due: [],
-      dispatched: false,
-      tokenSet,
-      reason: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set',
-    };
+  const db = serviceDb(env, deps.fetch);
+  if (!db) return { due: [], dispatched: false, tokenSet, reason: NO_DATABASE };
 
-  const key = env.SUPABASE_SERVICE_ROLE_KEY;
   const since = new Date(now.getTime() - dispatchLookbackMs(config, dispatch)).toISOString();
-  const query = new URLSearchParams({
+  const rows = await db.select<RunRow>('source_runs', {
     select: 'source_id,region_id,started_at,status',
     started_at: `gte.${since}`,
     order: 'started_at.desc',
     limit: '2000',
   });
-  const res = await doFetch(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/source_runs?${query}`, {
-    headers: {
-      apikey: key,
-      // Legacy keys are JWTs and also go in Authorization; new sb_secret_ keys go in apikey only.
-      ...(key.startsWith('eyJ') && { Authorization: `Bearer ${key}` }),
-    },
-  });
-  if (!res.ok) throw new Error(`source_runs read failed: ${res.status} ${await res.text()}`);
-  const rows = (await res.json()) as RunRow[];
   const runs: RunRecord[] = rows.map((r) => ({
     sourceId: r.source_id,
     regionId: r.region_id,

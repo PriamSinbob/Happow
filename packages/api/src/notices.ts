@@ -1,7 +1,7 @@
 import appJson from '../../../config/app.json';
 import { cachedKey } from './reminders.js';
 import type { ScheduleEnv } from './schedule.js';
-import { Supabase } from './supabase.js';
+import { Supabase, NO_DATABASE, serviceDb } from './supabase.js';
 import { sendPush, type PushOutcome } from './webpush.js';
 
 /**
@@ -110,14 +110,14 @@ export async function sendDueNotices(
   deps: { fetch?: typeof fetch; app?: App & { private: { keepAfterEndDays: number } } } = {},
 ): Promise<NoticeSendResult & { cleaned?: number }> {
   const app = deps.app ?? appJson;
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)
+  const db = serviceDb(env, deps.fetch);
+  if (!db)
     return {
       sent: 0,
       gone: 0,
       failed: 0,
-      reason: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set',
+      reason: NO_DATABASE,
     };
-  const db = new Supabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, deps.fetch);
   const cleaned = await db.rpc<number>('private_cleanup', {
     p_keep_days: app.private.keepAfterEndDays,
   });

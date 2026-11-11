@@ -1,8 +1,19 @@
 import type { HappowConfig } from '@happow/core';
 import { z } from 'zod';
 import type { User } from './accounts.js';
-import { ApiError, body, json, sha256 } from './http.js';
-import { SupabaseError, type Supabase } from './supabase.js';
+import {
+  ApiError,
+  body,
+  json,
+  type Limit,
+  deviceId,
+  eventId,
+  uuid,
+  noStore,
+  deviceHash,
+  type Need,
+} from './http.js';
+import { SupabaseError } from './supabase.js';
 
 /**
  * Private events, contacts and invitations. Everything here needs an account; nothing
@@ -29,16 +40,12 @@ import { SupabaseError, type Supabase } from './supabase.js';
 
 export interface PrivateDeps {
   config: HappowConfig;
-  need: () => { db: Supabase; salt: string };
+  need: Need;
   requireUser: (req: Request) => Promise<User>;
-  limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
+  limit: Limit;
 }
 
-const uuid = z.string().uuid();
-const eventId = z.string().min(1).max(300);
 const token = z.string().regex(/^[A-Za-z0-9_-]{16,64}$/);
-const deviceId = z.string().min(8).max(100);
-const noStore = { 'cache-control': 'private, no-store' };
 
 /** A random URL-safe token (128 bits). */
 export function newToken(bytes = 16): string {
@@ -269,7 +276,7 @@ export function privateRoutes({ config, need, requireUser, limit }: PrivateDeps)
         await rpc('friends_on_event', {
           p_user: user.id,
           p_event: input.eventId,
-          p_device: await sha256(`${salt}:device:${input.deviceId}`),
+          p_device: await deviceHash(salt, input.deviceId),
         }),
         200,
         noStore,

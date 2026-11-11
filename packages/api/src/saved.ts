@@ -1,8 +1,7 @@
 import { can, type Entitlements, type HappowConfig } from '@happow/core';
 import { z } from 'zod';
 import type { User } from './accounts.js';
-import { ApiError, body, json } from './http.js';
-import type { Supabase } from './supabase.js';
+import { ApiError, body, json, type Limit, noStore, type Need } from './http.js';
 
 /**
  * Saved events across an account's devices. A device sends its whole list,
@@ -12,10 +11,10 @@ import type { Supabase } from './supabase.js';
 
 export interface SavedDeps {
   config: HappowConfig;
-  need: () => { db: Supabase };
+  need: Need;
   requireUser: (req: Request) => Promise<User>;
   planOf: (user: { id: string }) => Promise<{ entitlements: Entitlements }>;
-  limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
+  limit: Limit;
 }
 
 export function savedRoutes({ config, need, requireUser, planOf, limit }: SavedDeps) {
@@ -48,6 +47,6 @@ export function savedRoutes({ config, need, requireUser, planOf, limit }: SavedD
       p_keep_removed_days: keepRemovedDays,
       p_max: maxSaved,
     });
-    return json({ items: merged }, 200, { 'cache-control': 'private, no-store' });
+    return json({ items: merged }, 200, noStore);
   };
 }

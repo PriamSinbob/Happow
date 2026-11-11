@@ -68,9 +68,10 @@ Everything not built yet, one line each: what, and why or what it waits for. Lau
 
 ## Native app
 
-- **Native rewrite** for Play Store and App Store, reusing the server, database and API; the PWA is the reference. A new project maintains it afterwards.
-- Carries over: home-screen widgets, native push, the bloom, and client speed checks (60 fps rail drag with 500 events, first pin tap under 3 s), which are measured there, not on the web build.
-- **Phone tests of reminders** wait for it, since notifications may be rebuilt natively.
+- **Android, then iOS,** in their own repositories: see [NATIVE.md](NATIVE.md) for what they get from here, the shared-core choice and the first server steps (native push, app links, Google sign-in on Android).
+- Carries over: home-screen widgets, native push, arrival by geofence, the bloom, and client speed checks (60 fps rail drag with 500 events, first pin tap under 3 s), which are measured there, not on the web build.
+- **Phone tests of reminders** wait for it, since notifications are rebuilt natively.
+- **Embeds** for other sites: public reads already allow any origin; the embed itself is not built.
 
 ## Scale triggers
 

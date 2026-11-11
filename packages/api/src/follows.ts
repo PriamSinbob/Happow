@@ -4,12 +4,14 @@ import {
   isInBbox,
   normName,
   type Entitlements,
+  type EventHit,
   type HappowConfig,
+  type NationwideDate,
   type Region,
 } from '@happow/core';
 import { z } from 'zod';
 import type { User } from './accounts.js';
-import { ApiError, body, json } from './http.js';
+import { ApiError, body, json, type Limit, noStore, type Need } from './http.js';
 import type { Supabase } from './supabase.js';
 
 /**
@@ -25,34 +27,13 @@ import type { Supabase } from './supabase.js';
 export interface FollowDeps {
   config: HappowConfig;
   env: Record<string, string | undefined>;
-  need: () => { db: Supabase; salt: string };
-  limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
+  need: Need;
+  limit: Limit;
   clientHash: (req: Request, salt: string) => Promise<string>;
   requireUser: (req: Request) => Promise<User>;
   planOf: (user: { id: string }) => Promise<{ entitlements: Entitlements }>;
   now: () => Date;
   fetch: typeof fetch;
-}
-
-/** A search or follow hit, as the app shows it. */
-export interface EventHit {
-  id: string;
-  title: string;
-  categoryIds: string[];
-  startAt: string;
-  endAt: string;
-  timezone: string;
-  venueName: string | null;
-  point: { lat: number; lng: number };
-  distanceM: number | null;
-  isFree: boolean;
-  status: string;
-  performers: string[];
-  matchedPerformer: string | null;
-  /** search only: how it matched. */
-  match?: 'performer' | 'performer_similar' | 'title';
-  matchedNorm?: string;
-  matchedExternalId?: string | null;
 }
 
 interface HitRow {
@@ -94,20 +75,6 @@ function rowToHit(r: HitRow): EventHit {
     ...(r.matched_norm !== undefined && { matchedNorm: r.matched_norm }),
     ...(r.matched_external_id !== undefined && { matchedExternalId: r.matched_external_id }),
   };
-}
-
-/** A Ticketmaster date outside the region: shown in the list with its city, not on the map. */
-export interface NationwideDate {
-  id: string;
-  attractionId: string;
-  performer: string;
-  title: string;
-  startAt: string | null;
-  localDate: string | null;
-  city: string | null;
-  venueName: string | null;
-  url: string | null;
-  point: { lat: number; lng: number } | null;
 }
 
 interface TmEvent {
@@ -307,7 +274,7 @@ export function followRoutes(deps: FollowDeps) {
     return json(
       { matches: rows.map(rowToHit), nationwide: await nationwide(db, tm, region) },
       200,
-      { 'cache-control': 'private, no-store' },
+      noStore,
     );
   }
 
@@ -352,7 +319,7 @@ export function followRoutes(deps: FollowDeps) {
       p_items: items.map((i) => ({ ...i, norm: normName(i.name) })),
       p_max: fcfg.max,
     });
-    return json({ items: merged }, 200, { 'cache-control': 'private, no-store' });
+    return json({ items: merged }, 200, noStore);
   }
 
   return { search, match, mine };

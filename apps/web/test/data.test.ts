@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import seed from '../../../data/seed/wroclaw.events.json';
 import { StaticEventRepository } from '../src/data/static';
-import { SupabaseEventRepository } from '../src/data/supabase';
+import { rowToEvent, type EventRow } from '@happow/core';
 import { config, region } from '../src/config';
 import { formatDistance, formatRelativeDay } from '../src/format';
 import { eventToIcs } from '../src/ics';
@@ -48,61 +48,45 @@ describe('StaticEventRepository', () => {
   });
 });
 
-describe('SupabaseEventRepository', () => {
-  it('calls events_near over PostgREST and maps rows', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify([
-          {
-            id: 'x',
-            title: 'T',
-            description: null,
-            category_ids: ['music'],
-            start_at: '2026-10-20T14:00:00Z',
-            end_at: '2026-10-20T16:00:00Z',
-            end_estimated: false,
-            timezone: 'Europe/Warsaw',
-            venue_id: 'v',
-            venue_name: 'V',
-            venue_address: null,
-            lat: 51.1,
-            lng: 17.03,
-            h3_r9: '89',
-            price_min: '10.00',
-            price_max: null,
-            currency: 'PLN',
-            is_free: false,
-            rules: {},
-            official_url: null,
-            ticket_url: null,
-            image_url: null,
-            status: 'scheduled',
-            trust: 'api',
-            confidence: 1,
-            last_seen_at: '2026-10-20T13:00:00Z',
-            distance_m: 120,
-          },
-        ]),
-        { status: 200 },
-      ),
-    );
-    vi.stubGlobal('fetch', fetchMock);
-    const repo = new SupabaseEventRepository('https://example.supabase.co/', 'anon');
-    const [ev] = await repo.near({
-      center: { lat: 51.1, lng: 17 },
-      radiusM: 500,
-      from: new Date(),
-      to: new Date(),
-    });
-    expect(fetchMock.mock.calls[0]![0]).toBe('https://example.supabase.co/rest/v1/rpc/events_near');
-    expect(ev).toMatchObject({
+describe('rowToEvent', () => {
+  it('maps an /api event row, with prices from numeric strings', () => {
+    const row: EventRow = {
+      id: 'x',
+      title: 'T',
+      description: null,
+      category_ids: ['music'],
+      start_at: '2026-10-20T14:00:00Z',
+      end_at: '2026-10-20T16:00:00Z',
+      end_estimated: false,
+      timezone: 'Europe/Warsaw',
+      venue_id: 'v',
+      venue_name: 'V',
+      venue_address: null,
+      lat: 51.1,
+      lng: 17.03,
+      h3_r9: '89',
+      price_min: '10.00',
+      price_max: null,
+      currency: 'PLN',
+      is_free: false,
+      rules: {},
+      official_url: null,
+      ticket_url: null,
+      image_url: null,
+      status: 'scheduled',
+      trust: 'api',
+      confidence: 1,
+      last_seen_at: '2026-10-20T13:00:00Z',
+      distance_m: 120,
+    };
+    expect(rowToEvent(row)).toMatchObject({
       id: 'x',
       priceMin: 10,
       priceMax: null,
       point: { lat: 51.1, lng: 17.03 },
+      venue: { id: 'v', name: 'V' },
       distanceM: 120,
     });
-    vi.unstubAllGlobals();
   });
 });
 
@@ -159,32 +143,6 @@ describe('StaticEventRepository filters', () => {
     expect(ev?.distanceM).toBeCloseTo(first!.distanceM, 3);
     expect(ev?.sourceId).toBe('seed');
     expect(await repo.byId('nope', region.center)).toBeNull();
-  });
-});
-
-describe('SupabaseEventRepository filters', () => {
-  it('sends category and price filters, and fetches details by id', async () => {
-    const fetchMock = vi.fn(
-      async (_url: string, _init: RequestInit) => new Response('[]', { status: 200 }),
-    );
-    vi.stubGlobal('fetch', fetchMock);
-    const r = new SupabaseEventRepository('https://example.supabase.co', 'anon');
-    await r.near({ ...day, categories: ['music', 'sport'], price: 'free' });
-    expect(JSON.parse(fetchMock.mock.calls[0]![1].body as string)).toMatchObject({
-      categories: ['music', 'sport'],
-      price: 'free',
-    });
-    await r.near(day);
-    expect(JSON.parse(fetchMock.mock.calls[1]![1].body as string)).toMatchObject({
-      categories: null,
-      price: 'any',
-    });
-    expect(await r.byId('ticketmaster:1', region.center)).toBeNull();
-    expect(fetchMock.mock.calls[2]![0]).toBe('https://example.supabase.co/rest/v1/rpc/event_by_id');
-    expect(JSON.parse(fetchMock.mock.calls[2]![1].body as string)).toMatchObject({
-      event_id: 'ticketmaster:1',
-    });
-    vi.unstubAllGlobals();
   });
 });
 

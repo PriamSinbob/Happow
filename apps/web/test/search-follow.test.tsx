@@ -16,7 +16,7 @@ import {
   SearchPanel,
 } from '../src/components/Follow';
 import { config } from '../src/config';
-import { rowToEvent, type Row } from '../src/data/supabase';
+import { rowToEvent, type EventRow as Row } from '@happow/core';
 import {
   follows,
   mergeFollows,
@@ -139,13 +139,18 @@ describe('matching and the ★', () => {
     categoryIds: ['music'],
     startAt: '2026-11-14T19:00:00Z',
     endAt: '2026-11-14T22:00:00Z',
+    timezone: 'Europe/Warsaw',
     venueName: 'Hala Stulecia',
     point: { lat: 51.1069, lng: 17.0773 },
     distanceM: 2400,
+    isFree: false,
+    status: 'scheduled',
+    performers: ['Dawid Podsiadło'],
     matchedPerformer: 'Dawid Podsiadło',
   };
   const elsewhere = {
     id: 'tm:2',
+    attractionId: 'K8vZ9175Tr0',
     performer: 'Dawid Podsiadło',
     title: 'Dawid Podsiadło – Trasa',
     startAt: '2026-12-05T19:00:00Z',
@@ -153,6 +158,7 @@ describe('matching and the ★', () => {
     city: 'Warszawa',
     venueName: 'PGE Narodowy',
     url: 'https://www.ticketmaster.pl/event/2001',
+    point: null,
   };
 
   it('asks once on open with the names, then keeps the answer for the hour', async () => {

@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { arrivalToken, captureArrival } from '../src/attendance';
 import { Going } from '../src/components/Going';
 import { ShareSheet } from '../src/components/ShareSheet';
-import { rowToEvent, type Row } from '../src/data/supabase';
+import { rowToEvent, type EventRow as Row } from '@happow/core';
 import { I18nProvider } from '../src/i18n';
 
 /** "I'm going" and the sharer's link count. */

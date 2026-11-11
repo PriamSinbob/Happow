@@ -1,7 +1,7 @@
 import appJson from '../../../config/app.json';
 import regionsJson from '../../../config/regions.json';
 import type { ScheduleEnv } from './schedule.js';
-import { Supabase } from './supabase.js';
+import { NO_DATABASE, serviceDb } from './supabase.js';
 
 /**
  * Cloudflare Cron Trigger → the week's metrics row.
@@ -55,13 +55,13 @@ export async function saveWeeklyMetrics(
   const { weekday, hour } = localWeekdayHour(now, region.timezone);
   const due = weekday === app.metrics.weekly.weekday && hour >= app.metrics.weekly.hour;
   if (!due) return { region: region.id, due };
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)
+  const db = serviceDb(env, deps.fetch);
+  if (!db)
     return {
       region: region.id,
       due,
-      reason: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set',
+      reason: NO_DATABASE,
     };
-  const db = new Supabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, deps.fetch);
   const saved = await db.rpc<boolean>('metrics_save', {
     p_region: region.id,
     p_at: now.toISOString(),

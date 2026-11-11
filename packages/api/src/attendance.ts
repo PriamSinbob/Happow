@@ -1,8 +1,22 @@
-import { attendanceBucket, type HappowConfig } from '@happow/core';
+import {
+  ATTENDANCE_SIGNALS,
+  attendanceBucket,
+  type AttendanceSignal,
+  type AttendanceView,
+  type HappowConfig,
+} from '@happow/core';
 import { z } from 'zod';
-import { ApiError, body, json, sha256 } from './http.js';
+import {
+  ApiError,
+  body,
+  json,
+  type Limit,
+  type Need,
+  deviceId,
+  eventId,
+  deviceHash,
+} from './http.js';
 import { newToken } from './private.js';
-import type { Supabase } from './supabase.js';
 
 /**
  * "I'm going", co-presence and share links on the server. Anonymous: a device is its
@@ -11,24 +25,16 @@ import type { Supabase } from './supabase.js';
  * own link) but follows the same category rule.
  */
 
-const SIGNALS = ['going', 'looking', 'onway', 'here'] as const;
-export type Signal = (typeof SIGNALS)[number];
+const SIGNALS = ATTENDANCE_SIGNALS;
+type Signal = AttendanceSignal;
 
 export interface AttendanceDeps {
   config: HappowConfig;
-  need: () => { db: Supabase; salt: string };
+  need: Need;
   now: () => Date;
-  limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
+  limit: Limit;
   /** The signed-in account, if any: kept with the row for the friends' view, never shown. */
   userOf: (req: Request) => Promise<{ id: string } | null>;
-}
-
-/** What the card shows: bucketed counts (null = don't show), this device's own signals. */
-export interface AttendanceView {
-  counts: Record<Signal, number | null>;
-  mine: Record<Signal, boolean>;
-  /** People who came through this device's links and are going; null where counts are off. */
-  fromMyLinks: number | null;
 }
 
 interface Raw {
@@ -40,8 +46,6 @@ interface Raw {
   private?: boolean | null;
 }
 
-const deviceId = z.string().min(8).max(100);
-const eventId = z.string().min(1).max(300);
 const viewSchema = z.object({ deviceId, eventId });
 const setSchema = z.object({
   deviceId,
@@ -71,15 +75,13 @@ export function attendanceRoutes({ config, need, now, limit, userOf }: Attendanc
     return { counts, mine, fromMyLinks: off ? null : raw.fromMyLinks };
   }
 
-  const device = (salt: string, id: string) => sha256(`${salt}:device:${id}`);
-
   /** POST /api/attendance: the card's counts and this device's signals. */
   async function get(req: Request): Promise<Response> {
     const { db, salt } = need();
     const input = await body(req, viewSchema);
     const raw = await db.rpc<Raw>('attendance_get', {
       p_event: input.eventId,
-      p_device: await device(salt, input.deviceId),
+      p_device: await deviceHash(salt, input.deviceId),
     });
     if (!raw.categories) throw new ApiError(404, 'not_found');
     return json(view(raw));
@@ -89,7 +91,7 @@ export function attendanceRoutes({ config, need, now, limit, userOf }: Attendanc
   async function set(req: Request): Promise<Response> {
     const { db, salt } = need();
     const input = await body(req, setSchema);
-    const hash = await device(salt, input.deviceId);
+    const hash = await deviceHash(salt, input.deviceId);
     await limit('attendance', hash, 3600, cfg.perHourPerDevice);
     const user = await userOf(req).catch(() => null);
     const raw = await db.rpc<Raw | null>('attendance_set', {
@@ -112,7 +114,7 @@ export function attendanceRoutes({ config, need, now, limit, userOf }: Attendanc
   async function share(req: Request): Promise<Response> {
     const { db, salt } = need();
     const input = await body(req, viewSchema);
-    const hash = await device(salt, input.deviceId);
+    const hash = await deviceHash(salt, input.deviceId);
     await limit('share', hash, 3600, cfg.sharesPerHourPerDevice);
     const token = newToken();
     const ok = await db.rpc<boolean>('share_link_create', {

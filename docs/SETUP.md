@@ -21,7 +21,7 @@ Never paste a secret into an issue, a commit, a chat or a file in the repo. Secr
 2. **Connection string.** Click **Connect** at the top of the project → **Session pooler** → copy the URI. It looks like `postgresql://postgres.<ref>:[YOUR-PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres`. Replace `[YOUR-PASSWORD]` with the password from step 1. This value is **`DATABASE_URL`**.
 3. **API keys.** Open **Project Settings → API Keys** and copy three values:
    - the **Project URL** (`https://<ref>.supabase.co`). This is both **`VITE_SUPABASE_URL`** and **`SUPABASE_URL`**.
-   - the **publishable** key (`sb_publishable_…`), or the legacy **anon** key. This is **`VITE_SUPABASE_ANON_KEY`**. It is public by design: it ships inside the app and can only call what the database allows anonymous users to call.
+   - the **publishable** key (`sb_publishable_…`), or the legacy **anon** key. This is **`VITE_SUPABASE_ANON_KEY`**. It is public by design: it ships inside the app, which uses it for sign-in only (all data goes through `/api`).
    - the **secret** key (`sb_secret_…`), or the legacy **service_role** key. This is **`SUPABASE_SERVICE_ROLE_KEY`**. It bypasses all security rules: keep it server-side only and never put it in a variable whose name starts with `VITE_`.
 4. **Sign-in settings.** Open **Authentication → Sign In / Providers**:
    - Keep **Allow new users to sign up** off while sign-in is by email code only. Accounts are created by the admin panel when you send someone a code (section 4), which works with sign-ups off. Turn it on when you add Google (step 5): a first Google sign-in creates the account.

@@ -1,9 +1,19 @@
 import type { HappowConfig } from '@happow/core';
 import { z } from 'zod';
 import appJson from '../../../config/app.json';
-import { ApiError, body, json, sha256 } from './http.js';
+import {
+  ApiError,
+  body,
+  json,
+  type Limit,
+  deviceId,
+  eventId,
+  noStore,
+  deviceHash,
+  type Need,
+} from './http.js';
 import type { ScheduleEnv } from './schedule.js';
-import { Supabase } from './supabase.js';
+import { NO_DATABASE, serviceDb } from './supabase.js';
 import { sendPush, vapidKey, type PushOutcome, type VapidKey } from './webpush.js';
 
 /**
@@ -15,14 +25,13 @@ import { sendPush, vapidKey, type PushOutcome, type VapidKey } from './webpush.j
 
 export interface ReminderDeps {
   config: HappowConfig;
-  need: () => { db: Supabase; salt: string };
-  limit: (bucket: string, actor: string, windowSeconds: number, max: number) => Promise<void>;
+  need: Need;
+  limit: Limit;
   userOf: (req: Request) => Promise<{ id: string } | null>;
   /** The VAPID private key (the secret named by push.secret), or undefined when not set. */
   pushSecret: string | undefined;
 }
 
-const deviceId = z.string().min(8).max(100);
 const b64 = z.string().regex(/^[A-Za-z0-9_-]+=*$/);
 const subscribeSchema = z.object({
   deviceId,
@@ -46,13 +55,12 @@ export function reminderRoutes({ config, need, limit, userOf, pushSecret }: Remi
   const langs = new Set<string>(config.app.languages);
   const setSchema = z.object({
     deviceId,
-    eventId: z.string().min(1).max(300),
+    eventId,
     lead: z
       .string()
       .refine((l) => cfg.leads.includes(l))
       .nullable(),
   });
-  const device = (salt: string, id: string) => sha256(`${salt}:device:${id}`);
 
   /** GET /api/push/key: the applicationServerKey; 503 until the secret is set. */
   async function key(): Promise<Response> {
@@ -69,7 +77,7 @@ export function reminderRoutes({ config, need, limit, userOf, pushSecret }: Remi
     const { db, salt } = need();
     if (path[0] === 'subscribe') {
       const input = await body(req, subscribeSchema);
-      const hash = await device(salt, input.deviceId);
+      const hash = await deviceHash(salt, input.deviceId);
       await limit('push', hash, 3600, config.app.push.subscribePerHourPerDevice);
       const user = await userOf(req);
       await db.rpc('push_subscribe', {
@@ -85,7 +93,7 @@ export function reminderRoutes({ config, need, limit, userOf, pushSecret }: Remi
     if (path[0] === 'unsubscribe') {
       const input = await body(req, unsubscribeSchema);
       await db.rpc('push_unsubscribe', {
-        p_device: await device(salt, input.deviceId),
+        p_device: await deviceHash(salt, input.deviceId),
         p_endpoint: input.endpoint,
       });
       return json({ ok: true });
@@ -101,14 +109,14 @@ export function reminderRoutes({ config, need, limit, userOf, pushSecret }: Remi
     if (path.join('/') === 'list') {
       const input = await body(req, listSchema);
       const list = await db.rpc<Record<string, string>>('reminders_list', {
-        p_device: await device(salt, input.deviceId),
+        p_device: await deviceHash(salt, input.deviceId),
         p_user: user?.id ?? null,
       });
-      return json({ reminders: list }, 200, { 'cache-control': 'private, no-store' });
+      return json({ reminders: list }, 200, noStore);
     }
     if (path.length) throw new ApiError(404, 'not_found');
     const input = await body(req, setSchema);
-    const hash = await device(salt, input.deviceId);
+    const hash = await deviceHash(salt, input.deviceId);
     await limit('reminders', hash, 3600, cfg.perHourPerDevice);
     const ok = await db.rpc<boolean>('reminder_set', {
       p_device: hash,
@@ -212,12 +220,11 @@ export async function sendDueReminders(
 ): Promise<ReminderTickResult> {
   const app = deps.app ?? appJson;
   const none = { due: 0, sent: 0, gone: 0, failed: 0 };
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)
-    return { ...none, reason: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set' };
+  const db = serviceDb(env, deps.fetch);
+  if (!db) return { ...none, reason: NO_DATABASE };
   const secret = env[app.push.secret];
   if (typeof secret !== 'string' || !secret)
     return { ...none, reason: `${app.push.secret} not set` };
-  const db = new Supabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, deps.fetch);
   const until = new Date(now.getTime() + app.reminders.cronMinutes * 60_000);
   const due = await db.rpc<DueReminder[]>('reminders_due', {
     p_until: until.toISOString(),

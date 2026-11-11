@@ -1,19 +1,21 @@
 import {
   areaKey,
   densityClusters,
+  distanceM,
   matchesFilters,
   nearby,
   overlaps,
+  rowToEvent,
   type DensityCluster,
   type DensityQuery,
   type EventQuery,
+  type EventRow,
   type HappowEvent,
   type LatLng,
   type NearbyEvent,
 } from '@happow/core';
 import { config } from '../config';
 import type { Credit, DistrictGoal, EventRepository } from './repository';
-import { rowToEvent, type Row, type SupabaseEventRepository } from './supabase';
 
 const { refresh, density } = config.app;
 /** The 24-hour snapshot follows the data step; multi-day ones change slowly. */
@@ -27,29 +29,48 @@ interface Snapshot {
   events: HappowEvent[];
 }
 
-class AreaUnavailable extends Error {}
+/** An event measured from where the reader is: /api rows carry no distance of their own. */
+const from = (row: EventRow, at: LatLng): NearbyEvent => {
+  const ev = rowToEvent(row);
+  return { ...ev, distanceM: distanceM(at, ev.point) };
+};
 
 /**
- * Battery- and data-friendly reads: one cached snapshot of the surrounding area per refresh step
+ * Where the app reads events with a backend: everything through /api, nothing from the database
+ * directly, so a native app reads exactly the same way.
+ *
+ * Battery- and data-friendly: one cached snapshot of the surrounding area per refresh step
  * (`/api/area`), from which the list, the radius, time windows, filters and hotspot counts are all
  * worked out on the phone. Changing a filter or the radius, or a minute passing, costs no request.
- * Detail views still read one event fresh, so a cancellation is never 5 minutes late there.
- * The 14-day and future windows each read their own longer snapshot, downloaded only when chosen and
- * kept for 30 minutes; the everyday 24-hour one is unaffected.
+ * Detail views still read one event fresh (`/api/events/:id`), so a cancellation is never a
+ * snapshot late there. The 14-day and future windows each read their own longer snapshot,
+ * downloaded only when chosen and kept for 30 minutes; the everyday 24-hour one is unaffected.
  */
 export class AreaEventRepository implements EventRepository {
-  readonly kind = 'supabase' as const;
+  readonly kind = 'api' as const;
   /** One snapshot per range ('' = the 24-hour one), so switching back and forth is free. */
   private snaps = new Map<string, Snapshot>();
   private pending: { key: string; promise: Promise<Snapshot> } | null = null;
-  /** Older servers without /api/area: fall back to per-query database calls. */
-  private direct = false;
 
   constructor(
-    private readonly db: SupabaseEventRepository,
-    private readonly doFetch: (url: string) => Promise<Response> = (url) => fetch(url),
+    private readonly doFetch: (url: string, init?: RequestInit) => Promise<Response> = (
+      url,
+      init,
+    ) => fetch(url, init),
     private readonly clock: () => number = Date.now,
   ) {}
+
+  /** One JSON answer from /api; `missing` statuses mean "nothing there", anything else throws. */
+  private async read<T>(
+    url: string,
+    init?: RequestInit,
+    missing: readonly number[] = [],
+  ): Promise<T | null> {
+    const res = await this.doFetch(url, init);
+    if (missing.includes(res.status)) return null;
+    if (!res.ok) throw new Error(`${url} failed: ${res.status}`);
+    return (await res.json()) as T;
+  }
 
   private async area(
     center: LatLng,
@@ -67,9 +88,8 @@ export class AreaEventRepository implements EventRepository {
     if (this.pending?.key === key) return (await this.pending.promise).events;
     // Not tied to one caller's abort signal: the list and the hotspot counts share this request.
     const promise = this.doFetch(`/api/area?${key}`).then(async (res) => {
-      if (res.status === 404 || res.status === 503) throw new AreaUnavailable();
       if (!res.ok) throw new Error(`area failed: ${res.status}`);
-      const data = (await res.json()) as { from: string; events: Row[] };
+      const data = (await res.json()) as { from: string; events: EventRow[] };
       return { key, from: Date.parse(data.from), events: data.events.map(rowToEvent) };
     });
     this.pending = { key, promise };
@@ -82,59 +102,77 @@ export class AreaEventRepository implements EventRepository {
     }
   }
 
-  private async matching(q: EventQuery): Promise<HappowEvent[] | null> {
-    if (this.direct) return null;
-    try {
-      const all = await this.area(
-        q.center,
-        Math.max(q.radiusM, density.searchRadiusM),
-        q.range,
-        q.range ? q.step : undefined,
-      );
-      return all.filter(
-        (e) => e.status !== 'cancelled' && overlaps(e, q.from, q.to) && matchesFilters(e, q),
-      );
-    } catch (err) {
-      if (!(err instanceof AreaUnavailable)) throw err;
-      this.direct = true;
-      return null;
-    }
+  private async matching(q: EventQuery): Promise<HappowEvent[]> {
+    const all = await this.area(
+      q.center,
+      Math.max(q.radiusM, density.searchRadiusM),
+      q.range,
+      q.range ? q.step : undefined,
+    );
+    return all.filter(
+      (e) => e.status !== 'cancelled' && overlaps(e, q.from, q.to) && matchesFilters(e, q),
+    );
   }
 
-  async near(q: EventQuery, signal?: AbortSignal): Promise<NearbyEvent[]> {
-    const events = await this.matching(q);
-    return events ? nearby(events, q.center, q.radiusM) : this.db.near(q, signal);
+  async near(q: EventQuery): Promise<NearbyEvent[]> {
+    return nearby(await this.matching(q), q.center, q.radiusM);
   }
 
-  async density(q: DensityQuery, signal?: AbortSignal): Promise<DensityCluster[]> {
-    const events = await this.matching(q);
-    if (!events) return this.db.density(q, signal);
-    const around = nearby(events, q.center, q.searchRadiusM);
+  async density(q: DensityQuery): Promise<DensityCluster[]> {
+    const around = nearby(await this.matching(q), q.center, q.searchRadiusM);
     return densityClusters(around, q.radiusM, (e) => e.densityCell ?? e.h3r9);
   }
 
-  byId(id: string, from: LatLng, signal?: AbortSignal): Promise<NearbyEvent | null> {
-    return this.db.byId(id, from, signal);
+  /** Read live, not from the snapshot: the long fields, and a cancellation at once. */
+  async byId(id: string, at: LatLng, signal?: AbortSignal): Promise<NearbyEvent | null> {
+    const data = await this.read<{ event: EventRow }>(
+      `/api/events/${encodeURIComponent(id)}`,
+      { signal },
+      [404],
+    );
+    return data ? from(data.event, at) : null;
   }
 
   /** Read live: the agenda's events can be anywhere and any day. */
-  byIds(ids: readonly string[], from: LatLng, signal?: AbortSignal): Promise<NearbyEvent[]> {
-    return this.db.byIds(ids, from, signal);
+  async byIds(ids: readonly string[], at: LatLng, signal?: AbortSignal): Promise<NearbyEvent[]> {
+    if (!ids.length) return [];
+    const data = await this.read<{ events: EventRow[] }>('/api/events/lookup', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ids }),
+      signal,
+    });
+    return (data?.events ?? []).map((row) => from(row, at));
   }
 
   /** Read live, never from the cached area, so turning the credit off hides it at once. */
-  credit(eventId: string, signal?: AbortSignal): Promise<Credit | null> {
-    return this.db.credit(eventId, signal);
+  async credit(eventId: string, signal?: AbortSignal): Promise<Credit | null> {
+    const data = await this.read<{ credit: Credit | null }>(
+      `/api/events/${encodeURIComponent(eventId)}/credit`,
+      { signal },
+      [404],
+    );
+    return data?.credit ?? null;
   }
 
   /** Live as well: a small count, asked only while the reach is empty. */
-  districtGoal(
+  async districtGoal(
     regionId: string,
     at: LatLng,
-    from: Date,
-    to: Date,
+    start: Date,
+    end: Date,
     signal?: AbortSignal,
   ): Promise<DistrictGoal | null> {
-    return this.db.districtGoal(regionId, at, from, to, signal);
+    const q = new URLSearchParams({
+      region: regionId,
+      lat: String(at.lat),
+      lng: String(at.lng),
+      from: start.toISOString(),
+      to: end.toISOString(),
+    });
+    const data = await this.read<{ goal: DistrictGoal | null }>(`/api/district-goal?${q}`, {
+      signal,
+    });
+    return data?.goal ?? null;
   }
 }

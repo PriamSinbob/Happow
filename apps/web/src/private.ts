@@ -1,8 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import type { LatLng, NearbyEvent } from '@happow/core';
+import { rowToEvent, type EventRow, type LatLng, type NearbyEvent } from '@happow/core';
 import { api, ApiError } from './api';
 import { accessToken } from './auth';
-import { rowToEvent, type Row } from './data/supabase';
 import { invitations } from './invitations';
 import { storage } from './storage';
 
@@ -31,7 +30,7 @@ export interface PrivateEvent extends NearbyEvent {
   link?: boolean;
 }
 
-interface PrivateRow extends Row {
+interface PrivateRow extends EventRow {
   mine: boolean;
   owner_name: string | null;
   invitation: InvitationState | null;
