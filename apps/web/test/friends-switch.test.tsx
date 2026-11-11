@@ -39,3 +39,29 @@ describe('the friends switch', () => {
     });
   });
 });
+
+describe('the name friends see', () => {
+  afterEach(cleanup);
+
+  it('is a field with Save on the card, not a link to another window', async () => {
+    render(
+      <I18nProvider initial="en">
+        <ContactsSection />
+      </I18nProvider>,
+    );
+    const field = (await screen.findByLabelText('Your name')) as HTMLInputElement;
+    expect(field.value).toBe('Ala');
+    const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    // Nothing to save until it changes.
+    expect(save.disabled).toBe(true);
+    fireEvent.change(field, { target: { value: 'Ala K.' } });
+    fireEvent.click(save);
+    await waitFor(() => expect(screen.getByRole('status').textContent).toMatch(/Saved/));
+    expect(api).toHaveBeenCalledWith('me', {
+      token: 'token',
+      method: 'PUT',
+      body: { displayName: 'Ala K.' },
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});

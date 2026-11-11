@@ -27,6 +27,11 @@ export interface ContactBook {
 
 const authed = async () => ({ token: await accessToken() });
 
+/** The name friends see (contacts, invitations, guest lists). */
+export async function saveName(name: string): Promise<void> {
+  await api('me', { token: await accessToken(), method: 'PUT', body: { displayName: name } });
+}
+
 export const contactLinkUrl = (token: string) => `${window.location.origin}/c/${token}`;
 
 export async function loadContacts(): Promise<ContactBook> {

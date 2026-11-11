@@ -226,6 +226,65 @@ describe('the private card', () => {
     expect(screen.queryByRole('button', { name: "I'm in" })).toBeNull();
   });
 
+  it('a link with no name set asks for it in place: one tap saves it and accepts', async () => {
+    signIn();
+    let named = false;
+    serve((url, init) => {
+      if (url === '/api/me' && init?.method === 'PUT') {
+        named = true;
+        return ok(me({ displayName: 'Basia' }));
+      }
+      if (url === '/api/me') return ok(me({ displayName: named ? 'Basia' : null }));
+      if (url === '/api/invitations/accept')
+        return named ? ok({ eventId: 'p1' }) : ok({ error: 'name_required' }, 409);
+      if (url.startsWith('/api/private')) return ok({ events: [] });
+      return ok({}, 404);
+    });
+    window.history.replaceState(null, '', '/?i=abcdefghijklmnop1234#/e/p1');
+    captureInvite();
+    const ev = rowToPrivate(row('p1', { ...future, link: true, invitation: null }) as never);
+    const toast = vi.fn();
+    wrap(<PrivatePanel ev={ev} center={null} onToast={toast} onGone={vi.fn()} />);
+
+    // No popup: the field sits above Accept, which waits for a name.
+    const field = await screen.findByLabelText('Your name');
+    const accept = screen.getByRole('button', { name: "I'm in" }) as HTMLButtonElement;
+    expect(accept.disabled).toBe(true);
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    fireEvent.change(field, { target: { value: ' Basia ' } });
+    expect(accept.disabled).toBe(false);
+    await act(async () => {
+      fireEvent.click(accept);
+    });
+    await waitFor(() => expect(toast).toHaveBeenCalled());
+    expect(
+      JSON.parse(String(calls('/api/me').find(([, i]) => i?.method === 'PUT')![1]!.body)),
+    ).toEqual({ displayName: 'Basia' });
+    expect(calls('/api/invitations/accept')).toHaveLength(1);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('when only the server knows the name is missing, its refusal shows the field, not an error', async () => {
+    signIn();
+    serve((url) => {
+      // The app's copy of the account is behind (just signed in, another device).
+      if (url === '/api/me') return ok(me());
+      if (url === '/api/invitations/accept') return ok({ error: 'name_required' }, 409);
+      return ok({}, 404);
+    });
+    window.history.replaceState(null, '', '/?i=abcdefghijklmnop1234#/e/p1');
+    captureInvite();
+    const ev = rowToPrivate(row('p1', { ...future, link: true, invitation: null }) as never);
+    wrap(<PrivatePanel ev={ev} center={null} onToast={vi.fn()} onGone={vi.fn()} />);
+    const accept = await screen.findByRole('button', { name: "I'm in" });
+    await act(async () => {
+      fireEvent.click(accept);
+    });
+    expect(await screen.findByLabelText('Your name')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('the owner invites and sees the guest list', async () => {
     signIn();
     serve((url) => {
