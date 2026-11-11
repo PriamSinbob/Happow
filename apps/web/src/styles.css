@@ -3315,8 +3315,11 @@ button.account-card__plan {
 .contrib__credit .check {
   margin-bottom: 4px;
 }
-.contrib__credit .field__hint {
+/* A checkbox's hint sits on its own line under the label, never run into it. */
+.contrib__credit .field__hint,
+.check .field__hint {
   display: block;
+  margin-top: 2px;
 }
 .contrib__name {
   display: grid;
@@ -3824,6 +3827,14 @@ button.account-card__plan {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+}
+/* The name asked for in place, above the action it is for: a full row of its own. */
+.name-field {
+  flex: 1 0 100%;
+  margin: 0;
+}
+.invite > .name-field {
+  margin-bottom: 8px;
 }
 .friends-line p {
   display: flex;

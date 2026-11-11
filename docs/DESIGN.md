@@ -71,7 +71,7 @@ Black and white only. Top to bottom: category chips; free / paid ticket toggles 
 
 ## About screen
 
-Every group is an 11 px uppercase label over one paper card (26 px corners, hairlines between rows). Top to bottom: Account; Appearance (theme, colour); Your places (the atlas bar); Information (the intro, then sources, terms, privacy and contact folded, and the legal links); Moderation for staff. Sheets close with the X or the scrim only: no "not now" links.
+Every group is an 11 px uppercase label over one paper card (26 px corners, hairlines between rows). Top to bottom: Account; Appearance (theme, colour); Your places (the atlas bar); Information (the intro, then sources, terms, privacy and contact folded, and the legal links); Moderation for staff. Sheets close with the X or the scrim only: no "not now" links. The name friends see is a field with Save on the Account card's Contacts part; an action that shows it to others (accepting an invite link, adding a contact, inviting) asks for it in place, above its own button, and that one tap saves the name and does the action. Never a separate window.
 
 ## Type
 

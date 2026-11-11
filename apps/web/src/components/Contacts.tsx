@@ -18,67 +18,10 @@ import {
 import { errorText } from '../errors';
 import { useI18n } from '../i18n';
 import { Icon } from './Icons';
+import { NameField, useNameGate } from './NameField';
 import { shareLink } from './PrivatePanel';
 import { Sheet } from './Sheet';
 import { SignInSheet } from './SignIn';
-
-/** "How your friends see you": the display name contacts and invitations need. */
-export function NameSheet({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const { t, lang } = useI18n();
-  const account = useAccount();
-  const [name, setName] = useState(account.me?.displayName ?? '');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  return (
-    <Sheet title={t('contacts.nameTitle')} onClose={onClose}>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          if (!name.trim() || busy) return;
-          setBusy(true);
-          setError(null);
-          try {
-            await api('me', {
-              token: await accessToken(),
-              method: 'PUT',
-              body: { displayName: name.trim() },
-            });
-            await account.refresh();
-            onSaved();
-            onClose();
-          } catch (err) {
-            setError(errorText(t, err, lang));
-            setBusy(false);
-          }
-        }}
-      >
-        <p className="account-sheet__lead">{t('contacts.nameLead')}</p>
-        <label className="field">
-          <span className="field__label">{t('contacts.nameLabel')}</span>
-          <input
-            value={name}
-            maxLength={60}
-            autoComplete="nickname"
-            onChange={(e) => setName(e.target.value)}
-          />
-        </label>
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-        <div className="account-sheet__foot">
-          <button type="button" className="btn" onClick={onClose}>
-            {t('common.cancel')}
-          </button>
-          <button type="submit" className="btn btn--primary" disabled={busy || !name.trim()}>
-            {t('contacts.nameSave')}
-          </button>
-        </div>
-      </form>
-    </Sheet>
-  );
-}
 
 /**
  * Contacts on the account card: the friends' switch, your contact link to share,
@@ -90,7 +33,6 @@ export function ContactsSection() {
   const [book, setBook] = useState<ContactBook | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [naming, setNaming] = useState(false);
   const [group, setGroup] = useState<Group | 'new' | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const me = account.me;
@@ -120,8 +62,9 @@ export function ContactsSection() {
 
   const shareMine = () =>
     run(async () => {
+      // The name field is right above: nothing to share until it is filled in.
       if (!me?.displayName) {
-        setNaming(true);
+        setError(t('error.name_required'));
         return;
       }
       const token = book?.link ?? (await newContactLink());
@@ -139,12 +82,7 @@ export function ContactsSection() {
       <h3 id="contacts-title" className="contrib__title">
         {t('contacts.title')}
       </h3>
-      <p className="contrib__line">
-        {me.displayName ? t('contacts.youAre', { name: me.displayName }) : t('contacts.intro')}{' '}
-        <button type="button" className="inline-link" onClick={() => setNaming(true)}>
-          {me.displayName ? t('contacts.rename') : t('contacts.setName')}
-        </button>
-      </p>
+      <NameField />
       <label className="check">
         <input
           type="checkbox"
@@ -245,7 +183,6 @@ export function ContactsSection() {
           {toast}
         </p>
       )}
-      {naming && <NameSheet onClose={() => setNaming(false)} onSaved={() => void reload()} />}
       {group && (
         <GroupSheet
           group={group === 'new' ? null : group}
@@ -429,24 +366,23 @@ export function ContactLinkSheet({ token, onClose }: { token: string; onClose: (
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signIn, setSignIn] = useState(false);
-  const [naming, setNaming] = useState(false);
 
   useEffect(() => {
     contactLinkName(token).then(setName, () => setName(null));
   }, [token]);
 
+  // Adding someone shows them your name: asked for here, with Add.
+  const myName = useNameGate();
+
   const add = async () => {
-    if (!account.me?.displayName) {
-      setNaming(true);
-      return;
-    }
     setBusy(true);
     setError(null);
     try {
+      await myName.ensure();
       await acceptContactLink(token);
       setDone(true);
     } catch (err) {
-      setError(errorText(t, err, lang));
+      if (!myName.asksForName(err)) setError(errorText(t, err, lang));
     } finally {
       setBusy(false);
     }
@@ -463,6 +399,7 @@ export function ContactLinkSheet({ token, onClose }: { token: string; onClose: (
       ) : (
         <p className="account-sheet__lead">{t('contacts.linkLead', { name })}</p>
       )}
+      {name && !done && myName.field}
       {error && (
         <p className="form-error" role="alert">
           {error}
@@ -476,7 +413,7 @@ export function ContactLinkSheet({ token, onClose }: { token: string; onClose: (
           <button
             type="button"
             className="btn btn--primary"
-            disabled={busy}
+            disabled={busy || !myName.ready}
             onClick={() => (account.status === 'signedIn' ? void add() : setSignIn(true))}
           >
             {account.status === 'signedIn' ? t('contacts.add') : t('private.signInToAccept')}
@@ -492,7 +429,6 @@ export function ContactLinkSheet({ token, onClose }: { token: string; onClose: (
           }}
         />
       )}
-      {naming && <NameSheet onClose={() => setNaming(false)} onSaved={() => void add()} />}
     </Sheet>
   );
 }

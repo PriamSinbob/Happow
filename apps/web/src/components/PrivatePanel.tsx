@@ -16,7 +16,7 @@ import {
 } from '../private';
 import { shareText } from '../shareEvent';
 import { Icon } from './Icons';
-import { NameSheet } from './Contacts';
+import { useNameGate } from './NameField';
 import { Sheet } from './Sheet';
 import { SignInSheet } from './SignIn';
 
@@ -64,6 +64,9 @@ export function PrivatePanel({
   const status = ev.invitation?.status ?? null;
   const signedIn = account.status === 'signedIn';
   const ended = Date.parse(ev.endAt) < Date.now();
+  // Taking an invite link puts your name on the guest list: asked for here, with Accept.
+  const name = useNameGate();
+  const linkOnly = !!ev.link && !ev.invitation;
 
   const showGuests = ev.mine || status === 'accepted';
   useEffect(() => {
@@ -93,12 +96,18 @@ export function PrivatePanel({
 
   const answer = (accept: boolean) =>
     run(async () => {
-      if (ev.link && !ev.invitation) {
+      if (linkOnly) {
         if (!accept) {
           onGone();
           return;
         }
-        await acceptInviteLink(ev.id, center);
+        try {
+          await name.ensure();
+          await acceptInviteLink(ev.id, center);
+        } catch (err) {
+          if (name.asksForName(err)) return;
+          throw err;
+        }
         onToast(t('private.accepted'));
         return;
       }
@@ -130,10 +139,11 @@ export function PrivatePanel({
             </button>
           ) : (
             <>
+              {linkOnly && name.field}
               <button
                 type="button"
                 className="btn btn--primary"
-                disabled={busy}
+                disabled={busy || (linkOnly && !name.ready)}
                 onClick={() => void answer(true)}
               >
                 <Icon name="check" size={18} />
@@ -271,14 +281,14 @@ function InviteSheet({
   onToast: (text: string) => void;
 }) {
   const { t, lang } = useI18n();
-  const account = useAccount();
   const [book, setBook] = useState<ContactBook | null>(null);
   const [people, setPeople] = useState<Set<string>>(new Set());
   const [groups, setGroups] = useState<Set<number>>(new Set());
   const [label, setLabel] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const needsName = !account.me?.displayName;
+  // Invitations carry your name: asked for in this window, not another one.
+  const name = useNameGate();
 
   useEffect(() => {
     loadContacts().then(setBook, (err) => setError(errorText(t, err, lang)));
@@ -303,11 +313,11 @@ function InviteSheet({
     }
   };
 
-  if (needsName) return <NameSheet onClose={onClose} onSaved={() => void account.refresh()} />;
   const contacts = book?.contacts.filter((c) => c.mutual && !c.blocked) ?? [];
   return (
     <Sheet title={t('private.inviteTitle')} onClose={onClose}>
       <section className="invite">
+        {name.field}
         <h3 className="contrib__title">{t('private.byLink')}</h3>
         <p className="contrib__line">{t('private.byLinkHint')}</p>
         <label className="field">
@@ -322,9 +332,10 @@ function InviteSheet({
             <button
               type="button"
               className="btn btn--inline"
-              disabled={busy}
+              disabled={busy || !name.ready}
               onClick={() =>
                 void run(async () => {
+                  await name.ensure();
                   const url = await inviteLink(ev.id, label);
                   const r = await shareLink(url, shareText(ev, lang));
                   if (r === 'copied') onToast(t('private.linkCopied'));
@@ -387,9 +398,10 @@ function InviteSheet({
         <button
           type="button"
           className="btn btn--primary"
-          disabled={busy || (!people.size && !groups.size)}
+          disabled={busy || !name.ready || (!people.size && !groups.size)}
           onClick={() =>
             void run(async () => {
+              await name.ensure();
               const n = await invitePeople(ev.id, [...people], [...groups]);
               onToast(t('private.invitedN', { count: n }));
               onClose();
