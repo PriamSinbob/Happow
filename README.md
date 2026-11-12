@@ -57,7 +57,7 @@ pnpm ingest --source ticketmaster --force  # one source, ignoring its schedule
 
 Adapter contract tests replay fixtures in `packages/ingest/test/fixtures` (no live calls in CI); `pnpm ingest --dry-run --source <id> --record packages/ingest/test/fixtures` re-records them.
 
-Checks: `pnpm format:check && pnpm typecheck && pnpm test && pnpm build`. Before launch: `pnpm launch:check`.
+Checks: `pnpm format:check && pnpm typecheck && pnpm test && pnpm build`. Before launch: `pnpm launch:check`. Run the checks once, when the work is accepted, not after every change; each push also runs them in CI, so push once at the end.
 
 Moderators and admins sign in with an email code like everyone else; the role comes from the `moderators` table ([SETUP §4](docs/SETUP.md#4-moderators-the-admin-and-sign-in-codes)).
 
