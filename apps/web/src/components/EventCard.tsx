@@ -5,6 +5,9 @@ import { useI18n, type MessageKey } from '../i18n';
 import { CategoryIcon, FlagNotice, GoButtons, useEventText } from './EventMeta';
 import { Glyph, Icon } from './Icons';
 import { FollowStar, PerformerChips } from './Follow';
+import { CardUpdates } from './Posts';
+import { PartyNotice } from './OpenPlaceCard';
+import type { OpenPlace } from '../places';
 import { en as RULE_KEYS } from '../i18n/en';
 
 const RULE_ICONS: Record<string, string> = {
@@ -89,9 +92,12 @@ export function EventCard({
   onDetails,
   onGo,
   followed = false,
+  party = null,
 }: {
   ev: NearbyEvent;
   now: Date;
+  /** The place this event is at holds a private party now: said on the card. */
+  party?: OpenPlace | null;
   /** A followed artist performs: the ★. */
   followed?: boolean;
   onClose: () => void;
@@ -134,6 +140,8 @@ export function EventCard({
       </header>
 
       <FlagNotice ev={ev} now={now} compact />
+      {party && <PartyNotice place={party} timeZone={ev.timezone} named />}
+      <CardUpdates ev={ev} now={now} onDetails={onDetails} />
       <p className="event-card__when">
         {running && <span className="now-pill">{t('event.now')}</span>}
         {when}

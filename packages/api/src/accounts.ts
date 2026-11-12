@@ -17,6 +17,11 @@ import { SupabaseError, type AuthUser } from './supabase.js';
 /** A checked user, with their staff role (null for everyone who isn't staff). */
 export interface User extends AuthUser {
   role: 'moderator' | 'admin' | null;
+  /**
+   * The account waits for its code: `email` is a placeholder, and only invitations and its own
+   * profile are open to it (`requireAnyUser`).
+   */
+  pending?: boolean;
 }
 
 export interface AccountDeps {
@@ -48,6 +53,7 @@ const codeRequestSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   locale: languageSchema,
 });
+const activateSchema = z.object({ pendingToken: z.string().min(20).max(4000) }).strict();
 const grantSchema = z
   .object({
     email: z.string().trim().toLowerCase().email().max(254),
@@ -90,19 +96,26 @@ export function accountRoutes({
   /** Checked tokens, so a burst of requests asks Supabase once. Per isolate, short-lived. */
   const cache = new Map<string, { user: User; until: number }>();
 
-  async function requireUser(req: Request): Promise<User> {
-    const token = /^Bearer (.+)$/i.exec(req.headers.get('authorization') ?? '')?.[1];
-    if (!token) throw new ApiError(401, 'unauthorized');
+  /** A waiting account's placeholder address: never deliverable, never a real account's. */
+  const isPendingEmail = (email: string) => email.endsWith(`@${auth.pending.domain}`);
+
+  /** The account behind a token, checked with Supabase (and cached); null for a bad token. */
+  async function userOf(token: string): Promise<User | null> {
     const t = now().getTime();
     const hit = cache.get(token);
     if (hit && hit.until > t) return hit.user;
     const { db } = need();
     const authUser = await db.user(token);
-    if (!authUser) throw new ApiError(401, 'unauthorized');
-    const role = await db.rpc<string | null>('staff_role', { p_email: authUser.email });
+    if (!authUser) return null;
+    const pending = isPendingEmail(authUser.email);
+    // A waiting account is never staff: its address is a placeholder.
+    const role = pending
+      ? null
+      : await db.rpc<string | null>('staff_role', { p_email: authUser.email });
     const user: User = {
       ...authUser,
       role: role === 'admin' || role === 'moderator' ? role : null,
+      ...(pending && { pending: true }),
     };
     if (auth.userCacheSec > 0) {
       if (cache.size > 500) cache.clear();
@@ -111,9 +124,33 @@ export function accountRoutes({
     return user;
   }
 
-  /** The signed-in user when the request carries a token (a bad token is 401), else null. */
-  const optionalUser = (req: Request): Promise<User | null> =>
-    req.headers.has('authorization') ? requireUser(req) : Promise.resolve(null);
+  /** Any signed-in account, one waiting for activation included. */
+  async function requireAnyUser(req: Request): Promise<User> {
+    const token = /^Bearer (.+)$/i.exec(req.headers.get('authorization') ?? '')?.[1];
+    const user = token ? await userOf(token) : null;
+    if (!user) throw new ApiError(401, 'unauthorized');
+    return user;
+  }
+
+  /** An activated account: one that waits for its code gets 403 activation_required. */
+  async function requireUser(req: Request): Promise<User> {
+    const user = await requireAnyUser(req);
+    if (user.pending) throw new ApiError(403, 'activation_required');
+    return user;
+  }
+
+  /**
+   * The activated account when the request carries a token (a bad token is 401), else null. A
+   * waiting account counts as none here: what it does without one is all it may do.
+   */
+  const optionalUser = async (req: Request): Promise<User | null> => {
+    if (!req.headers.has('authorization')) return null;
+    const user = await requireAnyUser(req);
+    return user.pending ? null : user;
+  };
+  /** As `optionalUser`, with waiting accounts: their devices' notifications follow them. */
+  const optionalAnyUser = (req: Request): Promise<User | null> =>
+    req.headers.has('authorization') ? requireAnyUser(req) : Promise.resolve(null);
 
   const forget = (userId: string) => {
     for (const [k, v] of cache) if (v.user.id === userId) cache.delete(k);
@@ -160,6 +197,33 @@ export function accountRoutes({
 
   async function profile(user: User) {
     const { db } = need();
+    if (user.pending) {
+      // Waiting for the code: the email it waits for, the name and terms, and nothing a plan gives.
+      const [p, email] = await Promise.all([
+        db.rpc<object>('profile_get', { p_user: user.id }),
+        db.rpc<string | null>('pending_email', { p_user: user.id }),
+      ]);
+      const entitlements = entitlementsFor(plans, 'anonymous');
+      const none = { used: 0, limit: 0 };
+      return {
+        id: user.id,
+        email: email ?? '',
+        role: null,
+        pending: true,
+        ...p,
+        plan: 'anonymous' as const,
+        planSource: null,
+        planEndsAt: null,
+        entitlements,
+        usage: {
+          month: usageMonth(now(), timeZone).month.slice(0, 7),
+          resetsAt: usageMonth(now(), timeZone).resetsAt.toISOString(),
+          events: none,
+          autofill: none,
+          private: none,
+        },
+      };
+    }
     const [p, plan] = await Promise.all([
       db.rpc<object>('profile_get', { p_user: user.id }),
       planOf(user),
@@ -168,6 +232,7 @@ export function accountRoutes({
       id: user.id,
       email: user.email,
       role: user.role,
+      pending: false,
       ...p,
       ...plan,
       usage: await usageOf(user, plan.entitlements),
@@ -176,10 +241,13 @@ export function accountRoutes({
 
   /** GET/PUT/DELETE /api/me, GET /api/me/export. */
   async function me(req: Request, path: string[]): Promise<Response> {
-    const user = await requireUser(req);
+    const user = await requireAnyUser(req);
     const { db } = need();
     const sub = path.join('/');
     if (req.method === 'GET' && sub === '') return json(await profile(user));
+    // A waiting account reads and sets its profile and can be deleted; the rest needs the code.
+    if (user.pending && !(sub === '' && (req.method === 'PUT' || req.method === 'DELETE')))
+      throw new ApiError(403, 'activation_required');
     if (req.method === 'PUT' && sub === '') {
       const { locale, termsVersion, showName, displayName, friendsVisible } = await body(
         req,
@@ -192,6 +260,8 @@ export function accountRoutes({
         p_locale: locale ?? null,
         p_terms_version: termsVersion ?? null,
       });
+      if (user.pending && (showName !== undefined || friendsVisible !== undefined))
+        throw new ApiError(403, 'activation_required');
       if (showName !== undefined || displayName !== undefined)
         await db.rpc('profile_prefs', {
           p_user: user.id,
@@ -223,7 +293,8 @@ export function accountRoutes({
       );
     }
     if (req.method === 'DELETE' && sub === '') {
-      await db.rpc('account_forget', { p_user: user.id, p_email: user.email });
+      // A waiting account has nothing under the email it typed: only its own rows go.
+      if (!user.pending) await db.rpc('account_forget', { p_user: user.id, p_email: user.email });
       await db.deleteUser(user.id);
       forget(user.id);
       return new Response(null, { status: 204, headers: noStore });
@@ -232,11 +303,62 @@ export function accountRoutes({
   }
 
   /**
+   * POST /api/auth/pending {email, locale}: signs the device in at once as an account that waits
+   * for activation. The email is not proven, so this is never the email's own account: it is a
+   * new one that may only accept invitations, and `POST /api/auth/activate` folds it into the
+   * real account once the code is typed. Sent with a waiting account's own token, it changes the
+   * email that account waits for. The answer is the same whether or not the email has an account.
+   */
+  async function pendingAccount(req: Request): Promise<Response> {
+    const { db, salt } = need();
+    const { email } = await body(req, codeRequestSchema);
+    if (isPendingEmail(email)) throw new ApiError(400, 'invalid_input', 'email');
+    const current = req.headers.has('authorization') ? await requireAnyUser(req) : null;
+    if (current && !current.pending) throw new ApiError(409, 'already_reviewed');
+    if (current) {
+      await limit('pending-email', current.id, 3600, auth.pending.perHourPerClient);
+      await db.rpc('pending_add', { p_user: current.id, p_email: email });
+      return json({ email }, 200, noStore);
+    }
+    await limit('pending', await clientHash(req, salt), 3600, auth.pending.perHourPerClient);
+    let session: Awaited<ReturnType<typeof db.createSession>>;
+    try {
+      session = await db.createSession(`p-${crypto.randomUUID()}@${auth.pending.domain}`);
+    } catch (err) {
+      if (err instanceof SupabaseError) throw new ApiError(502, 'auth_failed', err.message);
+      throw err;
+    }
+    const { id, ...tokens } = session;
+    await db.rpc('pending_add', { p_user: id, p_email: email });
+    return json({ session: tokens, email }, 201, noStore);
+  }
+
+  /**
+   * POST /api/auth/activate {pendingToken} 🔑: the code was typed (or Google signed in), so the
+   * waiting account behind `pendingToken` is folded into this one and deleted. Holding both
+   * tokens is the proof; a token of an activated account is refused.
+   */
+  async function activate(req: Request): Promise<Response> {
+    const user = await requireUser(req);
+    const { db } = need();
+    const { pendingToken } = await body(req, activateSchema);
+    const from = await userOf(pendingToken);
+    if (!from) throw new ApiError(404, 'not_found');
+    if (!from.pending) throw new ApiError(400, 'invalid_input', 'pendingToken');
+    const merged = await db.rpc<boolean>('pending_merge', { p_from: from.id, p_to: user.id });
+    await db.deleteUser(from.id);
+    forget(from.id);
+    return json({ merged: merged === true }, 200, noStore);
+  }
+
+  /**
    * POST /api/auth/code-request {email, locale}: with manual delivery, files a request for a
    * sign-in code that the admin sends by hand; with "app" delivery, makes the code and
    * emails it at once. Always the same answer, so it never tells whether an account exists.
    */
   async function authRoutes(req: Request, path: string[]): Promise<Response> {
+    if (req.method === 'POST' && path.join('/') === 'pending') return pendingAccount(req);
+    if (req.method === 'POST' && path.join('/') === 'activate') return activate(req);
     if (
       req.method !== 'POST' ||
       path.join('/') !== 'code-request' ||
@@ -246,6 +368,7 @@ export function accountRoutes({
     if (auth.emailDelivery === 'app' && !sender) throw new ApiError(503, 'not_configured');
     const { db, salt } = need();
     const { email, locale } = await body(req, codeRequestSchema);
+    if (isPendingEmail(email)) throw new ApiError(400, 'invalid_input', 'email');
     const client = await clientHash(req, salt);
     await limit('code-request', client, 3600, auth.codeRequestsPerHourPerClient);
     await limit(
@@ -417,5 +540,15 @@ export function accountRoutes({
     throw new ApiError(404, 'not_found');
   }
 
-  return { requireUser, optionalUser, planOf, usageOf, me, auth: authRoutes, admin };
+  return {
+    requireUser,
+    requireAnyUser,
+    optionalUser,
+    optionalAnyUser,
+    planOf,
+    usageOf,
+    me,
+    auth: authRoutes,
+    admin,
+  };
 }

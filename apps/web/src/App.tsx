@@ -36,12 +36,13 @@ import { useRadius } from './hooks/useRadius';
 import { useMyEvents } from './hooks/useMyEvents';
 import { useOpenEvent } from './hooks/useOpenEvent';
 import { invitations, useAcceptedInvitations } from './invitations';
-import { refreshPrivate, usePrivateEvents, usePrivateSync } from './private';
+import { isPrivate, refreshPrivate, usePrivateEvents, usePrivateSync } from './private';
 import { ContactLinkSheet } from './components/Contacts';
 import { useView } from './hooks/useView';
-import { openPlaces, usePlaces } from './places';
+import { openPlaces, partyAt, usePlaces } from './places';
 import { plans, usePlans, usePlanSync } from './plans';
-import { reminders } from './reminders';
+import { reminders, useReminders } from './reminders';
+import { updates, useUnread, useUpdatesSync, useUpdatesVersion, type News } from './updates';
 import { formatRelativeDay } from './format';
 import { useLongPress } from './hooks/useLongPress';
 import { useShortcut } from './hooks/useShortcut';
@@ -395,8 +396,11 @@ export function App() {
   const [recenter, setRecenter] = useState(0);
   const filtered = filters.activeCount > 0;
   const [route, go] = useRoute();
-  const { needsTerms, status: accountStatus } = useAccount();
-  usePrivateSync(accountStatus === 'signedIn', searchCenter, config.app.refresh.dataMinutes);
+  const { needsTerms, status: accountStatus, member } = useAccount();
+  // Adding and correcting need the activated account: signed out or still waiting for the code,
+  // the sign-in sheet comes first (waiting, it opens on the code).
+  const needsSignIn = accountStatus === 'signedOut' || accountStatus === 'pending';
+  usePrivateSync(member, searchCenter, config.app.refresh.dataMinutes);
   // Reminders: the server's pending ones, and the subscription tied to the account.
   useEffect(() => {
     if (accountStatus === 'loading') return;
@@ -410,7 +414,14 @@ export function App() {
   // Adding needs an account: signed out, Add opens a sign-in sheet over the map.
   // The plus asks first what to add; signed out, sign-in comes before the form.
   const [addChoice, setAddChoice] = useState(false);
-  const [addGate, setAddGate] = useState<'event' | 'place' | null>(null);
+  const [addGate, setAddGate] = useState<{ what: 'event' | 'place'; at?: string } | null>(null);
+  // A private event at a place: the place it was started from, for the add form.
+  const [eventPlace, setEventPlace] = useState<{
+    id: string;
+    name: string;
+    address: string | null;
+    point: LatLng;
+  } | null>(null);
   // Correcting the open place; signed out, sign-in first.
   const [placeEdit, setPlaceEdit] = useState<'edit' | 'signIn' | null>(null);
   const detailId = route?.name === 'event' ? route.id : null;
@@ -436,15 +447,40 @@ export function App() {
   };
   const close = useCallback(() => go(null), [go]);
   /** The add form, or sign-in first where adding needs an account (a place always does). */
-  const startAdd = (what: 'event' | 'place') => {
+  const startAdd = (what: 'event' | 'place', at?: string) => {
     setAddChoice(false);
-    if (
-      accountStatus === 'signedOut' &&
-      (what === 'place' || config.app.submissions.account === 'required')
-    )
-      setAddGate(what);
-    else go({ name: what === 'place' ? 'addPlace' : 'add' });
+    if (needsSignIn && (what === 'place' || config.app.submissions.account === 'required'))
+      setAddGate({ what, at });
+    else go(what === 'place' ? { name: 'addPlace' } : { name: 'add', ...(at && { place: at }) });
   };
+  // Updates on the events that are yours: what is saved, marked going or has a reminder (public
+  // ones are asked about; private ones bring theirs). Unseen ones carry the red "!".
+  const reminderMap = useReminders();
+  const watched = useMemo(
+    () => [
+      ...new Set([...myList.filter((e) => e.on).map((e) => e.id), ...Object.keys(reminderMap)]),
+    ],
+    [myList, reminderMap],
+  );
+  useUpdatesSync(watched);
+  useEffect(() => updates.setPrivate(priv), [priv]);
+  const unread = useUnread();
+  // The newest unseen update is announced once over the map; a tap opens the event.
+  const newsVersion = useUpdatesVersion();
+  const [notice, setNotice] = useState<{ id: string; news: News } | null>(null);
+  useEffect(() => {
+    const fresh = updates.takeNew();
+    if (fresh.length) setNotice(fresh[0]!);
+  }, [newsVersion]);
+  useEffect(() => {
+    if (!notice) return;
+    const id = setTimeout(() => setNotice(null), 9000);
+    return () => clearTimeout(id);
+  }, [notice]);
+  // Its card is open: the update is on screen, the notice has done its work.
+  useEffect(() => {
+    if (notice && selectedId === notice.id) setNotice(null);
+  }, [notice, selectedId]);
   // The district goal, only while the reach is empty.
   const goal = useDistrictGoal(repo, !loading && events.length === 0 ? searchCenter : null, now);
   // An edit or an answer on the card reads the event again.
@@ -567,6 +603,7 @@ export function App() {
           center={searchCenter}
           radiusM={radius}
           events={mapEvents}
+          unread={unread}
           now={pinTime}
           pinMode={pinMode}
           // A pin with several events is selected through any one of them.
@@ -700,6 +737,28 @@ export function App() {
           {toast}
         </div>
       )}
+      {notice && !detailId && (
+        <button
+          type="button"
+          className="update-notice"
+          onClick={() => {
+            setNotice(null);
+            openDetail(notice.id);
+          }}
+        >
+          <span className="badge badge--news" aria-hidden>
+            !
+          </span>
+          <span className="update-notice__text">
+            <strong>
+              {notice.news.posts[0]
+                ? `${t(`organiser.kind.${notice.news.posts[0].kind}`)}: ${notice.news.title}`
+                : notice.news.title}
+            </strong>
+            <span>{notice.news.posts[0]?.body ?? t('updates.changed')}</span>
+          </span>
+        </button>
+      )}
 
       {banner && (
         <div className="banner" role="status">
@@ -829,6 +888,11 @@ export function App() {
               ev={selected}
               now={now}
               followed={followedIds.has(selected.id)}
+              party={
+                isPrivate(selected)
+                  ? null
+                  : partyAt(allPlaces, pinTime, selected.point, searchCenter)
+              }
               onBack={
                 parked
                   ? () => {
@@ -853,7 +917,16 @@ export function App() {
               now={pinTime}
               timeZone={region.timezone}
               onClose={clearCards}
-              onEdit={() => setPlaceEdit(accountStatus === 'signedOut' ? 'signIn' : 'edit')}
+              onEdit={() => setPlaceEdit(needsSignIn ? 'signIn' : 'edit')}
+              onPrivateEvent={() => {
+                setEventPlace({
+                  id: openPlace.id,
+                  name: openPlace.name,
+                  address: openPlace.address,
+                  point: openPlace.point,
+                });
+                startAdd('event', openPlace.id);
+              }}
             />
           </div>
         ) : view === 'map' && placeEvents.length > 0 ? (
@@ -946,6 +1019,11 @@ export function App() {
           loadCredit={loadCredit}
           loadNearby={loadNearby}
           onOpenEvent={(id) => go({ name: 'event', id }, true)}
+          party={
+            detail.ev && !isPrivate(detail.ev)
+              ? partyAt(allPlaces, now, detail.ev.point, searchCenter)
+              : null
+          }
           center={searchCenter}
           onChanged={() => {
             setDetailVersion((v) => v + 1);
@@ -969,8 +1047,15 @@ export function App() {
       )}
       {route?.name === 'add' && (
         <AddEvent
-          key={route.again ?? 'new'}
+          key={route.again ?? route.place ?? 'new'}
           again={route.again ?? null}
+          place={
+            route.place
+              ? ((eventPlace?.id === route.place ? eventPlace : null) ??
+                allPlaces.find((p) => p.id === route.place) ??
+                null)
+              : null
+          }
           here={here}
           onClose={close}
           onOpenEvent={(id) => go({ name: 'event', id }, true)}
@@ -1013,10 +1098,14 @@ export function App() {
       )}
       {addGate && (
         <SignInSheet
-          forAdd={addGate === 'event'}
+          forAdd={addGate.what === 'event'}
           onClose={() => setAddGate(null)}
           onSignedIn={() => {
-            go({ name: addGate === 'place' ? 'addPlace' : 'add' });
+            go(
+              addGate.what === 'place'
+                ? { name: 'addPlace' }
+                : { name: 'add', ...(addGate.at && { place: addGate.at }) },
+            );
             setAddGate(null);
           }}
         />

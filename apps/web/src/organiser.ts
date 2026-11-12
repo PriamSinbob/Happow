@@ -1,3 +1,4 @@
+import type { EventPost } from '@happow/core';
 import { api, deviceId } from './api';
 import { accessToken } from './auth';
 
@@ -5,13 +6,8 @@ import { accessToken } from './auth';
 
 export type PostKind = 'schedule' | 'important' | 'info';
 
-export interface Post {
-  id: string;
-  kind: PostKind;
-  body: string;
-  change: { start_at?: string; end_at?: string; status?: string } | null;
-  createdAt: string;
-}
+/** An organiser's post: the shape the server and the app share. */
+export type Post = EventPost;
 
 export interface EventPosts {
   organiser: { name: string; kind: 'event' | 'venue' | 'private' } | null;

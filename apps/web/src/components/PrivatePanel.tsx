@@ -11,6 +11,7 @@ import {
   invitePeople,
   loadGuests,
   revokeInvitation,
+  transferEvent,
   type Guest,
   type PrivateEvent,
 } from '../private';
@@ -47,12 +48,15 @@ export function PrivatePanel({
   center,
   onToast,
   onGone,
+  onChanged = () => {},
 }: {
   ev: PrivateEvent;
   center: LatLng | null;
   onToast: (text: string) => void;
   /** Declined: the card closes, as the event leaves your app. */
   onGone: () => void;
+  /** Handed over: the event is read again, now as a guest's. */
+  onChanged?: () => void;
 }) {
   const { t, lang } = useI18n();
   const account = useAccount();
@@ -61,8 +65,11 @@ export function PrivatePanel({
   const [inviting, setInviting] = useState(false);
   const [signIn, setSignIn] = useState(false);
   const [guests, setGuests] = useState<Guest[] | null>(null);
+  // Handing the event over: the guest picked, asked about once more before it happens.
+  const [handing, setHanding] = useState<'pick' | Guest | null>(null);
   const status = ev.invitation?.status ?? null;
-  const signedIn = account.status === 'signedIn';
+  // Activated or still waiting for the code: either may answer an invitation.
+  const signedIn = account.member;
   const ended = Date.parse(ev.endAt) < Date.now();
   // Taking an invite link puts your name on the guest list: asked for here, with Accept.
   const name = useNameGate();
@@ -166,10 +173,15 @@ export function PrivatePanel({
       {status === 'accepted' && <p className="muted">{t('private.going')}</p>}
 
       {ev.mine && !ended && (
-        <button type="button" className="btn" onClick={() => setInviting(true)}>
-          <Icon name="users" size={18} />
-          {t('private.invite')}
-        </button>
+        <div className="private-panel__answer">
+          <button type="button" className="btn" onClick={() => setInviting(true)}>
+            <Icon name="users" size={18} />
+            {t('private.invite')}
+          </button>
+          <button type="button" className="btn" onClick={() => setHanding('pick')}>
+            {t('private.handOver')}
+          </button>
+        </div>
       )}
 
       {guests && guests.length > 0 && (
@@ -197,6 +209,27 @@ export function PrivatePanel({
         </p>
       )}
       {inviting && <InviteSheet ev={ev} onClose={() => setInviting(false)} onToast={onToast} />}
+      {handing && (
+        <HandOverSheet
+          guests={(guests ?? []).filter((g) => g.status === 'accepted' && g.person)}
+          picked={handing === 'pick' ? null : handing}
+          busy={busy}
+          error={error}
+          onPick={setHanding}
+          onClose={() => {
+            setHanding(null);
+            setError(null);
+          }}
+          onConfirm={(g) =>
+            void run(async () => {
+              await transferEvent(ev.id, g.person!, center);
+              setHanding(null);
+              onToast(t('private.handedOver', { name: g.name ?? '' }));
+              onChanged();
+            })
+          }
+        />
+      )}
       {signIn && (
         <SignInSheet
           onClose={() => setSignIn(false)}
@@ -204,9 +237,80 @@ export function PrivatePanel({
             setSignIn(false);
             void answer(true);
           }}
+          // The email is enough to accept: the code can follow later.
+          onPending={() => {
+            setSignIn(false);
+            void answer(true);
+          }}
         />
       )}
     </section>
+  );
+}
+
+/**
+ * "Hand over": pick one of the accepted guests, then confirm. They become the organiser; you stay
+ * as a guest. Only people who accepted can take it, so it never goes to someone who isn't coming.
+ */
+function HandOverSheet({
+  guests,
+  picked,
+  busy,
+  error,
+  onPick,
+  onClose,
+  onConfirm,
+}: {
+  guests: Guest[];
+  picked: Guest | null;
+  busy: boolean;
+  error: string | null;
+  onPick: (g: Guest | 'pick') => void;
+  onClose: () => void;
+  onConfirm: (g: Guest) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <Sheet title={t('private.handOverTitle')} onClose={onClose}>
+      {picked ? (
+        <>
+          <p className="account-sheet__lead">
+            {t('private.handOverConfirm', { name: picked.name ?? '' })}
+          </p>
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="account-sheet__foot">
+            <button type="button" className="btn" onClick={() => onPick('pick')}>
+              {t('common.back')}
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={busy}
+              onClick={() => onConfirm(picked)}
+            >
+              {t('private.handOverDo')}
+            </button>
+          </div>
+        </>
+      ) : guests.length ? (
+        <>
+          <p className="account-sheet__lead">{t('private.handOverLead')}</p>
+          <div className="choices">
+            {guests.map((g) => (
+              <button key={g.person} type="button" className="choice" onClick={() => onPick(g)}>
+                {g.name ?? '—'}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="account-sheet__lead">{t('private.handOverNone')}</p>
+      )}
+    </Sheet>
   );
 }
 

@@ -25,7 +25,7 @@ Never paste a secret into an issue, a commit, a chat or a file in the repo. Secr
    - the **secret** key (`sb_secret_…`), or the legacy **service_role** key. This is **`SUPABASE_SERVICE_ROLE_KEY`**. It bypasses all security rules: keep it server-side only and never put it in a variable whose name starts with `VITE_`.
 4. **Sign-in settings.** Open **Authentication → Sign In / Providers**:
    - Keep **Allow new users to sign up** off while sign-in is by email code only. Accounts are created by the admin panel when you send someone a code (section 4), which works with sign-ups off. Turn it on when you add Google (step 5): a first Google sign-in creates the account.
-   - Click **Email** in the provider list. Set **Email OTP Expiration** to `86400` (24 hours, the maximum), so a code you send by hand later the same day still works, and check that **Email OTP Length** is `6`. Save.
+   - Click **Email** in the provider list. Set **Email OTP Expiration** to `86400` (24 hours, the maximum), so a code you send by hand later the same day still works, and leave **Email OTP Length** as it is: the app takes codes of 6 to 10 digits (`auth.codeDigits` in `config/app.json`). Save.
 
    Then open **Authentication → URL Configuration**:
    - Set **Site URL** to the deployed app, for example `https://happow.<your-subdomain>.workers.dev` (later your own domain).
@@ -89,11 +89,13 @@ They then sign in like everyone else, in **About → Sign in** (an email code, o
 **Sign-in codes by hand** (`auth.emailDelivery: "manual"` in `config/app.json`, until the app has its own domain and an email sender). When someone asks for a code in the app, the request waits for you:
 
 1. Open **About Happow → Moderation → Codes**. The number on the tab is how many requests are open. Each row shows the email, the language (PL or EN), how long ago it was asked, and whether the person already has an account.
-2. Tap **Generate code**. This creates the account if needed and opens **Ready email**: the 6-digit code in large type (to read out over the phone), and the To, Subject and Body in the person's language.
+2. Tap **Generate code**. This creates the account if needed and opens **Ready email**: the code in large type (to read out over the phone), and the To, Subject and Body in the person's language.
 3. Tap **Open in mail app**: your mail app opens with the email filled in. Send it from your own address. If no mail app opens, tap **Copy email** and paste it into a new email; the small copy button next to To copies the address. On a phone that blocks copying, the text is selected for you: press and hold it, then **Copy**.
 4. Tap **Done**. The row now says **code made at 14:05**. The code works for 24 hours. **Generate again** makes a new code, and the old one stops working.
 
 Requests leave the list once the person has signed in after their code was made, or after 7 days. **Delete** removes one by hand (it asks first); a code that already went out still works.
+
+**While they wait**, the person is already signed in on their phone as an account that waits for activation: they can accept invitations and save events, nothing else. In Supabase (**Authentication → Users**) these show as `p-…@pending.happow.invalid`. The Worker creates them itself, so this works with sign-ups off; each one is folded into the real account and deleted when the code is typed, or deleted after 30 days (`auth.pending.keepDays`) if it never is. Leave them alone.
 
 **Premium by hand (plan grants).** Every account has premium during the early-access promotion: `earlyAccess.until` in `config/plans.json` (the last day included, Warsaw time). To extend it, change that date and deploy; it applies to everyone at once. To give one person premium beyond that (a tester, a partner organiser), add a grant:
 

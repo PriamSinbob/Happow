@@ -461,7 +461,7 @@ export const pl: Record<MessageKey, string> = {
   'signIn.codeSent':
     'Wysłaliśmy kod na adres {email}. Działa przez {hours, plural, one {# godzinę} few {# godziny} many {# godzin} other {# godziny}}.',
   'signIn.code': 'Kod z e-maila',
-  'signIn.codeHint': '6 cyfr',
+  'signIn.codeHint': 'Wszystkie cyfry z e-maila',
   'signIn.submit': 'Zaloguj',
   'signIn.wrongCode': 'Ten kod jest błędny albo wygasł.',
   'signIn.changeEmail': 'Zmień e-mail',
@@ -950,4 +950,35 @@ export const pl: Record<MessageKey, string> = {
   'error.too_many_contacts': 'Masz już najwięcej kontaktów.',
   'error.already_claimed': 'Ktoś już to organizuje. Zdecyduje moderator.',
   'error.own_item': 'To twoje.',
+  'signIn.pendingNow':
+    'Jesteś już zalogowany: przyjmowanie zaproszeń i zapisywanie wydarzeń działa od razu. Dodawanie wydarzeń i reszta konta otworzą się po wpisaniu kodu.',
+  'account.pending': 'Czeka na aktywację',
+  'account.pendingLead':
+    'Zaproszenia i zapisane wydarzenia działają już teraz. Wpisz kod z e-maila, aby otworzyć resztę konta.',
+  'account.enterCode': 'Wpisz kod',
+  'updates.title': 'Aktualizacje',
+  'updates.unread': 'Nowa aktualizacja',
+  'updates.changed': 'Zmienił się termin lub status.',
+  'updates.more':
+    '{count, plural, one {Jeszcze # aktualizacja w Szczegółach} few {Jeszcze # aktualizacje w Szczegółach} many {Jeszcze # aktualizacji w Szczegółach} other {Jeszcze # aktualizacji w Szczegółach}}',
+  'updates.notify': 'Powiadamiaj mnie o zmianach',
+  'updates.notifyHint':
+    'Ważne wpisy organizatora i zmiany terminu jako powiadomienia na tym urządzeniu.',
+  'updates.notifyOn': 'Powiadomienia włączone.',
+  'place.privateHint': 'Na razie nie wpuszczają gości z zewnątrz.',
+  'place.privateAt': '{name} na razie nie wpuszcza gości z zewnątrz.',
+  'place.privateEvent': 'Prywatne wydarzenie tutaj',
+  'add.atPlace': 'Prywatne wydarzenie w miejscu {name}: zobaczą je tylko zaproszeni.',
+  'add.atPlacePublic': 'Wydarzenie w miejscu {name}.',
+  'private.handOver': 'Przekaż',
+  'private.handOverTitle': 'Przekaż organizację',
+  'private.handOverLead':
+    'Wybierz gościa, który odtąd poprowadzi to wydarzenie: zaproszenia, zmiany i wpisy. Ty zostajesz jako gość.',
+  'private.handOverNone':
+    'Nikt jeszcze nie przyjął zaproszenia. Organizację można przekazać gościowi, który je przyjął.',
+  'private.handOverConfirm':
+    '{name} zostanie organizatorem, a Ty zostaniesz gościem. Tylko ta osoba może oddać Ci organizację.',
+  'private.handOverDo': 'Przekaż',
+  'private.handedOver': 'Organizuje teraz: {name}.',
+  'error.activation_required': 'To wymaga aktywnego konta. Najpierw wpisz kod z e-maila.',
 };

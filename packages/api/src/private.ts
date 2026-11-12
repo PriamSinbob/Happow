@@ -13,18 +13,21 @@ import {
   deviceHash,
   type Need,
 } from './http.js';
+import { announce } from './notices.js';
 import { SupabaseError } from './supabase.js';
 
 /**
  * Private events, contacts and invitations. Everything here needs an account; nothing
  * is cached anywhere but the person's own device. Links are shared through the phone's share
- * sheet, not by email.
+ * sheet, not by email. An account that still waits for its code may read what it is invited to
+ * and accept or decline (an invitation, an invite link, a contact link); the rest needs the code.
  *
  *   GET    /api/private                     the private events you own or are invited to
  *   GET    /api/private/:id?i=<token>       one, for you or for a live invite link
  *   POST   /api/private/:id/invite          {people?, groups?} or {link: true, label?}
  *   GET    /api/private/:id/guests          the organiser's list; accepted guests see who else
  *   POST   /api/private/:id/answer          {accept}
+ *   POST   /api/private/:id/transfer        {to}: the owner hands the event to an accepted guest
  *   POST   /api/invitations/accept          {token}: an invite link
  *   DELETE /api/invitations/:id             revoke (the organiser)
  *   GET    /api/contacts                    contacts, groups, your contact link
@@ -42,7 +45,12 @@ export interface PrivateDeps {
   config: HappowConfig;
   need: Need;
   requireUser: (req: Request) => Promise<User>;
+  /** As `requireUser`, with accounts that wait for activation. */
+  requireAnyUser: (req: Request) => Promise<User>;
   limit: Limit;
+  now: () => Date;
+  fetch?: typeof fetch;
+  pushSecret: string | undefined;
 }
 
 const token = z.string().regex(/^[A-Za-z0-9_-]{16,64}$/);
@@ -76,7 +84,16 @@ function mapError(err: unknown): never {
   throw err;
 }
 
-export function privateRoutes({ config, need, requireUser, limit }: PrivateDeps) {
+export function privateRoutes({
+  config,
+  need,
+  requireUser,
+  requireAnyUser,
+  limit,
+  now,
+  fetch: doFetch,
+  pushSecret,
+}: PrivateDeps) {
   const cfg = config.app.private;
   const rpc = async <T>(name: string, args: object): Promise<T> => {
     try {
@@ -96,7 +113,7 @@ export function privateRoutes({ config, need, requireUser, limit }: PrivateDeps)
     const u = new URL(req.url);
     const [id, action] = path;
     if (!id && req.method === 'GET') {
-      const user = await requireUser(req);
+      const user = await requireAnyUser(req);
       return json(
         { events: await rpc('private_events_for', { p_user: user.id, ...point(u) }) },
         200,
@@ -107,7 +124,7 @@ export function privateRoutes({ config, need, requireUser, limit }: PrivateDeps)
     if (!action && req.method === 'GET') {
       // A link invitation opens the card before signing in; otherwise an account.
       const linkToken = u.searchParams.get('i');
-      const user = req.headers.has('authorization') ? await requireUser(req) : null;
+      const user = req.headers.has('authorization') ? await requireAnyUser(req) : null;
       if (!user && !linkToken) throw new ApiError(401, 'unauthorized');
       const ev = await rpc<{ invitation: { status: string } | null } | null>('private_event_get', {
         p_user: user?.id ?? null,
@@ -119,7 +136,39 @@ export function privateRoutes({ config, need, requireUser, limit }: PrivateDeps)
       if (user && ev.invitation) await rpc('invitation_seen', { p_user: user.id, p_event: id });
       return json({ event: ev }, 200, noStore);
     }
-    const user = await requireUser(req);
+    // Reading the guests and answering are open to a waiting account; the rest is the owner's.
+    const user = await (
+      (action === 'guests' && req.method === 'GET') ||
+        (action === 'answer' && req.method === 'POST')
+        ? requireAnyUser
+        : requireUser
+    )(req);
+    if (action === 'transfer' && req.method === 'POST') {
+      await guard(user);
+      const { to } = await body(req, z.object({ to: uuid }));
+      const r = await rpc<{ owner: string; ownerName: string | null }>('event_transfer', {
+        p_user: user.id,
+        p_event: id,
+        p_to: to,
+      });
+      // The guests learn who runs it now; the one who handed it over does not need telling.
+      const lang = config.app.languages[0] === 'en' ? 'en' : 'pl';
+      const who = r.ownerName ?? '';
+      const notified = await announce(
+        need().db,
+        pushSecret,
+        config.app,
+        now(),
+        {
+          event: id,
+          kind: 'important',
+          body: (lang === 'en' ? `New organiser: ${who}` : `Nowy organizator: ${who}`).trim(),
+          except: user.id,
+        },
+        doFetch,
+      );
+      return json({ ok: true, ownerName: r.ownerName, notified }, 200, noStore);
+    }
     if (action === 'invite' && req.method === 'POST') {
       await guard(user);
       await named(user);
@@ -177,9 +226,10 @@ export function privateRoutes({ config, need, requireUser, limit }: PrivateDeps)
   }
 
   async function invitations(req: Request, path: string[]): Promise<Response> {
-    const user = await requireUser(req);
+    const accepting = path.join('/') === 'accept' && req.method === 'POST';
+    const user = await (accepting ? requireAnyUser : requireUser)(req);
     await guard(user);
-    if (path.join('/') === 'accept' && req.method === 'POST') {
+    if (accepting) {
       await named(user);
       const input = await body(req, z.object({ token }));
       const id = await rpc<string>('invitation_accept_link', {
@@ -206,7 +256,9 @@ export function privateRoutes({ config, need, requireUser, limit }: PrivateDeps)
       if (!owner) throw new ApiError(404, 'not_found');
       return json({ name: owner.name }, 200, noStore);
     }
-    const user = await requireUser(req);
+    // Taking someone's contact link is accepting an invitation: open to a waiting account.
+    const taking = path[0] === 'link' && path.length === 2 && req.method === 'POST';
+    const user = await (taking ? requireAnyUser : requireUser)(req);
     if (!path.length && req.method === 'GET')
       return json(await rpc('contacts_list', { p_user: user.id }), 200, noStore);
     await guard(user);

@@ -57,6 +57,7 @@ describe('/api/me', () => {
       id: 'u1',
       email: 'ala@example.org',
       role: null,
+      pending: false,
       displayName: null,
       locale: 'pl',
       termsVersion: null,

@@ -124,7 +124,7 @@ How the Worker routes /api/* (packages/api/src/handler.ts builds what the routes
 flowchart LR
   REQ(["Request /api/..."]) --> R{"route head"}
   R -- "GET config" --> CONF2["Client config<br/>public, cached"]
-  R -- "GET events/:id · POST events/lookup<br/>credit · district-goal" --> EVR["Public event reads<br/>events_public"]
+  R -- "GET events/:id · POST events/lookup<br/>events/updates · credit · district-goal" --> EVR["Public event reads<br/>events_public, updates"]
   R -- "GET area" --> AREA["events_area RPC<br/>grid-snapped key, ETag,<br/>public cache 5 / 30 min<br/>range: 14 days · future"]
   R -- "GET places" --> PLACES["places_area RPC<br/>same grid key, ETag,<br/>corrections applied,<br/>public cache 30 min"]
   R -- "POST autofill" --> AF["Sign-in + monthly allowance<br/>fetchPage → JSON-LD<br/>→ LLM (daily cap) → prefills"]
@@ -135,7 +135,7 @@ flowchart LR
   R -- "POST thanks / counts" --> CON["Contributions:<br/>thanks, attendance counts"]
   R -- "POST route" --> ROUTE["Walking route provider<br/>rate-limited, else straight line"]
   R -- "moderation/*" --> MOD["Moderator role required<br/>queue · approve / reject<br/>series · trusted · reports"]
-  R -- "auth/*" --> AUTH["Sign-in (email code, Google)"]
+  R -- "auth/*" --> AUTH["Sign-in: code request,<br/>waiting account at once,<br/>activation folds it in"]
   R -- "me/*" --> ME["Profile, plan, usage,<br/>saved, contributions, feeds"]
   R -- "admin/*" --> ADM["Grants, sources,<br/>feed review"]
   R -- "search · follows" --> FOL["Search, followed<br/>performers' dates"]
@@ -180,6 +180,8 @@ flowchart TB
   GUIDE --> GO
   DET --> GO["#/go/:id Going there<br/>walking route"]
   DET --> ACT["Save · share · add to calendar (.ics)<br/>report wrong/cancelled · I'm going"]
+  PINS --> UPD["Unseen update: red ! on pin and row,<br/>newest updates on the card"]
+  UPD --> DET
   DET --> AGAIN["Add again (#/add?again)"]
   HOME -- "add pill on the map" --> ADD["#/add Add event"]
   AGAIN --> ADD

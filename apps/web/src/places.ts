@@ -115,6 +115,29 @@ export function openPlaces(
   return out;
 }
 
+/**
+ * The place holding a private party at `at` right where an event is: the event took the place's
+ * pin over, so its card says the place is closed to the public.
+ */
+export function partyAt(
+  places: readonly Place[],
+  at: Date,
+  point: LatLng,
+  from: LatLng,
+): OpenPlace | null {
+  for (const p of places) {
+    if (p.privateUntil === null || p.privateUntil <= at) continue;
+    if (distanceM(point, p.point) > cfg.nearEventM) continue;
+    return {
+      ...p,
+      closesAt: p.privateUntil,
+      privateParty: true,
+      distanceM: distanceM(from, p.point),
+    };
+  }
+  return null;
+}
+
 const seedFiles = import.meta.glob<{ default: { places: PlaceRow[] } }>(
   '../../../data/seed/*.places.json',
 );
