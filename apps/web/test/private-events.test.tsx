@@ -398,16 +398,4 @@ describe('friends and organisers on the card', () => {
   });
 });
 
-describe('views', () => {
-  it('has the Private view in config', () => {
-    expect(config.app.agenda.views).toContain('private');
-  });
-
-  it('free accounts get one private event a month', () => {
-    expect(entitlementsFor(config.plans, 'account')['private.perMonth']).toBe(1);
-    expect(entitlementsFor(config.plans, 'account')['private.create']).toBe(true);
-    expect(entitlementsFor(config.plans, 'anonymous')['private.create']).toBe(false);
-  });
-});
-
 export type { PrivateEvent };

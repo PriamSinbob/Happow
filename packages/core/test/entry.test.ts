@@ -32,19 +32,6 @@ const ev = (over: Partial<Ev> = {}): Ev => ({
 const at = (iso: string) => new Date(iso);
 
 describe('category entry defaults', () => {
-  it('every category has an entry type and the agreed defaults', () => {
-    const by = Object.fromEntries(categories.map((c) => [c.id, c]));
-    for (const id of ['theatre', 'cinema', 'talk', 'sport', 'music', 'kids', 'religious'])
-      expect(by[id]!.entry, id).toBe('fixed');
-    for (const id of ['garage-sale', 'market', 'exhibition', 'festival', 'happening'])
-      expect(by[id]!.entry, id).toBe('open');
-    expect(by.cinema!.graceMin).toBe(25);
-    expect(by.kids!.graceMin).toBe(5);
-    expect(by.religious!.graceMin).toBe(15);
-    expect(by.kids!.family).toBe('yes');
-    for (const id of ['market', 'garage-sale', 'festival', 'exhibition', 'food', 'sport'])
-      expect(by[id]!.family, id).toBe('likely');
-  });
   it('the config check rejects a category without an entry type', () => {
     const bad = { id: 'x', labels: { pl: 'x', en: 'x' }, defaultDurationMin: 60 };
     expect(

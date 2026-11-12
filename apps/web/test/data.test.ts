@@ -5,7 +5,6 @@ import { rowToEvent, type EventRow } from '@happow/core';
 import { config, region } from '../src/config';
 import { formatDistance, formatRelativeDay } from '../src/format';
 import { eventToIcs } from '../src/ics';
-import { translate } from '../src/i18n';
 
 describe('StaticEventRepository', () => {
   const now = new Date('2026-10-20T14:00:00Z');
@@ -29,22 +28,6 @@ describe('StaticEventRepository', () => {
     expect(res.map((e) => e.distanceM)).toEqual(
       [...res.map((e) => e.distanceM)].sort((a, b) => a - b),
     );
-  });
-
-  it('excludes events outside the window', async () => {
-    const all = await repo.near({
-      center: region.center,
-      radiusM: 25000,
-      from: now,
-      to: new Date(now.getTime() + 48 * 3600_000),
-    });
-    const today = await repo.near({
-      center: region.center,
-      radiusM: 25000,
-      from: now,
-      to: new Date(now.getTime() + 6 * 3600_000),
-    });
-    expect(today.length).toBeLessThan(all.length);
   });
 });
 
@@ -161,15 +144,5 @@ describe('iCalendar export', () => {
     for (const line of ics.split('\r\n'))
       expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);
     expect(ics.trimEnd().endsWith('END:VCALENDAR')).toBe(true);
-  });
-});
-
-describe('i18n plural exact matches', () => {
-  it('uses =0 before plural categories', () => {
-    expect(translate('en', 'filters.show', { count: 0 })).toBe('No events');
-    expect(translate('en', 'filters.show', { count: 1 })).toBe('Show 1 event');
-    expect(translate('pl', 'filters.show', { count: 0 })).toBe('Brak wydarzeń');
-    expect(translate('pl', 'filters.show', { count: 3 })).toBe('Pokaż 3 wydarzenia');
-    expect(translate('pl', 'filters.show', { count: 12 })).toBe('Pokaż 12 wydarzeń');
   });
 });

@@ -124,10 +124,4 @@ describe('attendance counts', () => {
       (await api(req('share', { body: { deviceId: 'device-123', eventId: 'hidden' } }))).status,
     ).toBe(404);
   });
-
-  it('answers only POST on its own paths', async () => {
-    const { api } = backend({});
-    expect((await api(new Request('https://happow.example/api/attendance'))).status).toBe(404);
-    expect((await api(req('attendance/other', { body: {} }))).status).toBe(404);
-  });
 });

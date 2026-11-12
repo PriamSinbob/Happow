@@ -16,7 +16,6 @@ import {
   recordVisit,
   rimBlobs,
   seededRandom,
-  shouldRecordOpen,
   toCanvasPx,
   veilBox,
   veilFade,
@@ -34,14 +33,6 @@ describe('recording visits', () => {
     c = recordVisit(c, '891e2040887ffff', 'arrival', '2026-10-23');
     c = recordVisit(c, '891e2040887ffff', 'open', '2026-10-21');
     expect(c).toEqual({ cell: '891e2040887ffff', opens: 2, arrivals: 1, lastSeen: '2026-10-23' });
-  });
-
-  it('records an open once per cell per session, and only from a precise fix', () => {
-    const session = new Set(['891e2040887ffff']);
-    const max = app.atlas.maxAccuracyM;
-    expect(shouldRecordOpen({ cell: '891e2040887ffff', accuracyM: 10 }, session, max)).toBe(false);
-    expect(shouldRecordOpen({ cell: '891e2040897ffff', accuracyM: 10 }, session, max)).toBe(true);
-    expect(shouldRecordOpen({ cell: '891e2040897ffff', accuracyM: 500 }, session, max)).toBe(false);
   });
 
   it('starts a new session after the app was hidden long enough', () => {

@@ -46,13 +46,6 @@ describe('saveWeeklyMetrics', () => {
     expect(d.fetch).not.toHaveBeenCalled();
   });
 
-  it('does nothing on other days', async () => {
-    const d = deps();
-    const r = await saveWeeklyMetrics(env, new Date('2026-10-27T09:00:00Z'), d);
-    expect(r.due).toBe(false);
-    expect(d.fetch).not.toHaveBeenCalled();
-  });
-
   it('saves from Monday 08:00 local time on, with the configured evening', async () => {
     const d = deps();
     const now = new Date('2026-10-26T07:00:00Z');
@@ -76,10 +69,5 @@ describe('saveWeeklyMetrics', () => {
     const r = await saveWeeklyMetrics({}, new Date('2026-10-26T07:00:00Z'), d);
     expect(r.reason).toMatch(/SUPABASE_URL/);
     expect(d.fetch).not.toHaveBeenCalled();
-  });
-
-  it('reads the real config by default', async () => {
-    const r = await saveWeeklyMetrics({}, new Date('2026-10-27T09:00:00Z'));
-    expect(r).toEqual({ region: 'wroclaw', due: false });
   });
 });

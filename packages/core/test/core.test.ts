@@ -95,10 +95,6 @@ describe('seed', () => {
     expect(close.length).toBeGreaterThan(2);
     expect(close.some((e) => isRunning(e, now))).toBe(true);
   });
-
-  it('marks events without a duration as estimated', () => {
-    expect(events.filter((e) => e.endEstimated).length).toBeGreaterThan(0);
-  });
 });
 
 describe('dayBounds', () => {

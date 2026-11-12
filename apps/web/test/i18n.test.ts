@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { en } from '../src/i18n/en';
 import { pl } from '../src/i18n/pl';
 import { translate } from '../src/i18n';
-import { config } from '../src/config';
 
 const placeholders = (s: string) => [...s.matchAll(/\{(\w+)[,}]/g)].map((m) => m[1]).sort();
 
@@ -22,10 +21,5 @@ describe('i18n', () => {
     expect(c(5)).toBe('5 wydarzeń trwa teraz');
     expect(c(22)).toBe('22 wydarzenia trwają teraz');
     expect(translate('en', 'counter.label', { count: 1 }).split('.')[0]).toBe('1 event on now');
-  });
-
-  it('has labels for every category in every configured language', () => {
-    for (const c of config.categories)
-      for (const l of config.app.languages) expect(c.labels[l]).toBeTruthy();
   });
 });

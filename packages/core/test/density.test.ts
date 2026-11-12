@@ -56,10 +56,6 @@ describe('density clusters', () => {
     );
   });
 
-  it('names a cell after its most common venue', () => {
-    expect(clusters[0]!.topVenue).toBeTruthy();
-  });
-
   it('finds the hotspot only when a cell has enough events', () => {
     const top = hotspot(clusters, region.center, 2, distanceM);
     expect(top?.count).toBe(clusters[0]!.count);

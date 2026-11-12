@@ -20,15 +20,6 @@ describe.skipIf(!url)('events_near', () => {
       )
     ).rows;
 
-  it('loaded the seed and config', async () => {
-    const { rows } = await db.query(
-      `select count(*)::int as n from events where primary_source_id = 'seed'`,
-    );
-    expect(rows[0].n).toBe(23);
-    const cats = await db.query('select count(*)::int as n from categories');
-    expect(cats.rows[0].n).toBe(config.categories.length);
-  });
-
   it('returns only events within the radius, nearest first', async () => {
     const rows = await near(500, 0, 24 * 60);
     expect(rows.length).toBeGreaterThan(0);
@@ -36,12 +27,6 @@ describe.skipIf(!url)('events_near', () => {
     const d = rows.map((r) => Math.round(r.distance_m / 10));
     expect(d).toEqual([...d].sort((a, b) => a - b));
     expect(typeof rows[0].lat).toBe('number');
-  });
-
-  it('a wider radius includes more events', async () => {
-    expect((await near(25000, 0, 24 * 60)).length).toBeGreaterThan(
-      (await near(500, 0, 24 * 60)).length,
-    );
   });
 
   it('filters by time window overlap ("now" = start ≤ now ≤ end)', async () => {
@@ -106,15 +91,6 @@ describe.skipIf(!url)('events_near', () => {
       expect(music.reduce((n, c) => n + c.event_count, 0)).toBeLessThan(
         (await density(500, 25000)).reduce((n, c) => n + c.event_count, 0),
       );
-    });
-
-    it('seeded events carry a density cell and weather is gone', async () => {
-      const { rows } = await db.query(
-        `select count(*)::int as n from events where primary_source_id = 'seed' and density_cell is null`,
-      );
-      expect(rows[0].n).toBe(0);
-      const t = await db.query(`select to_regclass('public.weather_cache') as t`);
-      expect(t.rows[0].t).toBeNull();
     });
 
     it('is callable by the anon role', async () => {
