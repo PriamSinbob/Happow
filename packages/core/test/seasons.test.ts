@@ -63,13 +63,6 @@ describe('season collections', () => {
     expect(ids('2026-11-10T12:00:00Z')).toEqual([]);
     expect(ids('2026-12-31T20:00:00Z')).toEqual(['new-year']);
   });
-
-  it('are checked when config loads: categories exist, and each has a way to match', () => {
-    for (const s of config.seasons) {
-      expect(s.categories.length + s.keywords.length).toBeGreaterThan(0);
-      for (const c of s.categories) expect(config.categories.some((x) => x.id === c)).toBe(true);
-    }
-  });
 });
 
 describe('the weekend a district goal counts', () => {

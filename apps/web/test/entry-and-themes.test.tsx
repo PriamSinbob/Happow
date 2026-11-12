@@ -2,11 +2,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import seed from '../../../data/seed/wroclaw.events.json';
 import { entitlementsFor } from '@happow/core';
-import { materializeSeed } from '@happow/core/seed';
 import { RuleList } from '../src/components/EventCard';
-import { config, region } from '../src/config';
+import { config } from '../src/config';
 import { rowToEvent } from '@happow/core';
 import { I18nProvider } from '../src/i18n';
 
@@ -41,14 +39,6 @@ describe('entry and age data', () => {
       ageMin: null,
       family: null,
     });
-  });
-
-  it('the offline seed carries ageMin instead of rules.age', () => {
-    const events = materializeSeed(seed, region, config.categories, new Date(), 9);
-    expect(events.filter((e) => e.ageMin !== null).map((e) => e.ageMin)).toEqual([
-      6, 16, 12, 3, 14, 10, 0,
-    ]);
-    for (const e of events) expect(e.rules).not.toHaveProperty('age');
   });
 
   const rules = (lang: 'pl' | 'en', ev: Parameters<typeof RuleList>[0]['ev']) =>

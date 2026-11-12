@@ -11,3 +11,6 @@
 - UI is mobile-first (380 px), with Polish and English strings from the start.
 - UI follows `docs/DESIGN.md`; new icons need the owner's OK first.
 - Unbuilt ideas go in `docs/FUTURE.md`; launch to-dos go in `docs/LAUNCH.md`.
+- Run checks once, at the end: no tests, typecheck or build until the owner gives the green light at the end of the conversation. Small changes usually follow a first version, and every rerun costs time and money. Formatting the files you touched is fine at any time.
+- Commit locally as you go and push once, on that same green light: every push starts CI and a preview build. A push that changes only `CLAUDE.md` or `README.md` carries `[skip ci]`.
+- Do not grow the test suite for its own sake: no tests that restate config values, repeat an assertion made at another layer, or pin CSS or SVG strings.

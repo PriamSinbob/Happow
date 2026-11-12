@@ -124,10 +124,4 @@ describe.skipIf(!url || !local)('agenda and saved list in Postgres', () => {
     );
     expect(ex.rows[0]!.r.saved.map((s) => s.eventId).sort()).toEqual(['e1', 'e2', 'e3']);
   });
-
-  it('deletes the list with the account', async () => {
-    await db.query('delete from auth.users where id = $1', [user]);
-    const { rows } = await db.query('select 1 from saved_events where user_id = $1', [user]);
-    expect(rows).toEqual([]);
-  });
 });

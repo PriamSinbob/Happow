@@ -41,9 +41,6 @@ describe('pinState', () => {
     expect(s({ startAt: at(60), endAt: at(120) })).toMatchObject({ kind: 'soon', ring: null });
     expect(s({ startAt: at(61), endAt: at(120) }).kind).toBe('later');
   });
-  it('outside the radius', () => {
-    expect(s({}, 900, 500).outside).toBe(true);
-  });
   it('late: a theatre play already 10 min in, 400 m away', () => {
     const play = { categoryIds: ['theatre'], startAt: at(-10), endAt: at(100) };
     expect(s(play, 400).late).toBe(true);

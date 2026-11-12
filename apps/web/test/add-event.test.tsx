@@ -105,11 +105,6 @@ afterEach(() => {
 });
 
 describe('the add form with accounts', () => {
-  it('is switched on in config: an account is required and autofill comes with it', () => {
-    expect(config.app.submissions.account).toBe('required');
-    expect(config.app.submissions.autofill).toBe('account');
-  });
-
   it('signed out: offers sign-in with what a free account gives; only the X closes', () => {
     serve(() => ok({}, 404));
     const onClose = renderAdd();

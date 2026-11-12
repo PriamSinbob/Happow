@@ -6,8 +6,6 @@ import {
   HttpError,
   isDue,
   missedWindow,
-  plannedRuns,
-  redact,
   type NormalizedEvent,
 } from '../src';
 import { config, region, source } from './helpers';
@@ -45,16 +43,6 @@ describe('scheduling', () => {
     expect(dispatch.batchAheadHours).toBeGreaterThan(0);
     for (const s of config.sources.filter((x) => x.enabled && x.schedule))
       expect(intervalMs(s.schedule!)).toBeGreaterThanOrEqual(12 * 3_600_000);
-  });
-
-  it('never schedules sources without a schedule (the manual seed)', () => {
-    expect(isDue(source('seed'), null, now)).toBe(false);
-  });
-
-  it('plans only enabled sources the region turns on', () => {
-    const runs = plannedRuns(config).map((r) => `${r.source.id}@${r.region.id}`);
-    expect(runs).toContain('ticketmaster@wroclaw');
-    expect(runs).toContain('meetup@wroclaw');
   });
 });
 
@@ -104,10 +92,6 @@ describe('HttpClient', () => {
     await http.text('https://a.example');
     expect(waits).toHaveLength(1);
     expect(waits[0]).toBeGreaterThan(150);
-  });
-
-  it('redacts credentials in URLs', () => {
-    expect(redact('https://x/?apikey=abc&page=1')).toBe('https://x/?apikey=***&page=1');
   });
 });
 

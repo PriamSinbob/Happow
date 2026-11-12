@@ -1,8 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NearbyEvent } from '@happow/core';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { EventCard } from '../src/components/EventCard';
 import { ListView } from '../src/components/ListView';
 import { I18nProvider } from '../src/i18n';
@@ -126,24 +124,5 @@ describe('a card opened from a list row', () => {
     cleanup();
     card();
     expect(screen.queryByRole('button', { name: 'Back to the list' })).toBeNull();
-  });
-});
-
-describe('the list window', () => {
-  const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
-  const rule = (selector: string) => css.slice(css.indexOf(`\n${selector} {`)).split('}')[0] ?? '';
-
-  it('shows no scroll bar, and waits out of sight without losing its scroll position', () => {
-    expect(rule('.list-overlay')).toContain('scrollbar-width: none');
-    const parked = rule('.list-overlay.is-parked');
-    expect(parked).toContain('visibility: hidden');
-    expect(parked).not.toContain('display: none');
-  });
-
-  it('gives long titles a second line', () => {
-    for (const selector of ['.tt-row__title', '.row__title']) {
-      expect(rule(selector)).toContain('-webkit-line-clamp: 2');
-      expect(rule(selector)).not.toContain('nowrap');
-    }
   });
 });

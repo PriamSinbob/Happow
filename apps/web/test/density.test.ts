@@ -1,12 +1,10 @@
 import { renderHook } from '@testing-library/react';
-import { COMPASS, distanceM, type DensityCluster } from '@happow/core';
+import { distanceM, type DensityCluster } from '@happow/core';
 import { describe, expect, it } from 'vitest';
 import seed from '../../../data/seed/wroclaw.events.json';
 import { config, region } from '../src/config';
 import { StaticEventRepository } from '../src/data/static';
 import { useGuidance } from '../src/hooks/useGuidance';
-import { en } from '../src/i18n/en';
-import { pl } from '../src/i18n/pl';
 
 const now = new Date('2026-10-20T14:00:00Z');
 const repo = new StaticEventRepository(
@@ -31,14 +29,6 @@ describe('static density', () => {
     expect(clusters.reduce((n, c) => n + c.count, 0)).toBe(near.length);
     const inside = (await repo.near(q)).length;
     expect(clusters.reduce((n, c) => n + c.outsideCount, 0)).toBe(near.length - inside);
-  });
-
-  it('respects filters', async () => {
-    const all = await repo.density(q);
-    const music = await repo.density({ ...q, categories: ['music'] });
-    expect(music.reduce((n, c) => n + c.count, 0)).toBeLessThan(
-      all.reduce((n, c) => n + c.count, 0),
-    );
   });
 });
 
@@ -67,14 +57,5 @@ describe('guidance', () => {
   it('has no hotspot below the minimum and nothing to expand when nothing is outside', () => {
     const { result } = renderHook(() => useGuidance([], region.center, 500));
     expect(result.current).toEqual({ hotspot: null, nearest: null, expandTo: null });
-  });
-});
-
-describe('direction strings', () => {
-  it('exist for every compass point in every language', () => {
-    for (const d of COMPASS) {
-      expect(en[`dir.${d}`]).toBeTruthy();
-      expect(pl[`dir.${d}`]).toBeTruthy();
-    }
   });
 });

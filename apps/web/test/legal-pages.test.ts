@@ -1,13 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import appConfig from '../../../config/app.json';
-import {
-  fill,
-  LEGAL_PAGES,
-  renderLegalPage,
-  renderPages,
-  uaFromTemplate,
-} from '../build/crawlerPage';
+import { fill, LEGAL_PAGES, renderLegalPage, renderPages } from '../build/crawlerPage';
 
 /** The legal texts as static pages, filled from config. */
 describe('legal pages', () => {
@@ -42,12 +36,5 @@ describe('legal pages', () => {
 
   it('refuses an unknown placeholder rather than publishing it', () => {
     expect(() => fill('{{nope}}', {})).toThrow(/nope/);
-  });
-
-  it('the crawler page shows the User-Agent filled from config', () => {
-    const ua = uaFromTemplate(appConfig.ingest.userAgent, appConfig);
-    expect(renderPages()['crawler.html']).toContain(ua);
-    expect(ua).toContain(`${appConfig.site.url}/crawler`);
-    if (appConfig.legal.contactEmail) expect(ua).toContain(appConfig.legal.contactEmail);
   });
 });
