@@ -288,3 +288,17 @@ export async function revokeInvitation(invitationId: string): Promise<void> {
   const token = await accessToken();
   await api(`invitations/${invitationId}`, { token, method: 'DELETE' });
 }
+
+/**
+ * Hands your private event over to one of its accepted guests: they run it from now on (invite,
+ * edit, post), and you stay on it as a guest.
+ */
+export async function transferEvent(
+  eventId: string,
+  to: string,
+  center: LatLng | null,
+): Promise<void> {
+  const token = await accessToken();
+  await api(`private/${encodeURIComponent(eventId)}/transfer`, { token, body: { to } });
+  await refreshPrivate(center);
+}

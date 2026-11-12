@@ -31,6 +31,7 @@ A failure is `{ "error": "<code>", "message": "…", …details }` with an HTTP 
 | `already_reviewed`, `already_claimed`, `own_item`, `reminder_refused`            | 409    | State changed or not allowed twice                           |
 | `page_unavailable`                                                               | 422    | Autofill could not read the page                             |
 | `client_outdated`                                                                | 426    | This app build is too old; `minVersion` says which is needed |
+| `activation_required`                                                            | 403    | The account still waits for its code (see Account)           |
 | `rate_limited`                                                                   | 429    | Slow down                                                    |
 | `quota_exceeded`                                                                 | 429    | Monthly allowance used; `kind`, `limit`, `resetsAt`          |
 | `too_many_feeds`, `too_many_invitations`, `too_many_groups`, `too_many_contacts` | 429    | A per-account cap                                            |
@@ -63,6 +64,7 @@ The map is built on the phone from a snapshot of the area, so filters, the reach
 | `GET /api/places?lat&lng&r`                                | Places with opening hours (same grid) → `{ places: PlaceRow[] }`. "Open now" is worked out on the phone.                                                                                                                                                                                                                                                                                       |
 | `GET /api/events/:id`                                      | One listed event with its long fields → `{ event: EventRow }`, 404 `unknown_event`. Public, cached `refresh.eventSeconds`.                                                                                                                                                                                                                                                                     |
 | `POST /api/events/lookup {ids}`                            | The listed events among up to 500 ids (a device's plans), ended ones included → `{ events: EventRow[] }`                                                                                                                                                                                                                                                                                       |
+| `POST /api/events/updates {ids}`                           | News of up to `organiser.updatesMaxIds` public events in one call (what the person saved or marked going) → `{ updates: EventUpdates[] }`: `lastPostAt`, `changedAt` (time or status changed by hand) and the newest `organiser.updatesPosts` posts. Events with no news are left out. Never cached.                                                                                           |
 | `GET /api/events/:id/credit`                               | "Added by" → `{ credit: { name, level } \| null }`. Never cached.                                                                                                                                                                                                                                                                                                                              |
 | `GET /api/district-goal?lat&lng&from&to[&region]`          | The district a point is in and its events in that span → `{ goal: { id, name, count } \| null }`                                                                                                                                                                                                                                                                                               |
 | `GET /api/search?q&lat&lng[&region]`                       | Typo-tolerant search of upcoming events → `{ results: EventHit[] }`                                                                                                                                                                                                                                                                                                                            |
@@ -109,6 +111,8 @@ Push is web push only today; native push is the first server task of the native 
 |                                                                                  |                                                                                    |
 | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `POST /api/auth/code-request {email, locale}`                                    | Ask for a sign-in code (with `auth.emailDelivery` `manual` or `app`); always `202` |
+| `POST /api/auth/pending {email, locale}` 🔑?                                     | Sign in at once, waiting for the code → `{ session, email }` (`PendingSession`)    |
+| `POST /api/auth/activate {pendingToken}`                                         | After the real sign-in: fold the waiting account in → `{ merged }`                 |
 | `GET /api/me`                                                                    | Profile, plan, entitlements, this month's usage                                    |
 | `PUT /api/me {locale?, termsVersion?, showName?, displayName?, friendsVisible?}` |                                                                                    |
 | `DELETE /api/me`                                                                 | Delete the account                                                                 |
@@ -120,15 +124,28 @@ Push is web push only today; native push is the first server task of the native 
 | `GET/POST/DELETE /api/me/feeds[/:id]`                                            | The account's iCal feeds                                                           |
 | `GET /api/me/claims`, `GET /api/me/events`                                       | Organiser claims and own events                                                    |
 
-Sign-in itself goes to Supabase Auth directly: the 6-digit email code (`/auth/v1/verify`), Google (PKCE on the web, an ID token from Credential Manager on Android: `/auth/v1/token?grant_type=id_token`) and token refresh. The publishable key used there is public by design and unlocks nothing else.
+Sign-in itself goes to Supabase Auth directly: the email code (`/auth/v1/verify`; `auth.codeDigits` gives its shortest and longest length, 6 to 10 digits: never assume 6), Google (PKCE on the web, an ID token from Credential Manager on Android: `/auth/v1/token?grant_type=id_token`) and token refresh. The publishable key used there is public by design and unlocks nothing else.
+
+**Signed in at once, waiting for the code.** Right after `code-request` (or Supabase's own OTP request), call `POST /api/auth/pending` and keep the session it returns: the person is signed in immediately as an account that waits for activation. The email is not proven yet, so this is a new account of its own, never the email's real one. With that session:
+
+- `GET /api/me` answers `pending: true`, the `email` it waits for, the anonymous plan and zero quotas; `PUT /api/me {displayName, locale, termsVersion}` and `DELETE /api/me` work.
+- Invitations work: `GET /api/private`, `GET /api/private/:id`, `/guests`, `/answer`, `POST /api/invitations/accept`, `POST /api/contacts/link/:token`, and the posts of a private event it is invited to. Its push subscription, reminders and "I'm going" are tied to it. Saving events never needed an account.
+- Everything else that needs an account answers `403 activation_required`; 🔑? endpoints treat it as signed out.
+- Sent with the waiting session's own token, `auth/pending` only changes the email it waits for (`{ email }`, no new session).
+
+When the code is typed (or Google signs in), the app holds two sessions for a moment. It calls `POST /api/auth/activate` with the real one as the bearer and the waiting one's access token as `pendingToken`; the server moves the accepted invitations, contacts, name, accepted terms and devices to the real account and deletes the waiting one. Then the app keeps only the real session. A waiting account nobody activates is deleted after `auth.pending.keepDays`.
 
 ## Organisers, private events, contacts 🔑
 
 Listed with their bodies at the top of `packages/api/src/organisers.ts` and `private.ts`:
 
 - `/api/events/:id/posts`, `/mine`, `/edit`, `/reports/:rid`; `/api/posts/:id[/report]`; `/api/claims[/:id/check]`
-- `/api/private[/:id[/invite|/guests|/answer]]`, `/api/invitations/accept`, `/api/invitations/:id`
+- `/api/private[/:id[/invite|/guests|/answer|/transfer]]`, `/api/invitations/accept`, `/api/invitations/:id`
 - `/api/contacts`, `/api/contacts/link[/:token]`, `/api/contacts/:id`, `/api/contacts/groups[/:id]`
+
+`POST /api/private/:id/transfer {to}` hands a private event over: the owner gives it to one of its accepted guests (`to` is the guest's `person` id from `/guests`), who becomes the owner; the former owner stays as an accepted guest, and the guests are told. → `{ ok, ownerName, notified }`; `404` when the caller is not the owner or `to` has not accepted, `403 blocked` when that account can't take it.
+
+**Updates.** An organiser's posts are on `GET /api/events/:id/posts` (`EventPost[]`, important first); bodies are plain text, and clients make the http(s) links in them tappable. For the "!" on pins and rows, the app asks `POST /api/events/updates` for its saved and going events when it opens and every `refresh.dataMinutes`, takes `changed_at` / `last_post_at` of accepted private events from `/api/private`, and compares with when the person last opened each event's card (kept on the device). The same updates go out as push to devices that allowed it.
 
 ## Staff
 

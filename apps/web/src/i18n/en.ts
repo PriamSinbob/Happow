@@ -446,7 +446,7 @@ export const en = {
     'The Happow team will email your code to {email}. We send codes by hand for now, so it can take a few hours. The code works for {hours} hours.',
   'signIn.codeSent': 'We sent a code to {email}. It works for {hours} hours.',
   'signIn.code': 'Code from the email',
-  'signIn.codeHint': '6 digits',
+  'signIn.codeHint': 'All the digits from the email',
   'signIn.submit': 'Sign in',
   'signIn.wrongCode': 'That code is wrong or has expired.',
   'signIn.changeEmail': 'Change email',
@@ -915,6 +915,38 @@ export const en = {
   'error.too_many_contacts': 'You have the most contacts already.',
   'error.already_claimed': 'Someone already organises this. A moderator will decide.',
   'error.own_item': "That's your own.",
+  'signIn.pendingNow':
+    'You are signed in already: accepting invitations and saving events work right now. Adding events and the rest of your account open once you type the code.',
+  'account.pending': 'Waiting for activation',
+  'account.pendingLead':
+    'Invitations and saved events work now. Type the code from the email to open the rest of your account.',
+  'account.enterCode': 'Enter the code',
+  'updates.title': 'Updates',
+  'updates.unread': 'New update',
+  'updates.changed': 'The time or status has changed.',
+  'updates.more':
+    '{count, plural, one {# more update in Details} other {# more updates in Details}}',
+  'updates.notify': 'Notify me about changes',
+  'updates.notifyHint':
+    "The organiser's important updates and new times, as notifications on this device.",
+  'updates.notifyOn': 'Notifications are on.',
+  'place.privateHint': 'Closed to guests from outside for now.',
+  'place.privateAt': '{name} is closed to guests from outside for now.',
+  'place.privateEvent': 'Private event here',
+  'add.atPlace': 'A private event at {name}: only the people you invite will see it.',
+  'add.atPlacePublic': 'An event at {name}.',
+  'private.handOver': 'Hand over',
+  'private.handOverTitle': 'Hand the event over',
+  'private.handOverLead':
+    'Pick the guest who will run this event from now on: invitations, changes and updates. You stay on it as a guest.',
+  'private.handOverNone':
+    'Nobody has accepted yet. You can hand the event over to a guest who accepted the invitation.',
+  'private.handOverConfirm':
+    '{name} will become the organiser and you will stay as a guest. Only they can give it back.',
+  'private.handOverDo': 'Hand over',
+  'private.handedOver': '{name} is the organiser now.',
+  'error.activation_required':
+    'This needs your activated account. Type the code from the email first.',
 } as const;
 
 export type MessageKey = keyof typeof en;

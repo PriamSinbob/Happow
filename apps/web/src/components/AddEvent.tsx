@@ -246,6 +246,7 @@ function Usage({ me }: { me: Me }) {
 export function AddEvent({
   again = null,
   here = null,
+  place = null,
   onClose,
   onOpenEvent,
   onOpenAccount,
@@ -254,6 +255,8 @@ export function AddEvent({
   again?: string | null;
   /** A precise current location: offers "happening here, now". */
   here?: LatLng | null;
+  /** A private event at this place: its name, address and pin are filled in, and Private is on. */
+  place?: { name: string; address: string | null; point: LatLng } | null;
   onClose: () => void;
   onOpenEvent: (id: string) => void;
   /** The account card in About, with the contributor's impact. */
@@ -262,7 +265,11 @@ export function AddEvent({
   const { t, lang } = useI18n();
   const [link, setLink] = useState('');
   const [autofill, setAutofill] = useState<Autofill>({ state: 'idle' });
-  const [form, setForm] = useState<Form>(EMPTY);
+  const [form, setForm] = useState<Form>(() =>
+    place
+      ? { ...EMPTY, venueName: place.name, address: place.address ?? '', point: place.point }
+      : EMPTY,
+  );
   const [chosen, setChosen] = useState<number | null>(null);
   const [geo, setGeo] = useState<'idle' | 'loading' | 'notFound'>('idle');
   const [tried, setTried] = useState(false);
@@ -294,8 +301,10 @@ export function AddEvent({
 
   const account = useAccount();
   const { me } = account;
-  const gated = account.status === 'signedOut' && submissions.account === 'required';
-  const autofillOn = submissions.autofill === 'account' && account.status !== 'signedOut';
+  // An account still waiting for its code can't add yet, as when signed out.
+  const signedOut = account.status === 'signedOut' || account.status === 'pending';
+  const gated = signedOut && submissions.account === 'required';
+  const autofillOn = submissions.autofill === 'account' && !signedOut;
   const autofillOut = me ? me.usage.autofill.used >= me.usage.autofill.limit : false;
   // Once a submit is refused for the quota, a fill would spend an autofill on nothing.
   const linkOff = autofillOut || ranOut;
@@ -334,10 +343,13 @@ export function AddEvent({
   const [repeat, setRepeat] = useState<WeeklyRepeat | null>(null);
   // Private: only the people you invite see it; it can't repeat. A free account has one
   // a month, and it counts against the month's events too.
-  const [isPrivate, setPrivate] = useState(false);
+  // Started from a place's card, it is private from the start.
+  const [wantPrivate, setPrivate] = useState(!!place);
   const privateUsage = me?.usage.private;
   const privateLeft = privateUsage ? Math.max(0, privateUsage.limit - privateUsage.used) : null;
   const canPrivate = !!me?.entitlements['private.create'] && !me?.privateBlocked;
+  // Never sent as private where the account can't have one (no allowance left, or stopped).
+  const isPrivate = wantPrivate && canPrivate && privateLeft !== 0;
   const { recurring } = submissions;
   const dates =
     repeat && form.start && repeat.until
@@ -710,7 +722,13 @@ export function AddEvent({
           {t('add.shared')}
         </p>
       )}
-      {here && !again && !copied && !quick && (
+      {place && (
+        <p className="add-shared" role="status">
+          <Icon name="lock" size={15} />
+          {t(isPrivate ? 'add.atPlace' : 'add.atPlacePublic', { name: place.name })}
+        </p>
+      )}
+      {here && !again && !copied && !quick && !place && (
         <section className="quick" aria-labelledby="quick-title">
           <h3 id="quick-title" className="quick__title">
             {t('add.quick.title')}

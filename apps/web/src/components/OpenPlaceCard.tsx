@@ -16,6 +16,35 @@ function duration(minutes: number): string {
 }
 
 /**
+ * "Private party · until 23:00": said wherever the place shows (its own card, and the card of an
+ * event held there), so nobody walks to a closed door. `named` adds the place's name.
+ */
+export function PartyNotice({
+  place,
+  timeZone,
+  named = false,
+}: {
+  place: Pick<OpenPlace, 'name' | 'closesAt'>;
+  timeZone: string;
+  named?: boolean;
+}) {
+  const { t, lang } = useI18n();
+  return (
+    <p className="party-notice" role="status">
+      <Icon name="lock" size={18} />
+      <span>
+        <strong>{t('place.private')}</strong>
+        {place.closesAt &&
+          ` · ${t('place.until', { time: formatTime(place.closesAt.toISOString(), timeZone, lang) })}`}
+        <span className="party-notice__hint">
+          {named ? t('place.privateAt', { name: place.name }) : t('place.privateHint')}
+        </span>
+      </span>
+    </p>
+  );
+}
+
+/**
  * A place that is open now, with no event on: what it is, until when it is open and how long
  * that leaves, and the way there; or that a private party is on. An event at the place shows the
  * event's card instead.
@@ -26,8 +55,11 @@ export function OpenPlaceCard({
   timeZone,
   onClose,
   onEdit,
+  onPrivateEvent,
 }: {
   place: OpenPlace;
+  /** A private event of your own at this place: the add form, filled in with it. */
+  onPrivateEvent?: () => void;
   /** The time looked at: now, or the time picked on the line. */
   now: Date;
   timeZone: string;
@@ -54,23 +86,25 @@ export function OpenPlaceCard({
           <Icon name="close" size={16} />
         </button>
       </header>
-      <p className="event-card__when">
-        <span className={`open-pill${place.privateParty ? ' is-private' : ''}`}>
-          {t(place.privateParty ? 'place.private' : 'place.open')}
-        </span>
-        {place.privateParty && place.closesAt ? (
-          t('place.until', { time: formatTime(place.closesAt.toISOString(), timeZone, lang) })
-        ) : place.closesAt === null || left === null ? (
-          t('place.allDay')
-        ) : (
-          <>
-            {t('place.until', { time: formatTime(place.closesAt.toISOString(), timeZone, lang) })}
-            <span className={`open-place__left${left <= places.closingSoonMin ? ' is-soon' : ''}`}>
-              {t('place.left', { time: duration(left) })}
-            </span>
-          </>
-        )}
-      </p>
+      {place.privateParty ? (
+        <PartyNotice place={place} timeZone={timeZone} />
+      ) : (
+        <p className="event-card__when">
+          <span className="open-pill">{t('place.open')}</span>
+          {place.closesAt === null || left === null ? (
+            t('place.allDay')
+          ) : (
+            <>
+              {t('place.until', { time: formatTime(place.closesAt.toISOString(), timeZone, lang) })}
+              <span
+                className={`open-place__left${left <= places.closingSoonMin ? ' is-soon' : ''}`}
+              >
+                {t('place.left', { time: duration(left) })}
+              </span>
+            </>
+          )}
+        </p>
+      )}
       {place.address && <p className="event-card__venue">{place.address}</p>}
       <p className="event-card__distance">
         {formatDistance(place.distanceM, lang)} · {t('event.walk', { minutes: walk })}
@@ -89,6 +123,11 @@ export function OpenPlaceCard({
           <a className="btn" href={place.website} target="_blank" rel="noopener noreferrer">
             <Icon name="link" size={16} /> {t('place.website')}
           </a>
+        )}
+        {onPrivateEvent && (
+          <button type="button" className="btn" onClick={onPrivateEvent}>
+            <Icon name="lock" size={16} /> {t('place.privateEvent')}
+          </button>
         )}
         <button type="button" className="btn" onClick={onEdit}>
           <Icon name="pencil" size={16} /> {t('place.edit')}

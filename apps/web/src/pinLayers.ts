@@ -37,6 +37,13 @@ const common = {
   'symbol-z-order': 'auto',
 } as const;
 
+/** The "!" of an unseen update: a disc this wide at the pin's upper right, in the pin colour. */
+const NEWS_PX = 18;
+const NEWS_TEXT = 15;
+/** How far from the pin's centre it sits: by a glyph pin's edge, closer on a 10 px dot. */
+const NEWS_FAR = 13;
+const NEWS_NEAR = 8;
+
 /** Open places: their own source, drawn under the event pins. */
 export const PLACE_SOURCE = 'places';
 export const PLACE_HIT_LAYERS = ['place-disc'];
@@ -63,6 +70,15 @@ function addPlaceLayers(m: maplibregl.Map) {
   layer('place-disc', 'pin-disc', PLACE_PX / PIN_PX);
   layer('place-outline', 'pin-outline', PLACE_PX / PIN_PX);
   layer('place-glyph', ['concat', 'glyph-', get('glyph')], 0.66);
+  // A private party is on: the lock at the lower left, as on a private event's pin.
+  m.addLayer({
+    id: 'place-lock',
+    type: 'symbol',
+    source: PLACE_SOURCE,
+    filter: get('party'),
+    layout: { ...layout, 'icon-image': 'pin-lock', 'icon-offset': [-10, 9] },
+    paint: { 'icon-halo-width': 2 },
+  } as maplibregl.SymbolLayerSpecification);
 }
 
 /** Adds the sprites, the sources and the layers once per style (first load, raster fallback). */
@@ -173,10 +189,47 @@ export function addPinLayers(m: maplibregl.Map) {
     layout: { ...common, 'icon-image': 'pin-star', 'icon-offset': [-13, -11] },
     paint: { 'icon-opacity': opacity, 'icon-halo-width': 2 },
   });
+  // An update not seen yet (saved and "going" events only): a large "!" at the upper right in the
+  // preset's pin colour, on any pin, a cluster included.
+  // It takes the age badge's corner while it shows.
+  layer({
+    id: 'pin-news-bed',
+    filter: get('news'),
+    layout: {
+      ...common,
+      'icon-image': 'pin-disc',
+      'icon-size': NEWS_PX / PIN_PX,
+      // icon-offset counts in the sprite's own pixels, before icon-size.
+      'icon-offset': [
+        'case',
+        isKind('later'),
+        ['literal', [(NEWS_NEAR * PIN_PX) / NEWS_PX, (-NEWS_NEAR * PIN_PX) / NEWS_PX]],
+        ['literal', [(NEWS_FAR * PIN_PX) / NEWS_PX, (-NEWS_FAR * PIN_PX) / NEWS_PX]],
+      ],
+    },
+    paint: { 'icon-opacity': opacity, 'icon-halo-width': 1.5 },
+  });
+  layer({
+    id: 'pin-news',
+    filter: get('news'),
+    layout: {
+      ...common,
+      'text-field': '!',
+      'text-font': FONT,
+      'text-size': NEWS_TEXT,
+      'text-offset': [
+        'case',
+        isKind('later'),
+        ['literal', [NEWS_NEAR / NEWS_TEXT, -NEWS_NEAR / NEWS_TEXT]],
+        ['literal', [NEWS_FAR / NEWS_TEXT, -NEWS_FAR / NEWS_TEXT]],
+      ],
+    },
+    paint: { 'text-opacity': opacity },
+  });
   // "16+" / "18+" at the upper right. Numerals only, no translation.
   layer({
     id: 'pin-age',
-    filter: ['all', notCluster, ['!=', get('age'), '']],
+    filter: ['all', notCluster, ['!=', get('age'), ''], ['!', get('news')]],
     layout: {
       ...common,
       'text-field': get('age'),
@@ -222,6 +275,11 @@ export function pinPaint(
     ['pin-lock', 'icon-halo-color', t.paper],
     ['pin-star', 'icon-color', t.ink],
     ['pin-star', 'icon-halo-color', t.paper],
+    ['place-lock', 'icon-color', t.ink],
+    ['place-lock', 'icon-halo-color', t.paper],
+    ['pin-news-bed', 'icon-color', live],
+    ['pin-news-bed', 'icon-halo-color', t.paper],
+    ['pin-news', 'text-color', onLive],
     ['pin-age', 'text-color', t.ink],
     ['pin-age', 'text-halo-color', t.paper],
   ];

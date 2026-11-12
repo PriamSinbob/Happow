@@ -38,6 +38,11 @@ These are changes in this repository, made when the native app reaches them:
 3. **Google sign-in on Android.** Create an Android OAuth client in Google Cloud for the package and certificate, add it to Supabase's Google provider, and sign in with Credential Manager's ID token (`grant_type=id_token`). Nothing changes on the server.
 4. **Retiring old builds.** Raise `native.<platform>.minVersion` in `config/app.json`; older builds get `426 client_outdated`.
 
+## Sign-in and updates, as the web app does them
+
+- **Signed in at once.** After the email is given, call `POST /api/auth/pending` and keep its session: invitations can be accepted right away. The code field takes `auth.codeDigits.min` to `.max` digits. After the code (or Google), call `POST /api/auth/activate` with both tokens, then drop the waiting session ([API.md](API.md), Account). Reference: `apps/web/src/auth.ts`.
+- **Unseen updates.** `POST /api/events/updates` for the saved and going events, plus `changed_at` / `last_post_at` of accepted private events; compare with the time each event's card was last opened, kept on the device. Unseen: the "!" in the pin colour on the pin and the row, and the newest updates on the card. Reference: `apps/web/src/updates.ts`.
+
 ## On the phone
 
 - **Arrival.** A geofence (`navigation.arriveM`, today 40 m) around events marked "I'm going" or saved for today, at most 100 at a time (Android's limit). Entering one offers "I'm here" and, for community events, thanks, as a notification, on the widget and on the event's card. Nothing is sent from location alone: the person taps. Background location is optional and asked for with its reason; without it, arrival shows when the app or widget is open nearby. The trip screen with an in-app route ("Going there") is not part of the native app.

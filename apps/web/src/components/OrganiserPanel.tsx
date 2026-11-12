@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import type { NearbyEvent } from '@happow/core';
 import { useAccount } from '../account';
 import { errorText } from '../errors';
-import { formatAgo, formatDay, formatTime } from '../format';
 import { fromInput, toInput } from '../formTime';
 import { useI18n } from '../i18n';
 import {
@@ -23,7 +22,9 @@ import {
   type PostKind,
 } from '../organiser';
 import { isPrivate, privateEvents } from '../private';
+import { updates } from '../updates';
 import { Icon } from './Icons';
+import { PostList } from './Posts';
 import { Sheet } from './Sheet';
 
 /**
@@ -79,6 +80,11 @@ export function OrganiserPanel({
     };
   }, [ev.id, signedIn, tick]);
 
+  // The details show every update: the event's red "!" has been answered.
+  useEffect(() => {
+    if (data) updates.markSeen(ev.id);
+  }, [ev.id, data]);
+
   const runs = mine?.role === 'owner' || mine?.role === 'organiser';
   const canEdit = !!mine?.role;
   const refresh = () => setTick((n) => n + 1);
@@ -91,39 +97,27 @@ export function OrganiserPanel({
           {t('organiser.by', { name: data.organiser.name })} <Icon name="check" size={14} />
         </p>
       )}
-      {posts.length > 0 && (
-        <ul className="posts">
-          {posts.map((p) => (
-            <li key={p.id} className={`post post--${p.kind}`}>
-              <span className="post__kind">{t(`organiser.kind.${p.kind}`)}</span>
-              <p className="post__body">{p.body}</p>
-              {p.change?.start_at && (
-                <p className="post__change">
-                  {t('organiser.newStart', {
-                    time: `${formatDay(p.change.start_at, ev.timezone, lang)} ${formatTime(p.change.start_at, ev.timezone, lang)}`,
-                  })}
-                </p>
-              )}
-              <span className="post__meta">
-                {formatAgo(p.createdAt, now, lang, t('time.justNow'))}
-                {runs && p.kind !== 'schedule' ? (
-                  <button
-                    type="button"
-                    className="inline-link"
-                    onClick={() => void deletePost(p.id).then(refresh)}
-                  >
-                    {t('organiser.deletePost')}
-                  </button>
-                ) : (
-                  <button type="button" className="inline-link" onClick={() => setReportingPost(p)}>
-                    {t('organiser.reportPost')}
-                  </button>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* Important ones pinned on top, then newest: the order the server gives. */}
+      <PostList
+        posts={posts}
+        ev={ev}
+        now={now}
+        actions={(p) =>
+          runs && p.kind !== 'schedule' ? (
+            <button
+              type="button"
+              className="inline-link"
+              onClick={() => void deletePost(p.id).then(refresh)}
+            >
+              {t('organiser.deletePost')}
+            </button>
+          ) : (
+            <button type="button" className="inline-link" onClick={() => setReportingPost(p)}>
+              {t('organiser.reportPost')}
+            </button>
+          )
+        }
+      />
 
       {signedIn && mine && (
         <div className="organiser__tools">

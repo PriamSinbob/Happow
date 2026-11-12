@@ -58,6 +58,36 @@ interface App {
   site: { url: string };
 }
 
+/**
+ * Queues a notice for everyone interested in an event (but `except`, who caused it) and sends
+ * the first few now; the cron sends the rest. Returns how many were queued. Never throws: a
+ * notice that fails must not undo what it follows.
+ */
+export async function announce(
+  db: Supabase,
+  secret: string | undefined,
+  app: App & { notices: { maxAudience: number; inline: number; maxPerTick: number } },
+  now: Date,
+  notice: { event: string; kind: NoticeKind; body: string; except: string },
+  fetchImpl?: typeof fetch,
+): Promise<number> {
+  try {
+    const queued = await db.rpc<number>('notice_enqueue', {
+      p_event: notice.event,
+      p_kind: notice.kind,
+      p_body: notice.body.slice(0, 200),
+      p_except: notice.except,
+      p_max: app.notices.maxAudience,
+    });
+    if (queued)
+      await sendNotices(db, secret, app, now, app.notices.inline, notice.event, fetchImpl);
+    return queued;
+  } catch (err) {
+    console.error(JSON.stringify({ notice: notice.event, error: String(err) }));
+    return 0;
+  }
+}
+
 /** Sends up to `max` queued notices (one event's only, when given). */
 export async function sendNotices(
   db: Supabase,
@@ -107,8 +137,14 @@ export async function sendNotices(
 export async function sendDueNotices(
   env: ScheduleEnv,
   now: Date,
-  deps: { fetch?: typeof fetch; app?: App & { private: { keepAfterEndDays: number } } } = {},
-): Promise<NoticeSendResult & { cleaned?: number }> {
+  deps: {
+    fetch?: typeof fetch;
+    app?: App & {
+      private: { keepAfterEndDays: number };
+      auth: { pending: { keepDays: number; cleanupPerTick: number } };
+    };
+  } = {},
+): Promise<NoticeSendResult & { cleaned?: number; expired?: number }> {
   const app = deps.app ?? appJson;
   const db = serviceDb(env, deps.fetch);
   if (!db)
@@ -121,6 +157,20 @@ export async function sendDueNotices(
   const cleaned = await db.rpc<number>('private_cleanup', {
     p_keep_days: app.private.keepAfterEndDays,
   });
+  // Accounts that waited for a code nobody typed: gone after `auth.pending.keepDays`.
+  let expired = 0;
+  try {
+    const ids = await db.rpc<string[]>('pending_expired', {
+      p_keep_days: app.auth.pending.keepDays,
+      p_limit: app.auth.pending.cleanupPerTick,
+    });
+    for (const id of ids ?? []) {
+      await db.deleteUser(id);
+      expired++;
+    }
+  } catch (err) {
+    console.error(JSON.stringify({ pending: 'cleanup', error: String(err) }));
+  }
   const secret = env[app.push.secret];
   const r = await sendNotices(
     db,
@@ -131,5 +181,5 @@ export async function sendDueNotices(
     null,
     deps.fetch,
   );
-  return { ...r, cleaned };
+  return { ...r, cleaned, expired };
 }

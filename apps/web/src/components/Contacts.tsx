@@ -414,9 +414,9 @@ export function ContactLinkSheet({ token, onClose }: { token: string; onClose: (
             type="button"
             className="btn btn--primary"
             disabled={busy || !myName.ready}
-            onClick={() => (account.status === 'signedIn' ? void add() : setSignIn(true))}
+            onClick={() => (account.member ? void add() : setSignIn(true))}
           >
-            {account.status === 'signedIn' ? t('contacts.add') : t('private.signInToAccept')}
+            {account.member ? t('contacts.add') : t('private.signInToAccept')}
           </button>
         )}
       </div>
@@ -424,6 +424,10 @@ export function ContactLinkSheet({ token, onClose }: { token: string; onClose: (
         <SignInSheet
           onClose={() => setSignIn(false)}
           onSignedIn={() => {
+            setSignIn(false);
+            void add();
+          }}
+          onPending={() => {
             setSignIn(false);
             void add();
           }}

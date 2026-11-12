@@ -37,6 +37,8 @@ export interface PinProps {
   locked: boolean;
   /** A followed artist performs here: the ★ at the upper left. */
   starred: boolean;
+  /** An update you have not seen (the organiser's post, a new time): the red "!" at the upper right. */
+  news: boolean;
   /** symbol-sort-key: higher draws on top (selected > live > soon > later, inside > outside). */
   z: number;
   /** Event ids as a JSON array (GeoJSON properties are flat). */
@@ -85,6 +87,8 @@ export function pinFeatures(
     radiusM: number;
     selectedId: string | null;
     mode?: PinMode;
+    /** Events with an update not seen yet. */
+    unread?: ReadonlySet<string>;
   },
 ): PinCollection {
   const mode = ctx.mode ?? 'time';
@@ -143,6 +147,7 @@ export function pinFeatures(
           starred:
             g.kind === 'place' &&
             g.events.some((e) => (e as { followed?: boolean }).followed === true),
+          news: !!ctx.unread?.size && g.events.some((e) => ctx.unread!.has(e.id)),
           z:
             (selected ? 100 : 0) + (s.outside ? 0 : 10) + (2 - RANK[s.kind]) * 2 + (s.late ? 0 : 1),
           ids: JSON.stringify(g.events.map((e) => e.id)),

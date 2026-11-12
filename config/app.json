@@ -373,7 +373,11 @@
     "checksPerHour": 10,
     "editsPerHour": 60,
     "venueRadiusM": 75,
-    "postsCacheSec": 60
+    "postsCacheSec": 60,
+    "cardPosts": 3,
+    "updatesPosts": 3,
+    "updatesMaxIds": 200,
+    "updatesPerHourPerClient": 120
   },
   "notices": { "maxAudience": 500, "inline": 3, "maxPerTick": 6 },
   "search": {
@@ -432,6 +436,13 @@
     "codeRequestsPerDayPerEmail": 20,
     "codeRequestRetentionDays": 7,
     "codeValidHours": 24,
+    "codeDigits": { "min": 6, "max": 10 },
+    "pending": {
+      "domain": "pending.happow.invalid",
+      "keepDays": 30,
+      "perHourPerClient": 10,
+      "cleanupPerTick": 5
+    },
     "userCacheSec": 300,
     "codeEmail": {
       "pl": {

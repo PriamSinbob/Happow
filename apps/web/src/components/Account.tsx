@@ -43,6 +43,32 @@ export function AccountCard({
         </button>
       </div>
     );
+  // Signed in with the email alone: what works now, and the way to type the code.
+  if (account.pending)
+    return (
+      <div className="account-card">
+        <div className="account-card__who">
+          <span className="account-card__avatar" aria-hidden>
+            {account.pending.email.slice(0, 1).toUpperCase()}
+          </span>
+          <div className="account-card__id">
+            <div className="account-card__email">{account.pending.email}</div>
+            <div className="account-card__plan account-card__plan--usage">
+              {t('account.pending')}
+            </div>
+          </div>
+        </div>
+        <p className="account-card__perks">{t('account.pendingLead')}</p>
+        <div className="account-card__actions">
+          <button type="button" className="btn btn--primary" onClick={onSignIn}>
+            {t('account.enterCode')}
+          </button>
+          <button type="button" className="btn" onClick={account.signOut}>
+            {t('account.signOut')}
+          </button>
+        </div>
+      </div>
+    );
   if (!me)
     return (
       <div className="account-card">

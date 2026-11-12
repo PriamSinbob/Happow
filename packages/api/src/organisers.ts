@@ -23,6 +23,7 @@ import { SupabaseError } from './supabase.js';
  * ranked differently: nothing here touches how an event shows on the map.
  *
  *   GET    /api/events/:id/posts            the organiser and their posts (public, edge-cached)
+ *   POST   /api/events/updates              {ids}: what changed on those events, newest posts
  *   GET    /api/events/:id/mine             your role on it, your claim, the organiser's reports
  *   POST   /api/events/:id/posts            {kind, body, change?}
  *   POST   /api/events/:id/edit             {fields}
@@ -38,8 +39,11 @@ export interface OrganiserDeps {
   config: HappowConfig;
   need: Need;
   requireUser: (req: Request) => Promise<User>;
+  /** As `requireUser`, with accounts that wait for activation (they read what they're invited to). */
+  requireAnyUser: (req: Request) => Promise<User>;
   planOf: (user: { id: string }) => Promise<{ entitlements: Entitlements }>;
   limit: Limit;
+  clientHash: (req: Request, salt: string) => Promise<string>;
   trusted: (userId: string) => Promise<boolean>;
   now: () => Date;
   fetch: typeof fetch;
@@ -118,7 +122,8 @@ function mapError(err: unknown): never {
 }
 
 export function organiserRoutes(deps: OrganiserDeps) {
-  const { config, need, requireUser, planOf, limit, trusted, now, pushSecret } = deps;
+  const { config, need, requireUser, requireAnyUser, planOf, limit, trusted, now, pushSecret } =
+    deps;
   const cfg = config.app.organiser;
   const rpc = async <T>(name: string, args: object): Promise<T> => {
     try {
@@ -166,8 +171,8 @@ export function organiserRoutes(deps: OrganiserDeps) {
     const v = await visibility(id);
     if (!v) throw new ApiError(404, 'not_found');
     if (v === 'public')
-      return req.headers.has('authorization') ? requireUser(req).catch(() => null) : null;
-    const user = await requireUser(req);
+      return req.headers.has('authorization') ? requireAnyUser(req).catch(() => null) : null;
+    const user = await requireAnyUser(req);
     if (!(await rpc<boolean>('event_visible_to', { p_event: id, p_user: user.id })))
       throw new ApiError(404, 'not_found');
     return user;
@@ -280,6 +285,28 @@ export function organiserRoutes(deps: OrganiserDeps) {
       return json({ ok: true }, 200, noStore);
     }
     throw new ApiError(404, 'not_found');
+  }
+
+  /**
+   * POST /api/events/updates {ids}: the news of the public events a person cares about (saved,
+   * going, reminders), in one call: last post, last change by hand, the newest posts. Events with
+   * no news are left out. Private events carry theirs on /api/private.
+   */
+  async function updates(req: Request): Promise<Response> {
+    const { ids } = await body(
+      req,
+      z.object({ ids: z.array(eventId).max(cfg.updatesMaxIds) }).strict(),
+    );
+    await limit(
+      'updates',
+      await deps.clientHash(req, need().salt),
+      3600,
+      cfg.updatesPerHourPerClient,
+    );
+    const list = ids.length
+      ? await rpc<object[]>('events_updates', { p_ids: ids, p_posts: cfg.updatesPosts })
+      : [];
+    return json({ updates: list }, 200, noStore);
   }
 
   /** A short neutral line for an edit's notice; the app's card has the detail. */
@@ -449,5 +476,5 @@ export function organiserRoutes(deps: OrganiserDeps) {
     posts: await rpc<object[]>('post_reports_queue', {}),
   });
 
-  return { events, posts, claims, mine, moderation, queues };
+  return { events, updates, posts, claims, mine, moderation, queues };
 }

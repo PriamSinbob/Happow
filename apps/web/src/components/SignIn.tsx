@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { earlyAccessEnd, entitlementsFor, quota } from '@happow/core';
 import { useAccount } from '../account';
 import { LegalLinks } from './Legal';
-import { requestCode, signInWithGoogle, verifyCode } from '../auth';
+import { requestCode, signInWithGoogle, startPending, verifyCode } from '../auth';
 import { config, region } from '../config';
 import { errorText } from '../errors';
 import { useI18n } from '../i18n';
@@ -40,25 +40,37 @@ function GoogleG() {
 }
 
 /**
- * Sign-in: Google, or a 6-digit code by email. With manual delivery the sheet says plainly that a
- * person sends the code. `forAdd` is the variant the add form opens signed out: its own title and
- * lead, "Not now", and the add form after sign-in.
+ * Sign-in: Google, or a code by email (`auth.codeDigits` digits, whatever length Supabase makes).
+ * Giving the email signs the device in at once as an account waiting for activation: invitations
+ * and saved events work right away, and this sheet then waits for the code. With manual delivery
+ * it says plainly that a person sends the code. `forAdd` is the variant the add form opens signed
+ * out: its own title and lead, and the add form after sign-in.
  */
 export function SignInSheet({
   onClose,
   forAdd = false,
   onSignedIn = onClose,
+  onPending,
 }: {
   onClose: () => void;
   forAdd?: boolean;
+  /** The code was right: the account is activated. */
   onSignedIn?: () => void;
+  /**
+   * The email was given and the device is signed in, waiting for the code. For what a waiting
+   * account may do (accepting an invitation): the caller goes on at once and closes the sheet.
+   */
+  onPending?: () => void;
 }) {
   const { t, lang } = useI18n();
-  const [step, setStep] = useState<'email' | 'code'>('email');
-  const [email, setEmail] = useState('');
+  const signedInAs = useAccount();
+  const waiting = signedInAs.pending;
+  const [step, setStep] = useState<'email' | 'code'>(waiting ? 'code' : 'email');
+  const [email, setEmail] = useState(waiting?.email ?? '');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { min, max } = auth.codeDigits;
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -67,6 +79,12 @@ export function SignInSheet({
     setError(null);
     try {
       await requestCode(email.trim(), lang);
+      // Signed in at once, waiting for the code. If that fails, the code alone still signs in.
+      const started = await startPending(email.trim().toLowerCase(), lang);
+      if (started && onPending) {
+        onPending();
+        return;
+      }
       setStep('code');
     } catch (err) {
       setError(errorText(t, err, lang));
@@ -100,6 +118,11 @@ export function SignInSheet({
               hours: auth.codeValidHours,
             })}
           </p>
+          {signedInAs.status === 'pending' && (
+            <p className="account-sheet__lead" role="status">
+              {t('signIn.pendingNow')}
+            </p>
+          )}
           <label className="field">
             <span className="field__label">{t('signIn.code')}</span>
             <input
@@ -107,10 +130,10 @@ export function SignInSheet({
               autoFocus
               inputMode="numeric"
               autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              maxLength={6}
+              pattern={`[0-9]{${min},${max}}`}
+              maxLength={max}
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, max))}
             />
             <span className="field__hint">{t('signIn.codeHint')}</span>
           </label>
@@ -122,7 +145,7 @@ export function SignInSheet({
           <button
             type="submit"
             className="btn btn--primary btn--block"
-            disabled={code.length !== 6 || busy}
+            disabled={code.length < min || busy}
           >
             {t('signIn.submit')}
           </button>

@@ -29,6 +29,9 @@ const EXPORTED: Record<string, string> = {
   follow_settings: 'followAlerts',
   friend_overrides: 'friendOverrides',
   invitations: 'invitationsSent',
+  // The row of an account still waiting for its code: folded in and deleted at activation, so
+  // an account that can export (an activated one) never has one.
+  pending_accounts: 'profile',
   place_changes: 'places',
   place_log: 'places',
   places: 'places',

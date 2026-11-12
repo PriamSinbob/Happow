@@ -85,8 +85,9 @@ export function useNameGate() {
   const [name, setName] = useState('');
   // The server said so before the account had loaded (just signed in).
   const [asked, setAsked] = useState(false);
-  const needed =
-    account.status === 'signedIn' && (asked || (!!account.me && !account.me.displayName));
+  // An account waiting for its code accepts invitations too, under the same name.
+  const named = account.me?.displayName ?? account.pending?.displayName ?? null;
+  const needed = account.member && (asked || !named);
 
   const field: ReactNode = needed ? (
     <div className="field name-field">

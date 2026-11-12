@@ -4,8 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 export type Route =
   | { name: 'event'; id: string }
   | { name: 'go'; id: string }
-  /** `again`: one of the account's submissions to add for another date. */
-  | { name: 'add'; again?: string }
+  /**
+   * `again`: one of the account's submissions to add for another date. `place`: a private event
+   * at that place (its name, address and pin filled in).
+   */
+  | { name: 'add'; again?: string; place?: string }
   | { name: 'addPlace' }
   | { name: 'moderate' }
   /** Someone's contact link, /c/<token>. */
@@ -15,6 +18,7 @@ export type Route =
 /** Screens about one event: its detail, and "Going there". */
 const WITH_ID = { event: '#/e/', go: '#/go/' } as const;
 const AGAIN = '#/add?again=';
+const AT_PLACE = '#/add?place=';
 
 function read(): Route | null {
   const h = window.location.hash;
@@ -37,6 +41,14 @@ function read(): Route | null {
       return { name: 'add' };
     }
   }
+  if (h.startsWith(AT_PLACE)) {
+    try {
+      const place = decodeURIComponent(h.slice(AT_PLACE.length));
+      return place ? { name: 'add', place } : { name: 'add' };
+    } catch {
+      return { name: 'add' };
+    }
+  }
   if (h === '#/moderate') return { name: 'moderate' };
   const contact = /^#\/c\/([A-Za-z0-9_-]{16,64})$/.exec(h);
   if (contact) return { name: 'contact', token: contact[1]! };
@@ -46,6 +58,7 @@ function read(): Route | null {
 
 export function routeHref(route: Route): string {
   if (route.name === 'add' && route.again) return AGAIN + encodeURIComponent(route.again);
+  if (route.name === 'add' && route.place) return AT_PLACE + encodeURIComponent(route.place);
   if (route.name === 'contact') return `#/c/${route.token}`;
   return 'id' in route
     ? `${WITH_ID[route.name]}${encodeURIComponent(route.id)}`

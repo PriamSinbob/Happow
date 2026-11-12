@@ -496,6 +496,12 @@ export const appConfigSchema = z.object({
     venueRadiusM: z.number().positive(),
     /** Posts are cached at the edge this long. */
     postsCacheSec: z.number().int().min(0),
+    /** The newest updates shown on the map's card; the rest are in Details. */
+    cardPosts: z.number().int().min(0),
+    /** POST /api/events/updates: posts per event, ids per call, calls per client per hour. */
+    updatesPosts: z.number().int().min(0),
+    updatesMaxIds: z.number().int().positive(),
+    updatesPerHourPerClient: z.number().int().positive(),
   }),
   /** Search. */
   search: z.object({
@@ -621,6 +627,26 @@ export const appConfigSchema = z.object({
     codeRequestRetentionDays: z.number().int().positive(),
     /** Must match Supabase Auth → Email OTP expiration (24 h at most); quoted in the email. */
     codeValidHours: z.number().int().positive().max(24),
+    /**
+     * How many digits a sign-in code may have. Supabase Auth → Email OTP length decides the real
+     * length (6 to 10); the app takes any length in this span, so changing it there breaks nothing.
+     */
+    codeDigits: z
+      .object({ min: z.number().int().min(4).max(10), max: z.number().int().min(4).max(10) })
+      .refine((v) => v.min <= v.max, 'min must not exceed max'),
+    /**
+     * Accounts that wait for activation: signed in at once with the email alone, able to accept
+     * invitations, and folded into the real account when the code is typed.
+     */
+    pending: z.object({
+      /** The placeholder addresses' domain; never a deliverable one. */
+      domain: z.string().regex(/^[a-z0-9.-]+\.invalid$/),
+      /** A waiting account nobody activated is deleted after this many days. */
+      keepDays: z.number().int().positive(),
+      perHourPerClient: z.number().int().positive(),
+      /** Expired waiting accounts deleted per cron tick. */
+      cleanupPerTick: z.number().int().min(0),
+    }),
     /** How long the API trusts a checked access token before asking Supabase again. */
     userCacheSec: z.number().int().min(0).max(300),
     /** The email the admin sends by hand, per language: {code}, {link} and {hours} are filled in. */

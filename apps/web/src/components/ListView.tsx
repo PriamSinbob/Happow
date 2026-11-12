@@ -1,3 +1,4 @@
+import { useUnread } from '../updates';
 import { Fragment, useState } from 'react';
 import {
   activeSeasons,
@@ -93,6 +94,17 @@ function TimeCell({ ev, now }: { ev: NearbyEvent; now: Date }) {
   );
 }
 
+/** An update not seen yet: the "!" before the title, so a long title never hides it. */
+function NewsMark({ ev }: { ev: NearbyEvent }) {
+  const { t } = useI18n();
+  if (!useUnread().has(ev.id)) return null;
+  return (
+    <span className="badge badge--news" role="img" aria-label={t('updates.unread')}>
+      !
+    </span>
+  );
+}
+
 /** Unverified, reported and cancelled marks after a title. */
 function Marks({ ev }: { ev: NearbyEvent }) {
   const { t } = useI18n();
@@ -150,6 +162,7 @@ export function TimeRow({
         <TimeCell ev={ev} now={now} />
         <span className="tt-row__body">
           <span className="tt-row__title">
+            <NewsMark ev={ev} />
             {ev.title}
             <Marks ev={ev} />
           </span>
@@ -185,6 +198,7 @@ function VenueLine({ ev, now, anchor, onSelect, mixed }: LineProps & { mixed: bo
         <TimeCell ev={ev} now={now} />
         <span className="tt-row__body">
           <span className="tt-row__title">
+            <NewsMark ev={ev} />
             {mixed && <Glyph id={glyphOf(ev)} size={13} />}
             {ev.title}
             <Marks ev={ev} />

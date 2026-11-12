@@ -11,6 +11,7 @@ import { entitlementsFor, type Entitlements, type PlanId, type PlanSource } from
 import { api, ApiError } from './api';
 import {
   accessToken,
+  finishActivation,
   loadSession,
   onSessionChange,
   signInPending,
@@ -24,6 +25,8 @@ export interface Me {
   id: string;
   email: string;
   role: 'moderator' | 'admin' | null;
+  /** Signed in with the email alone: the code has not been typed yet. */
+  pending?: boolean;
   locale: string | null;
   termsVersion: string | null;
   plan: PlanId;
@@ -47,9 +50,17 @@ export interface Me {
 }
 
 export interface Account {
-  /** "loading" only while a session exists and /api/me hasn't answered yet. */
-  status: 'signedOut' | 'loading' | 'signedIn';
+  /**
+   * "loading" only while a session exists and /api/me hasn't answered yet. "pending": signed in
+   * with the email alone, waiting for the code; invitations work, the rest of an account doesn't.
+   */
+  status: 'signedOut' | 'loading' | 'pending' | 'signedIn';
+  /** The activated account; null while signed out or waiting for the code. */
   me: Me | null;
+  /** The account waiting for its code: the email it waits for and the name already given. */
+  pending: { email: string; displayName: string | null } | null;
+  /** Signed in, activated or not: may accept invitations and read private events. */
+  member: boolean;
   /** What this person may use now: their plan's, or the anonymous plan's when signed out. */
   entitlements: Entitlements;
   /** Signed in, but the current terms version isn't accepted yet (new account, or new terms). */
@@ -79,6 +90,8 @@ const noop = async () => {};
 const SIGNED_OUT: Account = {
   status: 'signedOut',
   me: null,
+  pending: null,
+  member: false,
   entitlements: ANONYMOUS,
   needsTerms: false,
   refresh: noop,
@@ -117,15 +130,19 @@ export function AccountProvider({
       return;
     }
     try {
-      store(await api<Me>('me', { token }));
-      setStatus('signedIn');
+      // A waiting account this device had is folded into the real one before it is read.
+      await finishActivation();
+      const next = await api<Me>('me', { token: await accessToken() });
+      store(next);
+      setStatus(next.pending ? 'pending' : 'signedIn');
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         endSession();
         return;
       }
       // Offline or a server error: keep the cached account, if any.
-      setStatus(cachedMe() ? 'signedIn' : 'loading');
+      const kept = cachedMe();
+      setStatus(kept ? (kept.pending ? 'pending' : 'signedIn') : 'loading');
     }
   }, []);
 
@@ -141,7 +158,10 @@ export function AccountProvider({
       } else {
         // A new sign-in is "loading" at once, so a signed-out screen doesn't come back while
         // /api/me answers; a token refresh keeps the account as it is.
-        setStatus((s) => (s === 'signedOut' ? 'loading' : s));
+        // The code typed while waiting is a new sign-in too: the waiting profile is not it.
+        setStatus((s) =>
+          s === 'signedOut' || (s === 'pending' && !loadSession()?.pending) ? 'loading' : s,
+        );
         void refresh();
       }
     });
@@ -153,12 +173,15 @@ export function AccountProvider({
 
   const value = useMemo<Account>(() => {
     const signedIn = status === 'signedIn' && me !== null;
+    const waiting = status === 'pending' && me !== null;
     return {
       status,
       me: signedIn ? me : null,
+      pending: waiting ? { email: me.email, displayName: me.displayName ?? null } : null,
+      member: signedIn || waiting,
       // While /api/me loads, the cached plan holds, so a premium colour doesn't flash off.
       entitlements: status !== 'signedOut' && me ? me.entitlements : ANONYMOUS,
-      needsTerms: signedIn && me.termsVersion !== config.app.legal.termsVersion,
+      needsTerms: (signedIn || waiting) && me.termsVersion !== config.app.legal.termsVersion,
       refresh,
       acceptTerms: async () => {
         const token = await accessToken();

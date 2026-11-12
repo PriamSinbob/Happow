@@ -49,6 +49,8 @@ interface Props {
   /** The time pins are drawn for: now, or the time picked on the line. */
   now: Date;
   pinMode: PinMode;
+  /** Events with an update not seen yet: their pins carry the red "!". */
+  unread?: ReadonlySet<string>;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   /** Open places (restaurants, pubs, galleries), drawn under the events from `places.minZoom` in. */
@@ -206,8 +208,13 @@ export function thinPlaces(
     const c = maplibregl.MercatorCoordinate.fromLngLat(p.point);
     const cell = `${Math.floor((c.x * world) / PLACE_CELL_PX)}:${Math.floor((c.y * world) / PLACE_CELL_PX)}`;
     const held = cells.get(cell);
-    if (!held || p.id === selectedId || (held.id !== selectedId && p.distanceM < held.distanceM))
-      cells.set(cell, p);
+    // The selected one always; then a private party (it must be seen), then the nearest.
+    const beats =
+      !held ||
+      p.id === selectedId ||
+      (held.id !== selectedId &&
+        (p.privateParty !== held.privateParty ? p.privateParty : p.distanceM < held.distanceM));
+    if (beats) cells.set(cell, p);
   }
   return [...cells.values()];
 }
@@ -638,10 +645,12 @@ export function MapView(props: Props) {
         radiusM: props.radiusM,
         selectedId: props.selectedId,
         mode: props.pinMode,
+        unread: props.unread,
       }),
     );
   }, [
     props.events,
+    props.unread,
     props.selectedId,
     props.now,
     props.center,
@@ -659,7 +668,12 @@ export function MapView(props: Props) {
       features: thinPlaces(props.places, zoom, props.selectedPlaceId).map((p) => ({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [p.point.lng, p.point.lat] },
-        properties: { id: p.id, glyph: p.kind.glyph, selected: p.id === props.selectedPlaceId },
+        properties: {
+          id: p.id,
+          glyph: p.kind.glyph,
+          selected: p.id === props.selectedPlaceId,
+          party: p.privateParty,
+        },
       })),
     });
   }, [props.places, props.selectedPlaceId, zoom, styleReady]);

@@ -133,7 +133,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     limit,
     clientHash,
   });
-  const { requireUser, optionalUser, planOf } = accounts;
+  const { requireUser, requireAnyUser, optionalUser, optionalAnyUser, planOf } = accounts;
   const contributions = contributionRoutes({ config, timeZone, need, now, limit });
   /** A reward that fails must not undo the approval or the submission it follows. */
   const award = async (submissionId: string, eventId: string | null) => {
@@ -148,8 +148,10 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     config,
     need,
     requireUser,
+    requireAnyUser,
     planOf,
     limit,
+    clientHash,
     trusted: contributions.trusted,
     now,
     fetch: doFetch,
@@ -158,7 +160,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
 
   const { area, places } = areaRoutes({ config, db, now });
   const events = eventRoutes({ config, db });
-  const attendance = attendanceRoutes({ config, need, now, limit, userOf: optionalUser });
+  const attendance = attendanceRoutes({ config, need, now, limit, userOf: optionalAnyUser });
   const autofill = autofillRoutes({
     config,
     need,
@@ -186,8 +188,17 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
   });
   const moderation = moderationRoutes({ need, requireUser, organisers, award });
   const placeEdits = placeEditRoutes({ config, need, requireUser, limit, now });
-  const privateApi = privateRoutes({ config, need, requireUser, limit });
-  const reminders = reminderRoutes({ config, need, limit, userOf: optionalUser, pushSecret });
+  const privateApi = privateRoutes({
+    config,
+    need,
+    requireUser,
+    requireAnyUser,
+    limit,
+    now,
+    fetch: doFetch,
+    pushSecret,
+  });
+  const reminders = reminderRoutes({ config, need, limit, userOf: optionalAnyUser, pushSecret });
   const walkingRoute = routingRoutes({
     config,
     need,
@@ -295,6 +306,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
         return await events.byId(rest[0]!);
       if (head === 'events' && method === 'POST' && sub === 'lookup')
         return await events.lookup(req);
+      if (head === 'events' && method === 'POST' && sub === 'updates')
+        return await organisers.updates(req);
       if (head === 'events' && method === 'GET' && rest.length === 2 && rest[1] === 'credit')
         return await events.credit(rest[0]!);
       if (head === 'district-goal' && method === 'GET' && !rest.length)

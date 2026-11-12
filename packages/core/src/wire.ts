@@ -50,6 +50,8 @@ export const API_ERROR_CODES = [
   'reminder_refused',
   /** This app build is older than `native.<platform>.minVersion`: it should ask to update. */
   'client_outdated',
+  /** The account waits for its code: only invitations and its own profile work until then. */
+  'activation_required',
   'server_error',
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
@@ -124,4 +126,40 @@ export interface NationwideDate {
   venueName: string | null;
   url: string | null;
   point: LatLng | null;
+}
+
+/** A Supabase Auth session as /api hands it out (POST /api/auth/pending). */
+export interface SessionTokens {
+  access_token: string;
+  refresh_token: string;
+  /** Seconds the access token lasts. */
+  expires_in: number;
+}
+
+/** POST /api/auth/pending: the waiting account's session, and the email it waits for. */
+export interface PendingSession {
+  session: SessionTokens;
+  email: string;
+}
+
+/** An organiser's post on an event (GET /api/events/:id/posts, POST /api/events/updates). */
+export interface EventPost {
+  id: string;
+  kind: 'schedule' | 'important' | 'info';
+  body: string;
+  /** A schedule post's change, in the database's column names. */
+  change: { start_at?: string; end_at?: string; status?: string } | null;
+  createdAt: string;
+}
+
+/** One event's news (POST /api/events/updates): events with none are left out of the answer. */
+export interface EventUpdates {
+  id: string;
+  title: string;
+  status: string;
+  /** The organiser's newest post, and the last change of time or status made by hand. */
+  lastPostAt: string | null;
+  changedAt: string | null;
+  /** The newest posts, newest first (`organiser.updatesPosts` of them). */
+  posts: EventPost[];
 }

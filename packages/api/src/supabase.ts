@@ -121,6 +121,48 @@ export class Supabase {
     return { code: p.email_otp, link: p.action_link };
   }
 
+  /**
+   * A new confirmed user for an address nobody has yet, and a session for it: the account that
+   * waits for activation (its address is a placeholder; see `auth.pending`). Three GoTrue calls:
+   * create, a one-time code made without any email, and that code traded for the session.
+   */
+  async createSession(
+    email: string,
+  ): Promise<{ id: string; access_token: string; refresh_token: string; expires_in: number }> {
+    const made = await this.doFetch(`${this.base}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ email, email_confirm: true }),
+    });
+    const user = (await (await this.check(made)).json()) as { id?: string };
+    if (!user.id) throw new SupabaseError(502, undefined, 'no user returned');
+    try {
+      const { code } = await this.signInCode(email, `${this.base}/`);
+      const res = await this.doFetch(`${this.base}/auth/v1/verify`, {
+        method: 'POST',
+        headers: this.headers(),
+        body: JSON.stringify({ type: 'email', email, token: code }),
+      });
+      const t = (await (await this.check(res)).json()) as {
+        access_token?: string;
+        refresh_token?: string;
+        expires_in?: number;
+      };
+      if (!t.access_token || !t.refresh_token)
+        throw new SupabaseError(502, undefined, 'no session returned');
+      return {
+        id: user.id,
+        access_token: t.access_token,
+        refresh_token: t.refresh_token,
+        expires_in: t.expires_in ?? 3600,
+      };
+    } catch (err) {
+      // No session: the user made a moment ago would be left with no way in.
+      await this.deleteUser(user.id).catch(() => {});
+      throw err;
+    }
+  }
+
   async deleteUser(id: string): Promise<void> {
     const res = await this.doFetch(`${this.base}/auth/v1/admin/users/${encodeURIComponent(id)}`, {
       method: 'DELETE',

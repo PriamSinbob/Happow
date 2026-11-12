@@ -26,6 +26,7 @@ export function errorText(t: Translate, err: unknown, lang: Language): string {
     case 'too_many_contacts':
     case 'already_claimed':
     case 'own_item':
+    case 'activation_required':
       return t(`error.${code}`);
     case 'outside_region':
       return t('error.outside_region', { region: region.name[lang] });

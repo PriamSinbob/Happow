@@ -1,12 +1,19 @@
 /**
- * Sign-in with Supabase Auth over plain fetch (no SDK in the bundle): a 6-digit email
- * code or Google (PKCE). Sessions live in localStorage with refresh-token rotation, so an
- * installed app stays signed in.
+ * Sign-in with Supabase Auth over plain fetch (no SDK in the bundle): an email code
+ * (`auth.codeDigits` digits) or Google (PKCE). Sessions live in localStorage with refresh-token
+ * rotation, so an installed app stays signed in.
+ *
+ * Giving the email signs the device in at once as an account that waits for activation
+ * (POST /api/auth/pending): invitations can be accepted right away. Typing the code (or Google)
+ * signs in for real, and the waiting account is folded into the real one (/api/auth/activate).
  */
-import { api } from './api';
+import type { PendingSession } from '@happow/core';
+import { api, ApiError } from './api';
 import { config } from './config';
 
 const KEY = 'happow:session';
+/** A waiting account's session after the real sign-in, until the server has folded it in. */
+const MERGE = 'happow:pending-session';
 /** The PKCE verifier waits here across the Google redirect (this tab only). */
 const VERIFIER = 'happow:pkce';
 /** The screen to land on after the Google round trip. */
@@ -17,6 +24,8 @@ export interface Session {
   refreshToken: string;
   expiresAt: number;
   email: string | null;
+  /** Signed in with the email alone: waiting for the code (`email` is the one it waits for). */
+  pending?: boolean;
 }
 
 const env = () => {
@@ -69,13 +78,25 @@ interface TokenResponse {
   expires_in: number;
 }
 
+const toSession = (t: TokenResponse, pendingEmail?: string | null): Session => ({
+  accessToken: t.access_token,
+  refreshToken: t.refresh_token,
+  expiresAt: Date.now() + t.expires_in * 1000,
+  email: pendingEmail ?? emailFromJwt(t.access_token),
+  ...(pendingEmail != null && { pending: true }),
+});
+
+/** A real sign-in: the waiting account it replaces, if any, is kept aside to be folded in. */
 function saveTokens(t: TokenResponse) {
-  save({
-    accessToken: t.access_token,
-    refreshToken: t.refresh_token,
-    expiresAt: Date.now() + t.expires_in * 1000,
-    email: emailFromJwt(t.access_token),
-  });
+  const old = loadSession();
+  if (old?.pending) {
+    try {
+      localStorage.setItem(MERGE, JSON.stringify(old));
+    } catch {
+      /* storage blocked */
+    }
+  }
+  save(toSession(t));
 }
 
 async function gotrue(path: string, body: unknown): Promise<Response> {
@@ -107,7 +128,73 @@ export async function requestCode(email: string, locale: string): Promise<void> 
   if (!res.ok) throw new Error(`otp ${res.status}`);
 }
 
-/** Signs in with the 6-digit code; false when the code is wrong or has expired. */
+/**
+ * Signs the device in as an account waiting for activation, right after the email is given.
+ * Already waiting: only the email it waits for changes. Signed in for real: nothing to do.
+ * Failing is not an error to show: the code still signs in, only nothing works until then.
+ */
+export async function startPending(email: string, locale: string): Promise<boolean> {
+  const current = loadSession();
+  if (current && !current.pending) return false;
+  try {
+    const token = current ? await accessToken() : null;
+    const r = await api<Partial<PendingSession>>('auth/pending', {
+      body: { email, locale },
+      token,
+    });
+    if (r.session) save(toSession(r.session, email));
+    else if (current) save({ ...current, email });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** A fresh access token for a stored session that is not the current one. */
+async function freshToken(s: Session): Promise<string | null> {
+  if (s.expiresAt - Date.now() > 60_000) return s.accessToken;
+  const res = await gotrue('token?grant_type=refresh_token', { refresh_token: s.refreshToken });
+  // A server error: try again later rather than give the waiting account up.
+  if (res.status >= 500) throw new ApiError(0, 'network');
+  if (!res.ok) return null;
+  return ((await res.json()) as TokenResponse).access_token;
+}
+
+/**
+ * After a real sign-in: folds the waiting account this device had into the account now signed
+ * in (its accepted invitations, name and accepted terms). Kept aside until the server answers,
+ * so a lost connection only delays it to the next start.
+ */
+export async function finishActivation(): Promise<void> {
+  let waiting: Session | null = null;
+  try {
+    const raw = localStorage.getItem(MERGE);
+    waiting = raw ? (JSON.parse(raw) as Session) : null;
+  } catch {
+    return;
+  }
+  const current = loadSession();
+  if (!waiting || !current || current.pending) return;
+  const done = () => {
+    try {
+      localStorage.removeItem(MERGE);
+    } catch {
+      /* storage blocked */
+    }
+  };
+  try {
+    const pendingToken = await freshToken(waiting);
+    const token = await accessToken();
+    if (!token) return;
+    if (pendingToken) await api('auth/activate', { token, body: { pendingToken } });
+    done();
+  } catch (err) {
+    // Refused for good (the waiting account is gone or already folded in): stop trying.
+    if (err instanceof ApiError && err.status >= 400 && err.status < 500) done();
+  }
+}
+
+/** Signs in with the emailed code; false when the code is wrong or has expired. */
 export async function verifyCode(email: string, code: string): Promise<boolean> {
   const res = await gotrue('verify', { type: 'email', email, token: code });
   if (!res.ok) return false;
@@ -219,7 +306,8 @@ export async function accessToken(): Promise<string | null> {
       }
       if (!res.ok) return null; // offline or a server error: try again next time
       const t = (await res.json()) as TokenResponse;
-      saveTokens(t);
+      // A refresh keeps what the session is: a waiting account stays one.
+      save(toSession(t, s.pending ? s.email : undefined));
       return t.access_token;
     } catch {
       return null;
@@ -231,5 +319,16 @@ export async function accessToken(): Promise<string | null> {
 }
 
 export function signOut(): void {
+  const s = loadSession();
+  // A waiting account exists only for this device: signing out removes it on the server too.
+  if (s?.pending)
+    void api('me', { token: s.accessToken, method: 'DELETE' }).catch(() => {
+      /* expires by itself after auth.pending.keepDays */
+    });
+  try {
+    localStorage.removeItem(MERGE);
+  } catch {
+    /* storage blocked */
+  }
   save(null);
 }

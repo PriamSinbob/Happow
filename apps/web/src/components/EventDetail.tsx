@@ -26,6 +26,9 @@ import { isPrivate } from '../private';
 import { FriendsLine } from './FriendsLine';
 import { OrganiserPanel } from './OrganiserPanel';
 import { PrivatePanel } from './PrivatePanel';
+import { PartyNotice } from './OpenPlaceCard';
+import { NotifyHint } from './NotifyHint';
+import type { OpenPlace } from '../places';
 
 const sourceNames = new Map(config.sources.map((s) => [s.id, s.name]));
 
@@ -48,6 +51,8 @@ interface Props {
   onOpenEvent: (id: string) => void;
   /** Where distances count from (private events read with it). */
   center?: LatLng | null;
+  /** The place the event is at holds a private party now. */
+  party?: OpenPlace | null;
   /** An edit or an answer changed the event: read it again. */
   onChanged?: () => void;
 }
@@ -77,6 +82,7 @@ export function EventDetail({
   loadNearby,
   onOpenEvent,
   center = null,
+  party = null,
   onChanged = () => {},
 }: Props) {
   const { t } = useI18n();
@@ -128,6 +134,7 @@ export function EventDetail({
             loadNearby={loadNearby}
             onOpenEvent={onOpenEvent}
             center={center}
+            party={party}
             onChanged={onChanged}
             onClose={onClose}
           />
@@ -152,10 +159,12 @@ function DetailBody({
   loadNearby,
   onOpenEvent,
   center,
+  party,
   onChanged,
   onClose,
 }: {
   ev: NearbyEvent;
+  party: OpenPlace | null;
   now: Date;
   saved: boolean;
   onToggleSave: () => void;
@@ -218,10 +227,19 @@ function DetailBody({
         </div>
         <h1 id="detail-title">{ev.title}</h1>
         <InstallHint />
-        {priv && <PrivatePanel ev={ev} center={center} onToast={setToast} onGone={onClose} />}
+        {priv && (
+          <PrivatePanel
+            ev={ev}
+            center={center}
+            onToast={setToast}
+            onGone={onClose}
+            onChanged={onChanged}
+          />
+        )}
 
         {ended && <p className="status-banner status-banner--ended">{t('ended.banner')}</p>}
         <FlagNotice ev={ev} now={now} />
+        {party && <PartyNotice place={party} timeZone={ev.timezone} named />}
         {ev.status !== 'scheduled' && (
           <p className={`status-banner status-banner--${ev.status}`}>{t(`event.${ev.status}`)}</p>
         )}
@@ -322,6 +340,10 @@ function DetailBody({
           )}
         </div>
         {reminding && <ReminderSheet ev={ev} onClose={() => setReminding(false)} />}
+        {/* Yours (saved, or an invitation you took): its updates can reach you as notifications. */}
+        {!ended && (saved || (priv && ev.invitation?.status === 'accepted')) && (
+          <NotifyHint onToast={setToast} />
+        )}
 
         <OrganiserPanel ev={ev} now={now} onToast={setToast} onChanged={onChanged} />
         {ended && !priv && <NearbyNow ev={ev} now={now} load={loadNearby} onOpen={onOpenEvent} />}

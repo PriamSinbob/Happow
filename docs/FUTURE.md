@@ -29,6 +29,9 @@ Everything not built yet, one line each: what, and why or what it waits for. Lau
 
 ## Map and UX
 
+- **Handing over a public event:** only private events can be handed to a guest; a community event's adder and a verified organiser can't pass theirs on yet (contribution credit and the claim would have to move too).
+- **Push for events saved without an account:** update notices reach devices through a reminder, "I'm going", an accepted invitation or a synced account; a plain bookmark on a signed-out device shows the red "!" in the app but gets no push.
+- **An inbox of past updates:** an unseen update is announced once over the map and marked on pins and rows; there is no list of earlier ones outside the event's card.
 - **"New since last open" bloom** on pins: moved to the native app.
 - **First-launch nudge on the reach rail.**
 - **Pin collision thinning:** skipped; zoom clustering keeps pins apart for now.
