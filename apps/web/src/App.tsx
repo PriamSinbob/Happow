@@ -41,7 +41,7 @@ import { ContactLinkSheet } from './components/Contacts';
 import { useView } from './hooks/useView';
 import { openPlaces, partyAt, usePlaces } from './places';
 import { plans, usePlans, usePlanSync } from './plans';
-import { reminders, useReminders } from './reminders';
+import { reminders } from './reminders';
 import { updates, useUnread, useUpdatesSync, useUpdatesVersion, type News } from './updates';
 import { formatRelativeDay } from './format';
 import { useLongPress } from './hooks/useLongPress';
@@ -453,15 +453,10 @@ export function App() {
       setAddGate({ what, at });
     else go(what === 'place' ? { name: 'addPlace' } : { name: 'add', ...(at && { place: at }) });
   };
-  // Updates on the events that are yours: what is saved, marked going or has a reminder (public
-  // ones are asked about; private ones bring theirs). Unseen ones carry the red "!".
-  const reminderMap = useReminders();
-  const watched = useMemo(
-    () => [
-      ...new Set([...myList.filter((e) => e.on).map((e) => e.id), ...Object.keys(reminderMap)]),
-    ],
-    [myList, reminderMap],
-  );
+  // Updates on the events that are yours: what is saved or marked going (public ones are asked
+  // about; private ones bring theirs). Unseen ones carry the "!"; any other event shows its
+  // updates when its card is opened.
+  const watched = useMemo(() => myList.filter((e) => e.on).map((e) => e.id), [myList]);
   useUpdatesSync(watched);
   useEffect(() => updates.setPrivate(priv), [priv]);
   const unread = useUnread();

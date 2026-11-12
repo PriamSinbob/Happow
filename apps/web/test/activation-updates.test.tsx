@@ -17,7 +17,7 @@ import { updates } from '../src/updates';
 import { entitlementsFor } from '@happow/core';
 
 /**
- * Signing in at once with the email and waiting for the code, codes of any length, the red "!"
+ * Signing in at once with the email and waiting for the code, codes of any length, the "!"
  * of an unseen update, the newest updates on the map's card with their links, and the private
  * party said wherever its place shows.
  */
@@ -264,11 +264,12 @@ describe('updates', () => {
       { id: 'seen', mine: false, invitation: { seenAt: '2026-11-12T11:30:00Z' }, ...base },
       { id: 'new', mine: false, invitation: { seenAt: '2026-11-12T10:00:00Z' }, ...base },
       { id: 'quiet', mine: false, invitation: { seenAt: null }, ...base, lastPostAt: null },
+      { id: 'asked', mine: false, invitation: { seenAt: null, status: 'pending' }, ...base },
     ]);
     expect([...updates.unread()]).toEqual(['new']);
   });
 
-  it('puts the red "!" on the pin of an event with unseen news', () => {
+  it('puts the "!" on the pin of an event with unseen news', () => {
     const ev = (id: string) =>
       ({
         id,

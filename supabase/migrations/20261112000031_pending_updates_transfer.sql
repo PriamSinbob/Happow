@@ -116,7 +116,7 @@ $$;
 
 -- What changed on the public events among `p_ids`: when the organiser last posted, when the
 -- time or status last changed by hand, and the newest posts. Events with neither are left out.
--- The app asks for the events a person cares about (saved, going, reminders) and marks the ones
+-- The app asks for the events a person cares about (saved, going) and marks the ones
 -- with something they have not seen.
 create function events_updates(p_ids text[], p_posts integer)
 returns jsonb

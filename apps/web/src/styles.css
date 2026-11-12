@@ -4271,7 +4271,7 @@ a.row {
 }
 
 /* ---------- Updates: the unseen mark, the card's newest few, the notice over the map ---------- */
-/* An update not seen yet: a red "!" (the error ink, never the live colour), on rows and cards. */
+/* An update not seen yet: a "!" in the pin colour (never red: it is news, not an error). */
 .badge--news {
   display: inline-grid;
   place-items: center;
@@ -4279,8 +4279,8 @@ a.row {
   height: 18px;
   margin-right: 6px;
   padding: 0;
-  background: var(--error-ink);
-  color: var(--error);
+  background: var(--live);
+  color: var(--on-live);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0;

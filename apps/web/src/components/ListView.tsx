@@ -94,7 +94,7 @@ function TimeCell({ ev, now }: { ev: NearbyEvent; now: Date }) {
   );
 }
 
-/** An update not seen yet: the red "!" before the title, so a long title never hides it. */
+/** An update not seen yet: the "!" before the title, so a long title never hides it. */
 function NewsMark({ ev }: { ev: NearbyEvent }) {
   const { t } = useI18n();
   if (!useUnread().has(ev.id)) return null;

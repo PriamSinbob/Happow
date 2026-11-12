@@ -37,7 +37,7 @@ const common = {
   'symbol-z-order': 'auto',
 } as const;
 
-/** The red "!" of an unseen update: a disc this wide at the pin's upper right. */
+/** The "!" of an unseen update: a disc this wide at the pin's upper right, in the pin colour. */
 const NEWS_PX = 18;
 const NEWS_TEXT = 15;
 /** How far from the pin's centre it sits: by a glyph pin's edge, closer on a 10 px dot. */
@@ -189,7 +189,8 @@ export function addPinLayers(m: maplibregl.Map) {
     layout: { ...common, 'icon-image': 'pin-star', 'icon-offset': [-13, -11] },
     paint: { 'icon-opacity': opacity, 'icon-halo-width': 2 },
   });
-  // An update not seen yet: a large red "!" at the upper right, on any pin, a cluster included.
+  // An update not seen yet (saved and "going" events only): a large "!" at the upper right in the
+  // preset's pin colour, on any pin, a cluster included.
   // It takes the age badge's corner while it shows.
   layer({
     id: 'pin-news-bed',
@@ -276,9 +277,9 @@ export function pinPaint(
     ['pin-star', 'icon-halo-color', t.paper],
     ['place-lock', 'icon-color', t.ink],
     ['place-lock', 'icon-halo-color', t.paper],
-    ['pin-news-bed', 'icon-color', t.errorInk],
+    ['pin-news-bed', 'icon-color', live],
     ['pin-news-bed', 'icon-halo-color', t.paper],
-    ['pin-news', 'text-color', t.error],
+    ['pin-news', 'text-color', onLive],
     ['pin-age', 'text-color', t.ink],
     ['pin-age', 'text-halo-color', t.paper],
   ];

@@ -6,9 +6,10 @@ import { storage } from './storage';
 
 /**
  * News on the events you care about: an organiser's post, or a change of time or status made by
- * hand. Public events are asked about in one call (POST /api/events/updates) for what is saved,
- * marked "going" or has a reminder; private ones bring theirs with /api/private. What you have
- * seen is kept on this device, so an event with something new carries the red "!" on its pin
+ * hand. Public events are asked about in one call (POST /api/events/updates) for what is saved
+ * or marked "going"; private ones you accepted bring theirs with /api/private. Any other event
+ * shows its updates when its card is opened, and needs no mark. What you have
+ * seen is kept on this device, so an event with something new carries the "!" on its pin
  * and its row until its card is opened, and the newest one is announced once over the map.
  */
 
@@ -33,7 +34,7 @@ export interface PrivateNews {
   mine: boolean;
   changedAt: string | null;
   lastPostAt: string | null;
-  invitation: { seenAt: string | null } | null;
+  invitation: { seenAt: string | null; status?: string } | null;
 }
 
 function load(key: string): Record<string, number> {
@@ -93,12 +94,12 @@ export const updates = {
     );
     emit();
   },
-  /** The private events you are invited to; your own never count as news to you. */
+  /** The private events you are going to (invitation accepted); your own never count as news. */
   setPrivate(list: readonly PrivateNews[]) {
     privateNews = new Map();
     remoteSeen = new Map();
     for (const e of list) {
-      if (e.mine) continue;
+      if (e.mine || (e.invitation?.status ?? 'accepted') !== 'accepted') continue;
       const at = Math.max(ms(e.lastPostAt), ms(e.changedAt));
       if (!at) continue;
       privateNews.set(e.id, { at, title: e.title, posts: [] });
@@ -170,7 +171,7 @@ export async function refreshUpdates(ids: readonly string[]): Promise<void> {
 }
 
 /**
- * Keeps the news of `ids` (saved, going, reminders) fresh: now, when the list changes, when the
+ * Keeps the news of `ids` (saved and going) fresh: now, when the list changes, when the
  * app comes back to the front, and every `refresh.dataMinutes`. Without a backend there is none.
  */
 export function useUpdatesSync(ids: readonly string[]): void {
