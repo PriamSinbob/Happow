@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FLAG_REASONS, type FlagReason, type LatLng, type NearbyEvent } from '@happow/core';
 import { track } from '../analytics';
 import { config } from '../config';
-import { formatAgo, formatDay, formatTime, isSameDay } from '../format';
+import { formatAgo, formatCountdown, formatDay, formatTime, isSameDay } from '../format';
 import { eventUrl } from '../hooks/useHashRoute';
 import { downloadIcs } from '../ics';
 import { useI18n } from '../i18n';
@@ -14,8 +14,7 @@ import { ShareSheet } from './ShareSheet';
 import { hasRules, RuleList } from './EventCard';
 import { FollowStar, PerformerChips } from './Follow';
 import { follows, useFollows } from '../follows';
-import { Glyph, Icon } from './Icons';
-import { glyphOf } from '../pins';
+import { Icon } from './Icons';
 import { ReportDialog } from './ReportDialog';
 import { ReminderSheet, useLeadLabel } from './ReminderSheet';
 import { useReminders } from '../reminders';
@@ -24,7 +23,7 @@ import type { Credit } from '../data/repository';
 import { levelKey } from '../contributions';
 import { isPrivate } from '../private';
 import { FriendsLine } from './FriendsLine';
-import { OrganiserPanel } from './OrganiserPanel';
+import { useOrganiser } from './OrganiserPanel';
 import { PrivatePanel } from './PrivatePanel';
 import { PartyNotice } from './OpenPlaceCard';
 import { NotifyHint } from './NotifyHint';
@@ -193,7 +192,8 @@ function DetailBody({
   const start = formatTime(ev.startAt, ev.timezone, lang);
   const end = formatTime(ev.endAt, ev.timezone, lang);
   const sameDay = isSameDay(ev.startAt, new Date(new Date(ev.endAt).getTime() - 1), ev.timezone);
-  const minutesToStart = Math.round((new Date(ev.startAt).getTime() - now.getTime()) / 60_000);
+  const organiser = useOrganiser({ ev, now, onToast: setToast, onChanged });
+  const ownerTools = priv && ev.mine;
   const source = (ev.sourceId && sourceNames.get(ev.sourceId)) || t(`event.source.${ev.trust}`);
   useFollows();
   const followed = (ev.performers ?? []).some((p) => follows.isFollowed(p.name));
@@ -206,36 +206,20 @@ function DetailBody({
 
   return (
     <div className="detail__scroll">
-      <div className={`detail__hero${ev.imageUrl ? ' has-image' : ''}`}>
-        {ev.imageUrl ? (
-          <img src={ev.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
-        ) : (
-          <span className="detail__hero-icon" aria-hidden>
-            <Glyph id={glyphOf(ev)} size={64} strokeWidth={1.25} />
-          </span>
-        )}
-      </div>
-
       <div className="detail__body">
-        <div className="event-card__cats">
-          {categories.map((c) => c.labels[lang]).join(' · ')}
-          <span className={`badge badge--${ev.trust}`}>{t(`event.source.${ev.trust}`)}</span>
-          {ev.verified === false && (
-            <span className="badge badge--unverified">{t('event.unverified')}</span>
-          )}
-          {followed && <FollowStar />}
-        </div>
-        <h1 id="detail-title">{ev.title}</h1>
+        {/* Centred, with room at both sides: the back button never covers the title. */}
+        <header className="detail__head">
+          <div className="event-card__cats">
+            {categories.map((c) => c.labels[lang]).join(' · ')}
+            <span className={`badge badge--${ev.trust}`}>{t(`event.source.${ev.trust}`)}</span>
+            {ev.verified === false && (
+              <span className="badge badge--unverified">{t('event.unverified')}</span>
+            )}
+            {followed && <FollowStar />}
+          </div>
+          <h1 id="detail-title">{ev.title}</h1>
+        </header>
         <InstallHint />
-        {priv && (
-          <PrivatePanel
-            ev={ev}
-            center={center}
-            onToast={setToast}
-            onGone={onClose}
-            onChanged={onChanged}
-          />
-        )}
 
         {ended && <p className="status-banner status-banner--ended">{t('ended.banner')}</p>}
         <FlagNotice ev={ev} now={now} />
@@ -243,12 +227,28 @@ function DetailBody({
         {ev.status !== 'scheduled' && (
           <p className={`status-banner status-banner--${ev.status}`}>{t(`event.${ev.status}`)}</p>
         )}
+        {organiser.updates && (
+          <section className="organiser" aria-label={t('organiser.section')}>
+            {organiser.updates}
+          </section>
+        )}
         <PerformerChips performers={ev.performers} />
 
         <ul className="facts">
           <li>
             <Icon name="clock" />
             <div>
+              {/* The time left leads; the date follows. */}
+              {ev.status !== 'cancelled' && (
+                <span className="facts__count">
+                  {running && <span className="now-pill">{t('event.now')}</span>}
+                  {running
+                    ? t('event.until', { time: end })
+                    : ended
+                      ? t('event.ended')
+                      : formatCountdown(ev.startAt, now, lang)}
+                </span>
+              )}
               <strong>
                 {formatDay(ev.startAt, ev.timezone, lang)}
                 {dayLong
@@ -257,24 +257,16 @@ function DetailBody({
                     ? ` · ${start}–${end}${ev.endEstimated ? '*' : ''}`
                     : ` ${start} – ${formatDay(ev.endAt, ev.timezone, lang)} ${end}`}
               </strong>
-              <span className="facts__sub">
-                {running && <span className="now-pill">{t('event.now')}</span>}
-                {running
-                  ? t('event.until', { time: end })
-                  : ended
-                    ? t('event.ended')
-                    : minutesToStart <= 180
-                      ? t('event.startsIn', { minutes: minutesToStart })
-                      : null}
-              </span>
             </div>
           </li>
           {ev.venue && (
             <li>
               <Icon name="pin" />
               <div>
-                <strong>{ev.venue.name}</strong>
-                {ev.venue.address && <span className="facts__sub">{ev.venue.address}</span>}
+                <strong>
+                  {ev.venue.name}
+                  {ev.venue.address && <span className="facts__addr"> · {ev.venue.address}</span>}
+                </strong>
                 <span className="facts__sub">
                   {distance} · {walk}
                 </span>
@@ -291,14 +283,26 @@ function DetailBody({
           )}
         </ul>
 
+        {/* The answer sits under when and where. A private event is answered through its
+            invitation, and its guests see each other by name: no "I'm going" button, no friends'
+            switch. */}
+        {priv && (
+          <PrivatePanel
+            part="main"
+            ev={ev}
+            center={center}
+            onToast={setToast}
+            onGone={onClose}
+            onChanged={onChanged}
+          />
+        )}
+        {!ended && (!priv || ev.mine || ev.invitation?.status === 'accepted') && (
+          <Going ev={ev} now={now} answer={!priv} />
+        )}
+        {!ended && !priv && <FriendsLine eventId={ev.id} />}
         <div className="event-card__actions">
           <GoButtons ev={ev} onGo={onGo} />
         </div>
-        {/* On a private event, only its owner and accepted guests mark themselves. */}
-        {!ended && (!priv || ev.mine || ev.invitation?.status === 'accepted') && (
-          <Going ev={ev} now={now} />
-        )}
-        {!ended && <FriendsLine eventId={ev.id} />}
         <div className="event-card__actions event-card__actions--links">
           {ev.ticketUrl && (
             <a className="btn" href={ev.ticketUrl} target="_blank" rel="noreferrer">
@@ -345,7 +349,6 @@ function DetailBody({
           <NotifyHint onToast={setToast} />
         )}
 
-        <OrganiserPanel ev={ev} now={now} onToast={setToast} onChanged={onChanged} />
         {ended && !priv && <NearbyNow ev={ev} now={now} load={loadNearby} onOpen={onOpenEvent} />}
         {ev.description && (
           <section className="detail__section">
@@ -360,6 +363,24 @@ function DetailBody({
           </section>
         )}
         {ev.endEstimated && <p className="footnote">* {t('event.endEstimated')}</p>}
+
+        {/* What the organiser sets, last: posting, editing, invitations, handing over. */}
+        {(organiser.tools || ownerTools) && (
+          <section className="detail__settings">
+            <h2>{t('event.settings')}</h2>
+            {organiser.tools}
+            {ownerTools && (
+              <PrivatePanel
+                part="settings"
+                ev={ev}
+                center={center}
+                onToast={setToast}
+                onGone={onClose}
+                onChanged={onChanged}
+              />
+            )}
+          </section>
+        )}
 
         {credit && (
           <p className="detail__credit">

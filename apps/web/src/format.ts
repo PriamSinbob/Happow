@@ -94,3 +94,13 @@ export function formatAgo(iso: string, now: Date, lang: Language, justNow: strin
   if (Math.abs(h) < 48) return rtf.format(h, 'hour');
   return rtf.format(Math.round(h / 24), 'day');
 }
+
+/** How long until a start, in the largest fitting unit: "in 26 min", "in 5 hr", "in 3 days". */
+export function formatCountdown(iso: string, now: Date, lang: Language): string {
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'short' });
+  const min = Math.max(1, Math.round((new Date(iso).getTime() - now.getTime()) / 60_000));
+  if (min < 90) return rtf.format(min, 'minute');
+  const h = Math.round(min / 60);
+  if (h < 48) return rtf.format(h, 'hour');
+  return rtf.format(Math.round(h / 24), 'day');
+}

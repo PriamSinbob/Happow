@@ -26,7 +26,7 @@ import { SupabaseError } from './supabase.js';
  *   GET    /api/private/:id?i=<token>       one, for you or for a live invite link
  *   POST   /api/private/:id/invite          {people?, groups?} or {link: true, label?}
  *   GET    /api/private/:id/guests          the organiser's list; accepted guests see who else
- *   POST   /api/private/:id/answer          {accept}
+ *   POST   /api/private/:id/answer          {answer: going | maybe | declined} or {accept}
  *   POST   /api/private/:id/transfer        {to}: the owner hands the event to an accepted guest
  *   POST   /api/invitations/accept          {token}: an invite link
  *   DELETE /api/invitations/:id             revoke (the organiser)
@@ -214,13 +214,25 @@ export function privateRoutes({
       );
     if (action === 'answer' && req.method === 'POST') {
       await guard(user);
-      const { accept } = await body(req, z.object({ accept: z.boolean() }));
+      // `answer` is the three-way reply; `accept` alone is what older apps send.
+      const input = await body(
+        req,
+        z
+          .object({
+            accept: z.boolean().optional(),
+            answer: z.enum(['going', 'maybe', 'declined']).optional(),
+          })
+          .refine((v) => v.accept !== undefined || v.answer !== undefined),
+      );
+      const accept = input.answer ? input.answer !== 'declined' : input.accept === true;
+      const maybe = input.answer === 'maybe';
       const status = await rpc<string>('invitation_answer', {
         p_user: user.id,
         p_event: id,
         p_accept: accept,
+        p_maybe: maybe,
       });
-      return json({ status }, 200, noStore);
+      return json({ status, maybe }, 200, noStore);
     }
     throw new ApiError(404, 'not_found');
   }

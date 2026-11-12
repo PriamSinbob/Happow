@@ -15,7 +15,22 @@ export interface InvitationState {
   id: string;
   status: 'pending' | 'accepted' | 'declined';
   seenAt: string | null;
+  /** Accepted as "maybe". */
+  maybe?: boolean;
 }
+
+/** The three answers to an invitation. */
+export type Answer = 'going' | 'maybe' | 'declined';
+
+/** The answer an invitation holds, or null while there is none yet. */
+export const answerOf = (i: InvitationState | null): Answer | null =>
+  i?.status === 'accepted'
+    ? i.maybe
+      ? 'maybe'
+      : 'going'
+    : i?.status === 'declined'
+      ? 'declined'
+      : null;
 
 export interface PrivateEvent extends NearbyEvent {
   visibility: 'private';
@@ -218,14 +233,18 @@ export async function fetchPrivateEvent(
   }
 }
 
-export async function answerInvitation(id: string, accept: boolean): Promise<void> {
+export async function answerInvitation(id: string, answer: Answer): Promise<void> {
   const token = await accessToken();
+  // `accept` is what a server from before "maybe" reads.
   const { status } = await api<{ status: 'accepted' | 'declined' }>(
     `private/${encodeURIComponent(id)}/answer`,
-    { token, body: { accept } },
+    { token, body: { accept: answer !== 'declined', answer } },
   );
   const e = list.find((x) => x.id === id);
-  if (e?.invitation) privateEvents.patch(id, { invitation: { ...e.invitation, status } });
+  if (e?.invitation)
+    privateEvents.patch(id, {
+      invitation: { ...e.invitation, status, maybe: status === 'accepted' && answer === 'maybe' },
+    });
   if (status === 'declined') privateEvents.patch(id, null);
 }
 
@@ -244,6 +263,8 @@ export async function acceptInviteLink(eventId: string, center: LatLng | null): 
 export interface Guest {
   id?: string;
   status: 'pending' | 'accepted' | 'declined' | 'revoked';
+  /** Accepted as "maybe". */
+  maybe?: boolean;
   name: string | null;
   label?: string | null;
   link?: boolean;

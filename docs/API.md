@@ -145,6 +145,8 @@ Listed with their bodies at the top of `packages/api/src/organisers.ts` and `pri
 
 `POST /api/private/:id/transfer {to}` hands a private event over: the owner gives it to one of its accepted guests (`to` is the guest's `person` id from `/guests`), who becomes the owner; the former owner stays as an accepted guest, and the guests are told. → `{ ok, ownerName, notified }`; `404` when the caller is not the owner or `to` has not accepted, `403 blocked` when that account can't take it.
 
+`POST /api/private/:id/answer {answer}` answers your invitation: `going`, `maybe` or `declined` (`{accept}` alone still works: true is going). → `{ status, maybe }`, where a maybe is `status: "accepted"` with `maybe: true`: it keeps the event in the guest's plans, with the guest list and the updates. The event's `invitation` and each entry of `/guests` carry the same `maybe`. Guests of a private event see each other by name on `/guests`; the friends' switch does not apply there.
+
 **Updates.** An organiser's posts are on `GET /api/events/:id/posts` (`EventPost[]`, important first); bodies are plain text, and clients make the http(s) links in them tappable. For the "!" on pins and rows, the app asks `POST /api/events/updates` for its saved and going events when it opens and every `refresh.dataMinutes`, takes `changed_at` / `last_post_at` of accepted private events from `/api/private`, and compares with when the person last opened each event's card (kept on the device). The same updates go out as push to devices that allowed it.
 
 ## Staff
