@@ -198,11 +198,14 @@ describe('the private card', () => {
   /** Answers are only offered before the event ends, so the card's event must stay ahead of the clock. */
   const future = { start_at: '2099-01-01T18:00:00Z', end_at: '2099-01-01T20:00:00Z' };
 
-  it('a pending invitee answers; declining closes the card', async () => {
+  it('a pending invitee answers going, maybe or no; declining closes the card', async () => {
     signIn();
-    serve((url) => {
+    serve((url, init) => {
       if (url === '/api/me') return ok(me());
-      if (url.endsWith('/answer')) return ok({ status: 'declined' });
+      if (url.endsWith('/answer')) {
+        const { answer } = JSON.parse(String(init!.body)) as { answer: string };
+        return ok({ status: answer === 'declined' ? 'declined' : 'accepted' });
+      }
       return ok({}, 404);
     });
     const ev = rowToPrivate(row('p1', future) as never);
@@ -210,11 +213,22 @@ describe('the private card', () => {
     const gone = vi.fn();
     wrap(<PrivatePanel ev={ev} center={null} onToast={vi.fn()} onGone={gone} />);
     expect(screen.getByText(/Private · invited by Ola/)).toBeTruthy();
+    const answers = () => calls('/answer').map(([, i]) => JSON.parse(String(i!.body)));
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Decline' }));
+      fireEvent.click(screen.getByRole('radio', { name: 'Maybe' }));
+    });
+    await waitFor(() =>
+      expect(screen.getByRole('radio', { name: 'Maybe' }).getAttribute('aria-checked')).toBe(
+        'true',
+      ),
+    );
+    expect(answers()).toEqual([{ accept: true, answer: 'maybe' }]);
+    expect(privateEvents.list()[0]!.invitation).toMatchObject({ status: 'accepted', maybe: true });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('radio', { name: "Can't make it" }));
     });
     await waitFor(() => expect(gone).toHaveBeenCalled());
-    expect(JSON.parse(String(calls('/answer')[0]![1]!.body))).toEqual({ accept: false });
+    expect(answers()[1]).toEqual({ accept: false, answer: 'declined' });
     expect(privateEvents.list()).toEqual([]);
   });
 

@@ -18,7 +18,16 @@ const { lookingMinutes, hereRadiusM } = config.app.attendance;
  * event. The line under the button shows here, on the way and looking, each only from the
  * threshold up and never for sensitive categories.
  */
-export function Going({ ev, now }: { ev: NearbyEvent; now: Date }) {
+export function Going({
+  ev,
+  now,
+  answer = true,
+}: {
+  ev: NearbyEvent;
+  now: Date;
+  /** Off on a private event: the invitation's answer says who is going, by name. */
+  answer?: boolean;
+}) {
   const { t } = useI18n();
   const [view, setView] = useState<AttendanceView | null>(null);
   const [busy, setBusy] = useState(false);
@@ -66,20 +75,24 @@ export function Going({ ev, now }: { ev: NearbyEvent; now: Date }) {
   const nearLive = isRunning(ev, now) && ev.distanceM <= hereRadiusM;
   const fromLinks = view?.fromMyLinks;
 
+  const offersHere = nearLive || here;
+  if (!answer && !offersHere && !presence.length) return null;
   return (
     <div className="going">
       <div className="going__row">
-        <button
-          type="button"
-          className="btn going__btn"
-          aria-pressed={going}
-          onClick={() => toggle('going')}
-          disabled={busy}
-        >
-          <Icon name={going ? 'check' : 'plus'} size={16} />
-          {going ? t('going.on') : t('going.off')}
-        </button>
-        {(nearLive || here) && (
+        {answer && (
+          <button
+            type="button"
+            className="btn going__btn"
+            aria-pressed={going}
+            onClick={() => toggle('going')}
+            disabled={busy}
+          >
+            <Icon name={going ? 'check' : 'plus'} size={16} />
+            {going ? t('going.on') : t('going.off')}
+          </button>
+        )}
+        {offersHere && (
           <button
             type="button"
             className="btn going__btn"
@@ -91,12 +104,12 @@ export function Going({ ev, now }: { ev: NearbyEvent; now: Date }) {
             {here ? t('presence.imHereOn') : t('presence.imHere')}
           </button>
         )}
-        {counts?.going != null && (
+        {answer && counts?.going != null && (
           <span className="going__count">{t('going.count', { count: counts.going })}</span>
         )}
       </div>
       {presence.length > 0 && <p className="going__links">{presence.join(' · ')}</p>}
-      {fromLinks ? (
+      {answer && fromLinks ? (
         <p className="going__links">{t('going.fromLinks', { count: fromLinks })}</p>
       ) : null}
     </div>

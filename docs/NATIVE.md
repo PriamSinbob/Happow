@@ -42,6 +42,7 @@ These are changes in this repository, made when the native app reaches them:
 
 - **Signed in at once.** After the email is given, call `POST /api/auth/pending` and keep its session: invitations can be accepted right away. The code field takes `auth.codeDigits.min` to `.max` digits. After the code (or Google), call `POST /api/auth/activate` with both tokens, then drop the waiting session ([API.md](API.md), Account). Reference: `apps/web/src/auth.ts`.
 - **Unseen updates.** `POST /api/events/updates` for the saved and going events, plus `changed_at` / `last_post_at` of accepted private events; compare with the time each event's card was last opened, kept on the device. Unseen: the "!" in the pin colour on the pin and the row, and the newest updates on the card. Reference: `apps/web/src/updates.ts`.
+- **Private invitations.** Three answers: `POST /api/private/:id/answer {answer: going | maybe | declined}`. A maybe reads back as `status: "accepted"` with `maybe: true`, on the event's `invitation` and on `/guests`; the card lists the guests once, by name, under "Going" and "Maybe", and has no friends' switch. The detail's order is in [DESIGN.md](DESIGN.md). Reference: `apps/web/src/components/PrivatePanel.tsx`, `EventDetail.tsx`.
 
 ## On the phone
 

@@ -192,7 +192,12 @@ describe('contacts and invitations', () => {
     const ans = await b.api(
       req('private/p1/answer', { token: 'ola-token', body: { accept: false } }),
     );
-    expect(await ans.json()).toEqual({ status: 'declined' });
+    expect(await ans.json()).toEqual({ status: 'declined', maybe: false });
+    const maybe = await b.api(
+      req('private/p1/answer', { token: 'ola-token', body: { answer: 'maybe' } }),
+    );
+    expect(await maybe.json()).toEqual({ status: 'accepted', maybe: true });
+    expect(b.call('invitation_answer')[1]!.args).toMatchObject({ p_accept: true, p_maybe: true });
     const acc = await b.api(
       req('invitations/accept', { token: 'ola-token', body: { token: 'abcdefghijklmnopqrstuv' } }),
     );

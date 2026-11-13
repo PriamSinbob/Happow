@@ -259,6 +259,12 @@ describe.skipIf(!url || !local)('private events and organisers in Postgres', () 
       ).toHaveLength(1);
       const seen = await fn<{ invitation: { status: string } }[]>('private_events_for($1)', [ola]);
       expect(seen[0]!.invitation.status).toBe('pending');
+      // "Maybe" is an accepted invitation marked so; "going" clears the mark.
+      expect(await fn('invitation_answer($1, $2, true, true)', [ola, party])).toBe('accepted');
+      expect(
+        (await fn<{ invitation: { maybe: boolean } }[]>('private_events_for($1)', [ola]))[0]!
+          .invitation.maybe,
+      ).toBe(true);
       expect(await fn('invitation_answer($1, $2, true)', [ola, party])).toBe('accepted');
       // A link: Ewa blocked Ala, so she can't take it; a new user can, once.
       const token = `inv-${tag}-bbbbbbbbbbbb`;

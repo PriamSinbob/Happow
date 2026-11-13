@@ -80,6 +80,8 @@ describe.skipIf(!url)('moderation in Postgres', () => {
   it('stores crawled events as facts with a crawled trust level', async () => {
     const [s] = await runIngest({
       ...base,
+      // The fixtures' dates are fixed: on the real clock they fall out of the ingest window.
+      now: new Date('2026-11-01T12:00:00Z'),
       sourceIds: ['ebilet'],
       fetch: site({
         'https://www.ebilet.pl/robots.txt': page('ebilet-robots.txt'),

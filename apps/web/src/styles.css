@@ -1661,35 +1661,20 @@ div.settings-row {
   text-align: center;
   color: var(--muted);
 }
-.detail__hero {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  aspect-ratio: 2 / 1;
-  max-height: 30dvh;
-  /* No poster: a quiet dot grid and a soft floor glow, ink only (no category colours). */
-  background:
-    radial-gradient(120% 90% at 50% 115%, var(--fill-strong), transparent 62%),
-    radial-gradient(circle at 1px 1px, var(--hair-strong) 1px, transparent 1.5px) 0 0 / 18px 18px,
-    var(--paper-2);
-  overflow: hidden;
-}
-.detail__hero img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.detail__hero-icon {
-  display: grid;
-  color: var(--ink);
-}
 .detail__body {
-  position: relative;
-  margin-top: -20px;
-  padding: 18px 16px calc(24px + var(--safe-bottom));
-  background: var(--paper);
-  border-radius: 28px 28px 0 0;
-  box-shadow: 0 -0.5px 0 var(--hair);
+  padding: 14px 16px calc(24px + var(--safe-bottom));
+}
+/* Tags and title, centred between the back button and an equal gap on the right. */
+.detail__head {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  min-height: 40px;
+  padding: 0 44px;
+  text-align: center;
+}
+.detail__head .event-card__cats {
+  justify-content: center;
 }
 .detail h1 {
   margin: 4px 0 0;
@@ -1795,6 +1780,23 @@ div.settings-row {
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
+/* The time left (or "Now · until 23:00"), above the date. */
+.facts__count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -3px 0 4px;
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.facts__addr {
+  font-weight: 400;
+  color: var(--muted);
+}
 .facts__sub {
   display: flex;
   flex-wrap: wrap;
@@ -1899,7 +1901,8 @@ div.settings-row {
 .detail__section {
   margin-top: 22px;
 }
-.detail__section h2 {
+.detail__section h2,
+.detail__settings h2 {
   margin: 0 0 6px;
   font-size: 11px;
   font-weight: 600;
@@ -3835,6 +3838,32 @@ button.account-card__plan {
 }
 .invite > .name-field {
   margin-bottom: 8px;
+}
+/* Who is coming to a private event: a label, then the names. */
+.guest-names {
+  display: grid;
+  gap: 4px;
+}
+.guest-names p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.guest-names strong {
+  margin-right: 8px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.detail__settings {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 0.5px solid var(--hair);
+}
+.detail__settings h2,
+.detail__settings .private-panel {
+  margin: 0;
 }
 .friends-line p {
   display: flex;

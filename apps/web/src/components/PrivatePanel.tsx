@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { LatLng } from '@happow/core';
 import { useAccount } from '../account';
 import { loadContacts, type ContactBook } from '../contacts';
@@ -7,11 +7,13 @@ import { useI18n } from '../i18n';
 import {
   acceptInviteLink,
   answerInvitation,
+  answerOf,
   inviteLink,
   invitePeople,
   loadGuests,
   revokeInvitation,
   transferEvent,
+  type Answer,
   type Guest,
   type PrivateEvent,
 } from '../private';
@@ -39,9 +41,25 @@ export async function shareLink(url: string, text: string): Promise<'shared' | '
   }
 }
 
+// The card shows the panel in two places (answer and guests on top, the organiser's tools at the
+// bottom): a change to the guests in one is read again by the other.
+let guestsVersion = 0;
+const guestsListeners = new Set<() => void>();
+const guestsChanged = () => {
+  guestsVersion++;
+  for (const l of guestsListeners) l();
+};
+const subscribeGuests = (fn: () => void) => {
+  guestsListeners.add(fn);
+  return () => guestsListeners.delete(fn);
+};
+const guestsSnapshot = () => guestsVersion;
+
 /**
- * The private part of an event's card: the lock and who invited you; Accept or
- * Decline; for the organiser, inviting people, groups or by link, and the guest list.
+ * The private part of an event's card. `main`: the lock and who invited you, your answer (going,
+ * maybe, can't make it) and who is coming, by name: guests of a private event see each other.
+ * `settings`, the organiser's: inviting people, groups or by link, handing the event over, and
+ * every invitation with its state. `all` is both, in that order.
  */
 export function PrivatePanel({
   ev,
@@ -49,13 +67,15 @@ export function PrivatePanel({
   onToast,
   onGone,
   onChanged = () => {},
+  part = 'all',
 }: {
   ev: PrivateEvent;
+  part?: 'all' | 'main' | 'settings';
   center: LatLng | null;
   onToast: (text: string) => void;
   /** Declined: the card closes, as the event leaves your app. */
   onGone: () => void;
-  /** Handed over: the event is read again, now as a guest's. */
+  /** Answered or handed over: the event is read again. */
   onChanged?: () => void;
 }) {
   const { t, lang } = useI18n();
@@ -67,7 +87,12 @@ export function PrivatePanel({
   const [guests, setGuests] = useState<Guest[] | null>(null);
   // Handing the event over: the guest picked, asked about once more before it happens.
   const [handing, setHanding] = useState<'pick' | Guest | null>(null);
-  const status = ev.invitation?.status ?? null;
+  // Your answer shows at once, before the event is read again.
+  const [answered, setAnswered] = useState<Answer | null>(null);
+  const mine = answered ?? answerOf(ev.invitation);
+  const version = useSyncExternalStore(subscribeGuests, guestsSnapshot, guestsSnapshot);
+  const main = part !== 'settings';
+  const settings = part !== 'main' && ev.mine;
   // Activated or still waiting for the code: either may answer an invitation.
   const signedIn = account.member;
   const ended = Date.parse(ev.endAt) < Date.now();
@@ -75,7 +100,7 @@ export function PrivatePanel({
   const name = useNameGate();
   const linkOnly = !!ev.link && !ev.invitation;
 
-  const showGuests = ev.mine || status === 'accepted';
+  const showGuests = ev.mine || mine === 'going' || mine === 'maybe';
   useEffect(() => {
     if (!showGuests || !signedIn) return;
     let live = true;
@@ -86,7 +111,7 @@ export function PrivatePanel({
     return () => {
       live = false;
     };
-  }, [ev.id, showGuests, signedIn, inviting]);
+  }, [ev.id, showGuests, signedIn, version]);
 
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
@@ -101,10 +126,10 @@ export function PrivatePanel({
     }
   };
 
-  const answer = (accept: boolean) =>
+  const answer = (a: Answer) =>
     run(async () => {
       if (linkOnly) {
-        if (!accept) {
+        if (a === 'declined') {
           onGone();
           return;
         }
@@ -118,61 +143,96 @@ export function PrivatePanel({
         onToast(t('private.accepted'));
         return;
       }
-      await answerInvitation(ev.id, accept);
-      onToast(t(accept ? 'private.accepted' : 'private.declined'));
-      if (!accept) onGone();
+      if (a === mine) return;
+      await answerInvitation(ev.id, a);
+      setAnswered(a);
+      onToast(
+        t(
+          a === 'going'
+            ? 'private.accepted'
+            : a === 'maybe'
+              ? 'private.maybeSaved'
+              : 'private.declined',
+        ),
+      );
+      if (a === 'declined') {
+        onGone();
+        return;
+      }
+      guestsChanged();
+      onChanged();
     });
 
+  if (!main && !settings) return null;
+  const accepted = (guests ?? []).filter((g) => g.status === 'accepted');
   return (
-    <section className="private-panel" aria-label={t('private.badge')}>
-      <p className="private-panel__head">
-        <Icon name="lock" size={16} />
-        <span>
-          {t('private.badge')}
-          {' · '}
-          {ev.mine
-            ? t('private.yours')
-            : ev.ownerName
-              ? t('private.invitedBy', { name: ev.ownerName })
-              : t('private.invited')}
-        </span>
-      </p>
+    <section className="private-panel" aria-label={main ? t('private.badge') : t('event.settings')}>
+      {main && (
+        <p className="private-panel__head">
+          <Icon name="lock" size={16} />
+          <span>
+            {t('private.badge')}
+            {' · '}
+            {ev.mine
+              ? t('private.yours')
+              : ev.ownerName
+                ? t('private.invitedBy', { name: ev.ownerName })
+                : t('private.invited')}
+          </span>
+        </p>
+      )}
 
-      {!ev.mine && !ended && (status === 'pending' || status === 'declined' || ev.link) && (
+      {main && !ev.mine && !ended && linkOnly && (
         <div className="private-panel__answer">
-          {ev.link && !signedIn ? (
+          {!signedIn ? (
             <button type="button" className="btn btn--primary" onClick={() => setSignIn(true)}>
               {t('private.signInToAccept')}
             </button>
           ) : (
             <>
-              {linkOnly && name.field}
+              {name.field}
               <button
                 type="button"
                 className="btn btn--primary"
-                disabled={busy || (linkOnly && !name.ready)}
-                onClick={() => void answer(true)}
+                disabled={busy || !name.ready}
+                onClick={() => void answer('going')}
               >
                 <Icon name="check" size={18} />
                 {t('private.accept')}
               </button>
-              {status !== 'declined' && (
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={busy}
-                  onClick={() => void answer(false)}
-                >
-                  {t('private.decline')}
-                </button>
-              )}
+              <button
+                type="button"
+                className="btn"
+                disabled={busy}
+                onClick={() => void answer('declined')}
+              >
+                {t('private.decline')}
+              </button>
             </>
           )}
         </div>
       )}
-      {status === 'accepted' && <p className="muted">{t('private.going')}</p>}
+      {/* An invitation of your own: one of three answers, changed with a tap. */}
+      {main && !ev.mine && !ended && ev.invitation && (
+        <div className="segmented segmented--3" role="radiogroup" aria-label={t('rsvp.label')}>
+          {(['going', 'maybe', 'declined'] as const).map((a) => (
+            <button
+              key={a}
+              type="button"
+              role="radio"
+              aria-checked={mine === a}
+              className={mine === a ? 'is-active' : ''}
+              disabled={busy}
+              onClick={() => void answer(a)}
+            >
+              {t(`rsvp.${a}`)}
+            </button>
+          ))}
+        </div>
+      )}
+      {main && accepted.length > 0 && <GuestNames guests={accepted} />}
 
-      {ev.mine && !ended && (
+      {settings && !ended && (
         <div className="private-panel__answer">
           <button type="button" className="btn" onClick={() => setInviting(true)}>
             <Icon name="users" size={18} />
@@ -184,15 +244,14 @@ export function PrivatePanel({
         </div>
       )}
 
-      {guests && guests.length > 0 && (
+      {settings && guests && guests.length > 0 && (
         <GuestList
           guests={guests}
-          owner={ev.mine}
           busy={busy}
           onRevoke={(g) =>
             void run(async () => {
               await revokeInvitation(g.id!);
-              setGuests(await loadGuests(ev.id));
+              guestsChanged();
             })
           }
           onShare={(g) =>
@@ -208,7 +267,16 @@ export function PrivatePanel({
           {error}
         </p>
       )}
-      {inviting && <InviteSheet ev={ev} onClose={() => setInviting(false)} onToast={onToast} />}
+      {inviting && (
+        <InviteSheet
+          ev={ev}
+          onClose={() => {
+            setInviting(false);
+            guestsChanged();
+          }}
+          onToast={onToast}
+        />
+      )}
       {handing && (
         <HandOverSheet
           guests={(guests ?? []).filter((g) => g.status === 'accepted' && g.person)}
@@ -235,12 +303,12 @@ export function PrivatePanel({
           onClose={() => setSignIn(false)}
           onSignedIn={() => {
             setSignIn(false);
-            void answer(true);
+            void answer('going');
           }}
           // The email is enough to accept: the code can follow later.
           onPending={() => {
             setSignIn(false);
-            void answer(true);
+            void answer('going');
           }}
         />
       )}
@@ -314,15 +382,36 @@ function HandOverSheet({
   );
 }
 
+/** Who is coming, by name: going first, then maybe. */
+function GuestNames({ guests }: { guests: Guest[] }) {
+  const { t } = useI18n();
+  const groups = [
+    ['private.guestsGoing', guests.filter((g) => !g.maybe)],
+    ['private.guestsMaybe', guests.filter((g) => g.maybe)],
+  ] as const;
+  return (
+    <div className="guest-names">
+      {groups.map(
+        ([key, list]) =>
+          list.length > 0 && (
+            <p key={key}>
+              <strong>{t(key, { count: list.length })}</strong>
+              {list.map((g) => g.name ?? g.label ?? t('private.unnamedLink')).join(', ')}
+            </p>
+          ),
+      )}
+    </div>
+  );
+}
+
+/** The organiser's list: every invitation with its state, to send again or revoke. */
 function GuestList({
   guests,
-  owner,
   busy,
   onRevoke,
   onShare,
 }: {
   guests: Guest[];
-  owner: boolean;
   busy: boolean;
   onRevoke: (g: Guest) => void;
   onShare: (g: Guest) => void;
@@ -333,9 +422,7 @@ function GuestList({
   return (
     <div className="guests">
       <h3 className="contrib__title">
-        {owner
-          ? t('private.guestsCount', { accepted, invited: shown.length })
-          : t('private.guestsAccepted', { count: accepted })}
+        {t('private.guestsCount', { accepted, invited: shown.length })}
       </h3>
       <ul className="my-events">
         {shown.map((g, i) => (
@@ -344,13 +431,15 @@ function GuestList({
               <span className="my-events__title">
                 {g.name ?? g.label ?? t('private.unnamedLink')}
               </span>
-              {owner && (
-                <span className="my-events__meta">
-                  {g.link && g.token ? t('private.linkUnused') : t(`private.status.${g.status}`)}
-                </span>
-              )}
+              <span className="my-events__meta">
+                {g.link && g.token
+                  ? t('private.linkUnused')
+                  : g.maybe
+                    ? t('private.status.maybe')
+                    : t(`private.status.${g.status}`)}
+              </span>
             </div>
-            {owner && g.id && (
+            {g.id && (
               <span className="guests__actions">
                 {g.token && (
                   <button type="button" className="inline-link" onClick={() => onShare(g)}>

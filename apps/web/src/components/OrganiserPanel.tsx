@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { NearbyEvent } from '@happow/core';
 import { useAccount } from '../account';
 import { errorText } from '../errors';
@@ -33,19 +33,35 @@ import { Sheet } from './Sheet';
  * organiser (or a private event's owner): posting, editing, and the reports people sent. For a
  * signed-in person with no role yet: "I organise this".
  */
-export function OrganiserPanel({
-  ev,
-  now,
-  onToast,
-  onChanged,
-}: {
+export function OrganiserPanel(props: OrganiserProps) {
+  const { t } = useI18n();
+  const { updates: news, tools } = useOrganiser(props);
+  return (
+    <section className="organiser" aria-label={t('organiser.section')}>
+      {news}
+      {tools}
+    </section>
+  );
+}
+
+interface OrganiserProps {
   ev: NearbyEvent;
   now: Date;
   onToast: (text: string) => void;
   /** An edit or a schedule change was applied: read the event again. */
   onChanged: () => void;
-}) {
-  const { t, lang } = useI18n();
+}
+
+/**
+ * The panel in two pieces, read once: `updates` (the organiser's name and posts) for the top of
+ * the event's details, `tools` (posting, editing, reports, "I organise this") for their end.
+ * Either is null when it has nothing to show.
+ */
+export function useOrganiser({ ev, now, onToast, onChanged }: OrganiserProps): {
+  updates: ReactNode;
+  tools: ReactNode;
+} {
+  const { t } = useI18n();
   const account = useAccount();
   const signedIn = account.status === 'signedIn';
   const [data, setData] = useState<EventPosts | null>(null);
@@ -90,38 +106,57 @@ export function OrganiserPanel({
   const refresh = () => setTick((n) => n + 1);
   const posts = data?.posts ?? [];
 
-  return (
-    <section className="organiser" aria-label={t('organiser.section')}>
-      {data?.organiser && data.organiser.kind !== 'private' && (
-        <p className="organiser__name">
-          {t('organiser.by', { name: data.organiser.name })} <Icon name="check" size={14} />
-        </p>
-      )}
-      {/* Important ones pinned on top, then newest: the order the server gives. */}
-      <PostList
-        posts={posts}
-        ev={ev}
-        now={now}
-        actions={(p) =>
-          runs && p.kind !== 'schedule' ? (
-            <button
-              type="button"
-              className="inline-link"
-              onClick={() => void deletePost(p.id).then(refresh)}
-            >
-              {t('organiser.deletePost')}
-            </button>
-          ) : (
-            <button type="button" className="inline-link" onClick={() => setReportingPost(p)}>
-              {t('organiser.reportPost')}
-            </button>
-          )
-        }
-      />
+  const named = !!data?.organiser && data.organiser.kind !== 'private';
+  const news =
+    named || posts.length > 0 ? (
+      <>
+        {named && (
+          <p className="organiser__name">
+            {t('organiser.by', { name: data!.organiser!.name })} <Icon name="check" size={14} />
+          </p>
+        )}
+        {/* Important ones pinned on top, then newest: the order the server gives. */}
+        <PostList
+          posts={posts}
+          ev={ev}
+          now={now}
+          actions={(p) =>
+            runs && p.kind !== 'schedule' ? (
+              <button
+                type="button"
+                className="inline-link"
+                onClick={() => void deletePost(p.id).then(refresh)}
+              >
+                {t('organiser.deletePost')}
+              </button>
+            ) : (
+              <button type="button" className="inline-link" onClick={() => setReportingPost(p)}>
+                {t('organiser.reportPost')}
+              </button>
+            )
+          }
+        />
+        {reportingPost && (
+          <ReportPostSheet
+            post={reportingPost}
+            onClose={() => setReportingPost(null)}
+            onSent={() => {
+              setReportingPost(null);
+              onToast(t('report.thanks'));
+            }}
+          />
+        )}
+      </>
+    ) : null;
 
-      {signedIn && mine && (
+  const canPost = runs && !ended;
+  const canClaim = !!mine && !mine.role && !isPrivate(ev) && !ended;
+  const reports = runs && mine ? mine.reports : [];
+  const tools =
+    signedIn && mine && (canPost || (canEdit && !ended) || canClaim || reports.length > 0) ? (
+      <>
         <div className="organiser__tools">
-          {runs && !ended && (
+          {canPost && (
             <button type="button" className="btn" onClick={() => setSheet('post')}>
               <Icon name="message" size={18} />
               {t('organiser.post')}
@@ -133,67 +168,56 @@ export function OrganiserPanel({
               {t('organiser.edit')}
             </button>
           )}
-          {!mine.role && !isPrivate(ev) && !ended && (
+          {canClaim && (
             <button type="button" className="inline-link" onClick={() => setSheet('claim')}>
               {mine.claim?.status === 'pending' ? t('claim.pendingLink') : t('claim.start')}
             </button>
           )}
         </div>
-      )}
+        {reports.length > 0 && <Reports eventId={ev.id} reports={reports} onAnswered={refresh} />}
+        {sheet === 'post' && (
+          <PostSheet
+            ev={ev}
+            infoPosts={mine.infoPosts}
+            onClose={() => setSheet(null)}
+            onDone={(notified, changed) => {
+              setSheet(null);
+              refresh();
+              onToast(
+                notified
+                  ? t('organiser.postedNotified', { count: notified })
+                  : t('organiser.posted'),
+              );
+              if (changed) onChanged();
+            }}
+          />
+        )}
+        {sheet === 'edit' && mine.role && (
+          <EditSheet
+            ev={ev}
+            role={mine.role}
+            onClose={() => setSheet(null)}
+            onDone={(status) => {
+              setSheet(null);
+              onToast(status === 'pending' ? t('edit.pending') : t('edit.saved'));
+              if (status === 'applied') onChanged();
+            }}
+          />
+        )}
+        {sheet === 'claim' && (
+          <ClaimSheet
+            ev={ev}
+            existing={mine.claim ?? null}
+            onClose={() => {
+              setSheet(null);
+              refresh();
+            }}
+          />
+        )}
+      </>
+    ) : null;
 
-      {runs && mine && mine.reports.length > 0 && (
-        <Reports eventId={ev.id} reports={mine.reports} onAnswered={refresh} />
-      )}
-
-      {sheet === 'post' && mine && (
-        <PostSheet
-          ev={ev}
-          infoPosts={mine.infoPosts}
-          onClose={() => setSheet(null)}
-          onDone={(notified, changed) => {
-            setSheet(null);
-            refresh();
-            onToast(
-              notified ? t('organiser.postedNotified', { count: notified }) : t('organiser.posted'),
-            );
-            if (changed) onChanged();
-          }}
-        />
-      )}
-      {sheet === 'edit' && mine?.role && (
-        <EditSheet
-          ev={ev}
-          role={mine.role}
-          onClose={() => setSheet(null)}
-          onDone={(status) => {
-            setSheet(null);
-            onToast(status === 'pending' ? t('edit.pending') : t('edit.saved'));
-            if (status === 'applied') onChanged();
-          }}
-        />
-      )}
-      {sheet === 'claim' && (
-        <ClaimSheet
-          ev={ev}
-          existing={mine?.claim ?? null}
-          onClose={() => {
-            setSheet(null);
-            refresh();
-          }}
-        />
-      )}
-      {reportingPost && (
-        <ReportPostSheet
-          post={reportingPost}
-          onClose={() => setReportingPost(null)}
-          onSent={() => {
-            setReportingPost(null);
-            onToast(t('report.thanks'));
-          }}
-        />
-      )}
-    </section>
-  );
+  return { updates: news, tools };
 }
 
 function Reports({
