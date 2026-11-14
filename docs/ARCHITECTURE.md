@@ -127,6 +127,7 @@ flowchart LR
   R -- "GET events/:id · POST events/lookup<br/>events/updates · credit · district-goal" --> EVR["Public event reads<br/>events_public, updates"]
   R -- "GET area" --> AREA["events_area RPC<br/>grid-snapped key, ETag,<br/>public cache 5 / 30 min<br/>range: 14 days · future"]
   R -- "GET places" --> PLACES["places_area RPC<br/>same grid key, ETag,<br/>corrections applied,<br/>public cache 30 min"]
+  R -- "GET places/unknown" --> UNK["places_unknown RPC<br/>no hours: hollow pins"]
   R -- "POST autofill" --> AF["Sign-in + monthly allowance<br/>fetchPage → JSON-LD<br/>→ LLM (daily cap) → prefills"]
   R -- "POST autofill/photo" --> AFP["Poster photo → LLM prefill"]
   R -- "POST places/photo" --> PPH["Door photo → LLM place prefill<br/>+ marks, pass for no account"]

@@ -158,7 +158,7 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     pushSecret,
   });
 
-  const { area, places } = areaRoutes({ config, db, now });
+  const { area, places, unknownPlaces } = areaRoutes({ config, db, now });
   const events = eventRoutes({ config, db });
   const attendance = attendanceRoutes({ config, need, now, limit, userOf: optionalAnyUser });
   const autofill = autofillRoutes({
@@ -334,6 +334,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'attendance' || head === 'share') return await attendance.route(req, head, rest);
       if (head === 'area' && method === 'GET' && !rest.length) return await area(req);
       if (head === 'places' && method === 'GET' && !rest.length) return await places(req);
+      if (head === 'places' && method === 'GET' && sub === 'unknown' && rest.length === 1)
+        return await unknownPlaces(req);
       if (head === 'places' && method === 'POST' && !rest.length) return await placeEdits.add(req);
       if (head === 'places' && method === 'POST' && sub === 'change')
         return await placeEdits.change(req);

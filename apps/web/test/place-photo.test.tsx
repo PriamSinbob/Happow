@@ -4,7 +4,7 @@ import { AccountProvider } from '../src/account';
 import { AddPlace } from '../src/components/AddPlace';
 import { I18nProvider } from '../src/i18n';
 import { gpsFromJpeg } from '../src/photo';
-import { listedNear, toPlaces, type PlaceRow } from '../src/places';
+import { listedAt, toPlaces, toUnknown, type PlaceRow } from '../src/places';
 
 /** A place from one photo of its door, without an account. */
 
@@ -51,6 +51,7 @@ function serve(listed: PlaceRow[] = []) {
     if (url === '/api/places/photo') return ok(read);
     if (url === '/api/places') return ok({ id: 'user/1' }, 201);
     if (url === '/api/places/change') return ok({ ok: true });
+    if (url.startsWith('/api/places/unknown?')) return ok({ places: [] });
     if (url.startsWith('/api/places?')) return ok({ places: listed });
     return ok({}, 404);
   });
@@ -135,20 +136,32 @@ describe('a place from a photo, without an account', () => {
 });
 
 describe('the place listed at the spot', () => {
-  const places = toPlaces([
-    row(),
-    row({ id: 'node/8', name: 'Pub Obok', kind: 'amenity=pub', lng: 17.0302 }),
-    row({ id: 'node/9', name: 'Daleko', lat: 51.112 }),
-  ]);
-  it('matches a name either way round, accents aside, within the distance', () => {
-    expect(listedNear(places, here, 'KAWIARNIA PRZYKLAD', null)?.id).toBe('node/7');
-    expect(listedNear(places, here, 'Przykład', null)?.id).toBe('node/7');
-    expect(listedNear(places, here, 'Daleko', null)).toBeNull();
-    expect(listedNear(places, here, 'Bistro Nowe', 'amenity=cafe')).toBeNull();
+  const all = [
+    ...toPlaces([
+      row(),
+      row({ id: 'node/8', name: 'Pub Obok', kind: 'amenity=pub', lng: 17.0302 }),
+      row({ id: 'node/9', name: 'Daleko', lat: 51.112 }),
+      row({ id: 'node/10', name: 'Bar Mleczny', kind: 'amenity=bar', lat: 51.11003 }),
+    ]),
+    // Listed without hours, 40 m away.
+    ...toUnknown([row({ id: 'node/11', name: 'Śluza', lat: 51.11036, opening_hours: null })]),
+  ];
+  const ids = (ps: { id: string }[]) => ps.map((p) => p.id);
+
+  it('matches a name either way round, accents aside, with hours or without', () => {
+    const cafe = listedAt(all, here, 'KAWIARNIA PRZYKLAD');
+    expect(cafe.named?.id).toBe('node/7');
+    expect(ids(cafe.near)).toEqual(['node/10']);
+    expect(listedAt(all, here, 'Śluza bar cafe').named?.id).toBe('node/11');
+    expect(listedAt(all, here, 'Pub Obok').named?.id).toBe('node/8');
+    expect(listedAt(all, here, 'Daleko').named).toBeNull();
   });
-  it('takes the only one of that kind when no name was read', () => {
-    expect(listedNear(places, here, '', 'amenity=pub')?.id).toBe('node/8');
-    expect(listedNear(places, here, '', 'amenity=bar')).toBeNull();
+
+  it('offers only places within a few metres to compare, and never decides by nearness', () => {
+    const none = listedAt(all, here, '');
+    expect(none.named).toBeNull();
+    expect(ids(none.near)).toEqual(['node/10', 'node/7']);
+    expect(listedAt(all, here, 'Bar').named).toBeNull();
   });
 });
 

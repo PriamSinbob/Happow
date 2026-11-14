@@ -95,6 +95,17 @@ export interface Prefill {
   performers: string[];
 }
 
+/** A place whose opening hours are unknown (GET /api/places/unknown). */
+export interface UnknownPlaceRow {
+  id: string;
+  name: string;
+  kind: string;
+  lat: number;
+  lng: number;
+  address: string | null;
+  website: string | null;
+}
+
 /** The fields of the add-place form that a photo can fill, in the order their marks are numbered. */
 export const PLACE_PHOTO_FIELDS = ['name', 'kind', 'hours', 'address', 'website'] as const;
 export type PlacePhotoField = (typeof PLACE_PHOTO_FIELDS)[number];

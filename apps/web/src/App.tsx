@@ -4,6 +4,7 @@ import {
   agendaDays,
   dayStarts,
   densityClusters,
+  distanceM,
   familyMatch,
   isOnDay,
   isRunning,
@@ -39,7 +40,7 @@ import { invitations, useAcceptedInvitations } from './invitations';
 import { isPrivate, refreshPrivate, usePrivateEvents, usePrivateSync } from './private';
 import { ContactLinkSheet } from './components/Contacts';
 import { useView } from './hooks/useView';
-import { openPlaces, partyAt, usePlaces } from './places';
+import { openPlaces, partyAt, usePlaces, useUnknownPlaces, type ListedPlace } from './places';
 import { plans, usePlans, usePlanSync } from './plans';
 import { reminders } from './reminders';
 import { updates, useUnread, useUpdatesSync, useUpdatesVersion, type News } from './updates';
@@ -68,7 +69,7 @@ import { MapView } from './components/MapView';
 import { Moderation } from './components/Moderation';
 import { SignInSheet, TermsSheet } from './components/SignIn';
 import { PickGrid } from './components/PickGrid';
-import { OpenPlaceCard } from './components/OpenPlaceCard';
+import { OpenPlaceCard, UnknownPlaceCard } from './components/OpenPlaceCard';
 import { PlaceCard } from './components/PlaceCard';
 import { ReachRail } from './components/ReachRail';
 import { SettingsSheet } from './components/SettingsSheet';
@@ -359,6 +360,27 @@ export function App() {
     ],
   );
   const openPlace = placesOnMap.find((p) => p.id === openPlaceId) ?? null;
+  // Places whose hours are unknown: hollow pins close in, so the hours can be added. They follow
+  // the category filters like the open places.
+  const allUnknown = useUnknownPlaces(searchCenter, showPlaces);
+  const unknownOnMap = useMemo(
+    () =>
+      showPlaces
+        ? allUnknown
+            .filter((p) =>
+              matchesFilters(
+                { categoryIds: [p.kind.category], isFree: true },
+                { ...filters, price: 'any' },
+              ),
+            )
+            .map((p) => ({ ...p, distanceM: distanceM(searchCenter, p.point) }))
+        : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [showPlaces, allUnknown, searchCenter, filters.categories, filters.excluded],
+  );
+  const unknownPlace = openPlace ? null : (unknownOnMap.find((p) => p.id === openPlaceId) ?? null);
+  /** A listed place whose hours are being added from its card. */
+  const [placeFix, setPlaceFix] = useState<ListedPlace | null>(null);
   // Ended long ago: off the list (a removal, so the account's other devices drop them too).
   const myDays = useMemo(
     () => agendaDays(mine.events, now, region.timezone, config.app.agenda.keepPastDays),
@@ -612,6 +634,7 @@ export function App() {
             setParked(false);
           }}
           places={placesOnMap}
+          unknownPlaces={unknownOnMap}
           selectedPlaceId={openPlaceId}
           onSelectOpenPlace={(id) => {
             setCard({ kind: 'place', id });
@@ -927,6 +950,17 @@ export function App() {
               }}
             />
           </div>
+        ) : view === 'map' && unknownPlace ? (
+          <div className="sheet__card">
+            <UnknownPlaceCard
+              place={unknownPlace}
+              onClose={clearCards}
+              onAddHours={() => {
+                setPlaceFix(unknownPlace);
+                go({ name: 'addPlace' });
+              }}
+            />
+          </div>
         ) : view === 'map' && placeEvents.length > 0 ? (
           <div className="sheet__card">
             <PlaceCard events={placeEvents} now={now} onSelect={openDetail} onClose={clearCards} />
@@ -1063,8 +1097,13 @@ export function App() {
       {route?.name === 'addPlace' && (
         <AddPlace
           here={here}
-          onClose={close}
+          fix={placeFix}
+          onClose={() => {
+            setPlaceFix(null);
+            close();
+          }}
           onShow={(id, point) => {
+            setPlaceFix(null);
             close();
             setCard({ kind: 'place', id });
             setFocus((f) => ({ point, seq: (f?.seq ?? 0) + 1 }));

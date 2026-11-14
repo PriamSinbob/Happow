@@ -130,5 +130,24 @@ export function areaRoutes({ config, db, now }: AreaDeps) {
     });
   }
 
-  return { area, places };
+  /**
+   * GET /api/places/unknown?lat&lng&r → the places whose opening hours are unknown, on the same
+   * grid and cached the same way: the map shows them close in so their hours can be added.
+   */
+  async function unknownPlaces(req: Request): Promise<Response> {
+    if (!db) throw new ApiError(503, 'not_configured');
+    const { key } = areaKey(req);
+    const { maxPerArea, cacheMinutes } = config.app.places;
+    const rows = await db.rpc<unknown>('places_unknown', {
+      lat: key.lat,
+      lng: key.lng,
+      radius_m: key.radiusM + areaSlackM(key.lat, refresh),
+      max_places: maxPerArea,
+    });
+    return cached(req, JSON.stringify({ places: rows }), {
+      'cache-control': `public, max-age=${Math.round(cacheMinutes * 60)}`,
+    });
+  }
+
+  return { area, places, unknownPlaces };
 }
