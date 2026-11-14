@@ -130,7 +130,13 @@
         "worship-services",
         "account-feeds",
         "submissions"
-      ]
+      ],
+      "seedFile": "data/seed/warszawa.events.json",
+      "seedPlacesFile": "data/seed/warszawa.places.json",
+      "districts": {
+        "file": "data/districts/warszawa.geojson",
+        "adminLevel": 9
+      }
     },
     {
       "id": "krakow",
@@ -180,7 +186,13 @@
         "worship-services",
         "account-feeds",
         "submissions"
-      ]
+      ],
+      "seedFile": "data/seed/krakow.events.json",
+      "seedPlacesFile": "data/seed/krakow.places.json",
+      "districts": {
+        "file": "data/districts/krakow.geojson",
+        "adminLevel": 9
+      }
     },
     {
       "id": "lodz",
@@ -228,7 +240,13 @@
         "worship-services",
         "account-feeds",
         "submissions"
-      ]
+      ],
+      "seedFile": "data/seed/lodz.events.json",
+      "seedPlacesFile": "data/seed/lodz.places.json",
+      "districts": {
+        "file": "data/districts/lodz.geojson",
+        "adminLevel": 10
+      }
     },
     {
       "id": "poznan",
@@ -279,7 +297,13 @@
         "worship-services",
         "account-feeds",
         "submissions"
-      ]
+      ],
+      "seedFile": "data/seed/poznan.events.json",
+      "seedPlacesFile": "data/seed/poznan.places.json",
+      "districts": {
+        "file": "data/districts/poznan.geojson",
+        "adminLevel": 9
+      }
     },
     {
       "id": "trojmiasto",
@@ -327,7 +351,13 @@
         "worship-services",
         "account-feeds",
         "submissions"
-      ]
+      ],
+      "seedFile": "data/seed/trojmiasto.events.json",
+      "seedPlacesFile": "data/seed/trojmiasto.places.json",
+      "districts": {
+        "file": "data/districts/trojmiasto.geojson",
+        "adminLevel": 9
+      }
     },
     {
       "id": "szczecin",
@@ -373,7 +403,13 @@
         "worship-services",
         "account-feeds",
         "submissions"
-      ]
+      ],
+      "seedFile": "data/seed/szczecin.events.json",
+      "seedPlacesFile": "data/seed/szczecin.places.json",
+      "districts": {
+        "file": "data/districts/szczecin.geojson",
+        "adminLevel": 10
+      }
     },
     {
       "id": "bydgoszcz",
@@ -418,7 +454,13 @@
         "worship-services",
         "account-feeds",
         "submissions"
-      ]
+      ],
+      "seedFile": "data/seed/bydgoszcz.events.json",
+      "seedPlacesFile": "data/seed/bydgoszcz.places.json",
+      "districts": {
+        "file": "data/districts/bydgoszcz.geojson",
+        "adminLevel": 9
+      }
     },
     {
       "id": "lublin",
@@ -464,7 +506,13 @@
         "worship-services",
         "account-feeds",
         "submissions"
-      ]
+      ],
+      "seedFile": "data/seed/lublin.events.json",
+      "seedPlacesFile": "data/seed/lublin.places.json",
+      "districts": {
+        "file": "data/districts/lublin.geojson",
+        "adminLevel": 9
+      }
     },
     {
       "id": "katowice",
@@ -521,7 +569,13 @@
         "worship-services",
         "account-feeds",
         "submissions"
-      ]
+      ],
+      "seedFile": "data/seed/katowice.events.json",
+      "seedPlacesFile": "data/seed/katowice.places.json",
+      "districts": {
+        "file": "data/districts/katowice.geojson",
+        "adminLevel": 9
+      }
     }
   ]
 }
