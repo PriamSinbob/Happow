@@ -4089,24 +4089,32 @@ button.account-card__plan {
   padding: 0;
   list-style: none;
 }
+/* Flex items default to min-width: auto; without this a long name pushes the card sideways. */
+.performers li {
+  min-width: 0;
+  max-width: 100%;
+}
 .performer-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-height: 36px;
   max-width: 100%;
-  padding: 0 10px 0 12px;
+  padding: 6px 10px 6px 12px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 18px;
   background: var(--paper);
   font: inherit;
   font-size: 14px;
   color: var(--ink);
 }
 .performer-chip__name {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.performer-chip svg {
+  flex: none;
 }
 .performer-chip.is-on {
   border-color: var(--ink);
