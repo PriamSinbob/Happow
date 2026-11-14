@@ -466,12 +466,12 @@
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
-      "enabled": false,
+      "enabled": true,
       "secrets": ["ANTHROPIC_API_KEY"],
       "maxCacheAgeHours": 72,
       "republishDescription": false,
       "republishImages": false,
-      "termsNotes": "Opera and ballet calendar: one page per performance. Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "termsNotes": "Opera and ballet calendar: one page per performance. Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Switched on by the owner on 2026-11-14 for now, before the site's terms are read (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
       "options": {
         "startUrls": ["https://teatrwielki.pl/repertuar/kalendarium/"],
         "followPattern": "/kalendarium/\\d{4}-\\d{4}/[a-z0-9-]+/termin/\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}/$",
@@ -486,7 +486,8 @@
         "aliases": ["Teatr Wielki", "Opera Narodowa"]
       },
       "defaultCategories": ["theatre"],
-      "categoryMap": {}
+      "categoryMap": {},
+      "beforeLaunch": "Read the site's terms (reuse of event facts, automated access) or ask the venue; switch off if they forbid it."
     },
     {
       "id": "opera-krakowska",
@@ -496,12 +497,12 @@
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
-      "enabled": false,
+      "enabled": true,
       "secrets": ["ANTHROPIC_API_KEY"],
       "maxCacheAgeHours": 72,
       "republishDescription": false,
       "republishImages": false,
-      "termsNotes": "The repertoire page lists the dates itself, so only it is read. Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "termsNotes": "The repertoire page lists the dates itself, so only it is read. Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Switched on by the owner on 2026-11-14 for now, before the site's terms are read (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
       "options": {
         "startUrls": ["https://www.opera.krakow.pl/repertuar"],
         "followPattern": null,
@@ -516,7 +517,8 @@
         "aliases": []
       },
       "defaultCategories": ["theatre"],
-      "categoryMap": {}
+      "categoryMap": {},
+      "beforeLaunch": "Read the site's terms (reuse of event facts, automated access) or ask the venue; switch off if they forbid it."
     },
     {
       "id": "teatr-wielki-lodz",
@@ -526,12 +528,12 @@
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
-      "enabled": false,
+      "enabled": true,
       "secrets": ["ANTHROPIC_API_KEY"],
       "maxCacheAgeHours": 72,
       "republishDescription": false,
       "republishImages": false,
-      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Switched on by the owner on 2026-11-14 for now, before the site's terms are read (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
       "options": {
         "startUrls": ["https://operalodz.com/"],
         "followPattern": ",29,\\d+$",
@@ -546,7 +548,8 @@
         "aliases": ["Teatr Wielki"]
       },
       "defaultCategories": ["theatre"],
-      "categoryMap": {}
+      "categoryMap": {},
+      "beforeLaunch": "Read the site's terms (reuse of event facts, automated access) or ask the venue; switch off if they forbid it."
     },
     {
       "id": "gdansk-wydarzenia",
@@ -556,12 +559,12 @@
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
-      "enabled": false,
+      "enabled": true,
       "secrets": ["ANTHROPIC_API_KEY"],
       "maxCacheAgeHours": 72,
       "republishDescription": false,
       "republishImages": false,
-      "termsNotes": "The city portal's events (many venues). robots.txt disallows only a URL template under /wydarzenia/. Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "termsNotes": "The city portal's events (many venues). robots.txt disallows only a URL template under /wydarzenia/. Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Switched on by the owner on 2026-11-14 for now, before the site's terms are read (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
       "options": {
         "startUrls": ["https://www.gdansk.pl/wydarzenia"],
         "followPattern": "/wydarzenia/[^/]+,w,\\d+$",
@@ -569,7 +572,8 @@
         "llmFallback": true
       },
       "defaultCategories": ["other"],
-      "categoryMap": {}
+      "categoryMap": {},
+      "beforeLaunch": "Read the site's terms (reuse of event facts, automated access) or ask the venue; switch off if they forbid it."
     },
     {
       "id": "filharmonia-szczecin",
@@ -579,12 +583,12 @@
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
-      "enabled": false,
+      "enabled": true,
       "secrets": ["ANTHROPIC_API_KEY"],
       "maxCacheAgeHours": 72,
       "republishDescription": false,
       "republishImages": false,
-      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Switched on by the owner on 2026-11-14 for now, before the site's terms are read (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
       "options": {
         "startUrls": ["https://filharmonia.szczecin.pl/repertuar"],
         "followPattern": "/wydarzenia/\\d+-",
@@ -599,7 +603,8 @@
         "aliases": ["Filharmonia w Szczecinie"]
       },
       "defaultCategories": ["music"],
-      "categoryMap": {}
+      "categoryMap": {},
+      "beforeLaunch": "Read the site's terms (reuse of event facts, automated access) or ask the venue; switch off if they forbid it."
     },
     {
       "id": "opera-nova",
@@ -609,12 +614,12 @@
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
-      "enabled": false,
+      "enabled": true,
       "secrets": ["ANTHROPIC_API_KEY"],
       "maxCacheAgeHours": 72,
       "republishDescription": false,
       "republishImages": false,
-      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Switched on by the owner on 2026-11-14 for now, before the site's terms are read (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
       "options": {
         "startUrls": ["https://www.opera.bydgoszcz.pl/repertuar.html"],
         "followPattern": "/spektakle/[a-z0-9-]+/[a-z0-9-]+\\.html$",
@@ -629,7 +634,8 @@
         "aliases": []
       },
       "defaultCategories": ["theatre"],
-      "categoryMap": {}
+      "categoryMap": {},
+      "beforeLaunch": "Read the site's terms (reuse of event facts, automated access) or ask the venue; switch off if they forbid it."
     },
     {
       "id": "filharmonia-pomorska",
@@ -639,12 +645,12 @@
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
-      "enabled": false,
+      "enabled": true,
       "secrets": ["ANTHROPIC_API_KEY"],
       "maxCacheAgeHours": 72,
       "republishDescription": false,
       "republishImages": false,
-      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Switched on by the owner on 2026-11-14 for now, before the site's terms are read (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
       "options": {
         "startUrls": ["https://filharmonia.bydgoszcz.pl/kalendarz-wydarzen/"],
         "followPattern": "/kalendarz/[a-z0-9-]+/$",
@@ -659,7 +665,8 @@
         "aliases": []
       },
       "defaultCategories": ["music"],
-      "categoryMap": {}
+      "categoryMap": {},
+      "beforeLaunch": "Read the site's terms (reuse of event facts, automated access) or ask the venue; switch off if they forbid it."
     },
     {
       "id": "filharmonia-lubelska",
@@ -669,12 +676,12 @@
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
-      "enabled": false,
+      "enabled": true,
       "secrets": ["ANTHROPIC_API_KEY"],
       "maxCacheAgeHours": 72,
       "republishDescription": false,
       "republishImages": false,
-      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Switched on by the owner on 2026-11-14 for now, before the site's terms are read (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
       "options": {
         "startUrls": ["https://filharmonialubelska.pl/kalendarz/"],
         "followPattern": "/co-gramy/[a-z0-9-]+/$",
@@ -689,7 +696,8 @@
         "aliases": []
       },
       "defaultCategories": ["music"],
-      "categoryMap": {}
+      "categoryMap": {},
+      "beforeLaunch": "Read the site's terms (reuse of event facts, automated access) or ask the venue; switch off if they forbid it."
     },
     {
       "id": "nospr",
@@ -699,12 +707,12 @@
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
-      "enabled": false,
+      "enabled": true,
       "secrets": ["ANTHROPIC_API_KEY"],
       "maxCacheAgeHours": 72,
       "republishDescription": false,
       "republishImages": false,
-      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Switched on by the owner on 2026-11-14 for now, before the site's terms are read (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
       "options": {
         "startUrls": ["https://www.nospr.org.pl/pl/kalendarz"],
         "followPattern": "/pl/kalendarz/[a-z0-9-]+$",
@@ -719,7 +727,8 @@
         "aliases": ["Narodowa Orkiestra Symfoniczna Polskiego Radia"]
       },
       "defaultCategories": ["music"],
-      "categoryMap": {}
+      "categoryMap": {},
+      "beforeLaunch": "Read the site's terms (reuse of event facts, automated access) or ask the venue; switch off if they forbid it."
     },
     {
       "id": "osm-venues",
