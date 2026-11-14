@@ -21,14 +21,23 @@ const PLACES_KEEP_SHARE = 0.7;
 export class VenueStore {
   constructor(private readonly db: pg.ClientBase) {}
 
-  async upsertOsmVenues(regionId: string, venues: OsmVenue[]): Promise<void> {
+  async upsertOsmVenues(regionId: string, list: OsmVenue[]): Promise<void> {
+    // One row per OSM id: an upsert statement may not touch the same row twice.
+    const venues = [...new Map(list.map((v) => [v.osmId, v])).values()];
     await this.db.query('begin');
     try {
-      for (const v of venues)
+      // One statement per 1,000 venues: the runner is far from the database (see EventStore.apply).
+      for (let i = 0; i < venues.length; i += 1000) {
+        const chunk = venues.slice(i, i + 1000);
         await this.db.query(
           `insert into osm_venues (osm_id, region_id, name, kind, point, address, website,
              opening_hours, wheelchair, service_times, seen_at)
-           values ($1, $2, $3, $4, st_point($5, $6)::geography, $7, $8, $9, $10, $11, now())
+           select t.osm_id, $1, t.name, t.kind, st_point(t.lng, t.lat)::geography, t.address,
+             t.website, t.opening_hours, t.wheelchair, t.service_times, now()
+           from unnest($2::text[], $3::text[], $4::text[], $5::float8[], $6::float8[], $7::text[],
+             $8::text[], $9::text[], $10::text[], $11::text[])
+             as t (osm_id, name, kind, lng, lat, address, website, opening_hours, wheelchair,
+               service_times)
            on conflict (osm_id) do update set region_id = excluded.region_id, name = excluded.name,
              kind = excluded.kind, point = excluded.point, address = excluded.address,
              website = excluded.website, opening_hours = excluded.opening_hours,
@@ -38,19 +47,20 @@ export class VenueStore {
              website_checked_at = case when osm_venues.website is distinct from excluded.website
                then null else osm_venues.website_checked_at end`,
           [
-            v.osmId,
             regionId,
-            v.name,
-            v.kind,
-            v.point.lng,
-            v.point.lat,
-            v.address,
-            v.website,
-            v.openingHours,
-            v.wheelchair,
-            v.serviceTimes,
+            chunk.map((v) => v.osmId),
+            chunk.map((v) => v.name),
+            chunk.map((v) => v.kind),
+            chunk.map((v) => v.point.lng),
+            chunk.map((v) => v.point.lat),
+            chunk.map((v) => v.address),
+            chunk.map((v) => v.website),
+            chunk.map((v) => v.openingHours),
+            chunk.map((v) => v.wheelchair),
+            chunk.map((v) => v.serviceTimes),
           ],
         );
+      }
       await this.db.query('commit');
     } catch (err) {
       await this.db.query('rollback');
@@ -160,8 +170,13 @@ export class VenueStore {
     let moved = 0;
     await this.db.query('begin');
     try {
+      if (links.length)
+        await this.db.query(
+          `update venues v set osm_id = t.osm_id
+           from unnest($1::text[], $2::text[]) as t (id, osm_id) where v.id = t.id`,
+          [links.map((l) => l.venueId), links.map((l) => l.osmId)],
+        );
       for (const l of links) {
-        await this.db.query('update venues set osm_id = $2 where id = $1', [l.venueId, l.osmId]);
         if (!l.moveTo) continue;
         const { rowCount } = await this.db.query(
           `with moved as (
