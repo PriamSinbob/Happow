@@ -139,6 +139,21 @@ export const pl: Record<MessageKey, string> = {
   'addPlace.done': 'Dzięki! Miejsce jest już na mapie.',
   'addPlace.doneClosed': 'Dzięki! Miejsce pokaże się na mapie, gdy będzie otwarte.',
   'addPlace.show': 'Pokaż na mapie',
+  'addPlace.photo': 'Zdjęcie drzwi',
+  'addPlace.photo.again': 'Inne zdjęcie',
+  'addPlace.photo.reading': 'Czytam zdjęcie…',
+  'addPlace.photo.lead':
+    'Zrób zdjęcie drzwi lub szyldu: odczytamy z niego nazwę, godziny otwarcia i adres. Może być dowolne zdjęcie, także z galerii.',
+  'addPlace.photo.notFound':
+    'Nie znaleźliśmy miejsca na tym zdjęciu. Spróbuj takiego z szyldem lub godzinami otwarcia.',
+  'addPlace.photo.alt': 'Zdjęcie, z którego wypełniono formularz',
+  'addPlace.fromPhoto': 'ze zdjęcia',
+  'addPlace.fromPhone': 'z Twojej lokalizacji',
+  'addPlace.dropPin': 'Dotknij mapy, by postawić pinezkę przy drzwiach.',
+  'addPlace.listed': '{name} jest już na mapie. Sprawdź godziny otwarcia i je zaktualizuj.',
+  'addPlace.another': 'To inne miejsce',
+  'addPlace.update': 'Zaktualizuj godziny',
+  'addPlace.doneUpdated': 'Dzięki! Godziny są zaktualizowane.',
   'hours.days': 'Dni tygodnia',
   'hours.from': 'Otwarte od',
   'hours.to': 'Otwarte do',
@@ -987,4 +1002,6 @@ export const pl: Record<MessageKey, string> = {
   'private.handOverDo': 'Przekaż',
   'private.handedOver': 'Organizuje teraz: {name}.',
   'error.activation_required': 'To wymaga aktywnego konta. Najpierw wpisz kod z e-maila.',
+  'error.photo_required':
+    'Przepustka ze zdjęcia wygasła lub została użyta. Zrób zdjęcie jeszcze raz.',
 };

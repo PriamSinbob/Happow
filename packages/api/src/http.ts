@@ -80,3 +80,48 @@ export async function cached(
     return new Response(null, { status: 304, headers });
   return new Response(body, { status: 200, headers });
 }
+
+async function hmac(salt: string, text: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(salt),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(text));
+  return [...new Uint8Array(sig)]
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, 32);
+}
+
+/**
+ * A short-lived pass the server hands out and checks later without storing it: "<expires>.<id>.<sig>",
+ * signed with the salt for one purpose and one holder (a device hash or an account id).
+ */
+export async function issuePass(
+  salt: string,
+  purpose: string,
+  holder: string,
+  expiresAt: Date,
+): Promise<string> {
+  const exp = Math.floor(expiresAt.getTime() / 1000);
+  const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+  return `${exp}.${id}.${await hmac(salt, `${purpose}:${holder}:${exp}:${id}`)}`;
+}
+
+/** The pass's id when it is genuine, for this purpose and holder, and not expired; else null. */
+export async function checkPass(
+  salt: string,
+  purpose: string,
+  holder: string,
+  pass: string,
+  now: Date,
+): Promise<string | null> {
+  const m = /^(\d{1,12})\.([0-9a-f]{16})\.([0-9a-f]{32})$/.exec(pass);
+  if (!m) return null;
+  const [, exp, id, sig] = m;
+  if (Number(exp) * 1000 <= now.getTime()) return null;
+  return (await hmac(salt, `${purpose}:${holder}:${exp}:${id}`)) === sig ? id! : null;
+}

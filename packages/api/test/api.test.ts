@@ -911,6 +911,7 @@ describe('adding and correcting places', () => {
       p_closed: null,
       p_private: null,
       p_private_until: null,
+      p_device: null,
     });
     const until = new Date(Date.parse(NOW) + 3 * 3_600_000).toISOString();
     const party = run('places/change', { id: 'node/1', privateUntil: until });

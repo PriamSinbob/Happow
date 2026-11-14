@@ -1,8 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod/v4';
+import { formatOpeningHours, parseOpeningHours, type OpeningWeek } from '@happow/core';
 import { boundFetch } from './fetch.js';
-import { validAge, type ExtractedEvent } from './types.js';
+import { validAge, type ExtractedEvent, type ExtractedPlace } from './types.js';
 
 export interface ExtractInput {
   url: string;
@@ -24,6 +25,15 @@ export interface ImageInput {
   categories: { id: string; label: string }[];
 }
 
+/** A photo of a place's door, sign or window, already shrunk on the device. */
+export interface PlaceImageInput {
+  /** Base64, no data: prefix. */
+  data: string;
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp';
+  /** The kinds a place can be (`places.kinds`): tag and label. */
+  kinds: { id: string; label: string }[];
+}
+
 /** Turns page text into events when a page has no structured data. Swappable behind config. */
 export interface Extractor {
   /** Identifies provider + model, part of the extraction cache key. */
@@ -31,6 +41,8 @@ export interface Extractor {
   extract(input: ExtractInput): Promise<ExtractedEvent[]>;
   /** Reads a poster photo; absent when the provider cannot read images. */
   extractImage?(input: ImageInput): Promise<ExtractedEvent[]>;
+  /** Reads a place from a photo of its door; null when the photo shows no place. */
+  extractPlace?(input: PlaceImageInput): Promise<ExtractedPlace | null>;
 }
 
 export class ExtractionRefusedError extends Error {}
@@ -56,6 +68,20 @@ entry is "fixed" when the event has a set start that people should be there for 
 performers lists who performs: artists, bands, DJs, actors named as the cast, speakers, or the teams in a match, each name exactly as printed. Leave out organisers, venues, sponsors, hosts of a Meetup group and the event's own title unless it is a performer's name. Use an empty list when the page names nobody.
 
 confidence is how sure you are about the title, date, start time and place together: about 0.9 when all are stated plainly, 0.6 when one had to be inferred, 0.3 or lower when the page is ambiguous.`;
+
+const PLACE_SYSTEM = `You read one photo of a place's entrance, sign, window or opening-hours plate (a restaurant, café, pub, club, cinema, gallery, museum, market), for a map that shows places while they are open.
+
+Report only what is printed or plainly visible; use null for anything not shown, and never guess opening hours. is_place is false when the photo shows no such place (a person, a room, a poster for an event, a landscape).
+
+name: the place's own name as written on its sign, without words like "zaprasza" or slogans. kind: one id from the given list that fits what the place is, or null when you cannot tell.
+
+hours: one entry per line of the hours plate. days use Mo, Tu, We, Th, Fr, Sa, Su; Polish plates write them as "pn", "wt", "śr", "czw", "pt", "sob", "nd" (or "pon.–pt.", "sob.–niedz.", "codziennie" for every day). Times are HH:MM, 24 h; "8–20" is 08:00 to 20:00, "do ostatniego klienta" or "open end" is not a time (leave that line out). A day marked "nieczynne" or "closed" is left out. Close may be after midnight ("18–2" is 18:00 to 02:00).
+
+street and house_number: from the house-number plate or the sign (Polish plates: "ul. Ruska 12"). website: a printed web address, as written.
+
+Boxes: for each field you fill, the box around the text it came from, in coordinates from 0 to 1000 across the photo's width (x) and height (y), x0,y0 the top left. For the address, the house-number plate. Use null for a box you cannot place.
+
+confidence: about 0.9 when the name is printed plainly on the place's own sign, 0.5 when it had to be inferred, 0.2 or lower when unsure this is one place.`;
 
 const SYSTEM = `${PAGE_INTRO}\n\n${RULES}`;
 const POSTER_SYSTEM = `${POSTER_INTRO}\n\n${RULES}`;
@@ -91,6 +117,75 @@ function schema(categoryIds: string[]) {
     confidence: z.number().describe('0 to 1'),
   });
   return z.object({ events: z.array(event) });
+}
+
+const box = z
+  .object({ x0: z.number(), y0: z.number(), x1: z.number(), y1: z.number() })
+  .nullable()
+  .describe('0–1000 across the photo; null when unsure');
+
+function placeSchema(kindIds: string[]) {
+  return z.object({
+    is_place: z.boolean(),
+    name: z.string().nullable(),
+    name_box: box,
+    kind: z
+      .string()
+      .nullable()
+      .describe(`One of: ${kindIds.join(', ')}`),
+    kind_box: box,
+    hours: z.array(
+      z.object({
+        days: z.array(z.string()).describe('Mo, Tu, We, Th, Fr, Sa, Su'),
+        open: z.string().describe('HH:MM 24h'),
+        close: z.string().describe('HH:MM 24h; may be after midnight'),
+      }),
+    ),
+    hours_box: box,
+    street: z.string().nullable(),
+    house_number: z.string().nullable(),
+    address_box: box,
+    website: z.string().nullable(),
+    website_box: box,
+    confidence: z.number().describe('0 to 1'),
+  });
+}
+
+const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
+/** The printed lines as `opening_hours`, or null when no line gives an open day. */
+export function hoursFromLines(lines: { days: string[]; open: string; close: string }[]) {
+  const week: OpeningWeek = WEEKDAYS.map(() => []);
+  const minute = (t: string) => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(t.trim());
+    if (!m || Number(m[1]) > 24 || Number(m[2]) > 59) return null;
+    return Math.min(1440, Number(m[1]) * 60 + Number(m[2]));
+  };
+  for (const line of lines) {
+    const from = minute(line.open);
+    const to = minute(line.close);
+    if (from === null || to === null || from >= 1440 || from === to) continue;
+    const span: [number, number] = [from, to < from ? to + 1440 : to];
+    const days = new Set(
+      line.days.map((d) => WEEKDAYS.indexOf(d.slice(0, 2))).filter((d) => d >= 0),
+    );
+    for (const d of days) week[d]!.push(span);
+  }
+  for (const spans of week) spans.sort((a, b) => a[0] - b[0]);
+  if (!week.some((d) => d.length)) return null;
+  const text = formatOpeningHours(week);
+  return parseOpeningHours(text)?.some((d) => d.length) ? text : null;
+}
+
+/** A box from the reader as fractions of the photo, or nothing when it is not a box. */
+function toMark(b: { x0: number; y0: number; x1: number; y1: number } | null) {
+  if (!b) return undefined;
+  const c = (n: number) => Math.min(1, Math.max(0, n / 1000));
+  const x = c(Math.min(b.x0, b.x1));
+  const y = c(Math.min(b.y0, b.y1));
+  const w = c(Math.max(b.x0, b.x1)) - x;
+  const h = c(Math.max(b.y0, b.y1)) - y;
+  return w > 0.005 && h > 0.005 ? { x, y, w, h } : undefined;
 }
 
 const categoryList = (categories: { id: string; label: string }[]) =>
@@ -166,6 +261,53 @@ export class ClaudeExtractor implements Extractor {
     ]);
   }
 
+  /** A place from a photo of its door: the photo first, then the kinds it may be. Nothing is kept. */
+  async extractPlace(input: PlaceImageInput): Promise<ExtractedPlace | null> {
+    const ids = input.kinds.map((k) => k.id);
+    if (!ids.length) throw new Error('no place kinds configured');
+    const out = await this.ask(PLACE_SYSTEM, placeSchema(ids), [
+      { type: 'image', source: { type: 'base64', media_type: input.mediaType, data: input.data } },
+      [`Kinds (id: label): ${categoryList(input.kinds)}`, 'Read the place in this photo.'].join(
+        '\n',
+      ),
+    ]);
+    if (!out.is_place) return null;
+    const clean = (v: string | null, max: number) => {
+      const t = v?.replace(/\s+/g, ' ').trim();
+      return t ? t.slice(0, max) : null;
+    };
+    const kind = out.kind && ids.includes(out.kind) ? out.kind : null;
+    const openingHours = hoursFromLines(out.hours);
+    const street = clean(out.street, 160);
+    const houseNumber = clean(out.house_number, 20);
+    const website = clean(out.website, 300);
+    const name = clean(out.name, 140);
+    const boxes: ExtractedPlace['boxes'] = {};
+    const mark = (
+      key: keyof ExtractedPlace['boxes'],
+      has: unknown,
+      b: Parameters<typeof toMark>[0],
+    ) => {
+      const m = has ? toMark(b) : undefined;
+      if (m) boxes[key] = m;
+    };
+    mark('name', name, out.name_box);
+    mark('kind', kind, out.kind_box);
+    mark('hours', openingHours, out.hours_box);
+    mark('address', street || houseNumber, out.address_box);
+    mark('website', website, out.website_box);
+    return {
+      name,
+      kind,
+      openingHours,
+      street,
+      houseNumber,
+      website,
+      boxes,
+      confidence: Math.min(1, Math.max(0, out.confidence)),
+    };
+  }
+
   private async run(
     system: string,
     categories: { id: string }[],
@@ -174,31 +316,7 @@ export class ClaudeExtractor implements Extractor {
   ): Promise<ExtractedEvent[]> {
     const ids = categories.map((c) => c.id);
     if (!ids.length) throw new Error('no categories configured');
-    const message = await this.client.messages.parse({
-      model: this.opts.model,
-      max_tokens: this.opts.maxTokens,
-      system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
-      output_config: {
-        effort: this.opts.effort,
-        format: zodOutputFormat(schema(ids)),
-      },
-      messages: [
-        {
-          role: 'user',
-          // A page is one string, as before; a poster is the image, then the text.
-          content:
-            content.length === 1 && typeof content[0] === 'string'
-              ? content[0]
-              : content.map((c) => (typeof c === 'string' ? { type: 'text', text: c } : c)),
-        },
-      ],
-    });
-
-    if (message.stop_reason === 'refusal') throw new ExtractionRefusedError('extraction refused');
-    if (message.stop_reason === 'max_tokens')
-      throw new Error('extraction hit max_tokens; raise extraction.maxTokens or shorten input');
-    const out = message.parsed_output;
-    if (!out) throw new Error('extraction returned no structured output');
+    const out = await this.ask(system, schema(ids), content);
     return out.events.flatMap((e): ExtractedEvent[] => {
       const start = when(e.start_date, e.start_time);
       if (!start || !e.title.trim()) return [];
@@ -233,5 +351,39 @@ export class ClaudeExtractor implements Extractor {
         },
       ];
     });
+  }
+
+  /** One structured-output call: the system prompt cached, a page as one string, a photo first. */
+  private async ask<T extends z.ZodType>(
+    system: string,
+    format: T,
+    content: (string | Anthropic.ImageBlockParam)[],
+  ): Promise<z.infer<T>> {
+    const message = await this.client.messages.parse({
+      model: this.opts.model,
+      max_tokens: this.opts.maxTokens,
+      system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+      output_config: {
+        effort: this.opts.effort,
+        format: zodOutputFormat(format),
+      },
+      messages: [
+        {
+          role: 'user',
+          // A page is one string, as before; a photo is the image, then the text.
+          content:
+            content.length === 1 && typeof content[0] === 'string'
+              ? content[0]
+              : content.map((c) => (typeof c === 'string' ? { type: 'text', text: c } : c)),
+        },
+      ],
+    });
+
+    if (message.stop_reason === 'refusal') throw new ExtractionRefusedError('extraction refused');
+    if (message.stop_reason === 'max_tokens')
+      throw new Error('extraction hit max_tokens; raise extraction.maxTokens or shorten input');
+    const out = message.parsed_output;
+    if (!out) throw new Error('extraction returned no structured output');
+    return out as z.infer<T>;
   }
 }

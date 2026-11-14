@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ClaudeExtractor, ExtractionRefusedError, htmlToText } from '../src';
+import { ClaudeExtractor, ExtractionRefusedError, hoursFromLines, htmlToText } from '../src';
 import { fixture } from './helpers';
 
 const categories = [
@@ -204,5 +204,87 @@ describe('ClaudeExtractor', () => {
     expect(body.system[0].text).toMatch(/photo of a poster/);
     expect(body.system[0].text).not.toContain('2026-10-29');
     expect(body.system[0].cache_control).toEqual({ type: 'ephemeral' });
+  });
+});
+
+describe('a place from a photo of its door', () => {
+  const kinds = [
+    { id: 'amenity=cafe', label: 'Café' },
+    { id: 'amenity=pub', label: 'Pub' },
+  ];
+  const door = {
+    is_place: true,
+    name: ' Kawiarnia  Przykład ',
+    name_box: { x0: 300, y0: 40, x1: 700, y1: 120 },
+    kind: 'amenity=cafe',
+    kind_box: null,
+    hours: [
+      { days: ['Mo', 'Tu', 'We', 'Th', 'Fr'], open: '8:00', close: '20:00' },
+      { days: ['Sa'], open: '09:00', close: '22:00' },
+      { days: ['Su'], open: '18:00', close: '02:00' },
+    ],
+    hours_box: { x0: 760, y0: 300, x1: 600, y1: 500 },
+    street: 'ul. Przykładowa',
+    house_number: '12',
+    address_box: { x0: 250, y0: 360, x1: 250, y1: 420 },
+    website: null,
+    website_box: { x0: 0, y0: 0, x1: 100, y1: 100 },
+    confidence: 0.9,
+  };
+
+  it("reads the fields, the hours as opening_hours and each field's box as fractions", async () => {
+    const fetchMock = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) =>
+      reply(door),
+    );
+    const place = await extractor(fetchMock as typeof fetch).extractPlace({
+      data: 'AAAA',
+      mediaType: 'image/jpeg',
+      kinds,
+    });
+    expect(place).toEqual({
+      name: 'Kawiarnia Przykład',
+      kind: 'amenity=cafe',
+      openingHours: 'Mo-Fr 08:00-20:00; Sa 09:00-22:00; Su 18:00-02:00',
+      street: 'ul. Przykładowa',
+      houseNumber: '12',
+      website: null,
+      // A box with no width, and one for a field that was not read, are left out.
+      boxes: {
+        name: { x: 0.3, y: 0.04, w: expect.closeTo(0.4), h: expect.closeTo(0.08) },
+        hours: { x: 0.6, y: 0.3, w: expect.closeTo(0.16), h: expect.closeTo(0.2) },
+      },
+      confidence: 0.9,
+    });
+    const body = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string);
+    expect(body.messages[0].content[0].type).toBe('image');
+    expect(body.messages[0].content[1].text).toContain('amenity=cafe: Café');
+  });
+
+  it('gives nothing for a photo with no place, and drops an unknown kind', async () => {
+    const none = vi.fn(async () => reply({ ...door, is_place: false }));
+    expect(
+      await extractor(none as typeof fetch).extractPlace({
+        data: 'A',
+        mediaType: 'image/jpeg',
+        kinds,
+      }),
+    ).toBeNull();
+    const odd = vi.fn(async () => reply({ ...door, kind: 'shop=bakery' }));
+    const place = await extractor(odd as typeof fetch).extractPlace({
+      data: 'A',
+      mediaType: 'image/jpeg',
+      kinds,
+    });
+    expect(place?.kind).toBeNull();
+  });
+
+  it('keeps hours only when a line gives an open day it can read', () => {
+    expect(hoursFromLines([{ days: ['Mo'], open: 'rano', close: '20:00' }])).toBeNull();
+    expect(hoursFromLines([{ days: ['nd'], open: '10:00', close: '18:00' }])).toBeNull();
+    expect(
+      hoursFromLines([
+        { days: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'], open: '00:00', close: '24:00' },
+      ]),
+    ).toBe('24/7');
   });
 });

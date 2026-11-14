@@ -52,6 +52,8 @@ export const API_ERROR_CODES = [
   'client_outdated',
   /** The account waits for its code: only invitations and its own profile work until then. */
   'activation_required',
+  /** Without an account a place is added only from a photo: its pass is missing, expired or used. */
+  'photo_required',
   'server_error',
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
@@ -91,6 +93,40 @@ export interface Prefill {
   entry: EntryType | null;
   /** Names as printed, one per line in the form. */
   performers: string[];
+}
+
+/** The fields of the add-place form that a photo can fill, in the order their marks are numbered. */
+export const PLACE_PHOTO_FIELDS = ['name', 'kind', 'hours', 'address', 'website'] as const;
+export type PlacePhotoField = (typeof PLACE_PHOTO_FIELDS)[number];
+
+/** Where in the photo a field was read: fractions (0–1) of its width and height. */
+export interface PhotoMark {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** The add-place form filled from one photo of a door (POST /api/places/photo). */
+export interface PlacePrefill {
+  name: string | null;
+  /** One of `places.kinds[].tag`. */
+  kind: string | null;
+  /** `opening_hours` that `parseOpeningHours` reads, with at least one open day. */
+  openingHours: string | null;
+  /** Street and house number as printed; the number alone when only it is visible. */
+  address: string | null;
+  website: string | null;
+  /** The part of the photo each filled field came from, where the reader could tell. */
+  marks: Partial<Record<PlacePhotoField, PhotoMark>>;
+}
+
+/** POST /api/places/photo → the prefill, and the pass that lets the device add without an account. */
+export interface PlacePhotoResult {
+  /** Null: the photo shows no place (no pass then). */
+  place: PlacePrefill | null;
+  /** Send as `photoPass` with POST /api/places or /api/places/change; null with no place. */
+  pass: string | null;
 }
 
 /** A search hit (GET /api/search) or a followed performer's date (POST /api/follows/match). */
