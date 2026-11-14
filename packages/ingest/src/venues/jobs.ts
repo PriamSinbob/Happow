@@ -1,5 +1,6 @@
 import {
   parseOpeningHours,
+  placeKindTag,
   rateLimitIntervalMs,
   type HappowConfig,
   type Region,
@@ -65,8 +66,8 @@ export const osmVenuesJob: VenueJob = async (ctx) => {
 export const osmPlacesJob: VenueJob = async (ctx) => {
   const { osm, places: cfg } = ctx.config.app;
   const tags: Record<string, string[]> = {};
-  for (const k of cfg.kinds) {
-    const [key, value] = k.tag.split('=') as [string, string];
+  for (const tag of cfg.kinds.flatMap((k) => [k.tag, ...k.alsoTags])) {
+    const [key, value] = tag.split('=') as [string, string];
     (tags[key] ??= []).push(value);
   }
   const elements = await overpass(venueQuery(tags, ctx.region.bbox), {
@@ -74,7 +75,11 @@ export const osmPlacesJob: VenueJob = async (ctx) => {
     userAgent: osm.userAgent,
     fetch: ctx.fetch,
   });
-  const places = parseOsmVenues(elements, tags);
+  // A bar is stored as the pub it is read as.
+  const places = parseOsmVenues(elements, tags).map((p) => ({
+    ...p,
+    kind: placeKindTag(cfg.kinds, p.kind) ?? p.kind,
+  }));
   const stats: JobStats = {
     places: places.length,
     withHours: places.filter((p) => parseOpeningHours(p.openingHours)).length,

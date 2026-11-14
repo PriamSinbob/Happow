@@ -115,9 +115,15 @@ export function loadConfig(): HappowConfig {
       if (label !== label.toLowerCase())
         errors.push(`source "${s.id}" categoryMap key "${label}" must be lower-case`);
   }
-  for (const k of app.places.kinds)
+  const placeTags = new Set<string>();
+  for (const k of app.places.kinds) {
     if (!categoryIds.has(k.category))
       errors.push(`place kind "${k.tag}" follows unknown category "${k.category}"`);
+    for (const tag of [k.tag, ...k.alsoTags]) {
+      if (placeTags.has(tag)) errors.push(`place tag "${tag}" is listed twice`);
+      placeTags.add(tag);
+    }
+  }
   for (const [type, c] of Object.entries(app.extraction.schemaTypeMap))
     if (!categoryIds.has(c))
       errors.push(`extraction.schemaTypeMap maps "${type}" to unknown category "${c}"`);
@@ -159,4 +165,12 @@ export function getRegion(config: HappowConfig, id?: string): Region {
     config.regions.find((r) => r.id === wanted) ??
     config.regions.find((r) => r.id === config.app.defaultRegion)!
   );
+}
+
+/** The place kind an OSM tag is read as (its own tag or one of its `alsoTags`); null if none. */
+export function placeKindTag(
+  kinds: readonly { tag: string; alsoTags: readonly string[] }[],
+  tag: string,
+): string | null {
+  return kinds.find((k) => k.tag === tag || k.alsoTags.includes(tag))?.tag ?? null;
 }

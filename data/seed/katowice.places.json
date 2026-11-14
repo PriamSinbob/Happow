@@ -24,7 +24,7 @@
     {
       "id": "seed/katowice-3",
       "name": "Bar Mariacka",
-      "kind": "amenity=bar",
+      "kind": "amenity=pub",
       "lat": 50.26767,
       "lng": 19.02911,
       "address": "ul. Mariacka, Katowice",

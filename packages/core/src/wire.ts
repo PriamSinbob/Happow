@@ -121,7 +121,7 @@ export interface PhotoMark {
 /** The add-place form filled from one photo of a door (POST /api/places/photo). */
 export interface PlacePrefill {
   name: string | null;
-  /** One of `places.kinds[].tag`. */
+  /** One of `places.kinds[].tag` (never one of its `alsoTags`). */
   kind: string | null;
   /** `opening_hours` that `parseOpeningHours` reads, with at least one open day. */
   openingHours: string | null;

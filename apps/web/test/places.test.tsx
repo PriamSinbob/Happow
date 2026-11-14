@@ -27,8 +27,8 @@ const rows = [
   row('cafe', 'amenity=cafe', 'Mo-Fr 08:00-18:00', 51.112),
   row('gallery', 'tourism=gallery', 'We-Su 12:00-18:00', 51.113),
   row('always', 'amenity=fast_food', '24/7', 51.114),
-  row('nohours', 'amenity=bar', null),
-  row('seasonal', 'amenity=biergarten', 'Apr-Oct: Mo-Su 12:00-22:00'),
+  row('nohours', 'amenity=pub', null),
+  row('seasonal', 'amenity=pub', 'Apr-Oct: Mo-Su 12:00-22:00'),
   row('bank', 'amenity=bank', 'Mo-Fr 09:00-17:00'),
 ];
 const ids = (time: string, filters = {}, events: { lat: number; lng: number }[] = []) =>

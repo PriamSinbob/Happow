@@ -24,7 +24,7 @@
     {
       "id": "seed/poznan-3",
       "name": "Bar na Jeżycach",
-      "kind": "amenity=bar",
+      "kind": "amenity=pub",
       "lat": 52.41042,
       "lng": 16.9122,
       "address": "ul. Dąbrowskiego, Poznań",
