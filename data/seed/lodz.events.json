@@ -1,0 +1,154 @@
+{
+  "$comment": "Hand-entered demo events. Real venues (points from OpenStreetMap), fictional programmes. Times are offsets in minutes from the moment the seed is applied.",
+  "region": "lodz",
+  "venues": [
+    {
+      "id": "lodz-manufaktura",
+      "name": "Manufaktura",
+      "address": "ul. Drewnowska 58, 91-002 Łódź",
+      "lat": 51.77974,
+      "lng": 19.44262,
+      "website": null
+    },
+    {
+      "id": "lodz-twl",
+      "name": "Teatr Wielki w Łodzi",
+      "address": "plac Dąbrowskiego, Łódź",
+      "lat": 51.77335,
+      "lng": 19.46966,
+      "website": null
+    },
+    {
+      "id": "lodz-ec1",
+      "name": "EC1 Łódź – Miasto Kultury",
+      "address": "ul. Targowa 1/3, Łódź",
+      "lat": 51.76748,
+      "lng": 19.4686,
+      "website": null
+    },
+    {
+      "id": "lodz-off",
+      "name": "OFF Piotrkowska",
+      "address": "ul. Piotrkowska 138/140, Łódź",
+      "lat": 51.76114,
+      "lng": 19.45979,
+      "website": null
+    },
+    {
+      "id": "lodz-zrodliska",
+      "name": "Park Źródliska",
+      "address": "al. Piłsudskiego, Łódź",
+      "lat": 51.76119,
+      "lng": 19.4792,
+      "website": null
+    },
+    {
+      "id": "lodz-ms2",
+      "name": "Muzeum Sztuki – ms²",
+      "address": "ul. Ogrodowa 19, Łódź",
+      "lat": 51.77882,
+      "lng": 19.44651,
+      "website": null
+    }
+  ],
+  "events": [
+    {
+      "externalId": "lodz-01",
+      "title": "Jarmark lokalnych twórców",
+      "description": "Stoiska z ceramiką, grafiką i rękodziełem.",
+      "categoryIds": ["market"],
+      "venueId": "lodz-manufaktura",
+      "startOffsetMin": -90,
+      "durationMin": 300,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "lodz-02",
+      "title": "Wieczór muzyki kameralnej",
+      "description": "Kwartet smyczkowy: Haydn i Szymanowski.",
+      "categoryIds": ["music"],
+      "venueId": "lodz-twl",
+      "startOffsetMin": 150,
+      "durationMin": 120,
+      "isFree": false,
+      "priceMin": 40,
+      "priceMax": 90,
+      "currency": "PLN"
+    },
+    {
+      "externalId": "lodz-03",
+      "title": "Rodzinne warsztaty odkrywców",
+      "description": "Doświadczenia dla dzieci i rodziców, wejście co pół godziny.",
+      "categoryIds": ["kids", "exhibition"],
+      "venueId": "lodz-ec1",
+      "startOffsetMin": -60,
+      "durationMin": null,
+      "isFree": false,
+      "priceMin": 20,
+      "priceMax": 20,
+      "currency": "PLN",
+      "family": true,
+      "entry": "open"
+    },
+    {
+      "externalId": "lodz-04",
+      "title": "Wieczór smaków regionu",
+      "description": "Degustacje kuchni regionalnej i muzyka na żywo.",
+      "categoryIds": ["food", "happening"],
+      "venueId": "lodz-off",
+      "startOffsetMin": 30,
+      "durationMin": 240,
+      "isFree": true
+    },
+    {
+      "externalId": "lodz-05",
+      "title": "Poranny bieg w parku",
+      "description": "Rekreacyjne 5 km dla każdego, bez pomiaru czasu.",
+      "categoryIds": ["sport"],
+      "venueId": "lodz-zrodliska",
+      "startOffsetMin": 60,
+      "durationMin": 60,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "lodz-06",
+      "title": "Pokaz filmowy z rozmową",
+      "description": "Film dokumentalny i spotkanie z twórcami po seansie.",
+      "categoryIds": ["cinema", "talk"],
+      "venueId": "lodz-ms2",
+      "startOffsetMin": 45,
+      "durationMin": 150,
+      "isFree": false,
+      "priceMin": 22,
+      "priceMax": 22,
+      "currency": "PLN",
+      "ageMin": 12
+    },
+    {
+      "externalId": "lodz-07",
+      "title": "Koncert pod gwiazdami",
+      "description": "Plenerowy koncert miejskiej orkiestry dętej.",
+      "categoryIds": ["happening", "music"],
+      "venueId": "lodz-manufaktura",
+      "startOffsetMin": 300,
+      "durationMin": 45,
+      "isFree": true
+    },
+    {
+      "externalId": "lodz-08",
+      "title": "Festiwal zimowy — otwarcie",
+      "description": "Pierwszy dzień miejskiego festiwalu.",
+      "categoryIds": ["festival"],
+      "venueId": "lodz-twl",
+      "startOffsetMin": 30240,
+      "durationMin": 300,
+      "isFree": true
+    }
+  ]
+}

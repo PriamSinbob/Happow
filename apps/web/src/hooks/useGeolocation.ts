@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { distanceM, isInBbox, type LatLng, type Region } from '@happow/core';
-import { config } from '../config';
+import { config, moveToRegionAt } from '../config';
 
 export type LocationStatus = 'locating' | 'ok' | 'denied' | 'unavailable' | 'outside';
 
@@ -48,8 +48,11 @@ export function useGeolocation(region: Region): LocationState {
             return;
           }
           last.current = { pos: here, accuracy, at: Date.now() };
+          const inside = isInBbox(here, region.bbox);
+          // In another city we cover: switch to its region (the page reloads once).
+          if (!inside && moveToRegionAt(here)) return;
           setFix({ position: here, accuracy });
-          setStatus(isInBbox(here, region.bbox) ? 'ok' : 'outside');
+          setStatus(inside ? 'ok' : 'outside');
         },
         (err) => {
           if (err.code === err.PERMISSION_DENIED) setStatus('denied');

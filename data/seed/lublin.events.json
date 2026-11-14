@@ -1,0 +1,154 @@
+{
+  "$comment": "Hand-entered demo events. Real venues (points from OpenStreetMap), fictional programmes. Times are offsets in minutes from the moment the seed is applied.",
+  "region": "lublin",
+  "venues": [
+    {
+      "id": "lublin-csk",
+      "name": "Centrum Spotkania Kultur",
+      "address": "plac Teatralny 1, Lublin",
+      "lat": 51.24672,
+      "lng": 22.54844,
+      "website": null
+    },
+    {
+      "id": "lublin-litewski",
+      "name": "Plac Litewski",
+      "address": "plac Litewski, Lublin",
+      "lat": 51.2484,
+      "lng": 22.56098,
+      "website": null
+    },
+    {
+      "id": "lublin-stary",
+      "name": "Teatr Stary",
+      "address": "ul. Jezuicka 18, Lublin",
+      "lat": 51.24739,
+      "lng": 22.5692,
+      "website": null
+    },
+    {
+      "id": "lublin-filharmonia",
+      "name": "Filharmonia Lubelska",
+      "address": "ul. Marii Curie-Skłodowskiej 5, Lublin",
+      "lat": 51.2469,
+      "lng": 22.5546,
+      "website": null
+    },
+    {
+      "id": "lublin-zamek",
+      "name": "Zamek Lubelski",
+      "address": "ul. Zamkowa 9, Lublin",
+      "lat": 51.25048,
+      "lng": 22.57173,
+      "website": null
+    },
+    {
+      "id": "lublin-bajka",
+      "name": "Kino Bajka",
+      "address": "ul. Radziszewskiego 8, Lublin",
+      "lat": 51.24646,
+      "lng": 22.54388,
+      "website": null
+    }
+  ],
+  "events": [
+    {
+      "externalId": "lublin-01",
+      "title": "Jarmark lokalnych twórców",
+      "description": "Stoiska z ceramiką, grafiką i rękodziełem.",
+      "categoryIds": ["market"],
+      "venueId": "lublin-csk",
+      "startOffsetMin": -90,
+      "durationMin": 300,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "lublin-02",
+      "title": "Wieczór muzyki kameralnej",
+      "description": "Kwartet smyczkowy: Haydn i Szymanowski.",
+      "categoryIds": ["music"],
+      "venueId": "lublin-litewski",
+      "startOffsetMin": 150,
+      "durationMin": 120,
+      "isFree": false,
+      "priceMin": 40,
+      "priceMax": 90,
+      "currency": "PLN"
+    },
+    {
+      "externalId": "lublin-03",
+      "title": "Rodzinne warsztaty odkrywców",
+      "description": "Doświadczenia dla dzieci i rodziców, wejście co pół godziny.",
+      "categoryIds": ["kids", "exhibition"],
+      "venueId": "lublin-stary",
+      "startOffsetMin": -60,
+      "durationMin": null,
+      "isFree": false,
+      "priceMin": 20,
+      "priceMax": 20,
+      "currency": "PLN",
+      "family": true,
+      "entry": "open"
+    },
+    {
+      "externalId": "lublin-04",
+      "title": "Wieczór smaków regionu",
+      "description": "Degustacje kuchni regionalnej i muzyka na żywo.",
+      "categoryIds": ["food", "happening"],
+      "venueId": "lublin-filharmonia",
+      "startOffsetMin": 30,
+      "durationMin": 240,
+      "isFree": true
+    },
+    {
+      "externalId": "lublin-05",
+      "title": "Poranny bieg w parku",
+      "description": "Rekreacyjne 5 km dla każdego, bez pomiaru czasu.",
+      "categoryIds": ["sport"],
+      "venueId": "lublin-zamek",
+      "startOffsetMin": 60,
+      "durationMin": 60,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "lublin-06",
+      "title": "Pokaz filmowy z rozmową",
+      "description": "Film dokumentalny i spotkanie z twórcami po seansie.",
+      "categoryIds": ["cinema", "talk"],
+      "venueId": "lublin-bajka",
+      "startOffsetMin": 45,
+      "durationMin": 150,
+      "isFree": false,
+      "priceMin": 22,
+      "priceMax": 22,
+      "currency": "PLN",
+      "ageMin": 12
+    },
+    {
+      "externalId": "lublin-07",
+      "title": "Koncert pod gwiazdami",
+      "description": "Plenerowy koncert miejskiej orkiestry dętej.",
+      "categoryIds": ["happening", "music"],
+      "venueId": "lublin-csk",
+      "startOffsetMin": 300,
+      "durationMin": 45,
+      "isFree": true
+    },
+    {
+      "externalId": "lublin-08",
+      "title": "Festiwal zimowy — otwarcie",
+      "description": "Pierwszy dzień miejskiego festiwalu.",
+      "categoryIds": ["festival"],
+      "venueId": "lublin-litewski",
+      "startOffsetMin": 30240,
+      "durationMin": 300,
+      "isFree": true
+    }
+  ]
+}

@@ -12,7 +12,9 @@ import { EventStore, runIngest } from '@happow/ingest';
 import { normalize } from '@happow/ingest/normalize';
 import { url } from './dbtest';
 
-const config = loadConfig();
+const full = loadConfig();
+/** The default region only: the fixtures are recordings for one city. */
+const config = { ...full, regions: [getRegion(full)] };
 const region = getRegion(config);
 const page = (name: string) =>
   readFileSync(new URL(`../packages/extract/test/fixtures/${name}`, import.meta.url), 'utf8');

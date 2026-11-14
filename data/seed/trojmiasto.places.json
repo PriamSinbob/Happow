@@ -1,0 +1,35 @@
+{
+  "region": "trojmiasto",
+  "places": [
+    {
+      "id": "seed/trojmiasto-1",
+      "name": "Smażalnia przy Molo",
+      "kind": "amenity=restaurant",
+      "lat": 54.34916,
+      "lng": 18.65424,
+      "address": "ul. Bohaterów Monte Cassino, Sopot",
+      "website": null,
+      "opening_hours": "Mo-Su 11:00-21:00"
+    },
+    {
+      "id": "seed/trojmiasto-2",
+      "name": "Kawa nad Motławą",
+      "kind": "amenity=cafe",
+      "lat": 54.36375,
+      "lng": 18.6464,
+      "address": "ul. Długie Pobrzeże, Gdańsk",
+      "website": null,
+      "opening_hours": "Mo-Su 08:00-21:00"
+    },
+    {
+      "id": "seed/trojmiasto-3",
+      "name": "Pub Portowy",
+      "kind": "amenity=pub",
+      "lat": 54.52016,
+      "lng": 18.54106,
+      "address": "ul. Świętojańska, Gdynia",
+      "website": null,
+      "opening_hours": "Mo-Su 16:00-01:00"
+    }
+  ]
+}

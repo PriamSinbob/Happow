@@ -840,6 +840,11 @@ export const sourceSchema = z.object({
   maxCacheAgeHours: z.number().positive().optional(),
   /** Adapter-specific settings (endpoints, page sizes). */
   options: z.record(z.unknown()).default({}),
+  /**
+   * Per-region settings laid over `options` for that region's runs (a ticketing site's city
+   * listing, say), keyed by region id.
+   */
+  regionOptions: z.record(z.record(z.unknown())).default({}),
   /** Source classification label (lower-case) → category id. Most specific label wins. */
   categoryMap: z.record(z.string()).default({}),
   /** Categories used when no label maps. */

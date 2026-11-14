@@ -6,11 +6,13 @@
 import { readFileSync } from 'node:fs';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { loadConfig } from '@happow/core';
+import { getRegion, loadConfig } from '@happow/core';
 import { EventStore, runIngest } from '@happow/ingest';
 import { url } from './dbtest';
 
-const config = loadConfig();
+const full = loadConfig();
+/** The default region only: the fixtures are recordings for one city. */
+const config = { ...full, regions: [getRegion(full)] };
 const fixture = (p: string) =>
   readFileSync(new URL(`../packages/ingest/test/fixtures/${p}`, import.meta.url), 'utf8');
 

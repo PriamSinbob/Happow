@@ -1,0 +1,35 @@
+{
+  "region": "lublin",
+  "places": [
+    {
+      "id": "seed/lublin-1",
+      "name": "Cebularz przy Bramie",
+      "kind": "amenity=bakery",
+      "lat": 51.24792,
+      "lng": 22.54694,
+      "address": "ul. Grodzka, Lublin",
+      "website": null,
+      "opening_hours": "Mo-Sa 07:00-18:00"
+    },
+    {
+      "id": "seed/lublin-2",
+      "name": "Kawiarnia na Starym Mieście",
+      "kind": "amenity=cafe",
+      "lat": 51.2508,
+      "lng": 22.55798,
+      "address": "Rynek, Lublin",
+      "website": null,
+      "opening_hours": "Mo-Su 09:00-21:00"
+    },
+    {
+      "id": "seed/lublin-3",
+      "name": "Bar Krakowskie",
+      "kind": "amenity=bar",
+      "lat": 51.25099,
+      "lng": 22.5647,
+      "address": "Krakowskie Przedmieście, Lublin",
+      "website": null,
+      "opening_hours": "Tu-Sa 17:00-02:00"
+    }
+  ]
+}

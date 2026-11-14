@@ -4,16 +4,16 @@ Happow is an Android app first and an iOS app next, each built in its own reposi
 
 ## What the native project gets from here
 
-|                                                        | Where                                                                               |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| The API, its rules and every endpoint                  | [API.md](API.md)                                                                    |
-| Response shapes and error codes                        | `packages/core/src/wire.ts`, `eventRow.ts`                                          |
-| Regions, categories, plans, theme, map style, settings | `GET /api/config` at start (cache it; never bundle it)                              |
-| Behaviour and look                                     | [DESIGN.md](DESIGN.md), and the web app itself (`pnpm dev` works without a backend) |
-| Logic that runs on the phone                           | `packages/core/src` (see below)                                                     |
-| Wording, Polish and English                            | `apps/web/src/i18n/pl.ts`, `en.ts`                                                  |
-| Glyphs                                                 | `apps/web/src/glyphs.ts` (SVG paths on a 24 grid)                                   |
-| Map style and night colours                            | `config/map.json` (`styleUrl`, `themeLayers`), `config/theme.json`                  |
+|                                                        | Where                                                                                             |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| The API, its rules and every endpoint                  | [API.md](API.md)                                                                                  |
+| Response shapes and error codes                        | `packages/core/src/wire.ts`, `eventRow.ts`                                                        |
+| Regions, categories, plans, theme, map style, settings | `GET /api/config` at start (cache it; never bundle it); the region from the position (`regionAt`) |
+| Behaviour and look                                     | [DESIGN.md](DESIGN.md), and the web app itself (`pnpm dev` works without a backend)               |
+| Logic that runs on the phone                           | `packages/core/src` (see below)                                                                   |
+| Wording, Polish and English                            | `apps/web/src/i18n/pl.ts`, `en.ts`                                                                |
+| Glyphs                                                 | `apps/web/src/glyphs.ts` (SVG paths on a 24 grid)                                                 |
+| Map style and night colours                            | `config/map.json` (`styleUrl`, `themeLayers`), `config/theme.json`                                |
 
 ## Shared core or two apps
 

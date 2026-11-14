@@ -52,6 +52,26 @@ describe('Ticketmaster adapter (contract, recorded fixtures)', () => {
     );
   });
 
+  it('splits an area with more than 1,000 events into quarters and keeps each event once', async () => {
+    const page = (totalElements: number, totalPages: number) =>
+      JSON.stringify({ page: { size: 200, totalElements, totalPages, number: 0 } });
+    const replay = replayFetch([
+      page(1500, 8),
+      fixture('ticketmaster/page-0.json'),
+      fixture('ticketmaster/page-1.json'),
+      page(0, 0),
+      page(0, 0),
+      fixture('ticketmaster/page-0.json'),
+      fixture('ticketmaster/page-1.json'),
+    ]);
+    const http = new HttpClient({ userAgent: config.app.ingest.userAgent, fetch: replay.fetch });
+    const raws = await adapters.ticketmaster!.fetch({ source: tm, region, window, http, env, now });
+    const radius = (i: number) => Number(new URL(replay.calls[i]!.url).searchParams.get('radius'));
+    expect(replay.calls).toHaveLength(7);
+    expect(radius(1)).toBeLessThan(radius(0));
+    expect(raws).toHaveLength(9);
+  });
+
   it('keeps every payload unchanged and parses each into the common shape', async () => {
     const { raws } = await fetchAll();
     expect(raws).toHaveLength(9);

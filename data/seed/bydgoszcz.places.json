@@ -1,0 +1,35 @@
+{
+  "region": "bydgoszcz",
+  "places": [
+    {
+      "id": "seed/bydgoszcz-1",
+      "name": "Kawiarnia nad Brdą",
+      "kind": "amenity=cafe",
+      "lat": 53.1256,
+      "lng": 17.99624,
+      "address": "ul. Mostowa, Bydgoszcz",
+      "website": null,
+      "opening_hours": "Mo-Su 08:00-21:00"
+    },
+    {
+      "id": "seed/bydgoszcz-2",
+      "name": "Bistro na Starówce",
+      "kind": "amenity=restaurant",
+      "lat": 53.13137,
+      "lng": 18.00783,
+      "address": "ul. Długa, Bydgoszcz",
+      "website": null,
+      "opening_hours": "Mo-Su 12:00-22:00"
+    },
+    {
+      "id": "seed/bydgoszcz-3",
+      "name": "Pub Spichrze",
+      "kind": "amenity=pub",
+      "lat": 53.12705,
+      "lng": 17.99182,
+      "address": "ul. Grodzka, Bydgoszcz",
+      "website": null,
+      "opening_hours": "Mo-Su 16:00-01:00"
+    }
+  ]
+}

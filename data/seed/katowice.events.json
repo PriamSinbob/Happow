@@ -1,0 +1,154 @@
+{
+  "$comment": "Hand-entered demo events. Real venues (points from OpenStreetMap), fictional programmes. Times are offsets in minutes from the moment the seed is applied.",
+  "region": "katowice",
+  "venues": [
+    {
+      "id": "katowice-nospr",
+      "name": "NOSPR",
+      "address": "plac Wojciecha Kilara 1, 40-202 Katowice",
+      "lat": 50.2639,
+      "lng": 19.02868,
+      "website": null
+    },
+    {
+      "id": "katowice-spodek",
+      "name": "Spodek",
+      "address": "al. Korfantego 35, Katowice",
+      "lat": 50.26611,
+      "lng": 19.02533,
+      "website": null
+    },
+    {
+      "id": "katowice-muzeum",
+      "name": "Muzeum Śląskie",
+      "address": "ul. Tadeusza Dobrowolskiego 1, Katowice",
+      "lat": 50.26407,
+      "lng": 19.03361,
+      "website": null
+    },
+    {
+      "id": "katowice-rynek",
+      "name": "Rynek w Katowicach",
+      "address": "Rynek, Katowice",
+      "lat": 50.25965,
+      "lng": 19.02188,
+      "website": null
+    },
+    {
+      "id": "katowice-slaski",
+      "name": "Park Śląski",
+      "address": "al. Różana, Chorzów",
+      "lat": 50.28662,
+      "lng": 18.98713,
+      "website": null
+    },
+    {
+      "id": "katowice-gliwice",
+      "name": "Rynek w Gliwicach",
+      "address": "Rynek, Gliwice",
+      "lat": 50.29407,
+      "lng": 18.66595,
+      "website": null
+    }
+  ],
+  "events": [
+    {
+      "externalId": "katowice-01",
+      "title": "Jarmark lokalnych twórców",
+      "description": "Stoiska z ceramiką, grafiką i rękodziełem.",
+      "categoryIds": ["market"],
+      "venueId": "katowice-nospr",
+      "startOffsetMin": -90,
+      "durationMin": 300,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "katowice-02",
+      "title": "Wieczór muzyki kameralnej",
+      "description": "Kwartet smyczkowy: Haydn i Szymanowski.",
+      "categoryIds": ["music"],
+      "venueId": "katowice-spodek",
+      "startOffsetMin": 150,
+      "durationMin": 120,
+      "isFree": false,
+      "priceMin": 40,
+      "priceMax": 90,
+      "currency": "PLN"
+    },
+    {
+      "externalId": "katowice-03",
+      "title": "Rodzinne warsztaty odkrywców",
+      "description": "Doświadczenia dla dzieci i rodziców, wejście co pół godziny.",
+      "categoryIds": ["kids", "exhibition"],
+      "venueId": "katowice-muzeum",
+      "startOffsetMin": -60,
+      "durationMin": null,
+      "isFree": false,
+      "priceMin": 20,
+      "priceMax": 20,
+      "currency": "PLN",
+      "family": true,
+      "entry": "open"
+    },
+    {
+      "externalId": "katowice-04",
+      "title": "Wieczór smaków regionu",
+      "description": "Degustacje kuchni regionalnej i muzyka na żywo.",
+      "categoryIds": ["food", "happening"],
+      "venueId": "katowice-rynek",
+      "startOffsetMin": 30,
+      "durationMin": 240,
+      "isFree": true
+    },
+    {
+      "externalId": "katowice-05",
+      "title": "Poranny bieg w parku",
+      "description": "Rekreacyjne 5 km dla każdego, bez pomiaru czasu.",
+      "categoryIds": ["sport"],
+      "venueId": "katowice-slaski",
+      "startOffsetMin": 60,
+      "durationMin": 60,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "katowice-06",
+      "title": "Pokaz filmowy z rozmową",
+      "description": "Film dokumentalny i spotkanie z twórcami po seansie.",
+      "categoryIds": ["cinema", "talk"],
+      "venueId": "katowice-gliwice",
+      "startOffsetMin": 45,
+      "durationMin": 150,
+      "isFree": false,
+      "priceMin": 22,
+      "priceMax": 22,
+      "currency": "PLN",
+      "ageMin": 12
+    },
+    {
+      "externalId": "katowice-07",
+      "title": "Koncert pod gwiazdami",
+      "description": "Plenerowy koncert miejskiej orkiestry dętej.",
+      "categoryIds": ["happening", "music"],
+      "venueId": "katowice-nospr",
+      "startOffsetMin": 300,
+      "durationMin": 45,
+      "isFree": true
+    },
+    {
+      "externalId": "katowice-08",
+      "title": "Festiwal zimowy — otwarcie",
+      "description": "Pierwszy dzień miejskiego festiwalu.",
+      "categoryIds": ["festival"],
+      "venueId": "katowice-spodek",
+      "startOffsetMin": 30240,
+      "durationMin": 300,
+      "isFree": true
+    }
+  ]
+}

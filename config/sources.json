@@ -15,7 +15,18 @@
       "id": "ticketmaster",
       "name": "Ticketmaster",
       "adapter": "ticketmaster",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "12h",
       "rateLimit": "5/s",
       "trustLevel": "api",
@@ -101,7 +112,18 @@
       "id": "ebilet",
       "name": "eBilet",
       "adapter": "crawler",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
@@ -110,13 +132,54 @@
       "republishDescription": false,
       "republishImages": false,
       "termsNotes": "Ticketing site; the city listing publishes schema.org Event JSON-LD (ItemList). Crawled page. Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; 1 request/s.",
-      "beforeLaunch": "eBilet's written consent or a partner feed: the owner emails them before launch. Small yield (15 of 404 events in 7 days on 26 Oct) but events found nowhere else.",
+      "beforeLaunch": "eBilet's written consent or a partner feed: the owner emails them before launch. Small yield (15 of 404 events in 7 days on 26 Oct) but events found nowhere else. On in every region until launch only, to see whether it is worth asking them.",
       "options": {
         "startUrls": ["https://www.ebilet.pl/miasto/wroclaw"],
         "followPattern": "^https://www\\.ebilet\\.pl/[a-z0-9-]+/[a-z0-9-]+/[a-z0-9-]+$",
         "maxFollow": 40,
         "llmFallback": false,
         "summaryListing": true
+      },
+      "regionOptions": {
+        "warszawa": {
+          "startUrls": ["https://www.ebilet.pl/miasto/warszawa"]
+        },
+        "krakow": {
+          "startUrls": ["https://www.ebilet.pl/miasto/krakow"]
+        },
+        "lodz": {
+          "startUrls": ["https://www.ebilet.pl/miasto/lodz"]
+        },
+        "poznan": {
+          "startUrls": ["https://www.ebilet.pl/miasto/poznan"]
+        },
+        "trojmiasto": {
+          "startUrls": [
+            "https://www.ebilet.pl/miasto/gdansk",
+            "https://www.ebilet.pl/miasto/gdynia",
+            "https://www.ebilet.pl/miasto/sopot"
+          ]
+        },
+        "szczecin": {
+          "startUrls": ["https://www.ebilet.pl/miasto/szczecin"]
+        },
+        "bydgoszcz": {
+          "startUrls": ["https://www.ebilet.pl/miasto/bydgoszcz"]
+        },
+        "lublin": {
+          "startUrls": ["https://www.ebilet.pl/miasto/lublin"]
+        },
+        "katowice": {
+          "startUrls": [
+            "https://www.ebilet.pl/miasto/katowice",
+            "https://www.ebilet.pl/miasto/gliwice",
+            "https://www.ebilet.pl/miasto/zabrze",
+            "https://www.ebilet.pl/miasto/bytom",
+            "https://www.ebilet.pl/miasto/chorzow",
+            "https://www.ebilet.pl/miasto/sosnowiec",
+            "https://www.ebilet.pl/miasto/tychy"
+          ]
+        }
       },
       "defaultCategories": ["other"],
       "categoryMap": {
@@ -198,7 +261,18 @@
       "id": "biletyna",
       "name": "Biletyna",
       "adapter": "crawler",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
@@ -212,6 +286,47 @@
         "followPattern": null,
         "maxFollow": 0,
         "llmFallback": false
+      },
+      "regionOptions": {
+        "warszawa": {
+          "startUrls": ["https://biletyna.pl/Warszawa"]
+        },
+        "krakow": {
+          "startUrls": ["https://biletyna.pl/Krakow"]
+        },
+        "lodz": {
+          "startUrls": ["https://biletyna.pl/Lodz"]
+        },
+        "poznan": {
+          "startUrls": ["https://biletyna.pl/Poznan"]
+        },
+        "trojmiasto": {
+          "startUrls": [
+            "https://biletyna.pl/Gdansk",
+            "https://biletyna.pl/Gdynia",
+            "https://biletyna.pl/Sopot"
+          ]
+        },
+        "szczecin": {
+          "startUrls": ["https://biletyna.pl/Szczecin"]
+        },
+        "bydgoszcz": {
+          "startUrls": ["https://biletyna.pl/Bydgoszcz"]
+        },
+        "lublin": {
+          "startUrls": ["https://biletyna.pl/Lublin"]
+        },
+        "katowice": {
+          "startUrls": [
+            "https://biletyna.pl/Katowice",
+            "https://biletyna.pl/Gliwice",
+            "https://biletyna.pl/Zabrze",
+            "https://biletyna.pl/Bytom",
+            "https://biletyna.pl/Chorzow",
+            "https://biletyna.pl/Sosnowiec",
+            "https://biletyna.pl/Tychy"
+          ]
+        }
       },
       "defaultCategories": ["other"],
       "categoryMap": {
@@ -344,32 +459,328 @@
       "categoryMap": {}
     },
     {
+      "id": "teatr-wielki-warszawa",
+      "name": "Teatr Wielki – Opera Narodowa",
+      "adapter": "crawler",
+      "regionIds": ["warszawa"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "Opera and ballet calendar: one page per performance. Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://teatrwielki.pl/repertuar/kalendarium/"],
+        "followPattern": "/kalendarium/\\d{4}-\\d{4}/[a-z0-9-]+/termin/\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}/$",
+        "maxFollow": 30,
+        "llmFallback": true
+      },
+      "defaultVenue": {
+        "name": "Teatr Wielki – Opera Narodowa",
+        "street": "plac Teatralny 1",
+        "postalCode": "00-950",
+        "city": "Warszawa",
+        "aliases": ["Teatr Wielki", "Opera Narodowa"]
+      },
+      "defaultCategories": ["theatre"],
+      "categoryMap": {}
+    },
+    {
+      "id": "opera-krakowska",
+      "name": "Opera Krakowska",
+      "adapter": "crawler",
+      "regionIds": ["krakow"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "The repertoire page lists the dates itself, so only it is read. Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://www.opera.krakow.pl/repertuar"],
+        "followPattern": null,
+        "maxFollow": 0,
+        "llmFallback": true
+      },
+      "defaultVenue": {
+        "name": "Opera Krakowska",
+        "street": "ul. Lubicz 48",
+        "postalCode": null,
+        "city": "Kraków",
+        "aliases": []
+      },
+      "defaultCategories": ["theatre"],
+      "categoryMap": {}
+    },
+    {
+      "id": "teatr-wielki-lodz",
+      "name": "Teatr Wielki w Łodzi",
+      "adapter": "crawler",
+      "regionIds": ["lodz"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://operalodz.com/"],
+        "followPattern": ",29,\\d+$",
+        "maxFollow": 30,
+        "llmFallback": true
+      },
+      "defaultVenue": {
+        "name": "Teatr Wielki w Łodzi",
+        "street": "plac Dąbrowskiego",
+        "postalCode": null,
+        "city": "Łódź",
+        "aliases": ["Teatr Wielki"]
+      },
+      "defaultCategories": ["theatre"],
+      "categoryMap": {}
+    },
+    {
+      "id": "gdansk-wydarzenia",
+      "name": "gdansk.pl Wydarzenia",
+      "adapter": "crawler",
+      "regionIds": ["trojmiasto"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "The city portal's events (many venues). robots.txt disallows only a URL template under /wydarzenia/. Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://www.gdansk.pl/wydarzenia"],
+        "followPattern": "/wydarzenia/[^/]+,w,\\d+$",
+        "maxFollow": 40,
+        "llmFallback": true
+      },
+      "defaultCategories": ["other"],
+      "categoryMap": {}
+    },
+    {
+      "id": "filharmonia-szczecin",
+      "name": "Filharmonia im. Mieczysława Karłowicza w Szczecinie",
+      "adapter": "crawler",
+      "regionIds": ["szczecin"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://filharmonia.szczecin.pl/repertuar"],
+        "followPattern": "/wydarzenia/\\d+-",
+        "maxFollow": 30,
+        "llmFallback": true
+      },
+      "defaultVenue": {
+        "name": "Filharmonia im. Mieczysława Karłowicza",
+        "street": "ul. Małopolska 48",
+        "postalCode": null,
+        "city": "Szczecin",
+        "aliases": ["Filharmonia w Szczecinie"]
+      },
+      "defaultCategories": ["music"],
+      "categoryMap": {}
+    },
+    {
+      "id": "opera-nova",
+      "name": "Opera Nova",
+      "adapter": "crawler",
+      "regionIds": ["bydgoszcz"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://www.opera.bydgoszcz.pl/repertuar.html"],
+        "followPattern": "/spektakle/[a-z0-9-]+/[a-z0-9-]+\\.html$",
+        "maxFollow": 30,
+        "llmFallback": true
+      },
+      "defaultVenue": {
+        "name": "Opera Nova",
+        "street": "ul. Marszałka Focha 5",
+        "postalCode": null,
+        "city": "Bydgoszcz",
+        "aliases": []
+      },
+      "defaultCategories": ["theatre"],
+      "categoryMap": {}
+    },
+    {
+      "id": "filharmonia-pomorska",
+      "name": "Filharmonia Pomorska",
+      "adapter": "crawler",
+      "regionIds": ["bydgoszcz"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://filharmonia.bydgoszcz.pl/kalendarz-wydarzen/"],
+        "followPattern": "/kalendarz/[a-z0-9-]+/$",
+        "maxFollow": 30,
+        "llmFallback": true
+      },
+      "defaultVenue": {
+        "name": "Filharmonia Pomorska",
+        "street": "ul. Andrzeja Szwalbego 6",
+        "postalCode": null,
+        "city": "Bydgoszcz",
+        "aliases": []
+      },
+      "defaultCategories": ["music"],
+      "categoryMap": {}
+    },
+    {
+      "id": "filharmonia-lubelska",
+      "name": "Filharmonia Lubelska",
+      "adapter": "crawler",
+      "regionIds": ["lublin"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://filharmonialubelska.pl/kalendarz/"],
+        "followPattern": "/co-gramy/[a-z0-9-]+/$",
+        "maxFollow": 30,
+        "llmFallback": true
+      },
+      "defaultVenue": {
+        "name": "Filharmonia Lubelska",
+        "street": "ul. Marii Curie-Skłodowskiej 5",
+        "postalCode": null,
+        "city": "Lublin",
+        "aliases": []
+      },
+      "defaultCategories": ["music"],
+      "categoryMap": {}
+    },
+    {
+      "id": "nospr",
+      "name": "Narodowa Orkiestra Symfoniczna Polskiego Radia (NOSPR)",
+      "adapter": "crawler",
+      "regionIds": ["katowice"],
+      "schedule": "24h",
+      "rateLimit": "12/m",
+      "trustLevel": "crawled",
+      "enabled": false,
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "maxCacheAgeHours": 72,
+      "republishDescription": false,
+      "republishImages": false,
+      "termsNotes": "Checked 2026-11-14: robots.txt allows the listing and event pages; no JSON-LD, so event pages go through LLM extraction (cached by content hash, about $0.01–0.05 a month). Off until the owner has read the site's terms (the Wrocław city portal's forbade reuse). Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; one request every 5 s.",
+      "options": {
+        "startUrls": ["https://www.nospr.org.pl/pl/kalendarz"],
+        "followPattern": "/pl/kalendarz/[a-z0-9-]+$",
+        "maxFollow": 30,
+        "llmFallback": true
+      },
+      "defaultVenue": {
+        "name": "NOSPR",
+        "street": "plac Wojciecha Kilara 1",
+        "postalCode": "40-202",
+        "city": "Katowice",
+        "aliases": ["Narodowa Orkiestra Symfoniczna Polskiego Radia"]
+      },
+      "defaultCategories": ["music"],
+      "categoryMap": {}
+    },
+    {
       "id": "osm-venues",
       "name": "OpenStreetMap venues",
       "adapter": "osm-venues",
-      "regionIds": ["wroclaw"],
-      "schedule": "168h",
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
+      "schedule": "720h",
       "rateLimit": null,
       "trustLevel": "crawled",
       "enabled": true,
-      "termsNotes": "Venues (theatres, clubs, cinemas, community centres, libraries, places of worship, museums) from OpenStreetMap through Overpass, weekly. ODbL: attribution in About. Writes venues and links, never events."
+      "termsNotes": "Venues (theatres, clubs, cinemas, community centres, libraries, places of worship, museums) from OpenStreetMap through Overpass, once every 30 days: one query per region, well inside Overpass's usage policy. ODbL: attribution in About. Writes venues and links, never events."
     },
     {
       "id": "osm-places",
       "name": "OpenStreetMap places",
       "adapter": "osm-places",
-      "regionIds": ["wroclaw"],
-      "schedule": "168h",
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
+      "schedule": "720h",
       "rateLimit": null,
       "trustLevel": "crawled",
       "enabled": true,
-      "termsNotes": "Places to go to while they are open (restaurants, cafés, pubs, bars, clubs, cinemas, theatres, galleries, museums, markets) with their opening hours, from OpenStreetMap through Overpass, weekly. ODbL: attribution in About. Writes places, never events."
+      "termsNotes": "Places to go to while they are open (restaurants, cafés, pubs, bars, clubs, cinemas, theatres, galleries, museums, markets) with their opening hours, from OpenStreetMap through Overpass, once every 30 days (one query per region): the starting set, which users then correct and add to. ODbL: attribution in About. Writes places, never events."
     },
     {
       "id": "venue-probe",
       "name": "Venue website check",
       "adapter": "venue-probe",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
@@ -383,7 +794,18 @@
       "id": "venue-sites",
       "name": "Venue websites",
       "adapter": "venue-sites",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
@@ -449,7 +871,18 @@
       "id": "worship-services",
       "name": "Regular services (OpenStreetMap)",
       "adapter": "worship-services",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "24h",
       "rateLimit": null,
       "trustLevel": "crawled",
@@ -470,7 +903,18 @@
       "id": "account-feeds",
       "name": "Account calendar feeds",
       "adapter": "account-feeds",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "12h",
       "rateLimit": "12/m",
       "trustLevel": "community",
@@ -484,7 +928,18 @@
       "id": "submissions",
       "name": "Happow community",
       "adapter": "user-submission",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": null,
       "rateLimit": null,
       "trustLevel": "community",

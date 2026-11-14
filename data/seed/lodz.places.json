@@ -1,0 +1,35 @@
+{
+  "region": "lodz",
+  "places": [
+    {
+      "id": "seed/lodz-1",
+      "name": "Kawiarnia na Pietrynie",
+      "kind": "amenity=cafe",
+      "lat": 51.78094,
+      "lng": 19.44112,
+      "address": "ul. Piotrkowska, Łódź",
+      "website": null,
+      "opening_hours": "Mo-Su 08:00-22:00"
+    },
+    {
+      "id": "seed/lodz-2",
+      "name": "Bistro w Fabryce",
+      "kind": "amenity=restaurant",
+      "lat": 51.77575,
+      "lng": 19.46666,
+      "address": "ul. Ogrodowa, Łódź",
+      "website": null,
+      "opening_hours": "Mo-Su 12:00-22:00"
+    },
+    {
+      "id": "seed/lodz-3",
+      "name": "Pub przy Off-ie",
+      "kind": "amenity=bar",
+      "lat": 51.77108,
+      "lng": 19.4641,
+      "address": "ul. Piotrkowska, Łódź",
+      "website": null,
+      "opening_hours": "We-Sa 18:00-03:00"
+    }
+  ]
+}

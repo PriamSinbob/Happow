@@ -16,6 +16,8 @@ Everything not built yet, one line each: what, and why or what it waits for. Lau
 - **Free-form parish timetable pages:** reading a weekly pattern from prose needs an LLM.
 - **RSS feeds:** left out; items carry publishing dates, not event times.
 - **Nationwide results beyond Ticketmaster:** wait for more regions.
+- **The other cities' own sources:** the nine regions added on 14 Nov have Ticketmaster, eBilet, Biletyna, OSM and the website check, plus one or two venue or portal calendars each, off until the owner has read each site's terms (`enabled` in `config/sources.json`). Still missing: city portals and libraries that refused this checker or start from a dated URL (karnet.krakowculture.pl, kultura.lublin.eu, miastoogrodow.eu, kulturapoznan.pl), and anything for Poznań beyond the website check.
+- **The rest of Poland:** places outside the ten regions. OSM would come in chunks (one Overpass query per area, one at a time, under its usage policy), but places and events belong to a region, so it needs either more regions or a country-wide one with a coarse map.
 - **Places per area read capped at 1,000 rows:** Supabase's PostgREST answers at most 1,000 rows (its `max-rows`), below `places.maxPerArea` (3,000); the city centre's 5 km read already returns 982. Raise `max-rows` or page the read before more places are added.
 - **Place from a photo, next steps:** HEIC photos from iPhones' galleries do not decode in every browser (the shrink fails and says so); the place log by device has no moderator view yet; the marks rely on the model's boxes, which can be off on busy photos.
 - **Photo upload on submissions:** needs storage and image moderation; the poster photo is read for autofill and discarded.

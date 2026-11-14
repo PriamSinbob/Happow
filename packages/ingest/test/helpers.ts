@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { vi } from 'vitest';
 import { getRegion, loadConfig } from '@happow/core';
 
-export const config = loadConfig();
+const full = loadConfig();
+/** The default region only: the fixtures are recordings for one city. */
+export const config = { ...full, regions: [getRegion(full)] };
 export const region = getRegion(config);
 export const source = (id: string) => {
   const s = config.sources.find((x) => x.id === id);

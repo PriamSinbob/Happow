@@ -1,0 +1,35 @@
+{
+  "region": "poznan",
+  "places": [
+    {
+      "id": "seed/poznan-1",
+      "name": "Rogale przy Ratuszu",
+      "kind": "amenity=cafe",
+      "lat": 52.40945,
+      "lng": 16.93208,
+      "address": "Stary Rynek, Poznań",
+      "website": null,
+      "opening_hours": "Mo-Su 09:00-20:00"
+    },
+    {
+      "id": "seed/poznan-2",
+      "name": "Pyry z gzikiem",
+      "kind": "amenity=restaurant",
+      "lat": 52.41018,
+      "lng": 16.91619,
+      "address": "ul. Wrocławska, Poznań",
+      "website": null,
+      "opening_hours": "Mo-Su 11:00-22:00"
+    },
+    {
+      "id": "seed/poznan-3",
+      "name": "Bar na Jeżycach",
+      "kind": "amenity=bar",
+      "lat": 52.41042,
+      "lng": 16.9122,
+      "address": "ul. Dąbrowskiego, Poznań",
+      "website": null,
+      "opening_hours": "Tu-Sa 17:00-01:00"
+    }
+  ]
+}

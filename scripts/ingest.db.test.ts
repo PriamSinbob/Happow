@@ -7,7 +7,9 @@ import { getRegion, loadConfig } from '@happow/core';
 import { EventStore, runIngest, type IngestOptions } from '@happow/ingest';
 import { url } from './dbtest';
 
-const config = loadConfig();
+const full = loadConfig();
+/** The default region only: the fixtures are recordings for one city. */
+const config = { ...full, regions: [getRegion(full)] };
 const region = getRegion(config);
 const fixture = (p: string) =>
   readFileSync(new URL(`../packages/ingest/test/fixtures/${p}`, import.meta.url), 'utf8');

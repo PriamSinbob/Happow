@@ -42,7 +42,12 @@ export function geohash(p: LatLng, precision = 9): string {
 
 /** Smallest circle around the region's bbox centre that covers the whole bbox. */
 export function coveringCircle(region: Region): { center: LatLng; radiusM: number } {
-  const { west, south, east, north } = region.bbox;
+  return bboxCircle(region.bbox);
+}
+
+/** Smallest circle around a bbox's centre that covers the whole bbox. */
+export function bboxCircle(bbox: Region['bbox']): { center: LatLng; radiusM: number } {
+  const { west, south, east, north } = bbox;
   const center = { lat: (south + north) / 2, lng: (west + east) / 2 };
   const radiusM = Math.max(
     ...[

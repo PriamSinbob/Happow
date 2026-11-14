@@ -1,0 +1,35 @@
+{
+  "region": "szczecin",
+  "places": [
+    {
+      "id": "seed/szczecin-1",
+      "name": "Paszteciki przy Wojska",
+      "kind": "amenity=fast_food",
+      "lat": 53.43155,
+      "lng": 14.55594,
+      "address": "al. Wojska Polskiego, Szczecin",
+      "website": null,
+      "opening_hours": "Mo-Sa 10:00-19:00"
+    },
+    {
+      "id": "seed/szczecin-2",
+      "name": "Kawiarnia na Łasztowni",
+      "kind": "amenity=cafe",
+      "lat": 53.43207,
+      "lng": 14.56301,
+      "address": "ul. Celna, Szczecin",
+      "website": null,
+      "opening_hours": "Mo-Su 09:00-21:00"
+    },
+    {
+      "id": "seed/szczecin-3",
+      "name": "Bar przy Bramie",
+      "kind": "amenity=bar",
+      "lat": 53.43091,
+      "lng": 14.5539,
+      "address": "plac Hołdu Pruskiego, Szczecin",
+      "website": null,
+      "opening_hours": "We-Sa 18:00-02:00"
+    }
+  ]
+}

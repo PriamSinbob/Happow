@@ -1,0 +1,154 @@
+{
+  "$comment": "Hand-entered demo events. Real venues (points from OpenStreetMap), fictional programmes. Times are offsets in minutes from the moment the seed is applied.",
+  "region": "krakow",
+  "venues": [
+    {
+      "id": "krakow-rynek",
+      "name": "Rynek Główny",
+      "address": "Rynek Główny, 31-042 Kraków",
+      "lat": 50.06274,
+      "lng": 19.9369,
+      "website": null
+    },
+    {
+      "id": "krakow-ice",
+      "name": "ICE Kraków",
+      "address": "ul. Marii Konopnickiej 17, 30-302 Kraków",
+      "lat": 50.04786,
+      "lng": 19.93252,
+      "website": null
+    },
+    {
+      "id": "krakow-opera",
+      "name": "Opera Krakowska",
+      "address": "ul. Lubicz 48, 31-512 Kraków",
+      "lat": 50.06592,
+      "lng": 19.95617,
+      "website": null
+    },
+    {
+      "id": "krakow-baranami",
+      "name": "Kino Pod Baranami",
+      "address": "Rynek Główny 27, Kraków",
+      "lat": 50.0616,
+      "lng": 19.9354,
+      "website": null
+    },
+    {
+      "id": "krakow-grzegorzecka",
+      "name": "Hala Targowa",
+      "address": "ul. Grzegórzecka 3, Kraków",
+      "lat": 50.058,
+      "lng": 19.94929,
+      "website": null
+    },
+    {
+      "id": "krakow-jordana",
+      "name": "Park Jordana",
+      "address": "al. 3 Maja, Kraków",
+      "lat": 50.06273,
+      "lng": 19.91607,
+      "website": null
+    }
+  ],
+  "events": [
+    {
+      "externalId": "krakow-01",
+      "title": "Jarmark lokalnych twórców",
+      "description": "Stoiska z ceramiką, grafiką i rękodziełem.",
+      "categoryIds": ["market"],
+      "venueId": "krakow-rynek",
+      "startOffsetMin": -90,
+      "durationMin": 300,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "krakow-02",
+      "title": "Wieczór muzyki kameralnej",
+      "description": "Kwartet smyczkowy: Haydn i Szymanowski.",
+      "categoryIds": ["music"],
+      "venueId": "krakow-ice",
+      "startOffsetMin": 150,
+      "durationMin": 120,
+      "isFree": false,
+      "priceMin": 40,
+      "priceMax": 90,
+      "currency": "PLN"
+    },
+    {
+      "externalId": "krakow-03",
+      "title": "Rodzinne warsztaty odkrywców",
+      "description": "Doświadczenia dla dzieci i rodziców, wejście co pół godziny.",
+      "categoryIds": ["kids", "exhibition"],
+      "venueId": "krakow-opera",
+      "startOffsetMin": -60,
+      "durationMin": null,
+      "isFree": false,
+      "priceMin": 20,
+      "priceMax": 20,
+      "currency": "PLN",
+      "family": true,
+      "entry": "open"
+    },
+    {
+      "externalId": "krakow-04",
+      "title": "Wieczór smaków regionu",
+      "description": "Degustacje kuchni regionalnej i muzyka na żywo.",
+      "categoryIds": ["food", "happening"],
+      "venueId": "krakow-baranami",
+      "startOffsetMin": 30,
+      "durationMin": 240,
+      "isFree": true
+    },
+    {
+      "externalId": "krakow-05",
+      "title": "Poranny bieg w parku",
+      "description": "Rekreacyjne 5 km dla każdego, bez pomiaru czasu.",
+      "categoryIds": ["sport"],
+      "venueId": "krakow-grzegorzecka",
+      "startOffsetMin": 60,
+      "durationMin": 60,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "krakow-06",
+      "title": "Pokaz filmowy z rozmową",
+      "description": "Film dokumentalny i spotkanie z twórcami po seansie.",
+      "categoryIds": ["cinema", "talk"],
+      "venueId": "krakow-jordana",
+      "startOffsetMin": 45,
+      "durationMin": 150,
+      "isFree": false,
+      "priceMin": 22,
+      "priceMax": 22,
+      "currency": "PLN",
+      "ageMin": 12
+    },
+    {
+      "externalId": "krakow-07",
+      "title": "Koncert pod gwiazdami",
+      "description": "Plenerowy koncert miejskiej orkiestry dętej.",
+      "categoryIds": ["happening", "music"],
+      "venueId": "krakow-rynek",
+      "startOffsetMin": 300,
+      "durationMin": 45,
+      "isFree": true
+    },
+    {
+      "externalId": "krakow-08",
+      "title": "Festiwal zimowy — otwarcie",
+      "description": "Pierwszy dzień miejskiego festiwalu.",
+      "categoryIds": ["festival"],
+      "venueId": "krakow-ice",
+      "startOffsetMin": 30240,
+      "durationMin": 300,
+      "isFree": true
+    }
+  ]
+}

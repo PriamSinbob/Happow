@@ -75,7 +75,7 @@ describe('Meetup adapter (contract, recorded fixtures)', () => {
       startDateRange: window.from.toISOString(),
       endDateRange: window.to.toISOString(),
     });
-    expect(first.variables.filter.lat).toBeCloseTo(51.1265, 3);
+    expect(first.variables.filter.lat).toBeCloseTo((region.bbox.south + region.bbox.north) / 2, 3);
     expect(first.variables.filter.radius).toBeGreaterThanOrEqual(6); // miles
     expect(second.variables.after).toBe('Y3Vyc29yOjM=');
   });

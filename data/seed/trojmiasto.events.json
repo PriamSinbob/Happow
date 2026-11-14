@@ -1,0 +1,154 @@
+{
+  "$comment": "Hand-entered demo events. Real venues (points from OpenStreetMap), fictional programmes. Times are offsets in minutes from the moment the seed is applied.",
+  "region": "trojmiasto",
+  "venues": [
+    {
+      "id": "trojmiasto-dlugitarg",
+      "name": "Długi Targ",
+      "address": "Długi Targ, 80-830 Gdańsk",
+      "lat": 54.34796,
+      "lng": 18.65574,
+      "website": null
+    },
+    {
+      "id": "trojmiasto-ecs",
+      "name": "Europejskie Centrum Solidarności",
+      "address": "plac Solidarności 1, 80-863 Gdańsk",
+      "lat": 54.36135,
+      "lng": 18.6494,
+      "website": null
+    },
+    {
+      "id": "trojmiasto-muzyczny",
+      "name": "Teatr Muzyczny w Gdyni",
+      "address": "plac Grunwaldzki 1, Gdynia",
+      "lat": 54.51656,
+      "lng": 18.54556,
+      "website": null
+    },
+    {
+      "id": "trojmiasto-molo",
+      "name": "Molo w Sopocie",
+      "address": "Plac Zdrojowy, Sopot",
+      "lat": 54.44252,
+      "lng": 18.562,
+      "website": null
+    },
+    {
+      "id": "trojmiasto-zak",
+      "name": "Klub Żak",
+      "address": "ul. Grunwaldzka 195/197, Gdańsk",
+      "lat": 54.38695,
+      "lng": 18.59225,
+      "website": null
+    },
+    {
+      "id": "trojmiasto-ergo",
+      "name": "Ergo Arena",
+      "address": "plac Dwóch Miast 1, Gdańsk",
+      "lat": 54.42653,
+      "lng": 18.58052,
+      "website": null
+    }
+  ],
+  "events": [
+    {
+      "externalId": "trojmiasto-01",
+      "title": "Jarmark lokalnych twórców",
+      "description": "Stoiska z ceramiką, grafiką i rękodziełem.",
+      "categoryIds": ["market"],
+      "venueId": "trojmiasto-dlugitarg",
+      "startOffsetMin": -90,
+      "durationMin": 300,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "trojmiasto-02",
+      "title": "Wieczór muzyki kameralnej",
+      "description": "Kwartet smyczkowy: Haydn i Szymanowski.",
+      "categoryIds": ["music"],
+      "venueId": "trojmiasto-ecs",
+      "startOffsetMin": 150,
+      "durationMin": 120,
+      "isFree": false,
+      "priceMin": 40,
+      "priceMax": 90,
+      "currency": "PLN"
+    },
+    {
+      "externalId": "trojmiasto-03",
+      "title": "Rodzinne warsztaty odkrywców",
+      "description": "Doświadczenia dla dzieci i rodziców, wejście co pół godziny.",
+      "categoryIds": ["kids", "exhibition"],
+      "venueId": "trojmiasto-muzyczny",
+      "startOffsetMin": -60,
+      "durationMin": null,
+      "isFree": false,
+      "priceMin": 20,
+      "priceMax": 20,
+      "currency": "PLN",
+      "family": true,
+      "entry": "open"
+    },
+    {
+      "externalId": "trojmiasto-04",
+      "title": "Wieczór smaków regionu",
+      "description": "Degustacje kuchni regionalnej i muzyka na żywo.",
+      "categoryIds": ["food", "happening"],
+      "venueId": "trojmiasto-molo",
+      "startOffsetMin": 30,
+      "durationMin": 240,
+      "isFree": true
+    },
+    {
+      "externalId": "trojmiasto-05",
+      "title": "Poranny bieg w parku",
+      "description": "Rekreacyjne 5 km dla każdego, bez pomiaru czasu.",
+      "categoryIds": ["sport"],
+      "venueId": "trojmiasto-zak",
+      "startOffsetMin": 60,
+      "durationMin": 60,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "trojmiasto-06",
+      "title": "Pokaz filmowy z rozmową",
+      "description": "Film dokumentalny i spotkanie z twórcami po seansie.",
+      "categoryIds": ["cinema", "talk"],
+      "venueId": "trojmiasto-ergo",
+      "startOffsetMin": 45,
+      "durationMin": 150,
+      "isFree": false,
+      "priceMin": 22,
+      "priceMax": 22,
+      "currency": "PLN",
+      "ageMin": 12
+    },
+    {
+      "externalId": "trojmiasto-07",
+      "title": "Koncert pod gwiazdami",
+      "description": "Plenerowy koncert miejskiej orkiestry dętej.",
+      "categoryIds": ["happening", "music"],
+      "venueId": "trojmiasto-dlugitarg",
+      "startOffsetMin": 300,
+      "durationMin": 45,
+      "isFree": true
+    },
+    {
+      "externalId": "trojmiasto-08",
+      "title": "Festiwal zimowy — otwarcie",
+      "description": "Pierwszy dzień miejskiego festiwalu.",
+      "categoryIds": ["festival"],
+      "venueId": "trojmiasto-ecs",
+      "startOffsetMin": 30240,
+      "durationMin": 300,
+      "isFree": true
+    }
+  ]
+}

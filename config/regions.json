@@ -9,7 +9,30 @@
       "timezone": "Europe/Warsaw",
       "locale": "pl",
       "countryCode": "PL",
-      "localities": ["Wrocław"],
+      "localities": [
+        "Wrocław",
+        "Siechnice",
+        "Radwanice",
+        "Święta Katarzyna",
+        "Czernica",
+        "Jelcz-Laskowice",
+        "Długołęka",
+        "Kiełczów",
+        "Mirków",
+        "Wisznia Mała",
+        "Trzebnica",
+        "Oborniki Śląskie",
+        "Miękinia",
+        "Kąty Wrocławskie",
+        "Smolec",
+        "Kobierzyce",
+        "Bielany Wrocławskie",
+        "Wysoka",
+        "Ślęza",
+        "Żórawina",
+        "Domasław",
+        "Sobótka"
+      ],
       "currency": "PLN",
       "center": {
         "lat": 51.1101,
@@ -17,10 +40,10 @@
       },
       "defaultZoom": 15,
       "bbox": {
-        "west": 16.807,
-        "south": 51.042,
-        "east": 17.176,
-        "north": 51.211
+        "west": 16.7,
+        "south": 50.94,
+        "east": 17.4,
+        "north": 51.33
       },
       "enabledSources": [
         "seed",
@@ -46,6 +69,511 @@
       "seedPlacesFile": "data/seed/wroclaw.places.json",
       "districts": {
         "file": "data/districts/wroclaw.geojson",
+        "adminLevel": 9
+      }
+    },
+    {
+      "id": "warszawa",
+      "name": {
+        "pl": "Warszawa",
+        "en": "Warsaw"
+      },
+      "timezone": "Europe/Warsaw",
+      "locale": "pl",
+      "countryCode": "PL",
+      "localities": [
+        "Warszawa",
+        "Pruszków",
+        "Piastów",
+        "Ożarów Mazowiecki",
+        "Łomianki",
+        "Legionowo",
+        "Jabłonna",
+        "Nieporęt",
+        "Marki",
+        "Ząbki",
+        "Zielonka",
+        "Kobyłka",
+        "Wołomin",
+        "Sulejówek",
+        "Józefów",
+        "Otwock",
+        "Konstancin-Jeziorna",
+        "Piaseczno",
+        "Lesznowola",
+        "Raszyn",
+        "Michałowice",
+        "Janki",
+        "Stare Babice"
+      ],
+      "currency": "PLN",
+      "center": {
+        "lat": 52.2297,
+        "lng": 21.0122
+      },
+      "defaultZoom": 15,
+      "bbox": {
+        "west": 20.75,
+        "south": 52.03,
+        "east": 21.35,
+        "north": 52.45
+      },
+      "enabledSources": [
+        "ticketmaster",
+        "ebilet",
+        "biletyna",
+        "teatr-wielki-warszawa",
+        "osm-venues",
+        "osm-places",
+        "venue-probe",
+        "venue-sites",
+        "worship-services",
+        "account-feeds",
+        "submissions"
+      ],
+      "seedFile": "data/seed/warszawa.events.json",
+      "seedPlacesFile": "data/seed/warszawa.places.json",
+      "districts": {
+        "file": "data/districts/warszawa.geojson",
+        "adminLevel": 9
+      }
+    },
+    {
+      "id": "krakow",
+      "name": {
+        "pl": "Kraków",
+        "en": "Kraków"
+      },
+      "timezone": "Europe/Warsaw",
+      "locale": "pl",
+      "countryCode": "PL",
+      "localities": [
+        "Kraków",
+        "Wieliczka",
+        "Niepołomice",
+        "Skawina",
+        "Zabierzów",
+        "Zielonki",
+        "Michałowice",
+        "Liszki",
+        "Mogilany",
+        "Świątniki Górne",
+        "Kocmyrzów-Luborzyca",
+        "Wielka Wieś",
+        "Modlniczka"
+      ],
+      "currency": "PLN",
+      "center": {
+        "lat": 50.0614,
+        "lng": 19.9366
+      },
+      "defaultZoom": 15,
+      "bbox": {
+        "west": 19.72,
+        "south": 49.93,
+        "east": 20.25,
+        "north": 50.16
+      },
+      "enabledSources": [
+        "ticketmaster",
+        "ebilet",
+        "biletyna",
+        "opera-krakowska",
+        "osm-venues",
+        "osm-places",
+        "venue-probe",
+        "venue-sites",
+        "worship-services",
+        "account-feeds",
+        "submissions"
+      ],
+      "seedFile": "data/seed/krakow.events.json",
+      "seedPlacesFile": "data/seed/krakow.places.json",
+      "districts": {
+        "file": "data/districts/krakow.geojson",
+        "adminLevel": 9
+      }
+    },
+    {
+      "id": "lodz",
+      "name": {
+        "pl": "Łódź",
+        "en": "Łódź"
+      },
+      "timezone": "Europe/Warsaw",
+      "locale": "pl",
+      "countryCode": "PL",
+      "localities": [
+        "Łódź",
+        "Zgierz",
+        "Pabianice",
+        "Konstantynów Łódzki",
+        "Aleksandrów Łódzki",
+        "Ksawerów",
+        "Rzgów",
+        "Andrespol",
+        "Nowosolna",
+        "Brzeziny",
+        "Stryków"
+      ],
+      "currency": "PLN",
+      "center": {
+        "lat": 51.7592,
+        "lng": 19.456
+      },
+      "defaultZoom": 15,
+      "bbox": {
+        "west": 19.25,
+        "south": 51.63,
+        "east": 19.7,
+        "north": 51.9
+      },
+      "enabledSources": [
+        "ticketmaster",
+        "ebilet",
+        "biletyna",
+        "teatr-wielki-lodz",
+        "osm-venues",
+        "osm-places",
+        "venue-probe",
+        "venue-sites",
+        "worship-services",
+        "account-feeds",
+        "submissions"
+      ],
+      "seedFile": "data/seed/lodz.events.json",
+      "seedPlacesFile": "data/seed/lodz.places.json",
+      "districts": {
+        "file": "data/districts/lodz.geojson",
+        "adminLevel": 10
+      }
+    },
+    {
+      "id": "poznan",
+      "name": {
+        "pl": "Poznań",
+        "en": "Poznań"
+      },
+      "timezone": "Europe/Warsaw",
+      "locale": "pl",
+      "countryCode": "PL",
+      "localities": [
+        "Poznań",
+        "Swarzędz",
+        "Luboń",
+        "Puszczykowo",
+        "Mosina",
+        "Komorniki",
+        "Tarnowo Podgórne",
+        "Przeźmierowo",
+        "Suchy Las",
+        "Czerwonak",
+        "Kórnik",
+        "Kostrzyn",
+        "Dopiewo",
+        "Rokietnica",
+        "Plewiska"
+      ],
+      "currency": "PLN",
+      "center": {
+        "lat": 52.4064,
+        "lng": 16.9252
+      },
+      "defaultZoom": 15,
+      "bbox": {
+        "west": 16.65,
+        "south": 52.25,
+        "east": 17.15,
+        "north": 52.55
+      },
+      "enabledSources": [
+        "ticketmaster",
+        "ebilet",
+        "biletyna",
+        "osm-venues",
+        "osm-places",
+        "venue-probe",
+        "venue-sites",
+        "worship-services",
+        "account-feeds",
+        "submissions"
+      ],
+      "seedFile": "data/seed/poznan.events.json",
+      "seedPlacesFile": "data/seed/poznan.places.json",
+      "districts": {
+        "file": "data/districts/poznan.geojson",
+        "adminLevel": 9
+      }
+    },
+    {
+      "id": "trojmiasto",
+      "name": {
+        "pl": "Trójmiasto",
+        "en": "Tricity"
+      },
+      "timezone": "Europe/Warsaw",
+      "locale": "pl",
+      "countryCode": "PL",
+      "localities": [
+        "Gdańsk",
+        "Gdynia",
+        "Sopot",
+        "Rumia",
+        "Reda",
+        "Wejherowo",
+        "Pruszcz Gdański",
+        "Żukowo",
+        "Kolbudy",
+        "Kosakowo",
+        "Pruszcz Gd."
+      ],
+      "currency": "PLN",
+      "center": {
+        "lat": 54.352,
+        "lng": 18.6466
+      },
+      "defaultZoom": 15,
+      "bbox": {
+        "west": 18.3,
+        "south": 54.25,
+        "east": 18.95,
+        "north": 54.65
+      },
+      "enabledSources": [
+        "ticketmaster",
+        "ebilet",
+        "biletyna",
+        "gdansk-wydarzenia",
+        "osm-venues",
+        "osm-places",
+        "venue-probe",
+        "venue-sites",
+        "worship-services",
+        "account-feeds",
+        "submissions"
+      ],
+      "seedFile": "data/seed/trojmiasto.events.json",
+      "seedPlacesFile": "data/seed/trojmiasto.places.json",
+      "districts": {
+        "file": "data/districts/trojmiasto.geojson",
+        "adminLevel": 9
+      }
+    },
+    {
+      "id": "szczecin",
+      "name": {
+        "pl": "Szczecin",
+        "en": "Szczecin"
+      },
+      "timezone": "Europe/Warsaw",
+      "locale": "pl",
+      "countryCode": "PL",
+      "localities": [
+        "Szczecin",
+        "Police",
+        "Gryfino",
+        "Goleniów",
+        "Dobra (Szczecińska)",
+        "Dobra",
+        "Kołbaskowo",
+        "Mierzyn",
+        "Stare Czarnowo"
+      ],
+      "currency": "PLN",
+      "center": {
+        "lat": 53.4285,
+        "lng": 14.5528
+      },
+      "defaultZoom": 15,
+      "bbox": {
+        "west": 14.35,
+        "south": 53.3,
+        "east": 14.85,
+        "north": 53.6
+      },
+      "enabledSources": [
+        "ticketmaster",
+        "ebilet",
+        "biletyna",
+        "filharmonia-szczecin",
+        "osm-venues",
+        "osm-places",
+        "venue-probe",
+        "venue-sites",
+        "worship-services",
+        "account-feeds",
+        "submissions"
+      ],
+      "seedFile": "data/seed/szczecin.events.json",
+      "seedPlacesFile": "data/seed/szczecin.places.json",
+      "districts": {
+        "file": "data/districts/szczecin.geojson",
+        "adminLevel": 10
+      }
+    },
+    {
+      "id": "bydgoszcz",
+      "name": {
+        "pl": "Bydgoszcz",
+        "en": "Bydgoszcz"
+      },
+      "timezone": "Europe/Warsaw",
+      "locale": "pl",
+      "countryCode": "PL",
+      "localities": [
+        "Bydgoszcz",
+        "Białe Błota",
+        "Osielsko",
+        "Solec Kujawski",
+        "Nowa Wieś Wielka",
+        "Niemcz",
+        "Żołędowo"
+      ],
+      "currency": "PLN",
+      "center": {
+        "lat": 53.1235,
+        "lng": 18.0084
+      },
+      "defaultZoom": 15,
+      "bbox": {
+        "west": 17.8,
+        "south": 53.03,
+        "east": 18.25,
+        "north": 53.25
+      },
+      "enabledSources": [
+        "ticketmaster",
+        "ebilet",
+        "biletyna",
+        "opera-nova",
+        "filharmonia-pomorska",
+        "osm-venues",
+        "osm-places",
+        "venue-probe",
+        "venue-sites",
+        "worship-services",
+        "account-feeds",
+        "submissions"
+      ],
+      "seedFile": "data/seed/bydgoszcz.events.json",
+      "seedPlacesFile": "data/seed/bydgoszcz.places.json",
+      "districts": {
+        "file": "data/districts/bydgoszcz.geojson",
+        "adminLevel": 9
+      }
+    },
+    {
+      "id": "lublin",
+      "name": {
+        "pl": "Lublin",
+        "en": "Lublin"
+      },
+      "timezone": "Europe/Warsaw",
+      "locale": "pl",
+      "countryCode": "PL",
+      "localities": [
+        "Lublin",
+        "Świdnik",
+        "Niemce",
+        "Konopnica",
+        "Głusk",
+        "Jastków",
+        "Wólka",
+        "Mełgiew",
+        "Strzeszkowice"
+      ],
+      "currency": "PLN",
+      "center": {
+        "lat": 51.2465,
+        "lng": 22.5684
+      },
+      "defaultZoom": 15,
+      "bbox": {
+        "west": 22.4,
+        "south": 51.13,
+        "east": 22.78,
+        "north": 51.36
+      },
+      "enabledSources": [
+        "ticketmaster",
+        "ebilet",
+        "biletyna",
+        "filharmonia-lubelska",
+        "osm-venues",
+        "osm-places",
+        "venue-probe",
+        "venue-sites",
+        "worship-services",
+        "account-feeds",
+        "submissions"
+      ],
+      "seedFile": "data/seed/lublin.events.json",
+      "seedPlacesFile": "data/seed/lublin.places.json",
+      "districts": {
+        "file": "data/districts/lublin.geojson",
+        "adminLevel": 9
+      }
+    },
+    {
+      "id": "katowice",
+      "name": {
+        "pl": "Katowice i GZM",
+        "en": "Katowice and GZM"
+      },
+      "timezone": "Europe/Warsaw",
+      "locale": "pl",
+      "countryCode": "PL",
+      "localities": [
+        "Katowice",
+        "Chorzów",
+        "Siemianowice Śląskie",
+        "Sosnowiec",
+        "Mysłowice",
+        "Ruda Śląska",
+        "Świętochłowice",
+        "Bytom",
+        "Piekary Śląskie",
+        "Zabrze",
+        "Gliwice",
+        "Będzin",
+        "Czeladź",
+        "Dąbrowa Górnicza",
+        "Tychy",
+        "Mikołów",
+        "Jaworzno",
+        "Tarnowskie Góry",
+        "Knurów",
+        "Łaziska Górne"
+      ],
+      "currency": "PLN",
+      "center": {
+        "lat": 50.2649,
+        "lng": 19.0238
+      },
+      "defaultZoom": 15,
+      "bbox": {
+        "west": 18.6,
+        "south": 50.08,
+        "east": 19.3,
+        "north": 50.47
+      },
+      "enabledSources": [
+        "ticketmaster",
+        "ebilet",
+        "biletyna",
+        "nospr",
+        "osm-venues",
+        "osm-places",
+        "venue-probe",
+        "venue-sites",
+        "worship-services",
+        "account-feeds",
+        "submissions"
+      ],
+      "seedFile": "data/seed/katowice.events.json",
+      "seedPlacesFile": "data/seed/katowice.places.json",
+      "districts": {
+        "file": "data/districts/katowice.geojson",
         "adminLevel": 9
       }
     }

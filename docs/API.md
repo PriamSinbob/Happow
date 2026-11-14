@@ -53,7 +53,7 @@ An installed app may be months old. So:
 
 ## The app's config
 
-`GET /api/config` → regions, categories, plans, theme, map style, seasons and the app settings (`app`), from the same files the server reads (`config/*.json`), minus server-only sections. Public, cached 30 min, ETag. The app reads this at start and caches it, so a new city, category or colour reaches installed apps without a release. Category labels, theme tokens and plan entitlements all come from here.
+`GET /api/config` → regions, categories, plans, theme, map style, seasons and the app settings (`app`), from the same files the server reads (`config/*.json`), minus server-only sections. Public, cached 30 min, ETag. The app reads this at start and caches it, so a new city, category or colour reaches installed apps without a release. Category labels, theme tokens and plan entitlements all come from here. Each region is a city with its suburbs (`bbox`, `center`, `localities`); the client picks the one the person is in, the nearest centre where two overlap (`regionAt` in `packages/core/src/config.ts`), keeps it on the device, and sends its id as `regionId` / `region`. Outside every region it stays on the last one (or `app.defaultRegion`) and says so.
 
 ## Events and places
 
