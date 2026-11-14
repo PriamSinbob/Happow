@@ -1,0 +1,35 @@
+{
+  "region": "warszawa",
+  "places": [
+    {
+      "id": "seed/warszawa-1",
+      "name": "Bar mleczny pod Pałacem",
+      "kind": "amenity=restaurant",
+      "lat": 52.23302,
+      "lng": 21.00476,
+      "address": "ul. Marszałkowska, Warszawa",
+      "website": null,
+      "opening_hours": "Mo-Fr 08:00-19:00; Sa 09:00-17:00"
+    },
+    {
+      "id": "seed/warszawa-2",
+      "name": "Kawiarnia Powiśle",
+      "kind": "amenity=cafe",
+      "lat": 52.24644,
+      "lng": 21.00702,
+      "address": "ul. Dobra, Warszawa",
+      "website": null,
+      "opening_hours": "Mo-Su 08:00-21:00"
+    },
+    {
+      "id": "seed/warszawa-3",
+      "name": "Pub na Placu Zbawiciela",
+      "kind": "amenity=pub",
+      "lat": 52.24346,
+      "lng": 21.02736,
+      "address": "plac Zbawiciela, Warszawa",
+      "website": null,
+      "opening_hours": "Mo-Th 16:00-24:00; Fr,Sa 16:00-02:00"
+    }
+  ]
+}

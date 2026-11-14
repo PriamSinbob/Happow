@@ -1,0 +1,35 @@
+{
+  "region": "krakow",
+  "places": [
+    {
+      "id": "seed/krakow-1",
+      "name": "Obwarzanki u Floriana",
+      "kind": "amenity=cafe",
+      "lat": 50.06394,
+      "lng": 19.9354,
+      "address": "ul. Floriańska, Kraków",
+      "website": null,
+      "opening_hours": "Mo-Su 07:00-20:00"
+    },
+    {
+      "id": "seed/krakow-2",
+      "name": "Pierogarnia na Kazimierzu",
+      "kind": "amenity=restaurant",
+      "lat": 50.05026,
+      "lng": 19.92952,
+      "address": "ul. Szeroka, Kraków",
+      "website": null,
+      "opening_hours": "Mo-Su 11:00-22:00"
+    },
+    {
+      "id": "seed/krakow-3",
+      "name": "Piwnica przy Rynku",
+      "kind": "amenity=pub",
+      "lat": 50.06952,
+      "lng": 19.95167,
+      "address": "ul. Szewska, Kraków",
+      "website": null,
+      "opening_hours": "Mo-Su 15:00-02:00"
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "$comment": "Hand-entered demo events. Real venues (points from OpenStreetMap), fictional programmes. Times are offsets in minutes from the moment the seed is applied.",
+  "region": "warszawa",
+  "venues": [
+    {
+      "id": "warszawa-pkin",
+      "name": "Pałac Kultury i Nauki",
+      "address": "plac Defilad 1, 00-901 Warszawa",
+      "lat": 52.23182,
+      "lng": 21.00626,
+      "website": null
+    },
+    {
+      "id": "warszawa-twon",
+      "name": "Teatr Wielki – Opera Narodowa",
+      "address": "plac Teatralny 1, 00-950 Warszawa",
+      "lat": 52.24404,
+      "lng": 21.01002,
+      "website": null
+    },
+    {
+      "id": "warszawa-kopernik",
+      "name": "Centrum Nauki Kopernik",
+      "address": "Wybrzeże Kościuszkowskie 20, 00-390 Warszawa",
+      "lat": 52.23986,
+      "lng": 21.03186,
+      "website": null
+    },
+    {
+      "id": "warszawa-koszyki",
+      "name": "Hala Koszyki",
+      "address": "ul. Koszykowa 63, Warszawa",
+      "lat": 52.2222,
+      "lng": 21.01103,
+      "website": null
+    },
+    {
+      "id": "warszawa-lazienki",
+      "name": "Łazienki Królewskie",
+      "address": "ul. Agrykoli 1, Warszawa",
+      "lat": 52.21321,
+      "lng": 21.03362,
+      "website": null
+    },
+    {
+      "id": "warszawa-muranow",
+      "name": "Kino Muranów",
+      "address": "ul. Generała Andersa 5, Warszawa",
+      "lat": 52.24494,
+      "lng": 20.99963,
+      "website": null
+    }
+  ],
+  "events": [
+    {
+      "externalId": "warszawa-01",
+      "title": "Jarmark lokalnych twórców",
+      "description": "Stoiska z ceramiką, grafiką i rękodziełem.",
+      "categoryIds": [
+        "market"
+      ],
+      "venueId": "warszawa-pkin",
+      "startOffsetMin": -90,
+      "durationMin": 300,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "warszawa-02",
+      "title": "Wieczór muzyki kameralnej",
+      "description": "Kwartet smyczkowy: Haydn i Szymanowski.",
+      "categoryIds": [
+        "music"
+      ],
+      "venueId": "warszawa-twon",
+      "startOffsetMin": 150,
+      "durationMin": 120,
+      "isFree": false,
+      "priceMin": 40,
+      "priceMax": 90,
+      "currency": "PLN"
+    },
+    {
+      "externalId": "warszawa-03",
+      "title": "Rodzinne warsztaty odkrywców",
+      "description": "Doświadczenia dla dzieci i rodziców, wejście co pół godziny.",
+      "categoryIds": [
+        "kids",
+        "exhibition"
+      ],
+      "venueId": "warszawa-kopernik",
+      "startOffsetMin": -60,
+      "durationMin": null,
+      "isFree": false,
+      "priceMin": 20,
+      "priceMax": 20,
+      "currency": "PLN",
+      "family": true,
+      "entry": "open"
+    },
+    {
+      "externalId": "warszawa-04",
+      "title": "Wieczór smaków regionu",
+      "description": "Degustacje kuchni regionalnej i muzyka na żywo.",
+      "categoryIds": [
+        "food",
+        "happening"
+      ],
+      "venueId": "warszawa-koszyki",
+      "startOffsetMin": 30,
+      "durationMin": 240,
+      "isFree": true
+    },
+    {
+      "externalId": "warszawa-05",
+      "title": "Poranny bieg w parku",
+      "description": "Rekreacyjne 5 km dla każdego, bez pomiaru czasu.",
+      "categoryIds": [
+        "sport"
+      ],
+      "venueId": "warszawa-lazienki",
+      "startOffsetMin": 60,
+      "durationMin": 60,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "warszawa-06",
+      "title": "Pokaz filmowy z rozmową",
+      "description": "Film dokumentalny i spotkanie z twórcami po seansie.",
+      "categoryIds": [
+        "cinema",
+        "talk"
+      ],
+      "venueId": "warszawa-muranow",
+      "startOffsetMin": 45,
+      "durationMin": 150,
+      "isFree": false,
+      "priceMin": 22,
+      "priceMax": 22,
+      "currency": "PLN",
+      "ageMin": 12
+    },
+    {
+      "externalId": "warszawa-07",
+      "title": "Koncert pod gwiazdami",
+      "description": "Plenerowy koncert miejskiej orkiestry dętej.",
+      "categoryIds": [
+        "happening",
+        "music"
+      ],
+      "venueId": "warszawa-pkin",
+      "startOffsetMin": 300,
+      "durationMin": 45,
+      "isFree": true
+    },
+    {
+      "externalId": "warszawa-08",
+      "title": "Festiwal zimowy — otwarcie",
+      "description": "Pierwszy dzień miejskiego festiwalu.",
+      "categoryIds": [
+        "festival"
+      ],
+      "venueId": "warszawa-twon",
+      "startOffsetMin": 30240,
+      "durationMin": 300,
+      "isFree": true
+    }
+  ]
+}
