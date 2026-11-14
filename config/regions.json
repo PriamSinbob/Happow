@@ -121,7 +121,6 @@
       "enabledSources": [
         "ticketmaster",
         "ebilet",
-        "biletyna",
         "teatr-wielki-warszawa",
         "osm-venues",
         "osm-places",
@@ -177,7 +176,6 @@
       "enabledSources": [
         "ticketmaster",
         "ebilet",
-        "biletyna",
         "opera-krakowska",
         "osm-venues",
         "osm-places",
@@ -231,7 +229,6 @@
       "enabledSources": [
         "ticketmaster",
         "ebilet",
-        "biletyna",
         "teatr-wielki-lodz",
         "osm-venues",
         "osm-places",
@@ -289,7 +286,6 @@
       "enabledSources": [
         "ticketmaster",
         "ebilet",
-        "biletyna",
         "osm-venues",
         "osm-places",
         "venue-probe",
@@ -342,7 +338,6 @@
       "enabledSources": [
         "ticketmaster",
         "ebilet",
-        "biletyna",
         "gdansk-wydarzenia",
         "osm-venues",
         "osm-places",
@@ -394,7 +389,6 @@
       "enabledSources": [
         "ticketmaster",
         "ebilet",
-        "biletyna",
         "filharmonia-szczecin",
         "osm-venues",
         "osm-places",
@@ -444,7 +438,6 @@
       "enabledSources": [
         "ticketmaster",
         "ebilet",
-        "biletyna",
         "opera-nova",
         "filharmonia-pomorska",
         "osm-venues",
@@ -497,7 +490,6 @@
       "enabledSources": [
         "ticketmaster",
         "ebilet",
-        "biletyna",
         "filharmonia-lubelska",
         "osm-venues",
         "osm-places",
@@ -560,7 +552,6 @@
       "enabledSources": [
         "ticketmaster",
         "ebilet",
-        "biletyna",
         "nospr",
         "osm-venues",
         "osm-places",

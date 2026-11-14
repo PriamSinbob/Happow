@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '@happow/core';
 import { dueForDispatch, plannedRuns } from '@happow/ingest/schedule';
-import { createApi, dispatchDueIngest } from '../src';
+import { createApi, dispatchDueIngest, rollForwardServices } from '../src';
 import { scheduleConfig } from '../src/schedule';
 
 const config = loadConfig();
@@ -154,5 +154,22 @@ describe('dispatchDueIngest', () => {
     });
     expect(body).not.toContain(env.GITHUB_DISPATCH_TOKEN === 'gh' ? '"gh"' : 'x');
     expect(f.mock.calls.some(([u]) => String(u).endsWith('/dispatches'))).toBe(false);
+  });
+});
+
+describe('rollForwardServices', () => {
+  it('rolls the regular services forward once an hour, horizon from the source', async () => {
+    const f = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
+      expect(String(input)).toBe(`${SB}/rest/v1/rpc/services_roll_forward`);
+      expect(JSON.parse(String(init.body))).toEqual({ p_source: 'worship-services', p_days: 14 });
+      return Response.json(3);
+    });
+    const at = (iso: string) => rollForwardServices(env, new Date(iso), { fetch: f, config });
+    expect(await at('2026-11-14T10:20:00Z')).toEqual({ due: false });
+    expect(await at('2026-11-14T11:05:00Z')).toEqual({
+      due: true,
+      added: { 'worship-services': 3 },
+    });
+    expect(f).toHaveBeenCalledTimes(1);
   });
 });

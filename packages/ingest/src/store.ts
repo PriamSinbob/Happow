@@ -29,6 +29,12 @@ export interface ApplyOptions {
    * primary listing was missed `afterRuns` runs in a row is marked "possibly cancelled".
    */
   missing?: { from: Date; to: Date; afterRuns: number } | null;
+  /**
+   * The run lists every future occurrence the source has (a weekly pattern read once a year):
+   * future occurrences of this source and region it no longer lists are hidden, so a changed
+   * pattern stops rolling forward (services_roll_forward).
+   */
+  replaceFuture?: boolean;
 }
 
 const EVENT_COLUMNS = `
@@ -171,62 +177,32 @@ export class EventStore {
     );
   }
 
-  /** Store raw payloads, then insert, update or merge every event, all in one transaction. */
+  /**
+   * Store raw payloads, then insert, update or merge every event, all in one transaction.
+   * Work goes in chunks of `APPLY_CHUNK` items: each chunk reads what it needs in two queries
+   * (linked listings, merge candidates) and writes in a handful of set-based statements, so a
+   * run costs a few round trips per chunk instead of several per event. The ingest runner is far
+   * from the database (a GitHub runner in the US, Supabase in Frankfurt), where one round trip
+   * is about 0.1 s: per-event statements made 3,000 church services take 40 minutes.
+   */
   async apply(items: NormalizedEvent[], raws: RawEvent[], opts: ApplyOptions): Promise<ApplyStats> {
     const stats: ApplyStats = { inserted: 0, updated: 0, merged: 0, queued: 0, missing: 0 };
     await this.db.query('begin');
     try {
-      for (const raw of raws) await this.saveRaw(raw);
-      for (const item of items) {
-        const listing = { sourceId: item.sourceId, externalId: item.externalId };
-        const linked = await this.linked(item);
-        const d = decide(
-          item.event,
-          listing,
-          linked,
-          await this.nearby(item.event, opts.dedup),
-          opts.rank,
-          opts.dedup,
-        );
-        // Unsure extractions wait for a moderator, unless a moderator already approved the
-        // listing or another source already lists the same event (corroboration).
-        if (!linked && d.action === 'insert' && item.event.confidence < opts.minConfidence) {
-          await this.queueForReview(item, opts.regionId);
-          stats.queued++;
-          continue;
-        }
-        if (item.venue) await this.saveVenue(item);
-        if (d.action === 'insert') {
-          await this.writeEvent(d.event, opts.regionId, d.owner, item.staleAfter, true);
-          stats.inserted++;
-        } else {
-          const owns =
-            d.owner.sourceId === listing.sourceId && d.owner.externalId === listing.externalId;
-          await this.writeEvent(
-            d.event,
-            opts.regionId,
-            d.owner,
-            owns ? item.staleAfter : undefined,
-            false,
-          );
-          if (d.merged) stats.merged++;
-          else stats.updated++;
-        }
+      for (let i = 0; i < raws.length; i += APPLY_CHUNK)
+        await this.saveRaws(raws.slice(i, i + APPLY_CHUNK));
+      // Events this run has written so far, by id: later items see them as merge candidates
+      // and as their linked event, exactly as if each had been written on its own.
+      const written = new Map<string, StoredEvent>();
+      for (let i = 0; i < items.length; i += APPLY_CHUNK)
+        await this.applyChunk(items.slice(i, i + APPLY_CHUNK), opts, stats, written);
+      if (opts.replaceFuture && raws.length)
         await this.db.query(
-          `insert into event_sources (event_id, source_id, external_id, source_url, raw_payload_ref, fetched_at)
-           values ($1, $2, $3, $4, $5, now())
-           on conflict (source_id, external_id) do update set event_id = excluded.event_id,
-             source_url = excluded.source_url, raw_payload_ref = excluded.raw_payload_ref, fetched_at = now(),
-             missed_runs = 0`,
-          [
-            d.event.id,
-            item.sourceId,
-            item.externalId,
-            item.sourceUrl,
-            `${item.sourceId}/${item.externalId}`,
-          ],
+          `update events set hidden = true
+           where primary_source_id = $1 and region_id = $2 and start_at > now() and not hidden
+             and not (primary_external_id = any($3::text[]))`,
+          [raws[0]!.sourceId, opts.regionId, raws.map((r) => r.externalId)],
         );
-      }
       // An empty run is more likely an outage or an API change than every event being called off.
       if (opts.missing && raws.length) {
         stats.missing = await this.markMissing(raws, opts.regionId, opts.missing);
@@ -237,6 +213,72 @@ export class EventStore {
       throw err;
     }
     return stats;
+  }
+
+  private async applyChunk(
+    items: NormalizedEvent[],
+    opts: ApplyOptions,
+    stats: ApplyStats,
+    written: Map<string, StoredEvent>,
+  ) {
+    const linkedRows = await this.linkedMany(items);
+    const candidates = await this.nearbyMany(items, opts.dedup);
+    const pending = new Map<string, PendingWrite>();
+    const venues = new Map<string, NonNullable<NormalizedEvent['venue']>>();
+    const sources = new Map<string, SourceLink>();
+    const fresh = (s: StoredEvent): StoredEvent => written.get(s.event.id) ?? s;
+
+    for (const item of items) {
+      const listing = { sourceId: item.sourceId, externalId: item.externalId };
+      const found = linkedRows.get(`${item.sourceId}\u0000${item.externalId}`);
+      const linked = found ? fresh(found) : null;
+      const ring = new Set(h3Neighbourhood(item.event.h3r9, opts.dedup.h3Ring));
+      const at = Date.parse(item.event.startAt);
+      const tol = opts.dedup.startToleranceMin * 60_000;
+      const near = new Map<string, StoredEvent>();
+      for (const c of [...candidates, ...written.values()]) {
+        const s = fresh(c);
+        if (ring.has(s.event.h3r9) && Math.abs(Date.parse(s.event.startAt) - at) <= tol)
+          near.set(s.event.id, s);
+      }
+      const d = decide(item.event, listing, linked, [...near.values()], opts.rank, opts.dedup);
+      // Unsure extractions wait for a moderator, unless a moderator already approved the
+      // listing or another source already lists the same event (corroboration).
+      if (!linked && d.action === 'insert' && item.event.confidence < opts.minConfidence) {
+        await this.queueForReview(item, opts.regionId);
+        stats.queued++;
+        continue;
+      }
+      if (item.venue) venues.set(item.venue.id, item.venue);
+      const owns =
+        d.action === 'insert' ||
+        (d.owner.sourceId === listing.sourceId && d.owner.externalId === listing.externalId);
+      const before = pending.get(d.event.id);
+      pending.set(d.event.id, {
+        event: d.event,
+        owner: d.owner,
+        // Only the owning listing may set it; otherwise an earlier write of this run stands.
+        staleAfter: owns ? item.staleAfter : before?.staleAfter,
+        insert: before ? before.insert : d.action === 'insert',
+      });
+      if (d.action === 'insert') stats.inserted++;
+      else if (d.merged) stats.merged++;
+      else stats.updated++;
+      written.set(d.event.id, {
+        primarySourceId: d.owner.sourceId,
+        primaryExternalId: d.owner.externalId,
+        event: d.event,
+      });
+      sources.set(`${item.sourceId}\u0000${item.externalId}`, {
+        eventId: d.event.id,
+        sourceId: item.sourceId,
+        externalId: item.externalId,
+        sourceUrl: item.sourceUrl,
+      });
+    }
+    await this.saveVenues([...venues.values()]);
+    await this.writeEvents([...pending.values()], opts.regionId);
+    await this.saveSourceLinks([...sources.values()]);
   }
 
   /** Counts missed listings and sets or clears `source_missing_at`; returns events newly marked. */
@@ -276,9 +318,11 @@ export class EventStore {
        returning id`,
       [sourceId, seen],
     );
-    for (const { id } of [...marked.rows, ...found.rows]) {
-      await this.db.query('select refresh_event_flag($1)', [id]);
-    }
+    const flagged = [...marked.rows, ...found.rows].map((r) => r.id);
+    if (flagged.length)
+      await this.db.query('select refresh_event_flag(id) from unnest($1::text[]) as t(id)', [
+        flagged,
+      ]);
     return marked.rows.length;
   }
 
@@ -456,138 +500,238 @@ export class EventStore {
     };
   }
 
-  private async saveRaw(raw: RawEvent) {
+  private async saveRaws(raws: RawEvent[]) {
+    if (!raws.length) return;
+    // The same listing twice in one statement would make the upsert fail; the last one wins.
+    const byKey = new Map(raws.map((r) => [`${r.sourceId}\u0000${r.externalId}`, r]));
+    const rows = [...byKey.values()];
     await this.db.query(
       `insert into raw_payloads (source_id, external_id, content_hash, payload, fetched_at)
-       values ($1, $2, $3, $4, $5)
+       select source_id, external_id, content_hash, payload::jsonb, fetched_at::timestamptz
+       from unnest($1::text[], $2::text[], $3::text[], $4::text[], $5::text[])
+         as t (source_id, external_id, content_hash, payload, fetched_at)
        on conflict (source_id, external_id) do update set fetched_at = excluded.fetched_at,
          content_hash = excluded.content_hash, payload = excluded.payload`,
       [
-        raw.sourceId,
-        raw.externalId,
-        payloadHash(raw.payload),
-        JSON.stringify(raw.payload),
-        raw.fetchedAt,
+        rows.map((r) => r.sourceId),
+        rows.map((r) => r.externalId),
+        rows.map((r) => payloadHash(r.payload)),
+        rows.map((r) => JSON.stringify(r.payload)),
+        rows.map((r) => r.fetchedAt),
       ],
     );
   }
 
-  private async linked(item: NormalizedEvent): Promise<StoredEvent | null> {
-    const { rows } = await this.db.query<EventRow>(
-      `select ${EVENT_COLUMNS} from event_sources es
-       join events e on e.id = es.event_id left join venues v on v.id = e.venue_id
-       where es.source_id = $1 and es.external_id = $2`,
-      [item.sourceId, item.externalId],
+  /** The stored event each listing of the chunk is linked to, by "source\0external". */
+  private async linkedMany(items: NormalizedEvent[]): Promise<Map<string, StoredEvent>> {
+    const { rows } = await this.db.query<EventRow & { l_source: string; l_external: string }>(
+      `select ${EVENT_COLUMNS}, es.source_id as l_source, es.external_id as l_external
+       from unnest($1::text[], $2::text[]) as l (source_id, external_id)
+       join event_sources es on es.source_id = l.source_id and es.external_id = l.external_id
+       join events e on e.id = es.event_id left join venues v on v.id = e.venue_id`,
+      [items.map((i) => i.sourceId), items.map((i) => i.externalId)],
     );
-    return rows[0] ? toStored(rows[0]) : null;
+    return new Map(rows.map((r) => [`${r.l_source}\u0000${r.l_external}`, toStored(r)]));
   }
 
-  /** Candidates for a merge; private events never take part, either way. */
-  private async nearby(ev: HappowEvent, cfg: ApplyOptions['dedup']): Promise<StoredEvent[]> {
+  /**
+   * Merge candidates for the whole chunk: public events in any item's neighbourhood within the
+   * chunk's time span. Each item then keeps those near itself. Private events never take part.
+   */
+  private async nearbyMany(
+    items: NormalizedEvent[],
+    cfg: ApplyOptions['dedup'],
+  ): Promise<StoredEvent[]> {
+    if (!items.length) return [];
+    const cells = new Set<string>();
+    let from = Infinity;
+    let to = -Infinity;
+    for (const { event } of items) {
+      for (const c of h3Neighbourhood(event.h3r9, cfg.h3Ring)) cells.add(c);
+      const at = Date.parse(event.startAt);
+      from = Math.min(from, at);
+      to = Math.max(to, at);
+    }
+    const tol = cfg.startToleranceMin * 60_000;
     const { rows } = await this.db.query<EventRow>(
       `select ${EVENT_COLUMNS} from events e left join venues v on v.id = e.venue_id
-       where e.visibility = 'public' and e.h3_r9 = any($1) and e.start_at between $2::timestamptz - make_interval(mins => $3)
-         and $2::timestamptz + make_interval(mins => $3)`,
-      [h3Neighbourhood(ev.h3r9, cfg.h3Ring), ev.startAt, cfg.startToleranceMin],
+       where e.visibility = 'public' and e.h3_r9 = any($1) and e.start_at between $2 and $3`,
+      [[...cells], new Date(from - tol).toISOString(), new Date(to + tol).toISOString()],
     );
     return rows.map(toStored);
   }
 
-  private async saveVenue(item: NormalizedEvent) {
-    const v = item.venue!;
+  private async saveVenues(venues: NonNullable<NormalizedEvent['venue']>[]) {
+    if (!venues.length) return;
     await this.db.query(
       `insert into venues (id, name, address, point, h3_r9, website)
-       values ($1, $2, $3, st_point($4, $5)::geography, $6, $7)
+       select id, name, address, st_point(lng, lat)::geography, h3_r9, website
+       from unnest($1::text[], $2::text[], $3::text[], $4::float8[], $5::float8[], $6::text[],
+         $7::text[]) as t (id, name, address, lng, lat, h3_r9, website)
        on conflict (id) do update set name = excluded.name, address = excluded.address,
          point = excluded.point, h3_r9 = excluded.h3_r9, website = coalesce(excluded.website, venues.website)`,
-      [v.id, v.name, v.address, v.point.lng, v.point.lat, v.h3r9, v.website],
+      [
+        venues.map((v) => v.id),
+        venues.map((v) => v.name),
+        venues.map((v) => v.address),
+        venues.map((v) => v.point.lng),
+        venues.map((v) => v.point.lat),
+        venues.map((v) => v.h3r9),
+        venues.map((v) => v.website),
+      ],
     );
   }
 
-  /** `staleAfter` undefined keeps the stored value (only the owning listing may extend it). */
-  private async writeEvent(
-    e: HappowEvent,
-    regionId: string,
-    owner: Listing,
-    staleAfter: string | null | undefined,
-    insert: boolean,
-  ) {
-    const values = [
-      e.id,
-      regionId,
-      e.title,
-      e.description,
-      e.categoryIds,
-      e.startAt,
-      e.endAt,
-      e.endEstimated,
-      e.timezone,
-      e.venue?.id ?? null,
-      e.point.lng,
-      e.point.lat,
-      e.h3r9,
-      e.priceMin,
-      e.priceMax,
-      e.currency,
-      e.isFree,
-      e.rules,
-      e.officialUrl,
-      e.ticketUrl,
-      e.imageUrl,
-      e.status,
-      e.trust,
-      e.confidence,
-      e.lastSeenAt,
-      owner.sourceId,
-      owner.externalId,
-      e.densityCell ?? null,
-      e.entry,
-      e.graceMin,
-      e.ageMin,
-      e.family,
-    ];
-    if (insert) {
+  /**
+   * Inserts and updates in two statements. `staleAfter` undefined keeps the stored value (only
+   * the owning listing may extend it). Performers are replaced by the merged list.
+   */
+  private async writeEvents(writes: PendingWrite[], regionId: string) {
+    if (!writes.length) return;
+    const row = ({ event: e, owner, staleAfter }: PendingWrite) => ({
+      id: e.id,
+      region_id: regionId,
+      title: e.title,
+      description: e.description,
+      category_ids: e.categoryIds,
+      start_at: e.startAt,
+      end_at: e.endAt,
+      end_estimated: e.endEstimated,
+      timezone: e.timezone,
+      venue_id: e.venue?.id ?? null,
+      lng: e.point.lng,
+      lat: e.point.lat,
+      h3_r9: e.h3r9,
+      price_min: e.priceMin,
+      price_max: e.priceMax,
+      currency: e.currency,
+      is_free: e.isFree,
+      rules: e.rules,
+      official_url: e.officialUrl,
+      ticket_url: e.ticketUrl,
+      image_url: e.imageUrl,
+      status: e.status,
+      trust: e.trust,
+      confidence: e.confidence,
+      last_seen_at: e.lastSeenAt,
+      primary_source_id: owner.sourceId,
+      primary_external_id: owner.externalId,
+      density_cell: e.densityCell ?? null,
+      entry: e.entry,
+      grace_min: e.graceMin,
+      age_min: e.ageMin,
+      family: e.family,
+      set_stale: staleAfter !== undefined,
+      stale_after: staleAfter ?? null,
+    });
+    const recordset = `jsonb_to_recordset($1::jsonb) as t (id text, region_id text, title text,
+      description text, category_ids text[], start_at timestamptz, end_at timestamptz,
+      end_estimated boolean, timezone text, venue_id text, lng float8, lat float8, h3_r9 text,
+      price_min numeric, price_max numeric, currency text, is_free boolean, rules jsonb,
+      official_url text, ticket_url text, image_url text, status event_status, trust trust_level,
+      confidence real, last_seen_at timestamptz, primary_source_id text,
+      primary_external_id text, density_cell text, entry text, grace_min integer,
+      age_min integer, family boolean, set_stale boolean, stale_after timestamptz)`;
+    const inserts = writes.filter((w) => w.insert).map(row);
+    const updates = writes.filter((w) => !w.insert).map(row);
+    if (inserts.length)
       await this.db.query(
         `insert into events (id, region_id, title, description, category_ids, start_at, end_at,
            end_estimated, timezone, venue_id, point, h3_r9, price_min, price_max, currency, is_free,
            rules, official_url, ticket_url, image_url, status, trust, confidence, last_seen_at,
            primary_source_id, primary_external_id, density_cell, entry, grace_min, age_min, family,
            stale_after)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, st_point($11, $12)::geography, $13, $14,
-           $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31,
-           $32, $33)`,
-        [...values, staleAfter ?? null],
+         select id, region_id, title, description, category_ids, start_at, end_at, end_estimated,
+           timezone, venue_id, st_point(lng, lat)::geography, h3_r9, price_min, price_max,
+           currency, is_free, coalesce(rules, '{}'::jsonb), official_url, ticket_url, image_url,
+           status, trust, confidence, last_seen_at, primary_source_id, primary_external_id,
+           density_cell, entry, grace_min, age_min, family, stale_after
+         from ${recordset}`,
+        [JSON.stringify(inserts)],
       );
-      await this.writePerformers(e, owner.sourceId);
-      return;
-    }
-    await this.db.query(
-      `update events set region_id = $2, title = $3, description = $4, category_ids = $5,
-         start_at = $6, end_at = $7, end_estimated = $8, timezone = $9, venue_id = $10,
-         point = st_point($11, $12)::geography, h3_r9 = $13, price_min = $14, price_max = $15,
-         currency = $16, is_free = $17, rules = $18, official_url = $19, ticket_url = $20,
-         image_url = $21, status = $22, trust = $23, confidence = $24, last_seen_at = $25,
-         primary_source_id = $26, primary_external_id = $27,
-         density_cell = coalesce($28, density_cell), entry = $29, grace_min = $30, age_min = $31,
-         family = $32,
-         stale_after = case when $33::boolean then $34::timestamptz else stale_after end
-       where id = $1`,
-      [...values, staleAfter !== undefined, staleAfter ?? null],
-    );
-    await this.writePerformers(e, owner.sourceId);
+    if (updates.length)
+      await this.db.query(
+        `update events e set region_id = t.region_id, title = t.title,
+           description = t.description, category_ids = t.category_ids, start_at = t.start_at,
+           end_at = t.end_at, end_estimated = t.end_estimated, timezone = t.timezone,
+           venue_id = t.venue_id, point = st_point(t.lng, t.lat)::geography, h3_r9 = t.h3_r9,
+           price_min = t.price_min, price_max = t.price_max, currency = t.currency,
+           is_free = t.is_free, rules = coalesce(t.rules, '{}'::jsonb),
+           official_url = t.official_url, ticket_url = t.ticket_url, image_url = t.image_url,
+           status = t.status, trust = t.trust, confidence = t.confidence,
+           last_seen_at = t.last_seen_at, primary_source_id = t.primary_source_id,
+           primary_external_id = t.primary_external_id,
+           density_cell = coalesce(t.density_cell, e.density_cell), entry = t.entry,
+           grace_min = t.grace_min, age_min = t.age_min, family = t.family,
+           stale_after = case when t.set_stale then t.stale_after else e.stale_after end
+         from ${recordset}
+         where e.id = t.id`,
+        [JSON.stringify(updates)],
+      );
+    await this.writePerformers(writes);
   }
 
-  /** The event's performers as merged: the stored list is replaced by the union. */
-  private async writePerformers(e: HappowEvent, sourceId: string) {
-    const list = mergePerformers(e.performers);
-    await this.db.query('delete from event_performers where event_id = $1', [e.id]);
-    if (!list.length) return;
+  /** Each event's performers as merged: the stored list is replaced by the union. */
+  private async writePerformers(writes: PendingWrite[]) {
+    const ids: string[] = [];
+    const rows = { id: [] as string[], ord: [] as number[], name: [] as string[] };
+    const src = { source: [] as string[], ext: [] as string[] };
+    for (const { event, owner } of writes) {
+      ids.push(event.id);
+      mergePerformers(event.performers).forEach((p, i) => {
+        rows.id.push(event.id);
+        rows.ord.push(i);
+        rows.name.push(p.name);
+        src.source.push(owner.sourceId);
+        src.ext.push(p.externalId ?? '');
+      });
+    }
+    await this.db.query('delete from event_performers where event_id = any($1::text[])', [ids]);
+    if (!rows.id.length) return;
     await this.db.query(
       `insert into event_performers (event_id, ord, name, norm, source_id, external_id)
-       select $1, ord::smallint - 1, name, f_norm(name), $2, nullif(ext, '')
-       from unnest($3::text[], $4::text[]) with ordinality as t(name, ext, ord)
+       select event_id, ord::smallint, name, f_norm(name), source_id, nullif(ext, '')
+       from unnest($1::text[], $2::int[], $3::text[], $4::text[], $5::text[])
+         as t (event_id, ord, name, source_id, ext)
        on conflict (event_id, norm) do nothing`,
-      [e.id, sourceId, list.map((p) => p.name), list.map((p) => p.externalId ?? '')],
+      [rows.id, rows.ord, rows.name, src.source, src.ext],
     );
   }
+
+  private async saveSourceLinks(links: SourceLink[]) {
+    if (!links.length) return;
+    await this.db.query(
+      `insert into event_sources (event_id, source_id, external_id, source_url, raw_payload_ref, fetched_at)
+       select event_id, source_id, external_id, source_url, source_id || '/' || external_id, now()
+       from unnest($1::text[], $2::text[], $3::text[], $4::text[])
+         as t (event_id, source_id, external_id, source_url)
+       on conflict (source_id, external_id) do update set event_id = excluded.event_id,
+         source_url = excluded.source_url, raw_payload_ref = excluded.raw_payload_ref, fetched_at = now(),
+         missed_runs = 0`,
+      [
+        links.map((l) => l.eventId),
+        links.map((l) => l.sourceId),
+        links.map((l) => l.externalId),
+        links.map((l) => l.sourceUrl),
+      ],
+    );
+  }
+}
+
+/** Items per round of reads and writes in `apply`. */
+const APPLY_CHUNK = 500;
+
+/** One event's final state in a chunk; `insert` when its first write in this run creates it. */
+interface PendingWrite {
+  event: HappowEvent;
+  owner: Listing;
+  staleAfter: string | null | undefined;
+  insert: boolean;
+}
+
+interface SourceLink {
+  eventId: string;
+  sourceId: string;
+  externalId: string;
+  sourceUrl: string | null;
 }

@@ -1,5 +1,5 @@
 export { createApi, type ApiEnv } from './handler.js';
-export { dispatchDueIngest, type ScheduleEnv } from './schedule.js';
+export { dispatchDueIngest, rollForwardServices, type ScheduleEnv } from './schedule.js';
 export { saveWeeklyMetrics } from './metrics.js';
 export { sendDueReminders } from './reminders.js';
 export { sendDueNotices } from './notices.js';

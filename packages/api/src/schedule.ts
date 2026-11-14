@@ -141,3 +141,32 @@ export async function dispatchDueIngest(
 export const dueRegions = (due: readonly string[]): string[] => [
   ...new Set(due.map((d) => d.slice(d.indexOf('@') + 1))),
 ];
+
+export interface RollResult {
+  due: boolean;
+  added?: Record<string, number>;
+  reason?: string;
+}
+
+/**
+ * Once an hour: sources with `options.rollForward` (regular services, read from OSM once a
+ * year) are carried forward week by week in the database, `options.horizonDays` ahead
+ * (services_roll_forward). Costs one RPC per such source and no Actions minutes.
+ */
+export async function rollForwardServices(
+  env: ScheduleEnv,
+  now: Date,
+  deps: ScheduleDeps = {},
+): Promise<RollResult> {
+  if (now.getUTCMinutes() >= 15) return { due: false };
+  const config = deps.config ?? scheduleConfig();
+  const db = serviceDb(env, deps.fetch);
+  if (!db) return { due: true, reason: NO_DATABASE };
+  const added: Record<string, number> = {};
+  for (const s of config.sources) {
+    if (!s.enabled || s.options.rollForward !== true) continue;
+    const days = typeof s.options.horizonDays === 'number' ? s.options.horizonDays : 14;
+    added[s.id] = await db.rpc<number>('services_roll_forward', { p_source: s.id, p_days: days });
+  }
+  return { due: true, added };
+}
