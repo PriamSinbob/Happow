@@ -10,6 +10,7 @@ import {
   isRunning,
   loadConfig,
   nearby,
+  regionAt,
   resolveEnd,
 } from '../src/index.js';
 import { materializeSeed } from '../src/seed.js';
@@ -21,6 +22,20 @@ describe('config', () => {
     expect(config.categories).toHaveLength(14);
     expect(getRegion(config).id).toBe(config.app.defaultRegion);
     expect(getRegion(config, 'nope').id).toBe(config.app.defaultRegion);
+  });
+
+  it('finds the region a point is in, the nearest centre where two overlap', () => {
+    const base = getRegion(config);
+    const at = (id: string, lat: number, lng: number) => ({
+      ...base,
+      id,
+      center: { lat, lng },
+      bbox: { west: lng - 0.5, south: lat - 0.5, east: lng + 0.5, north: lat + 0.5 },
+    });
+    const two = { regions: [at('a', 50, 17), at('b', 50, 17.6)] };
+    expect(regionAt(two, { lat: 50, lng: 16.6 })?.id).toBe('a');
+    expect(regionAt(two, { lat: 50, lng: 17.4 })?.id).toBe('b');
+    expect(regionAt(two, { lat: 52, lng: 21 })).toBeNull();
   });
 });
 

@@ -16,10 +16,12 @@ import {
   sourcesConfigSchema,
   themeConfigSchema,
 } from './schemas.js';
+import { distanceM, isInBbox } from './geo.js';
 import { checkPlans } from './plans.js';
 import type {
   AppConfig,
   Category,
+  LatLng,
   MapConfig,
   PlansConfig,
   Region,
@@ -139,6 +141,16 @@ export function loadConfig(): HappowConfig {
   errors.push(...checkPlans(plans));
   if (errors.length) throw new Error(`Invalid config:\n- ${errors.join('\n- ')}`);
   return { app, categories, regions, map, sources, theme, plans, seasons };
+}
+
+/**
+ * The region a point is in: the one whose bbox holds it, the nearest centre first where two
+ * overlap; null outside every region. Clients pick their region with this from `GET /api/config`.
+ */
+export function regionAt(config: Pick<HappowConfig, 'regions'>, p: LatLng): Region | null {
+  const inside = config.regions.filter((r) => isInBbox(p, r.bbox));
+  if (inside.length < 2) return inside[0] ?? null;
+  return inside.reduce((a, b) => (distanceM(p, b.center) < distanceM(p, a.center) ? b : a));
 }
 
 export function getRegion(config: HappowConfig, id?: string): Region {
