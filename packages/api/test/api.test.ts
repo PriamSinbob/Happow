@@ -24,6 +24,7 @@ const accountRpc: Backend['rpc'] = {
   // Nobody is trusted, nothing published by trusted accounts, rewards recorded.
   contributor_trusted: () => ({ body: false }),
   trusted_recent: () => ({ body: [] }),
+  place_closed_queue: () => ({ body: [] }),
   duplicate_candidates: () => ({ body: { title: 'x', others: [] } }),
   contribution_award: () => ({ body: { kind: 'verified', days: 3, startsAt: null } }),
   contribution_revoke_event: () => ({ body: 0 }),

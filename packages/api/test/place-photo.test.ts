@@ -32,6 +32,7 @@ function setup(read: ExtractedPlace | null = door, rpc: Record<string, Rpc> = {}
     },
     place_add: () => ({ body: 'user/1' }),
     place_change: () => ({ status: 204, body: null }),
+    place_reports_clear: () => ({ status: 204, body: null }),
     ...rpc,
   });
   const extractPlace = vi.fn(async () => read);

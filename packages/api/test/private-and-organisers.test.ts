@@ -310,6 +310,7 @@ describe('claims', () => {
     const b = backend({
       moderation_queue: () => ({ body: { submissions: [], reports: [] } }),
       trusted_recent: () => ({ body: [] }),
+      place_closed_queue: () => ({ body: [] }),
       claims_queue: () => ({ body: [{ id: claim.id }] }),
       edits_queue: () => ({ body: [] }),
       post_reports_queue: () => ({ body: [] }),
