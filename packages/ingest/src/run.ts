@@ -151,6 +151,7 @@ export async function runIngest(opts: IngestOptions): Promise<SourceRunSummary[]
             missing: source.completeListing
               ? missedWindow(result.window, result.events, config.app.ingest.missedRunsToFlag)
               : null,
+            replaceFuture: source.options.replaceFuture === true,
           })
         : { inserted: 0, updated: 0, merged: 0, queued: 0, missing: 0 };
       const stats = {

@@ -200,6 +200,9 @@ A new city is a region entry plus its id in each source's `regionIds`. Sources t
 
 - **Ticketmaster** answers at most 1,000 results per query. A query that matches more is split into quarters of its area, and below about 3 km into halves of its time window, until every part fits; events are kept once. A run is capped at `options.maxRequests` (300) of the 5,000 a day the free key allows.
 - **OpenStreetMap** (venues and open places) runs once every 30 days, one Overpass query per region: well inside Overpass's usage policy (under 10,000 queries and 1 GB a day, one query at a time). It is the starting set; users correct and add places after that, and their changes are kept apart from the OSM rows, so a monthly refresh does not overwrite them.
+- **Writes go in batches.** The ingest job runs on GitHub's runners in the US and the database is in Frankfurt, so one statement costs about 0.1 s. `EventStore.apply` reads and writes per chunk of 500 events in a few set-based statements; per-event statements made 3,000 church services take 40 minutes and pushed big cities past the job's 60-minute limit. Keep any new store code set-based.
+- **Regular church services** are read from OSM once a year (`schedule: 8760h`). The database carries the weekly pattern forward (`services_roll_forward`, called hourly by the Worker's cron), 14 days ahead, with no ingest run in between. The yearly read hides future services OSM no longer lists.
+- **Biletyna** is in Wrocław only: other cities' listings answered a bot check after the first few requests.
 - **eBilet** is on in every region until launch only, to see whether it is worth asking them for consent or a feed (`beforeLaunch` in `config/sources.json`).
 
 ### Nominatim (addresses to points)

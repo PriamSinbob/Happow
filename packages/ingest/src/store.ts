@@ -29,6 +29,12 @@ export interface ApplyOptions {
    * primary listing was missed `afterRuns` runs in a row is marked "possibly cancelled".
    */
   missing?: { from: Date; to: Date; afterRuns: number } | null;
+  /**
+   * The run lists every future occurrence the source has (a weekly pattern read once a year):
+   * future occurrences of this source and region it no longer lists are hidden, so a changed
+   * pattern stops rolling forward (services_roll_forward).
+   */
+  replaceFuture?: boolean;
 }
 
 const EVENT_COLUMNS = `
@@ -190,6 +196,13 @@ export class EventStore {
       const written = new Map<string, StoredEvent>();
       for (let i = 0; i < items.length; i += APPLY_CHUNK)
         await this.applyChunk(items.slice(i, i + APPLY_CHUNK), opts, stats, written);
+      if (opts.replaceFuture && raws.length)
+        await this.db.query(
+          `update events set hidden = true
+           where primary_source_id = $1 and region_id = $2 and start_at > now() and not hidden
+             and not (primary_external_id = any($3::text[]))`,
+          [raws[0]!.sourceId, opts.regionId, raws.map((r) => r.externalId)],
+        );
       // An empty run is more likely an outage or an API change than every event being called off.
       if (opts.missing && raws.length) {
         stats.missing = await this.markMissing(raws, opts.regionId, opts.missing);

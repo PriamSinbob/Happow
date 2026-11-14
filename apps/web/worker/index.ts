@@ -17,6 +17,7 @@ import {
   createApi,
   createEventPage,
   dispatchDueIngest,
+  rollForwardServices,
   eventIdFromPath,
   saveWeeklyMetrics,
   sendDueNotices,
@@ -103,7 +104,7 @@ export default {
   async scheduled(controller: ScheduledController, env: ApiEnv & ScheduleEnv): Promise<void> {
     const now = new Date(controller.scheduledTime);
     // Independent jobs: one failing must not stop the other.
-    const [ingest, metrics, reminders, notices, follows] = await Promise.allSettled([
+    const [ingest, metrics, reminders, notices, follows, services] = await Promise.allSettled([
       dispatchDueIngest(env, now),
       saveWeeklyMetrics(env, now),
       sendDueReminders(env, now),
@@ -111,6 +112,8 @@ export default {
       sendDueNotices(env, now),
       // New dates of followed artists.
       sendFollowAlerts(env, now),
+      // Regular services carried forward week by week, hourly.
+      rollForwardServices(env, now),
     ]);
     const out = (r: PromiseSettledResult<object>) =>
       r.status === 'fulfilled' ? r.value : { error: String(r.reason) };
@@ -123,6 +126,7 @@ export default {
         reminders: out(reminders),
         notices: out(notices),
         follows: out(follows),
+        services: out(services),
       }),
     );
   },

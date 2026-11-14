@@ -14,6 +14,7 @@ flowchart TB
     CRON["Cron trigger<br/>every 15 min"]
     SCHED{"Any source due?<br/>(source_run_latest)"}
     METRICS["Mondays:<br/>saveWeeklyMetrics"]
+    ROLL["Hourly:<br/>services_roll_forward"]
     API["/api/* router<br/>packages/api"]
     CACHE[("Workers Cache<br/>/api/area 5–30 min<br/>events 1 min · config")]
     STATIC["Static assets<br/>apps/web/dist (web app)"]
@@ -49,6 +50,7 @@ flowchart TB
   CFG --> API
   CRON --> SCHED
   CRON --> METRICS --> DB
+  CRON --> ROLL --> DB
   SCHED -- "yes: workflow_dispatch<br/>(due regions)" --> INGEST
   FALLBACK --> INGEST
   EXT --> INGEST
