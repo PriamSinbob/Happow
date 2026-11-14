@@ -10,7 +10,7 @@ import { NO_DATABASE, serviceDb } from './supabase.js';
  * and starts the workflow (workflow_dispatch) only when some source is due, so a 15-minute cron
  * costs CI minutes only for runs that fetch something. The workflow then applies the same
  * schedule rules itself and fetches only the due sources. It is told which regions are due, and
- * runs one job per region side by side, so more cities do not make one run longer.
+ * runs one job per region, so more cities do not make one job run past its timeout.
  */
 
 export interface ScheduleEnv {

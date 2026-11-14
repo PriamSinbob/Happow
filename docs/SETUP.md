@@ -145,7 +145,7 @@ The app runs as one **Cloudflare Worker** named `happow`. Cloudflare serves the 
 
 ### 5a. Scheduled ingestion (Cron Trigger)
 
-The Worker has a Cron Trigger every 15 minutes (`triggers.crons` in `wrangler.jsonc`). Each tick reads the latest rows of `source_runs` and starts the GitHub **Ingest sources** workflow only when some source is due. A tick that finds nothing due costs nothing, and GitHub's own schedule is only a fallback once a day. This keeps ingestion on time (GitHub runs its own frequent schedules late or not at all) and within the 2,000 free Actions minutes a private repository gets.
+The Worker has a Cron Trigger every 15 minutes (`triggers.crons` in `wrangler.jsonc`). Each tick reads the latest run of each source in each region (the `source_run_latest` view) and starts the GitHub **Ingest sources** workflow only when some source is due. A tick that finds nothing due costs nothing, and GitHub's own schedule is only a fallback once a day. This keeps ingestion on time (GitHub runs its own frequent schedules late or not at all) and within the 2,000 free Actions minutes a private repository gets.
 
 1. GitHub → your avatar → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
    - **Repository access:** Only select repositories → `PriamSinbob/happow`.
@@ -154,7 +154,7 @@ The Worker has a Cron Trigger every 15 minutes (`triggers.crons` in `wrangler.js
 2. Cloudflare → the `happow` Worker → **Settings → Runtime variables and secrets → + Add variable**, secret checkbox ticked, name `GITHUB_DISPATCH_TOKEN`, value: the token.
 3. Check: the Worker's **Settings → Triggers** lists the Cron Trigger `*/15 * * * *` (it appears after the first deploy of this change). After the next tick, **Observability → Logs** shows a line like `{"cron":"*/15 * * * *","due":["ticketmaster@wroclaw"],"dispatched":true}`, and GitHub → **Actions** shows a new run started by `workflow_dispatch`.
 
-Sources whose GitHub secrets are missing are recorded as skipped and not retried for 24 hours (`ingest.dispatch` in `config/app.json`), so an unconfigured source never triggers runs on its own. Runs are kept few on purpose: no source is scheduled more often than every 12 hours (Ticketmaster and account feeds; the rest daily or weekly), a failed source is retried after 6 hours, and a run that starts also takes every source due within the next 6 hours (`batchAheadHours`), so sources settle into one long run a day (about 40 minutes, the city portal alone about 20) and one short one 12 hours later. Expected use: about 45 minutes a day, roughly 1,400 minutes a month plus CI. The job may take up to 60 minutes; it only bills what it uses.
+Sources whose GitHub secrets are missing are recorded as skipped and not retried for 24 hours (`ingest.dispatch` in `config/app.json`), so an unconfigured source never triggers runs on its own. Runs are kept few on purpose: no source is scheduled more often than every 12 hours (Ticketmaster and account feeds; the rest daily or weekly), a failed source is retried after 6 hours, and a run that starts also takes every source due within the next 6 hours (`batchAheadHours`), so sources settle into one long run a day (about 40 minutes, the city portal alone about 20) and one short one 12 hours later. The Worker passes the regions with something due, and the workflow runs one job per region, one after another; each job may take up to 60 minutes and bills only what it uses, rounded up to a whole minute. Expected use with Wrocław alone: about 45 minutes a day, roughly 1,400 minutes a month plus CI. With ten regions it is well over a private repository's free minutes: see [Regions and limits](#regions-and-limits).
 
 ## 6. GitHub: secrets for the scheduled jobs
 
@@ -181,12 +181,44 @@ The Worker also needs `TICKETMASTER_API_KEY` (Settings → Variables and Secrets
 
 Prices: Claude Haiku 5.5 costs $0.10 per million input tokens and $0.50 per million output tokens. One event page is about 4,000 input tokens (the page text is cut to 12,000 characters) plus a few hundred output tokens, so roughly **$0.0005–0.001 per page**.
 
-| What calls Claude                               | How often                                                                                                            | Bound                                                                               | Cost                        |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------- |
-| NFM crawl                                       | Only pages that changed since the last crawl (content-hash cache)                                                    | at most 25 pages a day                                                              | a few cents a month         |
-| "Add an event" autofill                         | Signed-in accounts only (`submissions.autofill: "account"`), with a monthly allowance per plan (`config/plans.json`) | `extraction.autofillLlmPerDay` (300) across all users, plus 30 per hour per account | a few cents a month at most |
-| Map, list, filters, detail, reports, moderation | never                                                                                                                | —                                                                                   | $0                          |
+| What calls Claude                               | How often                                                                                                                                               | Bound                                                                               | Cost                                    |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------- |
+| NFM crawl                                       | Only pages that changed since the last crawl (content-hash cache)                                                                                       | at most 25 pages a day                                                              | a few cents a month                     |
+| "Add an event" autofill                         | Signed-in accounts only (`submissions.autofill: "account"`), with a monthly allowance per plan (`config/plans.json`)                                    | `extraction.autofillLlmPerDay` (300) across all users, plus 30 per hour per account | a few cents a month at most             |
+| Poster and place photos                         | Each photo is one call (about 1,600–2,500 image tokens + instructions + a short answer): **about $0.0005–0.001 a photo**, 1,000–2,000 photos per dollar | the same daily cap; place photos also 5 a day per device and 30 per network         | at most about $5–9 a month at 300 a day |
+| Map, list, filters, detail, reports, moderation | never                                                                                                                                                   | —                                                                                   | $0                                      |
 
 So the Claude cost is crawling, which grows with the number of **cities and sources**, plus autofill, bounded by the daily cap: about $0.01–0.05 per city per month for an NFM-like source. The workspace spend limit (step 2.3) is the backstop.
 
 Your own Claude subscription (Claude.ai and Claude Code) is a different product with its own limits. The app never uses it, and building the app in Claude Code never touches the API key.
+
+## Regions and limits
+
+Each region in `config/regions.json` is a city with its suburbs: `bbox` must hold the suburbs (events outside it are rejected as `outside-region`, and the add form refuses points outside it), and `localities` lists the town names crawled listings use (an item naming another town is dropped before geocoding). Clients pick the region from the position (`regionAt`); the web app remembers it and reloads once when it finds itself in another region, and `?region=<id>` opens one directly.
+
+A new city is a region entry plus its id in each source's `regionIds`. Sources that read a city listing take the address per region in `regionOptions` (eBilet, Biletyna). Districts for the metrics are optional: `pnpm districts` writes them from OSM.
+
+- **Ticketmaster** answers at most 1,000 results per query. A query that matches more is split into quarters of its area, and below about 3 km into halves of its time window, until every part fits; events are kept once. A run is capped at `options.maxRequests` (300) of the 5,000 a day the free key allows.
+- **OpenStreetMap** (venues and open places) runs once every 30 days, one Overpass query per region: well inside Overpass's usage policy (under 10,000 queries and 1 GB a day, one query at a time). It is the starting set; users correct and add places after that, and their changes are kept apart from the OSM rows, so a monthly refresh does not overwrite them.
+- **eBilet** is on in every region until launch only, to see whether it is worth asking them for consent or a feed (`beforeLaunch` in `config/sources.json`).
+
+### Nominatim (addresses to points)
+
+Events that arrive without coordinates (crawled pages, account feeds, the add form's address field) are geocoded with OpenStreetMap's public Nominatim server. Its usage policy: at most **one request a second from the whole app**, a User-Agent that identifies the app (ours has the site and contact address), results cached, and no bulk geocoding of large lists. Happow keeps to it like this:
+
+- One request every 1.1 s (`geocoding.minIntervalMs`), and region jobs run one after another (`max-parallel: 1` in `ingest.yml`), so two jobs never ask at once.
+- Every answer, found or not, is cached for 30 days (`geocoding.cacheDays`), so a venue is looked up once a month, not once per event.
+- Sources with coordinates (Ticketmaster, Meetup, JSON-LD with `geo`, OSM) never call it, nor does an event whose venue already carries a point.
+- The query is bounded to the region's bbox, so a Polish street name finds the right city.
+
+What changes with ten cities is only the first week: each new city's venues are unknown, so its first runs geocode a few hundred to a few thousand addresses (an hour per 3,000). After that it is a few new venues a day. If the queue keeps growing (the run log's `geocoded` count stays high, or Nominatim answers 429 or 403), the geocoder is one class behind an interface (`Geocoder` in `packages/extract/src/geocode.ts`) and can move to a self-hosted Photon or Nominatim with a Poland extract (a small server with 8 GB of memory and 100 GB of disk, no request limit), or to a paid service with a free tier (LocationIQ, Geoapify, MapTiler). Nothing else changes.
+
+### GitHub Actions minutes for a private repository
+
+A private repository gets 2,000 free Actions minutes a month on GitHub Free and 3,000 on Pro or Team. Each job is billed in whole minutes, about 1–2 of them for checkout and `pnpm install` before any work. Public repositories pay nothing, which is why this was never an issue before.
+
+A rough estimate for ten regions: Wrocław about 45 minutes a day, each other city 10–15 (two runs a day, a third of it setup), so **about 4,500–6,000 minutes a month**, plus CI (both CI jobs on every push to a pull request, a few minutes each). Measure with `source_runs` once the regions run. Three ways to fit:
+
+1. **Self-hosted runner (recommended).** Jobs on your own machine use no included minutes. A small VPS (for example Hetzner CX22, 2 vCPU and 4 GB, about €4–5 a month) is enough for ingest. GitHub → the repository → **Settings → Actions → Runners → New self-hosted runner** → Linux x64, run the commands it shows on the server, then `sudo ./svc.sh install && sudo ./svc.sh start` so it survives reboots. Then **Settings → Secrets and variables → Actions → Variables → New repository variable** `INGEST_RUNNER` = `self-hosted`. Only the ingest workflow moves; CI stays on GitHub's runners. Keep the repository private while a self-hosted runner is attached (on a public one, anyone's pull request could run code on it). The same server can later run the self-hosted geocoder. GitHub announced and then postponed a $0.002-a-minute charge for self-hosted runners in private repositories; even at that rate, 6,000 minutes would be $12 a month.
+2. **Pay for extra minutes.** Above the included ones, a Linux 2-core runner costs well under a cent a minute; 3,000–4,000 extra minutes come to roughly $20–30 a month. Set a spending limit in **Settings → Billing**.
+3. **Fewer runs.** Daily instead of 12-hourly sources (`schedule` in `config/sources.json`), or a larger `batchAheadHours`, halves the setup minutes.

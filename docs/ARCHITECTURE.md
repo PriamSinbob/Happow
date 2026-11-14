@@ -12,7 +12,7 @@ flowchart TB
 
   subgraph CF["Cloudflare Worker (happow)"]
     CRON["Cron trigger<br/>every 15 min"]
-    SCHED{"Any source due?<br/>(source_runs)"}
+    SCHED{"Any source due?<br/>(source_run_latest)"}
     METRICS["Mondays:<br/>saveWeeklyMetrics"]
     API["/api/* router<br/>packages/api"]
     CACHE[("Workers Cache<br/>/api/area 5–30 min<br/>events 1 min · config")]
@@ -20,7 +20,7 @@ flowchart TB
   end
 
   subgraph GH["GitHub Actions"]
-    INGEST["ingest.yml<br/>pnpm ingest"]
+    INGEST["ingest.yml<br/>one job per due region<br/>pnpm ingest --region"]
     FALLBACK["Daily fallback cron 03:17"]
     MIGRATE["db-migrate.yml"]
     CI["ci.yml<br/>tests on fixtures"]
@@ -49,7 +49,7 @@ flowchart TB
   CFG --> API
   CRON --> SCHED
   CRON --> METRICS --> DB
-  SCHED -- "yes: workflow_dispatch" --> INGEST
+  SCHED -- "yes: workflow_dispatch<br/>(due regions)" --> INGEST
   FALLBACK --> INGEST
   EXT --> INGEST
   INGEST <--> LLM

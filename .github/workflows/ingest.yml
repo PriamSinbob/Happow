@@ -4,8 +4,8 @@ name: Ingest sources
 # packages/api/src/schedule.ts), by hand, or by the fallback schedule below. Each source's own
 # `schedule` in config/sources.json decides whether it is due (tracked in the source_runs table).
 # Sources whose secrets are missing are skipped and recorded, so the Worker backs off for a day.
-# The Worker names the regions with something due; each gets its own job, side by side, so more
-# cities do not make one job run past its timeout. Without regions, one job runs them all.
+# The Worker names the regions with something due; each gets its own job, one after another, so
+# more cities do not make one job run past its timeout. Without regions, one job runs them all.
 on:
   schedule:
     # Fallback only, in case the Worker cannot dispatch (token missing or expired). Once a day:
@@ -32,10 +32,15 @@ concurrency:
 
 jobs:
   ingest:
-    runs-on: ubuntu-latest
+    # A self-hosted runner (repository variable INGEST_RUNNER=self-hosted) costs no Actions
+    # minutes; GitHub's hosted runner until one is set up. See docs/SETUP.md, "Regions and limits".
+    runs-on: ${{ vars.INGEST_RUNNER || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
-      max-parallel: 5
+      # One region at a time: Nominatim allows one request a second from the whole app, and
+      # Overpass asks for one query at a time. Separate jobs still give each region its own
+      # timeout, so more cities never make a job run out of time.
+      max-parallel: 1
       matrix:
         region: ${{ fromJSON(inputs.regions || '["all"]') }}
     # One job fetches its region's due sources in turn (the Wrocław city portal alone takes about

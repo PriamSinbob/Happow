@@ -1,6 +1,6 @@
 # Happow
 
-Happening Now: a map-first app that shows every nearby event of any kind happening now, within hours, or in the next days. The reach is small by default (about 500 m) and adjustable; when nothing is in reach, the map itself shows where things are. It starts in Wrocław and is meant for every city in Poland and beyond: every source, region and provider is config.
+Happening Now: a map-first app that shows every nearby event of any kind happening now, within hours, or in the next days. The reach is small by default (about 500 m) and adjustable; when nothing is in reach, the map itself shows where things are. It covers ten Polish cities with their suburbs (Wrocław first) and is meant for every city in Poland and beyond: every source, region and provider is config.
 
 **Direction:** Happow is an Android app, then an iOS app, each built in its own repository against this one's API ([docs/NATIVE.md](docs/NATIVE.md)). This repository holds the server, database, ingest, config and the web app. The web app is not launched as a product: it serves shared event links and embeds on other sites, and it is the reference client where every behaviour is built and tested first.
 
