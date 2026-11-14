@@ -120,6 +120,7 @@ export function areaRoutes({ config, db, now }: AreaDeps) {
       lng: key.lng,
       radius_m: key.radiusM + areaSlackM(key.lat, refresh),
       max_places: maxPerArea,
+      report_days: config.app.places.closed.days,
     });
     const body = JSON.stringify({ places: rows });
     const some = Array.isArray(rows) && rows.length > 0;

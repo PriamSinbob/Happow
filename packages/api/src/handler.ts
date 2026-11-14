@@ -186,7 +186,13 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     now,
     fetch: doFetch,
   });
-  const moderation = moderationRoutes({ need, requireUser, organisers, award });
+  const moderation = moderationRoutes({
+    need,
+    closedDays: config.app.places.closed.days,
+    requireUser,
+    organisers,
+    award,
+  });
   const placeEdits = placeEditRoutes({
     config,
     need,

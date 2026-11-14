@@ -38,6 +38,8 @@ export interface PlaceRow {
   opening_hours: string | null;
   /** A private party is on until then. */
   private_until?: string | null;
+  /** Accounts that reported it closed for good lately (it leaves the map at `places.closed.reports`). */
+  closed_reports?: number;
 }
 
 export interface Place {
@@ -49,6 +51,8 @@ export interface Place {
   website: string | null;
   week: OpeningWeek;
   privateUntil: Date | null;
+  /** Accounts that reported it closed for good lately. */
+  closedReports: number;
 }
 
 /** A place whose opening hours are unknown: shown close in as a hollow pin, to be filled in. */
@@ -107,6 +111,7 @@ export function toPlaces(rows: readonly PlaceRow[]): Place[] {
       website: r.website,
       week,
       privateUntil: r.private_until ? new Date(r.private_until) : null,
+      closedReports: r.closed_reports ?? 0,
     });
   }
   return out;
@@ -182,10 +187,12 @@ async function seedRows(): Promise<PlaceRow[]> {
 }
 
 const cache = new Map<string, { at: number; places: Promise<Place[]> }>();
-// After a change of your own, each area's next read goes past every cache (the browser keeps an
-// area for `cacheMinutes`), and open maps read again. Per area: the add form reads the area at its
-// pin, which may not be the map's.
+// After a change of your own, every read goes past every cache, and open maps read again. The
+// browser keeps an area for `cacheMinutes`, and so does Cloudflare's cache in front of the API,
+// which `cache: 'reload'` does not reach: so from then on the reads carry the time of the change
+// (`fresh`), an address no cache has seen. The API ignores it.
 let changed = false;
+let fresh = '';
 const reloaded = new Set<string>();
 let version = 0;
 const watchers = new Set<() => void>();
@@ -195,6 +202,7 @@ function refreshPlaces(): void {
   cache.clear();
   unknownCache.clear();
   changed = true;
+  fresh = `&fresh=${Date.now().toString(36)}`;
   reloaded.clear();
   version++;
   for (const w of watchers) w();
@@ -211,7 +219,7 @@ export function loadPlaces(
   const hit = cache.get(key);
   if (hit && now() < hit.at + cfg.cacheMinutes * 60_000) return hit.places;
   const read = async (init?: RequestInit) => {
-    const res = await doFetch(`/api/places?${key}`, init);
+    const res = await doFetch(`/api/places?${key}${fresh}`, init);
     if (!res.ok) throw new Error(`places failed: ${res.status}`);
     return ((await res.json()) as { places: PlaceRow[] }).places;
   };
@@ -272,7 +280,7 @@ export function loadUnknown(center: LatLng, now: () => number = Date.now): Promi
   if (changed) reloaded.add(`unknown:${key}`);
   const places = (
     import.meta.env.VITE_SUPABASE_URL
-      ? fetch(`/api/places/unknown?${key}`, reload ? { cache: 'reload' } : undefined).then(
+      ? fetch(`/api/places/unknown?${key}${fresh}`, reload ? { cache: 'reload' } : undefined).then(
           async (res) => {
             if (!res.ok) throw new Error(`unknown places failed: ${res.status}`);
             return ((await res.json()) as { places: Omit<PlaceRow, 'opening_hours'>[] }).places;
@@ -338,15 +346,45 @@ export async function addPlace(place: NewPlace, pass: string | null = null): Pro
   return id;
 }
 
-/** One correction: new hours, closed for good, or a private party until a time (null: over). */
+/** What a closed-for-good report did: closed once enough accounts reported it. */
+export interface ClosedReport {
+  closed: boolean;
+  reports: number;
+  needed: number;
+}
+
+/**
+ * One correction: new hours, a private party until a time (null: over), a report that it is
+ * closed for good (made at the place: `at` is where the phone is), or that it is still open.
+ */
 export async function changePlace(
   id: string,
-  change: { openingHours: string } | { closed: true } | { privateUntil: string | null },
+  change:
+    | { openingHours: string }
+    | { closed: true; at: LatLng }
+    | { closed: false }
+    | { privateUntil: string | null },
   pass: string | null = null,
-): Promise<void> {
+): Promise<Partial<ClosedReport>> {
   const by = await author(pass);
-  await api('places/change', { body: { id, ...change, ...by.body }, token: by.token });
+  const done = await api<Partial<ClosedReport>>('places/change', {
+    body: { id, ...change, ...by.body },
+    token: by.token,
+  });
   refreshPlaces();
+  return done;
+}
+
+/** A precise fix of where the phone is now: closed-for-good reports are made at the place. */
+export function hereNow(): Promise<LatLng> {
+  return new Promise((resolve, reject) => {
+    if (!('geolocation' in navigator)) return reject(new Error('unavailable'));
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      reject,
+      { enableHighAccuracy: true, timeout: 20_000, maximumAge: 30_000 },
+    );
+  });
 }
 
 /** Reads a photo of a place's door into the add form, with a pass to add it without an account. */

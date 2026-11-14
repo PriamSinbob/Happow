@@ -24,8 +24,11 @@ import {
 import { SupabaseError } from './supabase.js';
 
 /**
- * Places people add and correct. They show at once (no moderation): every change is logged with
- * who made it (the account, or the hashed device), with daily limits for each.
+ * Places people add and correct. They show at once (no moderation first): every change is logged
+ * with who made it (the account, or the hashed device), with daily limits for each. Closed for
+ * good is the exception: it is a report, made at the place, and the place leaves the map only
+ * after `places.closed.reports` accounts reported it (or a moderator did). Reports go to the
+ * moderators' queue (moderation.ts).
  * An account adds and corrects freely. Without one, a place comes only from a photo of its door:
  * POST /api/places/photo reads it and hands out a pass, good for one place (a new one, or new
  * hours for one already listed) from that device.
@@ -80,6 +83,8 @@ const changeSchema = z
     closed: z.boolean().optional(),
     /** A private party until then; null: it is over. */
     privateUntil: z.string().datetime().nullable().optional(),
+    /** With `closed: true`: where the phone is, which must be at the place. */
+    at: z.object({ lat: z.number(), lng: z.number() }).optional(),
     deviceId: deviceId.optional(),
     photoPass: z.string().max(100).optional(),
   })
@@ -255,13 +260,16 @@ export function placeEditRoutes({
 
   /**
    * POST /api/places/change {id, openingHours | closed | privateUntil} → {ok}. Without an account
-   * only new hours, with the pass from a photo read.
+   * only new hours, with the pass from a photo read. `closed: true` with `at` (the phone's
+   * position) reports it closed for good → {ok, closed, reports, needed}; `closed: false` says it
+   * is still open and clears the reports.
    */
   async function change(req: Request): Promise<Response> {
     const user = await caller(req);
     const { db } = need();
     const input = await body(req, changeSchema);
     if (!user && input.openingHours === undefined) await requireUser(req);
+    if (user && input.closed !== undefined) return closed(user, input.id, input.closed, input.at);
     let until: string | null = null;
     if (input.privateUntil) {
       const at = Date.parse(input.privateUntil);
@@ -282,12 +290,71 @@ export function placeEditRoutes({
         p_private: input.privateUntil === undefined ? null : input.privateUntil !== null,
         p_private_until: until,
       });
+      // New hours say the place is open: any closed-for-good reports are cleared.
+      if (input.openingHours !== undefined)
+        await db.rpc('place_reports_clear', {
+          p_user: by.user,
+          p_place: input.id,
+          p_reopen: false,
+        });
     } catch (err) {
       if (err instanceof SupabaseError && err.code === 'P0002')
         throw new ApiError(404, 'not_found');
       throw err;
     }
     return json({ ok: true });
+  }
+
+  /**
+   * Closed for good, from an account: a report from within `places.closed.withinM` of the place
+   * (a moderator's closes it at once), or "still open", which clears the reports (and, from a
+   * moderator, opens a closed place again).
+   */
+  async function closed(
+    user: User,
+    id: string,
+    isClosed: boolean,
+    at: { lat: number; lng: number } | undefined,
+  ): Promise<Response> {
+    const { db } = need();
+    const rule = cfg.closed;
+    await limit('place-change', user.id, 86_400, cfg.changesPerDayPerAccount);
+    try {
+      if (!isClosed) {
+        await db.rpc('place_reports_clear', {
+          p_user: user.id,
+          p_place: id,
+          p_reopen: user.role !== null,
+        });
+        return json({ ok: true });
+      }
+      if (!at) throw new ApiError(400, 'invalid_input', 'at');
+      const done = await db.rpc<{
+        closed: boolean;
+        reports: number;
+        distanceM: number;
+        tooFar: boolean;
+      }>('place_report_closed', {
+        p_user: user.id,
+        p_place: id,
+        p_lat: at.lat,
+        p_lng: at.lng,
+        p_within_m: rule.withinM,
+        p_needed: rule.reports,
+        p_days: rule.days,
+        p_now: user.role !== null,
+      });
+      if (done.tooFar)
+        throw new ApiError(400, 'too_far', undefined, {
+          withinM: rule.withinM,
+          distanceM: done.distanceM,
+        });
+      return json({ ok: true, closed: done.closed, reports: done.reports, needed: rule.reports });
+    } catch (err) {
+      if (err instanceof SupabaseError && err.code === 'P0002')
+        throw new ApiError(404, 'not_found');
+      throw err;
+    }
   }
 
   return { photo, add, change };

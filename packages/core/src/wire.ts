@@ -54,6 +54,8 @@ export const API_ERROR_CODES = [
   'activation_required',
   /** Without an account a place is added only from a photo: its pass is missing, expired or used. */
   'photo_required',
+  /** A closed-for-good report sent from too far from the place: `withinM`, `distanceM`. */
+  'too_far',
   'server_error',
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

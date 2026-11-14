@@ -6,10 +6,14 @@ import { openPlaces, toPlaces } from '../src/places';
 
 /** Correcting a place from its card: each choice sends one change. */
 
-const changePlace = vi.hoisted(() => vi.fn(async () => {}));
+const changePlace = vi.hoisted(() =>
+  vi.fn(async (): Promise<Record<string, unknown>> => ({ ok: true })),
+);
+const hereNow = vi.hoisted(() => vi.fn(async () => ({ lat: 51.111, lng: 17.031 })));
 vi.mock('../src/places', async (orig) => ({
   ...(await orig<typeof import('../src/places')>()),
   changePlace,
+  hereNow,
 }));
 
 const tz = 'Europe/Warsaw';
@@ -65,11 +69,26 @@ describe('correcting a place', () => {
     expect(changePlace).toHaveBeenCalledWith('node/1', { openingHours: 'Mo-Su 16:00-01:00' });
   });
 
-  it('asks before removing a place for good', async () => {
+  it('reports a place closed for good from where the phone is, and says how many more it takes', async () => {
+    changePlace.mockResolvedValueOnce({ ok: true, closed: false, reports: 1, needed: 3 });
     open();
     fireEvent.click(screen.getByText('Closed for good'));
     expect(changePlace).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText('Remove from the map'));
-    await waitFor(() => expect(changePlace).toHaveBeenCalledWith('node/1', { closed: true }));
+    fireEvent.click(screen.getByText('Report closed for good'));
+    await screen.findByText(/Reports so far: 1 of 3/);
+    expect(changePlace).toHaveBeenCalledWith('node/1', {
+      closed: true,
+      at: { lat: 51.111, lng: 17.031 },
+    });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("sends no report without the phone's position", async () => {
+    hereNow.mockRejectedValueOnce(new Error('denied'));
+    open();
+    fireEvent.click(screen.getByText('Closed for good'));
+    fireEvent.click(screen.getByText('Report closed for good'));
+    await screen.findByRole('alert');
+    expect(changePlace).not.toHaveBeenCalled();
   });
 });

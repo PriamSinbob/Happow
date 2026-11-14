@@ -12,6 +12,7 @@ function backend(rpc: Record<string, Rpc>) {
     usage_take: () => ({ body: true }),
     profile_get: () => ({ body: { displayName: null, locale: 'pl', termsVersion: null } }),
     trusted_recent: () => ({ body: [] }),
+    place_closed_queue: () => ({ body: [] }),
     moderation_queue: () => ({ body: { submissions: [], reports: [] } }),
     ...submitRpc,
     ...organiserRpc,

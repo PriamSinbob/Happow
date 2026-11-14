@@ -310,6 +310,7 @@
     "changesPerDayPerAccount": 20,
     "sameWithinM": 50,
     "privateMaxHours": 24,
+    "closed": { "reports": 3, "withinM": 300, "days": 30 },
     "nearEventM": 30,
     "closingSoonMin": 60,
     "unknownMinZoom": 17,

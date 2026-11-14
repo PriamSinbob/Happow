@@ -1295,6 +1295,7 @@ div.settings-row {
 /* ---------- Event card ---------- */
 .sheet__card {
   max-height: 52dvh;
+  overflow-x: hidden;
   overflow-y: auto;
   border-radius: var(--radius-lg);
   background: var(--paper);
@@ -1359,8 +1360,10 @@ div.settings-row {
 .event-card__distance {
   color: var(--muted);
 }
+/* Buttons wrap onto a second line rather than run past the card (four on a place card). */
 .event-card__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 16px;
 }
@@ -2661,6 +2664,9 @@ label.choice input {
   margin-top: 2px;
   font-size: 12px;
   color: var(--warn-ink);
+}
+.flag-banner__action {
+  margin-top: 8px;
 }
 .flag-line {
   margin: 8px 0 0;
