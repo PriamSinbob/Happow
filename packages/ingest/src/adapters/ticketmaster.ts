@@ -1,5 +1,5 @@
-import { localToInstant } from '@happow/core';
-import { coveringCircle, geohash } from '../geo.js';
+import { localToInstant, type Region } from '@happow/core';
+import { bboxCircle, geohash } from '../geo.js';
 import type { AdapterContext, ParsedEvent, RawEvent, SourceAdapter } from '../types.js';
 import { opt, safeUrl, toNumber } from './util.js';
 
@@ -58,7 +58,35 @@ const DEEP_PAGING_LIMIT = 1000;
 /** The API wants "2026-10-20T14:00:00Z", without milliseconds. */
 const tmDate = (d: Date) => d.toISOString().replace(/\.\d{3}Z$/, 'Z');
 
+/** One query: a part of the region and a part of the time window. */
+interface Slice {
+  bbox: Region['bbox'];
+  from: Date;
+  to: Date;
+}
+
+/** Below this covering radius a slice is split by time instead (one venue can hold 1,000 dates). */
+const MIN_SPLIT_RADIUS_M = 3000;
+const DAY_MS = 86_400_000;
+
+/** The four quarters of a bbox. */
+function quarters({ west, south, east, north }: Region['bbox']): Region['bbox'][] {
+  const lng = (west + east) / 2;
+  const lat = (south + north) / 2;
+  return [
+    { west, south, east: lng, north: lat },
+    { west: lng, south, east, north: lat },
+    { west, south: lat, east: lng, north },
+    { west: lng, south: lat, east, north },
+  ];
+}
+
 export const ticketmaster: SourceAdapter = {
+  /**
+   * Every event in the region and window. The API serves at most 1,000 results per query, so a
+   * query that matches more is split into quarters of its area (their circles overlap; events
+   * are kept once), and below a few kilometres into halves of its time, until each part fits.
+   */
   async fetch(ctx: AdapterContext): Promise<RawEvent[]> {
     const { source, region, window, http, env } = ctx;
     const apiKey = env.TICKETMASTER_API_KEY;
@@ -66,17 +94,22 @@ export const ticketmaster: SourceAdapter = {
     const endpoint = opt(source, 'endpoint', 'string');
     const size = opt(source, 'pageSize', 'number');
     const maxPages = opt(source, 'maxPages', 'number');
-    const { center, radiusM } = coveringCircle(region);
+    const maxRequests =
+      typeof source.options.maxRequests === 'number' ? source.options.maxRequests : 300;
+    const cap = Math.min(DEEP_PAGING_LIMIT, maxPages * size);
+    let requests = 0;
 
-    const out: RawEvent[] = [];
-    for (let page = 0; page < maxPages && (page + 1) * size <= DEEP_PAGING_LIMIT; page++) {
+    const query = async (slice: Slice, page: number): Promise<TmPage> => {
+      if (++requests > maxRequests)
+        throw new Error(`more than ${maxRequests} requests: raise options.maxRequests`);
+      const { center, radiusM } = bboxCircle(slice.bbox);
       const params = new URLSearchParams({
         apikey: apiKey,
         geoPoint: geohash(center, 9),
         radius: String(Math.ceil(radiusM / 1000)),
         unit: 'km',
-        startDateTime: tmDate(window.from),
-        endDateTime: tmDate(window.to),
+        startDateTime: tmDate(slice.from),
+        endDateTime: tmDate(slice.to),
         size: String(size),
         page: String(page),
         sort: 'date,asc',
@@ -84,10 +117,16 @@ export const ticketmaster: SourceAdapter = {
       const locale = source.options.locale;
       if (typeof locale === 'string') params.set('locale', locale);
       if (region.countryCode) params.set('countryCode', region.countryCode);
+      return http.json<TmPage>(`${endpoint}?${params}`);
+    };
 
-      const body = await http.json<TmPage>(`${endpoint}?${params}`);
+    const out: RawEvent[] = [];
+    const seen = new Set<string>();
+    const keep = (body: TmPage) => {
       const fetchedAt = ctx.now.toISOString();
-      for (const e of body._embedded?.events ?? [])
+      for (const e of body._embedded?.events ?? []) {
+        if (seen.has(e.id)) continue;
+        seen.add(e.id);
         out.push({
           sourceId: source.id,
           externalId: e.id,
@@ -95,8 +134,31 @@ export const ticketmaster: SourceAdapter = {
           fetchedAt,
           payload: e,
         });
-      const totalPages = body.page?.totalPages ?? 0;
-      if (page + 1 >= totalPages) break;
+      }
+    };
+
+    const queue: Slice[] = [{ bbox: region.bbox, from: window.from, to: window.to }];
+    while (queue.length) {
+      const slice = queue.shift()!;
+      const first = await query(slice, 0);
+      keep(first);
+      const total = first.page?.totalElements ?? 0;
+      if (total > cap) {
+        const span = slice.to.getTime() - slice.from.getTime();
+        if (bboxCircle(slice.bbox).radiusM > MIN_SPLIT_RADIUS_M) {
+          queue.push(...quarters(slice.bbox).map((bbox) => ({ ...slice, bbox })));
+          continue;
+        }
+        if (span > DAY_MS) {
+          const mid = new Date(slice.from.getTime() + Math.floor(span / 2));
+          queue.push({ ...slice, to: mid }, { ...slice, from: mid });
+          continue;
+        }
+        // A few kilometres and one day with over 1,000 events: take the first 1,000.
+      }
+      const totalPages = first.page?.totalPages ?? 0;
+      for (let page = 1; page < totalPages && (page + 1) * size <= cap; page++)
+        keep(await query(slice, page));
     }
     return out;
   },

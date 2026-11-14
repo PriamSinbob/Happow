@@ -15,7 +15,18 @@
       "id": "ticketmaster",
       "name": "Ticketmaster",
       "adapter": "ticketmaster",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "12h",
       "rateLimit": "5/s",
       "trustLevel": "api",
@@ -101,7 +112,18 @@
       "id": "ebilet",
       "name": "eBilet",
       "adapter": "crawler",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
@@ -110,13 +132,54 @@
       "republishDescription": false,
       "republishImages": false,
       "termsNotes": "Ticketing site; the city listing publishes schema.org Event JSON-LD (ItemList). Crawled page. Store facts only (title, time, place, price) and link back; no descriptions or images are republished. robots.txt is honoured; 1 request/s.",
-      "beforeLaunch": "eBilet's written consent or a partner feed: the owner emails them before launch. Small yield (15 of 404 events in 7 days on 26 Oct) but events found nowhere else.",
+      "beforeLaunch": "eBilet's written consent or a partner feed: the owner emails them before launch. Small yield (15 of 404 events in 7 days on 26 Oct) but events found nowhere else. On in every region until launch only, to see whether it is worth asking them.",
       "options": {
         "startUrls": ["https://www.ebilet.pl/miasto/wroclaw"],
         "followPattern": "^https://www\\.ebilet\\.pl/[a-z0-9-]+/[a-z0-9-]+/[a-z0-9-]+$",
         "maxFollow": 40,
         "llmFallback": false,
         "summaryListing": true
+      },
+      "regionOptions": {
+        "warszawa": {
+          "startUrls": ["https://www.ebilet.pl/miasto/warszawa"]
+        },
+        "krakow": {
+          "startUrls": ["https://www.ebilet.pl/miasto/krakow"]
+        },
+        "lodz": {
+          "startUrls": ["https://www.ebilet.pl/miasto/lodz"]
+        },
+        "poznan": {
+          "startUrls": ["https://www.ebilet.pl/miasto/poznan"]
+        },
+        "trojmiasto": {
+          "startUrls": [
+            "https://www.ebilet.pl/miasto/gdansk",
+            "https://www.ebilet.pl/miasto/gdynia",
+            "https://www.ebilet.pl/miasto/sopot"
+          ]
+        },
+        "szczecin": {
+          "startUrls": ["https://www.ebilet.pl/miasto/szczecin"]
+        },
+        "bydgoszcz": {
+          "startUrls": ["https://www.ebilet.pl/miasto/bydgoszcz"]
+        },
+        "lublin": {
+          "startUrls": ["https://www.ebilet.pl/miasto/lublin"]
+        },
+        "katowice": {
+          "startUrls": [
+            "https://www.ebilet.pl/miasto/katowice",
+            "https://www.ebilet.pl/miasto/gliwice",
+            "https://www.ebilet.pl/miasto/zabrze",
+            "https://www.ebilet.pl/miasto/bytom",
+            "https://www.ebilet.pl/miasto/chorzow",
+            "https://www.ebilet.pl/miasto/sosnowiec",
+            "https://www.ebilet.pl/miasto/tychy"
+          ]
+        }
       },
       "defaultCategories": ["other"],
       "categoryMap": {
@@ -198,7 +261,18 @@
       "id": "biletyna",
       "name": "Biletyna",
       "adapter": "crawler",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
@@ -212,6 +286,47 @@
         "followPattern": null,
         "maxFollow": 0,
         "llmFallback": false
+      },
+      "regionOptions": {
+        "warszawa": {
+          "startUrls": ["https://biletyna.pl/Warszawa"]
+        },
+        "krakow": {
+          "startUrls": ["https://biletyna.pl/Krakow"]
+        },
+        "lodz": {
+          "startUrls": ["https://biletyna.pl/Lodz"]
+        },
+        "poznan": {
+          "startUrls": ["https://biletyna.pl/Poznan"]
+        },
+        "trojmiasto": {
+          "startUrls": [
+            "https://biletyna.pl/Gdansk",
+            "https://biletyna.pl/Gdynia",
+            "https://biletyna.pl/Sopot"
+          ]
+        },
+        "szczecin": {
+          "startUrls": ["https://biletyna.pl/Szczecin"]
+        },
+        "bydgoszcz": {
+          "startUrls": ["https://biletyna.pl/Bydgoszcz"]
+        },
+        "lublin": {
+          "startUrls": ["https://biletyna.pl/Lublin"]
+        },
+        "katowice": {
+          "startUrls": [
+            "https://biletyna.pl/Katowice",
+            "https://biletyna.pl/Gliwice",
+            "https://biletyna.pl/Zabrze",
+            "https://biletyna.pl/Bytom",
+            "https://biletyna.pl/Chorzow",
+            "https://biletyna.pl/Sosnowiec",
+            "https://biletyna.pl/Tychy"
+          ]
+        }
       },
       "defaultCategories": ["other"],
       "categoryMap": {
@@ -347,29 +462,62 @@
       "id": "osm-venues",
       "name": "OpenStreetMap venues",
       "adapter": "osm-venues",
-      "regionIds": ["wroclaw"],
-      "schedule": "168h",
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
+      "schedule": "720h",
       "rateLimit": null,
       "trustLevel": "crawled",
       "enabled": true,
-      "termsNotes": "Venues (theatres, clubs, cinemas, community centres, libraries, places of worship, museums) from OpenStreetMap through Overpass, weekly. ODbL: attribution in About. Writes venues and links, never events."
+      "termsNotes": "Venues (theatres, clubs, cinemas, community centres, libraries, places of worship, museums) from OpenStreetMap through Overpass, once every 30 days: one query per region, well inside Overpass's usage policy. ODbL: attribution in About. Writes venues and links, never events."
     },
     {
       "id": "osm-places",
       "name": "OpenStreetMap places",
       "adapter": "osm-places",
-      "regionIds": ["wroclaw"],
-      "schedule": "168h",
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
+      "schedule": "720h",
       "rateLimit": null,
       "trustLevel": "crawled",
       "enabled": true,
-      "termsNotes": "Places to go to while they are open (restaurants, cafés, pubs, bars, clubs, cinemas, theatres, galleries, museums, markets) with their opening hours, from OpenStreetMap through Overpass, weekly. ODbL: attribution in About. Writes places, never events."
+      "termsNotes": "Places to go to while they are open (restaurants, cafés, pubs, bars, clubs, cinemas, theatres, galleries, museums, markets) with their opening hours, from OpenStreetMap through Overpass, once every 30 days (one query per region): the starting set, which users then correct and add to. ODbL: attribution in About. Writes places, never events."
     },
     {
       "id": "venue-probe",
       "name": "Venue website check",
       "adapter": "venue-probe",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
@@ -383,7 +531,18 @@
       "id": "venue-sites",
       "name": "Venue websites",
       "adapter": "venue-sites",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "24h",
       "rateLimit": "12/m",
       "trustLevel": "crawled",
@@ -449,7 +608,18 @@
       "id": "worship-services",
       "name": "Regular services (OpenStreetMap)",
       "adapter": "worship-services",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "24h",
       "rateLimit": null,
       "trustLevel": "crawled",
@@ -470,7 +640,18 @@
       "id": "account-feeds",
       "name": "Account calendar feeds",
       "adapter": "account-feeds",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": "12h",
       "rateLimit": "12/m",
       "trustLevel": "community",
@@ -484,7 +665,18 @@
       "id": "submissions",
       "name": "Happow community",
       "adapter": "user-submission",
-      "regionIds": ["wroclaw"],
+      "regionIds": [
+        "wroclaw",
+        "warszawa",
+        "krakow",
+        "lodz",
+        "poznan",
+        "trojmiasto",
+        "szczecin",
+        "bydgoszcz",
+        "lublin",
+        "katowice"
+      ],
       "schedule": null,
       "rateLimit": null,
       "trustLevel": "community",

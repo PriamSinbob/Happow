@@ -31,8 +31,15 @@ export function plannedRuns(
       .filter(
         (s) => s.enabled && s.regionIds.includes(region.id) && region.enabledSources.includes(s.id),
       )
-      .map((source) => ({ region, source })),
+      .map((source) => ({ region, source: forRegion(source, region.id) })),
   );
+}
+
+/** The source with its `regionOptions` for this region laid over its `options`. */
+export function forRegion(source: Source, regionId: string): Source {
+  // The Worker reads the JSON without schema defaults, so regionOptions may be missing.
+  const extra = (source.regionOptions as Source['regionOptions'] | undefined)?.[regionId];
+  return extra ? { ...source, options: { ...source.options, ...extra } } : source;
 }
 
 /** One row of `source_runs`, as the dispatcher reads it. */
@@ -66,11 +73,19 @@ export function dueForDispatch(
   policy: DispatchPolicy,
 ): string[] {
   const due: string[] = [];
+  // Grouped once: the Worker's cron has a few ms of CPU, and regions × sources × runs adds up.
+  const byPair = new Map<string, RunRecord[]>();
+  for (const r of runs) {
+    const key = `${r.sourceId}@${r.regionId}`;
+    const list = byPair.get(key);
+    if (list) list.push(r);
+    else byPair.set(key, [r]);
+  }
   for (const { region, source } of plannedRuns(config)) {
     if (!source.schedule) continue;
-    const mine = runs
-      .filter((r) => r.sourceId === source.id && r.regionId === region.id)
-      .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
+    const mine = (byPair.get(`${source.id}@${region.id}`) ?? []).sort(
+      (a, b) => b.startedAt.getTime() - a.startedAt.getTime(),
+    );
     const lastOk = mine.find((r) => r.status === 'ok')?.startedAt ?? null;
     if (!isDue(source, lastOk, now)) continue;
     const last = mine[0];
@@ -89,16 +104,4 @@ export function dueForDispatch(
     due.push(`${source.id}@${region.id}`);
   }
   return due;
-}
-
-/** How far back the dispatcher must read `source_runs` to apply every rule above. */
-export function dispatchLookbackMs(
-  config: Pick<HappowConfig, 'regions' | 'sources'>,
-  policy: DispatchPolicy,
-): number {
-  const longest = Math.max(
-    0,
-    ...plannedRuns(config).map(({ source }) => (source.schedule ? intervalMs(source.schedule) : 0)),
-  );
-  return Math.max(longest, policy.skippedBackoffHours * 3_600_000) + 3_600_000;
 }

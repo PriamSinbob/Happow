@@ -1,5 +1,5 @@
 import { siteTemplate, type HappowConfig } from '@happow/core';
-import { dispatchLookbackMs, dueForDispatch, type RunRecord } from '@happow/ingest/schedule';
+import { dueForDispatch, type RunRecord } from '@happow/ingest/schedule';
 import appJson from '../../../config/app.json';
 import regionsJson from '../../../config/regions.json';
 import sourcesJson from '../../../config/sources.json';
@@ -9,7 +9,8 @@ import { NO_DATABASE, serviceDb } from './supabase.js';
  * Cloudflare Cron Trigger → GitHub ingest workflow. The Worker reads the latest `source_runs`
  * and starts the workflow (workflow_dispatch) only when some source is due, so a 15-minute cron
  * costs CI minutes only for runs that fetch something. The workflow then applies the same
- * schedule rules itself and fetches only the due sources.
+ * schedule rules itself and fetches only the due sources. It is told which regions are due, and
+ * runs one job per region side by side, so more cities do not make one run longer.
  */
 
 export interface ScheduleEnv {
@@ -77,12 +78,11 @@ export async function dispatchDueIngest(
   const db = serviceDb(env, deps.fetch);
   if (!db) return { due: [], dispatched: false, tokenSet, reason: NO_DATABASE };
 
-  const since = new Date(now.getTime() - dispatchLookbackMs(config, dispatch)).toISOString();
-  const rows = await db.select<RunRow>('source_runs', {
+  // The latest run per source, region and status: a fixed number of rows (regions × sources × 4)
+  // however long the schedules are. Reading recent runs instead would be cut at the API's row
+  // limit once a monthly job and ten regions are in play, and an old success would look missing.
+  const rows = await db.select<RunRow>('source_run_latest', {
     select: 'source_id,region_id,started_at,status',
-    started_at: `gte.${since}`,
-    order: 'started_at.desc',
-    limit: '2000',
   });
   const runs: RunRecord[] = rows.map((r) => ({
     sourceId: r.source_id,
@@ -115,9 +115,17 @@ export async function dispatchDueIngest(
   const gh = await doFetch(`${workflowUrl}/dispatches`, {
     method: 'POST',
     headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ref: dispatch.ref }),
+    body: JSON.stringify({
+      ref: dispatch.ref,
+      inputs: { regions: JSON.stringify(dueRegions(due)) },
+    }),
   });
   if (gh.status !== 204)
     throw new Error(`workflow dispatch failed: ${gh.status} ${await gh.text()}`);
   return { due, dispatched: true, tokenSet };
 }
+
+/** Region ids of `source@region` pairs, once each, in order. */
+export const dueRegions = (due: readonly string[]): string[] => [
+  ...new Set(due.map((d) => d.slice(d.indexOf('@') + 1))),
+];

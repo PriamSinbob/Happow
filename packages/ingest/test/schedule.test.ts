@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dispatchLookbackMs, dueForDispatch, type RunRecord } from '../src/schedule';
+import { dueForDispatch, plannedRuns, type RunRecord } from '../src/schedule';
 import { config } from './helpers';
 
 const policy = { skippedBackoffHours: 24, failedRetryMinutes: 60, runningTimeoutMinutes: 40 };
@@ -11,25 +11,12 @@ const run = (sourceId: string, startedAt: Date, status: RunRecord['status']): Ru
   startedAt,
   status,
 });
-/** Every scheduled source succeeded recently, so nothing is due unless a test changes that. */
-const fresh: RunRecord[] = [
-  'ticketmaster',
-  'meetup',
-  'ebilet',
-  'wroclaw-go',
-  'nfm',
-  'osm-venues',
-  'osm-places',
-  'venue-probe',
-  'venue-sites',
-  'account-feeds',
-  'biletyna',
-  'mbp-wroclaw',
-  'uwr',
-  'meetup-pages',
-  'worship-services',
-].map((id) => run(id, at('11:50'), 'ok'));
-const without = (id: string) => fresh.filter((r) => r.sourceId !== id);
+/** Every scheduled source succeeded recently in every region, so nothing is due unless a test changes that. */
+const fresh: RunRecord[] = plannedRuns(config)
+  .filter(({ source }) => source.schedule)
+  .map(({ source, region }) => ({ ...run(source.id, at('11:50'), 'ok'), regionId: region.id }));
+/** Fresh, except this source in Wrocław. */
+const without = (id: string) => fresh.filter((r) => r.sourceId !== id || r.regionId !== 'wroclaw');
 
 describe('dueForDispatch', () => {
   it('starts nothing while every source is within its schedule', () => {
@@ -75,10 +62,5 @@ describe('dueForDispatch', () => {
     expect(due).not.toContain('seed@wroclaw');
     expect(due).not.toContain('submissions@wroclaw');
     expect(due).not.toContain('threads@wroclaw');
-  });
-
-  it('reads back far enough for the longest schedule and the skip backoff', () => {
-    // The weekly OSM venues job is the longest schedule.
-    expect(dispatchLookbackMs(config, policy)).toBe(169 * 3_600_000);
   });
 });

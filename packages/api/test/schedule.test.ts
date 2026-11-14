@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '@happow/core';
-import { dueForDispatch } from '@happow/ingest/schedule';
+import { dueForDispatch, plannedRuns } from '@happow/ingest/schedule';
 import { createApi, dispatchDueIngest } from '../src';
 import { scheduleConfig } from '../src/schedule';
 
@@ -12,34 +12,21 @@ const env = {
   SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_x',
   GITHUB_DISPATCH_TOKEN: 'gh',
 };
-const okRow = (source_id: string, started_at = '2026-10-24T11:50:00Z') => ({
+const okRow = (source_id: string, region_id = 'wroclaw', started_at = '2026-10-24T11:50:00Z') => ({
   source_id,
-  region_id: 'wroclaw',
+  region_id,
   started_at,
   status: 'ok',
 });
-const allFresh = [
-  'ticketmaster',
-  'meetup',
-  'ebilet',
-  'wroclaw-go',
-  'nfm',
-  'osm-venues',
-  'osm-places',
-  'venue-probe',
-  'venue-sites',
-  'account-feeds',
-  'biletyna',
-  'mbp-wroclaw',
-  'uwr',
-  'meetup-pages',
-  'worship-services',
-].map((id) => okRow(id));
+/** Every scheduled source succeeded a moment ago in every region. */
+const allFresh = plannedRuns(config)
+  .filter(({ source }) => source.schedule)
+  .map(({ source, region }) => okRow(source.id, region.id));
 
 function fake(rows: unknown[], dispatchStatus = 204) {
   return vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
     const url = String(input);
-    if (url.startsWith(`${SB}/rest/v1/source_runs?`)) return Response.json(rows);
+    if (url.startsWith(`${SB}/rest/v1/source_run_latest?`)) return Response.json(rows);
     if (url.startsWith('https://api.github.com/') && !url.endsWith('/dispatches'))
       return Response.json({ id: 1, name: 'Ingest sources' });
     if (url.startsWith('https://api.github.com/'))
@@ -56,9 +43,6 @@ describe('dispatchDueIngest', () => {
     const r = await dispatchDueIngest(env, now, { fetch: f, config });
     expect(r).toEqual({ due: [], dispatched: false, tokenSet: true });
     expect(f).toHaveBeenCalledTimes(1);
-    const url = new URL(String(f.mock.calls[0]![0]));
-    // A week and an hour back: the weekly OSM venues job is the longest schedule.
-    expect(url.searchParams.get('started_at')).toBe('gte.2026-10-17T11:00:00.000Z');
   });
 
   it('dispatches the configured workflow when a source is due', async () => {
@@ -70,7 +54,10 @@ describe('dispatchDueIngest', () => {
       'https://api.github.com/repos/PriamSinbob/happow/actions/workflows/ingest.yml/dispatches',
     );
     expect(init!.method).toBe('POST');
-    expect(JSON.parse(String(init!.body))).toEqual({ ref: 'main' });
+    expect(JSON.parse(String(init!.body))).toEqual({
+      ref: 'main',
+      inputs: { regions: '["wroclaw"]' },
+    });
     expect(new Headers(init!.headers).get('authorization')).toBe('Bearer gh');
     // New-style secret keys go in apikey only, never as a bearer token.
     expect(new Headers(f.mock.calls[0]![1]!.headers).get('authorization')).toBeNull();
