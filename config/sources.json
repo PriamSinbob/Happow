@@ -431,7 +431,16 @@
         "street": "plac Teatralny 1",
         "postalCode": "00-950",
         "city": "Warszawa",
-        "aliases": ["Teatr Wielki", "Opera Narodowa"]
+        "aliases": [
+          "Teatr Wielki",
+          "Opera Narodowa",
+          "Sala Moniuszki",
+          "Sala Młynarskiego",
+          "Przestrzeń EDU",
+          "Foyer",
+          "Balkon",
+          "Scena Kameralna"
+        ]
       },
       "defaultCategories": ["theatre"],
       "categoryMap": {},
@@ -579,7 +588,15 @@
         "street": "ul. Marszałka Focha 5",
         "postalCode": null,
         "city": "Bydgoszcz",
-        "aliases": []
+        "aliases": [
+          "Duża Scena",
+          "Scena Kameralna",
+          "Mała Scena",
+          "Balet",
+          "Opera",
+          "Operetka",
+          "Musical"
+        ]
       },
       "defaultCategories": ["theatre"],
       "categoryMap": {},
