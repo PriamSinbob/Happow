@@ -2665,6 +2665,9 @@ label.choice input {
   font-size: 12px;
   color: var(--warn-ink);
 }
+.flag-banner__action {
+  margin-top: 8px;
+}
 .flag-line {
   margin: 8px 0 0;
   padding: 6px 10px;

@@ -38,6 +38,8 @@ export interface PlaceRow {
   opening_hours: string | null;
   /** A private party is on until then. */
   private_until?: string | null;
+  /** Accounts that reported it closed for good lately (it leaves the map at `places.closed.reports`). */
+  closed_reports?: number;
 }
 
 export interface Place {
@@ -49,6 +51,8 @@ export interface Place {
   website: string | null;
   week: OpeningWeek;
   privateUntil: Date | null;
+  /** Accounts that reported it closed for good lately. */
+  closedReports: number;
 }
 
 /** A place whose opening hours are unknown: shown close in as a hollow pin, to be filled in. */
@@ -107,6 +111,7 @@ export function toPlaces(rows: readonly PlaceRow[]): Place[] {
       website: r.website,
       week,
       privateUntil: r.private_until ? new Date(r.private_until) : null,
+      closedReports: r.closed_reports ?? 0,
     });
   }
   return out;
@@ -341,15 +346,45 @@ export async function addPlace(place: NewPlace, pass: string | null = null): Pro
   return id;
 }
 
-/** One correction: new hours, closed for good, or a private party until a time (null: over). */
+/** What a closed-for-good report did: closed once enough accounts reported it. */
+export interface ClosedReport {
+  closed: boolean;
+  reports: number;
+  needed: number;
+}
+
+/**
+ * One correction: new hours, a private party until a time (null: over), a report that it is
+ * closed for good (made at the place: `at` is where the phone is), or that it is still open.
+ */
 export async function changePlace(
   id: string,
-  change: { openingHours: string } | { closed: true } | { privateUntil: string | null },
+  change:
+    | { openingHours: string }
+    | { closed: true; at: LatLng }
+    | { closed: false }
+    | { privateUntil: string | null },
   pass: string | null = null,
-): Promise<void> {
+): Promise<Partial<ClosedReport>> {
   const by = await author(pass);
-  await api('places/change', { body: { id, ...change, ...by.body }, token: by.token });
+  const done = await api<Partial<ClosedReport>>('places/change', {
+    body: { id, ...change, ...by.body },
+    token: by.token,
+  });
   refreshPlaces();
+  return done;
+}
+
+/** A precise fix of where the phone is now: closed-for-good reports are made at the place. */
+export function hereNow(): Promise<LatLng> {
+  return new Promise((resolve, reject) => {
+    if (!('geolocation' in navigator)) return reject(new Error('unavailable'));
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      reject,
+      { enableHighAccuracy: true, timeout: 20_000, maximumAge: 30_000 },
+    );
+  });
 }
 
 /** Reads a photo of a place's door into the add form, with a pass to add it without an account. */

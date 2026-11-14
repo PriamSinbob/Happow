@@ -78,7 +78,7 @@ interface Queue extends OrganiserQueue {
   reports: ReportedEvent[];
   /** Published by trusted accounts in the last 7 days, for spot checks. */
   trusted?: QueuedSubmission[];
-  /** Places closed for good that no moderator has looked at yet: off the map already. */
+  /** Places reported closed for good, and closed ones no moderator has looked at yet. */
   places?: ClosedPlace[];
 }
 
@@ -87,9 +87,12 @@ interface ClosedPlace {
   name: string;
   kind: string;
   address: string | null;
-  closed_at: string;
-  /** The account's email; null for a device without an account. */
-  closed_by: string | null;
+  /** Off the map already (enough reports, or a moderator); else still shown, as reported. */
+  closed: boolean;
+  reported_at: string;
+  reports: number;
+  /** The reporting accounts' emails, earliest first. */
+  reported_by: string[];
 }
 
 const placeKinds = new Map(config.app.places.kinds.map((k) => [k.tag, k.labels]));
@@ -378,11 +381,14 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                   <h3>{p.name}</h3>
                   <p className="mod-card__meta">
                     {p.address && `${p.address} · `}
-                    {t('mod.placeClosedBy', {
-                      who: p.closed_by ?? t('mod.placeDevice'),
-                      when: when(p.closed_at),
+                    {t(p.closed ? 'mod.placeOff' : 'mod.placeOn', {
+                      count: p.reports,
+                      when: when(p.reported_at),
                     })}
                   </p>
+                  {p.reported_by.length > 0 && (
+                    <p className="mod-card__meta">{p.reported_by.join(', ')}</p>
+                  )}
                   <div className="event-card__actions">
                     <button
                       type="button"
@@ -390,7 +396,7 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                       disabled={busy === key}
                       onClick={() => act(path, 'approve', key)}
                     >
-                      {t('mod.keepClosed')}
+                      {t(p.closed ? 'mod.keepClosed' : 'mod.closeNow')}
                     </button>
                     <button
                       type="button"
@@ -398,7 +404,7 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                       disabled={busy === key}
                       onClick={() => act(path, 'reject', key)}
                     >
-                      {t('mod.reopen')}
+                      {t(p.closed ? 'mod.reopen' : 'mod.notClosed')}
                     </button>
                   </div>
                 </article>

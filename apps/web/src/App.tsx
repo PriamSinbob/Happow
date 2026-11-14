@@ -40,7 +40,14 @@ import { invitations, useAcceptedInvitations } from './invitations';
 import { isPrivate, refreshPrivate, usePrivateEvents, usePrivateSync } from './private';
 import { ContactLinkSheet } from './components/Contacts';
 import { useView } from './hooks/useView';
-import { openPlaces, partyAt, usePlaces, useUnknownPlaces, type ListedPlace } from './places';
+import {
+  changePlace,
+  openPlaces,
+  partyAt,
+  usePlaces,
+  useUnknownPlaces,
+  type ListedPlace,
+} from './places';
 import { plans, usePlans, usePlanSync } from './plans';
 import { reminders } from './reminders';
 import { updates, useUnread, useUpdatesSync, useUpdatesVersion, type News } from './updates';
@@ -939,6 +946,11 @@ export function App() {
               timeZone={region.timezone}
               onClose={clearCards}
               onEdit={() => setPlaceEdit(needsSignIn ? 'signIn' : 'edit')}
+              onStillOpen={() =>
+                needsSignIn
+                  ? setPlaceEdit('signIn')
+                  : void changePlace(openPlace.id, { closed: false }).catch(console.error)
+              }
               onPrivateEvent={() => {
                 setEventPlace({
                   id: openPlace.id,

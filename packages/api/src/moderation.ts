@@ -5,13 +5,15 @@ import { SupabaseError } from './supabase.js';
 
 /**
  * The moderator's queue (moderator or admin role).
- * - GET  /api/moderation: pending submissions, reports, trusted spot checks, places closed for
- *   good, organiser queues.
+ * - GET  /api/moderation: pending submissions, reports, trusted spot checks, places reported
+ *   closed for good, organiser queues.
  * - POST /api/moderation/:kind/:id {action, note?}: a decision on one of them.
  */
 
 export interface ModerationDeps {
   need: Need;
+  /** `places.closed.days`: how long a closed-for-good report counts. */
+  closedDays: number;
   requireUser: (req: Request) => Promise<User>;
   /** Claims, contributors' edits, reported posts and private events (organisers.ts). */
   organisers: {
@@ -32,7 +34,13 @@ const moderateSchema = z.object({
   note: z.string().trim().max(500).nullable().optional(),
 });
 
-export function moderationRoutes({ need, requireUser, organisers, award }: ModerationDeps) {
+export function moderationRoutes({
+  need,
+  closedDays,
+  requireUser,
+  organisers,
+  award,
+}: ModerationDeps) {
   async function moderator(req: Request): Promise<string> {
     const user = await requireUser(req);
     if (!user.role) throw new ApiError(403, 'forbidden');
@@ -48,8 +56,10 @@ export function moderationRoutes({ need, requireUser, organisers, award }: Moder
         ...(await db.rpc<object>('moderation_queue', {})),
         // Spot checks of what trusted accounts published.
         trusted: await db.rpc<object[]>('trusted_recent', { p_days: 7 }),
-        // Places someone closed for good: off the map already, kept closed or opened again here.
-        places: await db.rpc<object[]>('place_closed_queue', {}),
+        // Places reported closed for good, and closed ones no moderator has looked at yet.
+        places: await db.rpc<object[]>('place_closed_queue', {
+          p_days: closedDays,
+        }),
         // Claims, contributors' edits and reported posts.
         ...(await organisers.queues()),
       });

@@ -397,6 +397,16 @@ export const appConfigSchema = z.object({
     sameWithinM: z.number().nonnegative(),
     /** A private party can be marked this far ahead at most. */
     privateMaxHours: z.number().positive(),
+    /**
+     * Closed for good is a report: a place leaves the map once `reports` different accounts
+     * reported it within `days` (a moderator's report closes it at once). Each report is made
+     * from within `withinM` of the place, by the phone's position.
+     */
+    closed: z.object({
+      reports: z.number().int().positive(),
+      withinM: z.number().positive(),
+      days: z.number().int().positive(),
+    }),
     /** A place this close to a shown event gives way to the event's pin. */
     nearEventM: z.number().nonnegative(),
     /** Closing within this many minutes is said on the card. */

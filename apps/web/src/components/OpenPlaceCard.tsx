@@ -57,8 +57,11 @@ export function OpenPlaceCard({
   onClose,
   onEdit,
   onPrivateEvent,
+  onStillOpen,
 }: {
   place: OpenPlace;
+  /** Reported closed for good: say it is still open, which clears the reports. */
+  onStillOpen?: () => void;
   /** A private event of your own at this place: the add form, filled in with it. */
   onPrivateEvent?: () => void;
   /** The time looked at: now, or the time picked on the line. */
@@ -105,6 +108,22 @@ export function OpenPlaceCard({
             </>
           )}
         </p>
+      )}
+      {place.closedReports > 0 && (
+        <div className="flag-banner" role="status">
+          <span className="flag-banner__icon" aria-hidden>
+            ⚠
+          </span>
+          <div>
+            <strong>{t('place.reportedClosed', { count: place.closedReports })}</strong>
+            <span className="flag-banner__note">{t('place.reportedClosedHint')}</span>
+            {onStillOpen && (
+              <button type="button" className="btn flag-banner__action" onClick={onStillOpen}>
+                {t('place.stillOpen')}
+              </button>
+            )}
+          </div>
+        </div>
       )}
       {place.address && <p className="event-card__venue">{place.address}</p>}
       <p className="event-card__distance">

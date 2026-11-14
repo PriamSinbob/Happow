@@ -168,10 +168,15 @@ export const en = {
   'placeEdit.partyOver': 'The private party is over',
   'placeEdit.partyOverHint': 'The place is open to everyone again.',
   'placeEdit.closed': 'Closed for good',
-  'placeEdit.closedHint': 'This place is gone.',
-  'placeEdit.closedConfirm': '{name} will leave the map for everyone. Is it really gone?',
-  'placeEdit.closedDo': 'Remove from the map',
+  'placeEdit.closedHint': 'Report that this place is gone.',
+  'placeEdit.closedConfirm':
+    "Only at the place: your phone's location is checked (within {m} m). {name} leaves the map once {count} people have reported it.",
+  'placeEdit.closedDo': 'Report closed for good',
   'placeEdit.save': 'Save the hours',
+  'placeEdit.reported':
+    'Thanks. Reports so far: {count} of {needed}. {name} leaves the map at {needed}.',
+  'placeEdit.noLocation':
+    "Reporting needs your location, and it's off or unavailable. Turn it on and try again at the place.",
   'place.title': '{count, plural, one {# event} other {# events}} here',
   'hotspot.label': 'Busiest nearby: {place}, {count, plural, one {# event} other {# events}}',
   'header.add': 'Add',
@@ -331,9 +336,12 @@ export const en = {
   'mod.confidence': 'confidence {value}%',
   'mod.trusted': 'Published by trusted contributors ({count})',
   'mod.kind.trusted': 'Trusted contributor, published without review',
-  'mod.places': 'Places closed for good ({count})',
-  'mod.placeClosedBy': 'Closed by {who} · {when}',
-  'mod.placeDevice': 'a device without an account',
+  'mod.places': 'Reported closed for good ({count})',
+  'mod.placeOn':
+    '{count, plural, one {# report} other {# reports}}, still on the map · last {when}',
+  'mod.placeOff': '{count, plural, one {# report} other {# reports}}, off the map · last {when}',
+  'mod.closeNow': 'Close now',
+  'mod.notClosed': 'Not closed',
   'mod.keepClosed': 'Keep closed',
   'mod.reopen': 'Open again',
   'mod.reportCount': '{count, plural, one {# report} other {# reports}}',
@@ -965,6 +973,10 @@ export const en = {
   'place.privateHint': 'Closed to guests from outside for now.',
   'place.privateAt': '{name} is closed to guests from outside for now.',
   'place.privateEvent': 'Private event here',
+  'place.reportedClosed':
+    '{count, plural, one {# person says} other {# people say}} it is closed for good',
+  'place.reportedClosedHint': 'Not confirmed yet. Check before you go.',
+  'place.stillOpen': "It's still open",
   'add.atPlace': 'A private event at {name}: only the people you invite will see it.',
   'add.atPlacePublic': 'An event at {name}.',
   'private.handOver': 'Hand over',
@@ -980,6 +992,7 @@ export const en = {
   'error.activation_required':
     'This needs your activated account. Type the code from the email first.',
   'error.photo_required': "The photo's pass ran out or was used. Take the photo again.",
+  'error.too_far': "You're too far away. Report it from the place (within {m} m).",
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -172,10 +172,15 @@ export const pl: Record<MessageKey, string> = {
   'placeEdit.partyOver': 'Impreza zamknięta się skończyła',
   'placeEdit.partyOverHint': 'Miejsce jest znów otwarte dla wszystkich.',
   'placeEdit.closed': 'Zamknięte na stałe',
-  'placeEdit.closedHint': 'Tego miejsca już nie ma.',
-  'placeEdit.closedConfirm': '{name} zniknie z mapy dla wszystkich. Na pewno już nie działa?',
-  'placeEdit.closedDo': 'Usuń z mapy',
+  'placeEdit.closedHint': 'Zgłoś, że tego miejsca już nie ma.',
+  'placeEdit.closedConfirm':
+    'Tylko na miejscu: sprawdzamy lokalizację telefonu (do {m} m). {name} zniknie z mapy po {count, plural, one {# zgłoszeniu} other {# zgłoszeniach}}.',
+  'placeEdit.closedDo': 'Zgłoś zamknięcie',
   'placeEdit.save': 'Zapisz godziny',
+  'placeEdit.reported':
+    'Dzięki. Zgłoszenia: {count} z {needed}. {name} zniknie z mapy po {needed}.',
+  'placeEdit.noLocation':
+    'Do zgłoszenia potrzebna jest lokalizacja, a jest wyłączona lub niedostępna. Włącz ją i spróbuj na miejscu.',
   'place.title':
     '{count, plural, one {# wydarzenie} few {# wydarzenia} many {# wydarzeń} other {# wydarzenia}} w tym miejscu',
   'hotspot.label':
@@ -341,9 +346,13 @@ export const pl: Record<MessageKey, string> = {
   'mod.confidence': 'pewność {value}%',
   'mod.trusted': 'Opublikowane przez zaufanych ({count})',
   'mod.kind.trusted': 'Zaufana osoba, opublikowane bez sprawdzenia',
-  'mod.places': 'Miejsca zamknięte na stałe ({count})',
-  'mod.placeClosedBy': 'Zamknięte przez: {who} · {when}',
-  'mod.placeDevice': 'urządzenie bez konta',
+  'mod.places': 'Zgłoszone jako zamknięte na stałe ({count})',
+  'mod.placeOn':
+    '{count, plural, one {# zgłoszenie} few {# zgłoszenia} other {# zgłoszeń}}, nadal na mapie · ostatnie {when}',
+  'mod.placeOff':
+    '{count, plural, one {# zgłoszenie} few {# zgłoszenia} other {# zgłoszeń}}, zdjęte z mapy · ostatnie {when}',
+  'mod.closeNow': 'Zamknij teraz',
+  'mod.notClosed': 'Nie jest zamknięte',
   'mod.keepClosed': 'Zostaw zamknięte',
   'mod.reopen': 'Otwórz z powrotem',
   'mod.reportCount':
@@ -999,6 +1008,11 @@ export const pl: Record<MessageKey, string> = {
   'place.privateHint': 'Na razie nie wpuszczają gości z zewnątrz.',
   'place.privateAt': '{name} na razie nie wpuszcza gości z zewnątrz.',
   'place.privateEvent': 'Prywatne wydarzenie tutaj',
+  'place.reportedClosed':
+    '{count, plural, one {# osoba zgłosiła} few {# osoby zgłosiły} other {# osób zgłosiło}}, że zamknięte na stałe',
+  'place.reportedClosedHint': 'Jeszcze niepotwierdzone. Sprawdź, zanim pójdziesz.',
+  'place.stillOpen': 'Nadal działa',
+  'error.too_far': 'Jesteś za daleko. Zgłoś to na miejscu (do {m} m).',
   'add.atPlace': 'Prywatne wydarzenie w miejscu {name}: zobaczą je tylko zaproszeni.',
   'add.atPlacePublic': 'Wydarzenie w miejscu {name}.',
   'private.handOver': 'Przekaż',

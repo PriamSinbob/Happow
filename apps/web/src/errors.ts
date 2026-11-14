@@ -1,5 +1,5 @@
 import { ApiError } from './api';
-import { region } from './config';
+import { config, region } from './config';
 import type { Language } from '@happow/core';
 import type { Translate } from './i18n';
 
@@ -31,6 +31,8 @@ export function errorText(t: Translate, err: unknown, lang: Language): string {
       return t(`error.${code}`);
     case 'outside_region':
       return t('error.outside_region', { region: region.name[lang] });
+    case 'too_far':
+      return t('error.too_far', { m: config.app.places.closed.withinM });
     default:
       return t('error.generic');
   }

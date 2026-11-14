@@ -4,14 +4,16 @@ import { config } from '../config';
 import { errorText } from '../errors';
 import { formatTime } from '../format';
 import { useI18n } from '../i18n';
-import { changePlace, type OpenPlace } from '../places';
+import { changePlace, hereNow, type ClosedReport, type OpenPlace } from '../places';
 import { HoursEditor, rowsToWeek, weekToRows } from './HoursEditor';
 import { Sheet } from './Sheet';
 
-const { privateMaxHours } = config.app.places;
+const { privateMaxHours, closed: closedRule } = config.app.places;
 
 /**
- * Correct a place: its hours, a private party on now, or closed for good. Each shows at once.
+ * Correct a place: its hours or a private party on now, which show at once, or a report that it
+ * is closed for good, made at the place (the phone's position is checked); it leaves the map once
+ * `places.closed.reports` accounts reported it.
  */
 export function PlaceEdit({
   place,
@@ -25,7 +27,8 @@ export function PlaceEdit({
   onClose: () => void;
 }) {
   const { t, lang } = useI18n();
-  const [step, setStep] = useState<'pick' | 'hours' | 'closed'>('pick');
+  const [step, setStep] = useState<'pick' | 'hours' | 'closed' | 'reported'>('pick');
+  const [report, setReport] = useState<ClosedReport | null>(null);
   const [rows, setRows] = useState(() => weekToRows(place.week));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +50,33 @@ export function PlaceEdit({
       setError(errorText(t, err, lang));
       setBusy(false);
     }
+  };
+  // Closed for good: from where the phone is now. Gone at once once enough people said so.
+  const reportClosed = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    let at;
+    try {
+      at = await hereNow();
+    } catch {
+      setError(t('placeEdit.noLocation'));
+      setBusy(false);
+      return;
+    }
+    try {
+      const done = await changePlace(place.id, { closed: true, at });
+      if (done.closed) return onClose();
+      setReport({
+        closed: false,
+        reports: done.reports ?? 1,
+        needed: done.needed ?? closedRule.reports,
+      });
+      setStep('reported');
+    } catch (err) {
+      setError(errorText(t, err, lang));
+    }
+    setBusy(false);
   };
   const foot = (label: string, disabled: boolean, run: () => void) => (
     <div className="account-sheet__foot">
@@ -111,9 +141,29 @@ export function PlaceEdit({
       {step === 'closed' && (
         <>
           <p className="account-sheet__lead">
-            {t('placeEdit.closedConfirm', { name: place.name })}
+            {t('placeEdit.closedConfirm', {
+              name: place.name,
+              count: closedRule.reports,
+              m: closedRule.withinM,
+            })}
           </p>
-          {foot(t('placeEdit.closedDo'), false, () => send({ closed: true }))}
+          {foot(t('placeEdit.closedDo'), false, reportClosed)}
+        </>
+      )}
+      {step === 'reported' && report && (
+        <>
+          <p className="account-sheet__lead" role="status">
+            {t('placeEdit.reported', {
+              name: place.name,
+              count: report.reports,
+              needed: report.needed,
+            })}
+          </p>
+          <div className="account-sheet__foot">
+            <button type="button" className="btn btn--primary" onClick={onClose}>
+              {t('common.close')}
+            </button>
+          </div>
         </>
       )}
       {error && (

@@ -161,6 +161,49 @@ describe.skipIf(!url || !local)('places in Postgres', () => {
     }
   });
 
+  it('takes a place off the map after three reports made at it, and back on when still open', async () => {
+    const users = (
+      await db.query(
+        `insert into auth.users (id, email)
+         select gen_random_uuid(), $1 || n || '@example.org' from generate_series(1, 3) n
+         returning id`,
+        [`${tag}-closed-`],
+      )
+    ).rows.map((r) => r.id as string);
+    const far = `node/${tag}pfar`;
+    const read = async () => (await area(5000)).find((r) => r.id === far);
+    const report = async (user: string, lat = 0.52) =>
+      (
+        await db.query(`select place_report_closed($1, $2, $3, 1, 300, 3, 30) as r`, [
+          user,
+          far,
+          lat,
+        ])
+      ).rows[0].r;
+    try {
+      // About 1 km off: not stored.
+      expect(await report(users[0]!, 0.51)).toMatchObject({ tooFar: true, reports: 0 });
+      expect(await report(users[0]!)).toMatchObject({ closed: false, reports: 1 });
+      // The same account again still counts once.
+      expect(await report(users[0]!)).toMatchObject({ reports: 1 });
+      expect((await read()).closed_reports).toBe(1);
+      // Still open: the reports are gone.
+      await db.query(`select place_reports_clear($1, $2, false)`, [users[1], far]);
+      expect((await read()).closed_reports).toBe(0);
+      await report(users[0]!);
+      await report(users[1]!);
+      expect(await report(users[2]!)).toMatchObject({ closed: true, reports: 3 });
+      expect(await read()).toBeUndefined();
+      // Only a moderator opens a closed place again.
+      await db.query(`select place_reports_clear($1, $2, false)`, [users[0], far]);
+      expect(await read()).toBeUndefined();
+      await db.query(`select moderate_place($1, 'reject', 'mod@example.org')`, [far]);
+      expect((await read()).closed_reports).toBe(0);
+    } finally {
+      await db.query('delete from auth.users where id = any($1)', [users]);
+    }
+  });
+
   it('is not readable directly by the anon role', async () => {
     await db.query('begin; set local role anon');
     try {

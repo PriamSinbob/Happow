@@ -582,13 +582,13 @@ describe('/api/moderation', () => {
     );
   });
 
-  it('keeps a place closed for good or opens it again', async () => {
+  it('closes a reported place or opens it again', async () => {
     const web = backend({
       rpc: {
         ...rpc,
         moderate_place: (a: Record<string, unknown>) =>
           a.p_place === 'node/2'
-            ? { status: 400, body: { code: 'P0001', message: 'not closed' } }
+            ? { status: 400, body: { code: 'P0002', message: 'no such place' } }
             : { body: null },
       },
       users,
@@ -605,7 +605,7 @@ describe('/api/moderation', () => {
     // Opened again by someone else meanwhile.
     expect(
       (await api(post('moderation/places/node%2F2', { action: 'approve' }, auth))).status,
-    ).toBe(409);
+    ).toBe(404);
   });
 });
 
@@ -910,6 +910,13 @@ describe('adding and correcting places', () => {
     rate_limit_hit: () => ({ body: true }),
     place_add: () => ({ body: 'user/1' }),
     place_change: () => ({ body: null }),
+    place_reports_clear: () => ({ body: null }),
+    place_report_closed: (a: Record<string, unknown>) => ({
+      body:
+        a.p_lat === 51.2
+          ? { closed: false, reports: 0, distanceM: 9000, tooFar: true }
+          : { closed: false, reports: 1, distanceM: 40, tooFar: false },
+    }),
   };
   const run = (path: string, body: unknown, headers?: Record<string, string>) => {
     const web = backend({ rpc });
@@ -958,7 +965,7 @@ describe('adding and correcting places', () => {
     }
   });
 
-  it('takes one correction at a time: hours, closed for good, or a private party', async () => {
+  it('takes one correction at a time: hours, or a private party', async () => {
     const hours = run('places/change', { id: 'node/1', openingHours: 'Mo-Su 12:00-20:00' });
     expect((await hours.res).status).toBe(200);
     expect(hours.web.calls.find((c) => c.name === 'place_change')!.args).toEqual({
@@ -983,10 +990,47 @@ describe('adding and correcting places', () => {
       p_private: false,
       p_private_until: null,
     });
-    const closed = run('places/change', { id: 'node/1', closed: true });
-    await closed.res;
-    expect(closed.web.calls.find((c) => c.name === 'place_change')!.args).toMatchObject({
-      p_closed: true,
+    // New hours say it is open: closed-for-good reports are cleared.
+    expect(hours.web.calls.find((c) => c.name === 'place_reports_clear')!.args).toEqual({
+      p_user: 'id-user-token',
+      p_place: 'node/1',
+      p_reopen: false,
+    });
+  });
+
+  it('takes closed for good as a report made at the place', async () => {
+    const at = { lat: 51.11, lng: 17.03 };
+    const report = run('places/change', { id: 'node/1', closed: true, at });
+    expect(await (await report.res).json()).toEqual({
+      ok: true,
+      closed: false,
+      reports: 1,
+      needed: 3,
+    });
+    expect(report.web.calls.find((c) => c.name === 'place_report_closed')!.args).toEqual({
+      p_user: 'id-user-token',
+      p_place: 'node/1',
+      p_lat: 51.11,
+      p_lng: 17.03,
+      p_within_m: 300,
+      p_needed: 3,
+      p_days: 30,
+      p_now: false,
+    });
+    expect(report.web.calls.some((c) => c.name === 'place_change')).toBe(false);
+    const far = await run('places/change', {
+      id: 'node/1',
+      closed: true,
+      at: { lat: 51.2, lng: 17.03 },
+    }).res;
+    expect(far.status).toBe(400);
+    expect(await far.json()).toMatchObject({ error: 'too_far', withinM: 300, distanceM: 9000 });
+    // Without the phone's position there is no report.
+    expect((await run('places/change', { id: 'node/1', closed: true }).res).status).toBe(400);
+    const open = run('places/change', { id: 'node/1', closed: false });
+    expect((await open.res).status).toBe(200);
+    expect(open.web.calls.find((c) => c.name === 'place_reports_clear')!.args).toMatchObject({
+      p_reopen: false,
     });
   });
 
