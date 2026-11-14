@@ -33,6 +33,7 @@ const EXPORTED: Record<string, string> = {
   // an account that can export (an activated one) never has one.
   pending_accounts: 'profile',
   place_changes: 'places',
+  place_closed_reports: 'placeClosedReports',
   place_log: 'places',
   places: 'places',
   plan_grants: 'grants',
