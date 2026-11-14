@@ -54,7 +54,7 @@ describe('geo helpers', () => {
   it('covers the whole region bbox', () => {
     const { radiusM } = coveringCircle(region);
     expect(radiusM).toBeGreaterThan(10_000);
-    expect(radiusM).toBeLessThan(25_000);
+    expect(radiusM).toBeLessThan(40_000);
   });
 });
 

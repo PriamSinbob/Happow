@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { runIngest } from '../src';
-import { overpass } from '../src/overpass';
+import { overpass, overpassBbox } from '../src/overpass';
 import {
   linkVenues,
   parseOsmVenues,
@@ -18,9 +18,7 @@ describe('OSM venues (contract, Overpass response shape)', () => {
   it('asks for every configured tag inside the bbox, with centres for ways and relations', () => {
     const q = venueQuery(tags, region.bbox);
     expect(q).toContain(`nwr["amenity"~"^(theatre|arts_centre|`);
-    expect(q).toContain(
-      `nwr["tourism"~"^(museum|gallery)$"]["name"](51.042,16.807,51.211,17.176);`,
-    );
+    expect(q).toContain(`nwr["tourism"~"^(museum|gallery)$"]["name"]${overpassBbox(region.bbox)};`);
     expect(q).toMatch(/out center tags;$/);
   });
 
