@@ -135,6 +135,21 @@ export const en = {
   'addPlace.done': 'Thanks! The place is on the map.',
   'addPlace.doneClosed': 'Thanks! The place will show on the map when it is open.',
   'addPlace.show': 'Show on the map',
+  'addPlace.photo': 'Photo of the door',
+  'addPlace.photo.again': 'Another photo',
+  'addPlace.photo.reading': 'Reading the photo…',
+  'addPlace.photo.lead':
+    'Take a photo of the door or the sign: the name, the hours and the address are read from it. Any photo will do, one from the gallery too.',
+  'addPlace.photo.notFound':
+    "Couldn't find a place in this photo. Try one with its sign or opening hours.",
+  'addPlace.photo.alt': 'The photo the form was filled from',
+  'addPlace.fromPhoto': 'from the photo',
+  'addPlace.fromPhone': 'from your location',
+  'addPlace.dropPin': 'Tap the map to place the pin where the door is.',
+  'addPlace.listed': '{name} is already on the map. Check its hours and update them.',
+  'addPlace.another': "It's another place",
+  'addPlace.update': 'Update the hours',
+  'addPlace.doneUpdated': 'Thanks! The hours are updated.',
   'hours.days': 'Days of the week',
   'hours.from': 'Open from',
   'hours.to': 'Open until',
@@ -954,6 +969,7 @@ export const en = {
   'private.handedOver': '{name} is the organiser now.',
   'error.activation_required':
     'This needs your activated account. Type the code from the email first.',
+  'error.photo_required': "The photo's pass ran out or was used. Take the photo again.",
 } as const;
 
 export type MessageKey = keyof typeof en;

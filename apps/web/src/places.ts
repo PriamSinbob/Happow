@@ -8,10 +8,12 @@ import {
   type EventFilters,
   type LatLng,
   type OpeningWeek,
+  type PlacePhotoResult,
 } from '@happow/core';
-import { api } from './api';
+import { api, deviceId } from './api';
 import { accessToken } from './auth';
 import { config, region } from './config';
+import type { ShrunkPhoto } from './photo';
 
 /**
  * Places to go to while they are open (restaurants, pubs, galleries). One snapshot of the area,
@@ -228,11 +230,21 @@ export interface NewPlace {
   website: string;
 }
 
-/** Adds a place (an account is needed); it is on the map at once. */
-export async function addPlace(place: NewPlace): Promise<string> {
+/**
+ * Without an account, the pass from a photo read stands in for it (one place per photo). With
+ * an account it is not needed and not sent.
+ */
+async function author(pass: string | null) {
+  const token = await accessToken();
+  return token || !pass ? { token } : { token, body: { deviceId: deviceId(), photoPass: pass } };
+}
+
+/** Adds a place (an account, or the pass from a photo); it is on the map at once. */
+export async function addPlace(place: NewPlace, pass: string | null = null): Promise<string> {
+  const by = await author(pass);
   const { id } = await api<{ id: string }>('places', {
-    body: { regionId: region.id, ...place },
-    token: await accessToken(),
+    body: { regionId: region.id, ...place, ...by.body },
+    token: by.token,
   });
   refreshPlaces();
   return id;
@@ -242,7 +254,60 @@ export async function addPlace(place: NewPlace): Promise<string> {
 export async function changePlace(
   id: string,
   change: { openingHours: string } | { closed: true } | { privateUntil: string | null },
+  pass: string | null = null,
 ): Promise<void> {
-  await api('places/change', { body: { id, ...change }, token: await accessToken() });
+  const by = await author(pass);
+  await api('places/change', { body: { id, ...change, ...by.body }, token: by.token });
   refreshPlaces();
+}
+
+/** Reads a photo of a place's door into the add form, with a pass to add it without an account. */
+export async function readPlacePhoto(photo: ShrunkPhoto): Promise<PlacePhotoResult> {
+  return api<PlacePhotoResult>('places/photo', {
+    body: {
+      image: photo.data,
+      mediaType: photo.mediaType,
+      deviceId: deviceId(),
+      regionId: region.id,
+    },
+    token: await accessToken(),
+  });
+}
+
+/** Lower case, no accents, letters and digits only: "Kawiarnia Przykład!" → "kawiarniaprzyklad". */
+const fold = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/ł/g, 'l')
+    .replace(/[^\p{L}\p{N}]/gu, '');
+
+/**
+ * The place already listed at this spot (within `places.photo.listedWithinM`) that a photo
+ * shows: one whose name contains the other's, or, with no name read, the only one of that kind.
+ * The form then updates its hours instead of adding it again.
+ */
+export function listedNear(
+  places: readonly Place[],
+  point: LatLng,
+  name: string,
+  kind: string | null,
+): Place | null {
+  const near = places
+    .map((p) => ({ p, d: distanceM(point, p.point) }))
+    .filter(({ d }) => d <= cfg.photo.listedWithinM)
+    .sort((a, b) => a.d - b.d)
+    .map(({ p }) => p);
+  const n = fold(name);
+  if (n.length >= 3) {
+    const named = near.find((p) => {
+      const o = fold(p.name);
+      return o.length >= 3 && (o.includes(n) || n.includes(o));
+    });
+    if (named) return named;
+  }
+  if (n.length) return null;
+  const same = near.filter((p) => p.kind.tag === kind);
+  return same.length === 1 ? same[0]! : null;
 }

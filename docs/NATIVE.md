@@ -47,6 +47,7 @@ These are changes in this repository, made when the native app reaches them:
 ## On the phone
 
 - **Arrival.** A geofence (`navigation.arriveM`, today 40 m) around events marked "I'm going" or saved for today, at most 100 at a time (Android's limit). Entering one offers "I'm here" and, for community events, thanks, as a notification, on the widget and on the event's card. Nothing is sent from location alone: the person taps. Background location is optional and asked for with its reason; without it, arrival shows when the app or widget is open nearby. The trip screen with an in-app route ("Going there") is not part of the native app.
+- **Place from a photo.** The camera and the gallery both; read the EXIF position from the original before shrinking (on Android, `ACCESS_MEDIA_LOCATION` and `MediaStore.setRequireOriginal`, or the location is redacted), else the precise fix, else a pin. Keep the pass from `POST /api/places/photo` with the form and send it once; the "already listed" match runs on the phone over the places snapshot (`listedNear` in `apps/web/src/places.ts`).
 - **Widgets.** What is on now in reach, the next plan, and arrival.
 - **Notifications.** Reminders, followed artists' new dates, organisers' notices, invitations.
 - **Speed.** 60 fps on the reach rail with 500 events; the first pin tap under 3 s.

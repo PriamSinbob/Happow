@@ -43,6 +43,27 @@ export interface ExtractedEvent {
   confidence: number;
 }
 
+/** A place as read from one photo of its door, sign or window. */
+export interface ExtractedPlace {
+  name: string | null;
+  /** One of the kinds the reader was given. */
+  kind: string | null;
+  /** `opening_hours` with at least one open day; null when none is printed or it can't be read. */
+  openingHours: string | null;
+  street: string | null;
+  houseNumber: string | null;
+  website: string | null;
+  /** Where each field was read, as fractions (0–1) of the photo's width and height. */
+  boxes: Partial<
+    Record<
+      'name' | 'kind' | 'hours' | 'address' | 'website',
+      { x: number; y: number; w: number; h: number }
+    >
+  >;
+  /** 0–1: how sure the reader is that this is one place and the name is right. */
+  confidence: number;
+}
+
 /** Oldest `ageMin` we store; higher numbers on a page are something else (a year, a price). */
 export const MAX_AGE_MIN = 21;
 

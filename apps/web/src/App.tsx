@@ -446,10 +446,13 @@ export function App() {
     go({ name: 'go', id });
   };
   const close = useCallback(() => go(null), [go]);
-  /** The add form, or sign-in first where adding needs an account (a place always does). */
+  /**
+   * The add form, or sign-in first where adding an event needs an account. A place needs none:
+   * without one, its form starts from a photo of the door.
+   */
   const startAdd = (what: 'event' | 'place', at?: string) => {
     setAddChoice(false);
-    if (needsSignIn && (what === 'place' || config.app.submissions.account === 'required'))
+    if (needsSignIn && what === 'event' && config.app.submissions.account === 'required')
       setAddGate({ what, at });
     else go(what === 'place' ? { name: 'addPlace' } : { name: 'add', ...(at && { place: at }) });
   };
@@ -1059,6 +1062,7 @@ export function App() {
       )}
       {route?.name === 'addPlace' && (
         <AddPlace
+          here={here}
           onClose={close}
           onShow={(id, point) => {
             close();

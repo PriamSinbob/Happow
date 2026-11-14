@@ -101,6 +101,18 @@ describe.skipIf(!url || !local)('places in Postgres', () => {
         );
       expect((await mine()).opening_hours).toBe('Mo-Su 12:00-20:00');
 
+      // Without an account, from a photo: the hashed device is logged instead.
+      const photo = (
+        await db.query(
+          `select place_add(null, $1, $2, 'amenity=cafe', 0.5006, 1, null, null,
+            'Mo-Fr 08:00-16:00', 50, $3) as id`,
+          [region, `Photo ${tag}`, `dev-${tag}`],
+        )
+      ).rows[0].id as string;
+      expect(
+        (await db.query('select user_id, device from place_log where place_id = $1', [photo])).rows,
+      ).toEqual([{ user_id: null, device: `dev-${tag}` }]);
+
       // The weekly import neither updates nor removes it.
       await store().replacePlaces(region, [
         place('far', 0.52, 1, 'Mo-Su 12:00-20:00'),
@@ -142,6 +154,7 @@ describe.skipIf(!url || !local)('places in Postgres', () => {
       ).rejects.toMatchObject({ code: 'P0002' });
     } finally {
       await db.query('delete from places where added_by = $1', [user]);
+      await db.query('delete from places where name = $1', [`Photo ${tag}`]);
       await db.query('delete from auth.users where id = $1', [user]);
     }
   });

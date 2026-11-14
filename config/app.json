@@ -321,7 +321,14 @@
     "sameWithinM": 50,
     "privateMaxHours": 24,
     "nearEventM": 30,
-    "closingSoonMin": 60
+    "closingSoonMin": 60,
+    "photo": {
+      "readsPerHour": 6,
+      "readsPerDayPerNetwork": 30,
+      "passMinutes": 30,
+      "perDayPerDevice": 5,
+      "listedWithinM": 30
+    }
   },
   "counts": { "maxBatch": 50, "perHourPerDevice": 240 },
   "attendance": {

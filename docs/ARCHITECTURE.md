@@ -116,9 +116,9 @@ flowchart TB
   FIN["finishRun ok / failed<br/>+ stats"] --> LOOP
 ```
 
-## API request routing (/api/*)
+## API request routing (/api/\*)
 
-How the Worker routes /api/* (packages/api/src/handler.ts builds what the routes share and sends each request to its feature module), including submission → moderation → reward. Response shapes and error codes that the server and the app both name live in packages/core/src/wire.ts.
+How the Worker routes /api/\* (packages/api/src/handler.ts builds what the routes share and sends each request to its feature module), including submission → moderation → reward. Response shapes and error codes that the server and the app both name live in packages/core/src/wire.ts.
 
 ```mermaid
 flowchart LR
@@ -129,6 +129,7 @@ flowchart LR
   R -- "GET places" --> PLACES["places_area RPC<br/>same grid key, ETag,<br/>corrections applied,<br/>public cache 30 min"]
   R -- "POST autofill" --> AF["Sign-in + monthly allowance<br/>fetchPage → JSON-LD<br/>→ LLM (daily cap) → prefills"]
   R -- "POST autofill/photo" --> AFP["Poster photo → LLM prefill"]
+  R -- "POST places/photo" --> PPH["Door photo → LLM place prefill<br/>+ marks, pass for no account"]
   R -- "POST geocode" --> GC["Address → point in region"]
   R -- "POST submissions" --> SUB["Validate category, bbox, dates<br/>weekly repeat → series<br/>quota · trusted account?"]
   R -- "POST reports" --> REP["report_event<br/>1 per device per day"]

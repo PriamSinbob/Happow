@@ -187,7 +187,16 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
     fetch: doFetch,
   });
   const moderation = moderationRoutes({ need, requireUser, organisers, award });
-  const placeEdits = placeEditRoutes({ config, need, requireUser, limit, now });
+  const placeEdits = placeEditRoutes({
+    config,
+    need,
+    requireUser,
+    optionalUser,
+    limit,
+    clientHash,
+    now,
+    extractor,
+  });
   const privateApi = privateRoutes({
     config,
     need,
@@ -328,6 +337,8 @@ export function createApi(env: ApiEnv, deps: ApiDeps = {}) {
       if (head === 'places' && method === 'POST' && !rest.length) return await placeEdits.add(req);
       if (head === 'places' && method === 'POST' && sub === 'change')
         return await placeEdits.change(req);
+      if (head === 'places' && method === 'POST' && sub === 'photo')
+        return await placeEdits.photo(req);
       if (head === 'ingest' && method === 'GET' && sub === 'status') return await ingestStatus();
       if (head === 'autofill' && method === 'POST' && sub === 'photo')
         return await autofill.photo(req);

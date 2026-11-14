@@ -396,6 +396,22 @@ export const appConfigSchema = z.object({
     nearEventM: z.number().nonnegative(),
     /** Closing within this many minutes is said on the card. */
     closingSoonMin: z.number().int().nonnegative(),
+    /**
+     * A place from one photo of its door, with or without an account (POST /api/places/photo).
+     * The read gives a short-lived pass that lets a device without an account add that one place
+     * or update its hours; typing a place in without an account is not offered.
+     */
+    photo: z.object({
+      /** Photo reads per device (or account) an hour, and per network a day. */
+      readsPerHour: z.number().int().positive(),
+      readsPerDayPerNetwork: z.number().int().positive(),
+      /** How long the pass from a read is good for. */
+      passMinutes: z.number().int().positive(),
+      /** Places a device without an account may add or update in a day. */
+      perDayPerDevice: z.number().int().positive(),
+      /** A listed place this close to the spot turns "add" into "update hours". */
+      listedWithinM: z.number().nonnegative(),
+    }),
   }),
   /** Per-event opens, routes and arrivals for "your impact". */
   counts: z.object({
