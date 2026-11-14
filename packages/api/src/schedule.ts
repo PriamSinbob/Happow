@@ -1,4 +1,4 @@
-import { siteTemplate, type HappowConfig } from '@happow/core';
+import { siteTemplate, type HappowConfig, type Source } from '@happow/core';
 import { dueForDispatch, type RunRecord } from '@happow/ingest/schedule';
 import appJson from '../../../config/app.json';
 import regionsJson from '../../../config/regions.json';
@@ -164,8 +164,10 @@ export async function rollForwardServices(
   if (!db) return { due: true, reason: NO_DATABASE };
   const added: Record<string, number> = {};
   for (const s of config.sources) {
-    if (!s.enabled || s.options.rollForward !== true) continue;
-    const days = typeof s.options.horizonDays === 'number' ? s.options.horizonDays : 14;
+    // The raw JSON has no schema defaults: a source may have no options at all.
+    const options = (s.options as Source['options'] | undefined) ?? {};
+    if (!s.enabled || options.rollForward !== true) continue;
+    const days = typeof options.horizonDays === 'number' ? options.horizonDays : 14;
     added[s.id] = await db.rpc<number>('services_roll_forward', { p_source: s.id, p_days: days });
   }
   return { due: true, added };

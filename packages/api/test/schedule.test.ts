@@ -164,7 +164,12 @@ describe('rollForwardServices', () => {
       expect(JSON.parse(String(init.body))).toEqual({ p_source: 'worship-services', p_days: 14 });
       return Response.json(3);
     });
-    const at = (iso: string) => rollForwardServices(env, new Date(iso), { fetch: f, config });
+    // The Worker reads the raw JSON (scheduleConfig), where some sources have no options.
+    const at = (iso: string) =>
+      rollForwardServices(env, new Date(iso), {
+        fetch: f,
+        config: scheduleConfig() as unknown as typeof config,
+      });
     expect(await at('2026-11-14T10:20:00Z')).toEqual({ due: false });
     expect(await at('2026-11-14T11:05:00Z')).toEqual({
       due: true,
