@@ -24,8 +24,9 @@ import {
 import { SupabaseError } from './supabase.js';
 
 /**
- * Places people add and correct. They show at once (no moderation): every change is logged with
- * who made it (the account, or the hashed device), with daily limits for each.
+ * Places people add and correct. They show at once (no moderation first): every change is logged
+ * with who made it (the account, or the hashed device), with daily limits for each. A place closed
+ * for good also goes to the moderators' queue, to keep closed or open again (moderation.ts).
  * An account adds and corrects freely. Without one, a place comes only from a photo of its door:
  * POST /api/places/photo reads it and hands out a pass, good for one place (a new one, or new
  * hours for one already listed) from that device.

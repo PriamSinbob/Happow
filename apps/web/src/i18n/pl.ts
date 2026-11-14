@@ -341,6 +341,11 @@ export const pl: Record<MessageKey, string> = {
   'mod.confidence': 'pewność {value}%',
   'mod.trusted': 'Opublikowane przez zaufanych ({count})',
   'mod.kind.trusted': 'Zaufana osoba, opublikowane bez sprawdzenia',
+  'mod.places': 'Miejsca zamknięte na stałe ({count})',
+  'mod.placeClosedBy': 'Zamknięte przez: {who} · {when}',
+  'mod.placeDevice': 'urządzenie bez konta',
+  'mod.keepClosed': 'Zostaw zamknięte',
+  'mod.reopen': 'Otwórz z powrotem',
   'mod.reportCount':
     '{count, plural, one {# raport} few {# raporty} many {# raportów} other {# raportu}}',
   'mod.published': 'na mapie, niezweryfikowane',

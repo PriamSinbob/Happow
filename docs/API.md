@@ -154,7 +154,7 @@ Listed with their bodies at the top of `packages/api/src/organisers.ts` and `pri
 
 ## Staff
 
-- `/api/moderation[/:kind/:id]` 🛡: the queue and decisions
+- `/api/moderation[/:kind/:id]` 🛡: the queue and decisions. `places` lists places closed for good that no moderator has looked at since (`{id, name, kind, address, closed_at, closed_by, closed_by_device}`); `POST /api/moderation/places/:id {action}` keeps one closed (`approve`) or opens it again (`reject`), 409 when it is no longer closed
 - `/api/admin/code-requests`, `/grants`, `/sources`, `/coverage`, `/trust`, `/feeds/:id` 👑
 
 ## Outside /api

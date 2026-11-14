@@ -78,7 +78,21 @@ interface Queue extends OrganiserQueue {
   reports: ReportedEvent[];
   /** Published by trusted accounts in the last 7 days, for spot checks. */
   trusted?: QueuedSubmission[];
+  /** Places closed for good that no moderator has looked at yet: off the map already. */
+  places?: ClosedPlace[];
 }
+
+interface ClosedPlace {
+  id: string;
+  name: string;
+  kind: string;
+  address: string | null;
+  closed_at: string;
+  /** The account's email; null for a device without an account. */
+  closed_by: string | null;
+}
+
+const placeKinds = new Map(config.app.places.kinds.map((k) => [k.tag, k.labels]));
 
 type State =
   | { name: 'loading' }
@@ -174,6 +188,7 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                 ),
                 reports: s.queue.reports.filter((x) => `r:${x.event_id}` !== key),
                 trusted: s.queue.trusted?.filter((x) => `t:${x.id}` !== key),
+                places: s.queue.places?.filter((x) => `p:${x.id}` !== key),
               },
             }
           : s,
@@ -342,6 +357,48 @@ export function Moderation({ onClose }: { onClose: () => void }) {
                       onClick={() => act(`trusted/${s.id}`, 'reject', key)}
                     >
                       {t('mod.reject')}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+        )}
+
+        {(queue.places?.length ?? 0) > 0 && (
+          <section className="mod-section">
+            <h2>{t('mod.places', { count: queue.places!.length })}</h2>
+            {queue.places!.map((p) => {
+              const key = `p:${p.id}`;
+              const path = `places/${encodeURIComponent(p.id)}`;
+              const kind = placeKinds.get(p.kind);
+              return (
+                <article key={p.id} className="mod-card">
+                  {kind && <div className="event-card__cats">{kind[lang]}</div>}
+                  <h3>{p.name}</h3>
+                  <p className="mod-card__meta">
+                    {p.address && `${p.address} · `}
+                    {t('mod.placeClosedBy', {
+                      who: p.closed_by ?? t('mod.placeDevice'),
+                      when: when(p.closed_at),
+                    })}
+                  </p>
+                  <div className="event-card__actions">
+                    <button
+                      type="button"
+                      className="btn btn--primary"
+                      disabled={busy === key}
+                      onClick={() => act(path, 'approve', key)}
+                    >
+                      {t('mod.keepClosed')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={busy === key}
+                      onClick={() => act(path, 'reject', key)}
+                    >
+                      {t('mod.reopen')}
                     </button>
                   </div>
                 </article>

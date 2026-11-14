@@ -182,10 +182,12 @@ async function seedRows(): Promise<PlaceRow[]> {
 }
 
 const cache = new Map<string, { at: number; places: Promise<Place[]> }>();
-// After a change of your own, each area's next read goes past every cache (the browser keeps an
-// area for `cacheMinutes`), and open maps read again. Per area: the add form reads the area at its
-// pin, which may not be the map's.
+// After a change of your own, every read goes past every cache, and open maps read again. The
+// browser keeps an area for `cacheMinutes`, and so does Cloudflare's cache in front of the API,
+// which `cache: 'reload'` does not reach: so from then on the reads carry the time of the change
+// (`fresh`), an address no cache has seen. The API ignores it.
 let changed = false;
+let fresh = '';
 const reloaded = new Set<string>();
 let version = 0;
 const watchers = new Set<() => void>();
@@ -195,6 +197,7 @@ function refreshPlaces(): void {
   cache.clear();
   unknownCache.clear();
   changed = true;
+  fresh = `&fresh=${Date.now().toString(36)}`;
   reloaded.clear();
   version++;
   for (const w of watchers) w();
@@ -211,7 +214,7 @@ export function loadPlaces(
   const hit = cache.get(key);
   if (hit && now() < hit.at + cfg.cacheMinutes * 60_000) return hit.places;
   const read = async (init?: RequestInit) => {
-    const res = await doFetch(`/api/places?${key}`, init);
+    const res = await doFetch(`/api/places?${key}${fresh}`, init);
     if (!res.ok) throw new Error(`places failed: ${res.status}`);
     return ((await res.json()) as { places: PlaceRow[] }).places;
   };
@@ -272,7 +275,7 @@ export function loadUnknown(center: LatLng, now: () => number = Date.now): Promi
   if (changed) reloaded.add(`unknown:${key}`);
   const places = (
     import.meta.env.VITE_SUPABASE_URL
-      ? fetch(`/api/places/unknown?${key}`, reload ? { cache: 'reload' } : undefined).then(
+      ? fetch(`/api/places/unknown?${key}${fresh}`, reload ? { cache: 'reload' } : undefined).then(
           async (res) => {
             if (!res.ok) throw new Error(`unknown places failed: ${res.status}`);
             return ((await res.json()) as { places: Omit<PlaceRow, 'opening_hours'>[] }).places;

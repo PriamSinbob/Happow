@@ -549,6 +549,7 @@ describe('/api/moderation', () => {
       submissions: [],
       reports: [],
       trusted: [],
+      places: [],
       claims: [],
       edits: [],
       posts: [],
@@ -579,6 +580,32 @@ describe('/api/moderation', () => {
     expect((await api(post('moderation/submissions/s1', { action: 'hide' }, auth))).status).toBe(
       400,
     );
+  });
+
+  it('keeps a place closed for good or opens it again', async () => {
+    const web = backend({
+      rpc: {
+        ...rpc,
+        moderate_place: (a: Record<string, unknown>) =>
+          a.p_place === 'node/2'
+            ? { status: 400, body: { code: 'P0001', message: 'not closed' } }
+            : { body: null },
+      },
+      users,
+    });
+    const api = createApi(env, { config, fetch: web.fetch, now, geocoder, extractor: null });
+    const auth = { authorization: 'Bearer good-token' };
+    const open = await api(post('moderation/places/node%2F1', { action: 'reject' }, auth));
+    expect(await open.json()).toEqual({ id: 'node/1', action: 'reject' });
+    expect(web.calls.find((c) => c.name === 'moderate_place')!.args).toEqual({
+      p_place: 'node/1',
+      p_action: 'reject',
+      p_moderator: 'mod@example.org',
+    });
+    // Opened again by someone else meanwhile.
+    expect(
+      (await api(post('moderation/places/node%2F2', { action: 'approve' }, auth))).status,
+    ).toBe(409);
   });
 });
 
