@@ -24,7 +24,7 @@
     {
       "id": "seed/lodz-3",
       "name": "Pub przy Off-ie",
-      "kind": "amenity=bar",
+      "kind": "amenity=pub",
       "lat": 51.77108,
       "lng": 19.4641,
       "address": "ul. Piotrkowska, Łódź",

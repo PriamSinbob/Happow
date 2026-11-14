@@ -373,6 +373,8 @@ export const appConfigSchema = z.object({
       .array(
         z.object({
           tag: z.string().regex(/^[a-z_:]+=[a-z_]+$/),
+          /** More OSM tags read as this kind (bars and beer gardens are pubs here). */
+          alsoTags: z.array(z.string().regex(/^[a-z_:]+=[a-z_]+$/)).default([]),
           glyph: z.string().min(1),
           category: z.string().min(1),
           labels: z.object({ pl: z.string().min(1), en: z.string().min(1) }),

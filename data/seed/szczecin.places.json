@@ -24,7 +24,7 @@
     {
       "id": "seed/szczecin-3",
       "name": "Bar przy Bramie",
-      "kind": "amenity=bar",
+      "kind": "amenity=pub",
       "lat": 53.43091,
       "lng": 14.5539,
       "address": "plac Hołdu Pruskiego, Szczecin",

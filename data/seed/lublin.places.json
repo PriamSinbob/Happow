@@ -24,7 +24,7 @@
     {
       "id": "seed/lublin-3",
       "name": "Bar Krakowskie",
-      "kind": "amenity=bar",
+      "kind": "amenity=pub",
       "lat": 51.25099,
       "lng": 22.5647,
       "address": "Krakowskie Przedmieście, Lublin",

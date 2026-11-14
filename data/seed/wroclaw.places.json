@@ -64,7 +64,7 @@
     {
       "id": "seed/7",
       "name": "Bar Nocny Ruska",
-      "kind": "amenity=bar",
+      "kind": "amenity=pub",
       "lat": 51.1099,
       "lng": 17.0262,
       "address": "ul. Ruska 46, 50-079 Wrocław",
@@ -74,7 +74,7 @@
     {
       "id": "seed/8",
       "name": "Koktajle na Odrzańskiej",
-      "kind": "amenity=bar",
+      "kind": "amenity=pub",
       "lat": 51.1118,
       "lng": 17.0299,
       "address": "ul. Odrzańska 7, 50-113 Wrocław",
@@ -164,7 +164,7 @@
     {
       "id": "seed/17",
       "name": "Ogródek nad Fosą",
-      "kind": "amenity=biergarten",
+      "kind": "amenity=pub",
       "lat": 51.1061,
       "lng": 17.0331,
       "address": "Podwale 37, 50-040 Wrocław",

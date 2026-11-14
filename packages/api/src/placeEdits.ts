@@ -2,6 +2,7 @@ import {
   getRegion,
   isInBbox,
   parseOpeningHours,
+  placeKindTag,
   type HappowConfig,
   type PlacePhotoResult,
   type PlacePrefill,
@@ -220,8 +221,9 @@ export function placeEditRoutes({
     const { db } = need();
     const input = await body(req, addSchema);
     const region = getRegion(config, input.regionId);
-    if (!cfg.kinds.some((k) => k.tag === input.kind))
-      throw new ApiError(400, 'invalid_input', 'kind');
+    // An app with older config may still send a merged kind ("amenity=bar"): stored as the pub.
+    const kind = placeKindTag(cfg.kinds, input.kind);
+    if (!kind) throw new ApiError(400, 'invalid_input', 'kind');
     if (!isInBbox(input.point, region.bbox)) throw new ApiError(400, 'outside_region');
     let website: string | null = null;
     if (input.website) {
@@ -240,7 +242,7 @@ export function placeEditRoutes({
       p_device: by.device,
       p_region: region.id,
       p_name: input.name,
-      p_kind: input.kind,
+      p_kind: kind,
       p_lat: input.point.lat,
       p_lng: input.point.lng,
       p_address: input.address ?? null,

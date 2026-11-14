@@ -141,7 +141,7 @@ describe('the place listed at the spot', () => {
       row(),
       row({ id: 'node/8', name: 'Pub Obok', kind: 'amenity=pub', lng: 17.0302 }),
       row({ id: 'node/9', name: 'Daleko', lat: 51.112 }),
-      row({ id: 'node/10', name: 'Bar Mleczny', kind: 'amenity=bar', lat: 51.11003 }),
+      row({ id: 'node/10', name: 'Bar Mleczny', kind: 'amenity=fast_food', lat: 51.11003 }),
     ]),
     // Listed without hours, 40 m away.
     ...toUnknown([row({ id: 'node/11', name: 'Śluza', lat: 51.11036, opening_hours: null })]),

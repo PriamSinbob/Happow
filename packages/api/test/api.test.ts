@@ -908,6 +908,14 @@ describe('adding and correcting places', () => {
     });
   });
 
+  it('stores a merged kind from older app config as the kind it was merged into', async () => {
+    const { web, res } = run('places', { ...place, kind: 'amenity=bar' });
+    expect((await res).status).toBe(201);
+    expect(web.calls.find((c) => c.name === 'place_add')!.args).toMatchObject({
+      p_kind: 'amenity=pub',
+    });
+  });
+
   it('needs an account, a known kind, a spot in the region and hours it can read', async () => {
     expect((await run('places', place, {}).res).status).toBe(401);
     for (const bad of [
