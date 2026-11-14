@@ -151,15 +151,19 @@ async function seedRows(): Promise<PlaceRow[]> {
 }
 
 const cache = new Map<string, { at: number; places: Promise<Place[]> }>();
-// After a change of your own: the next read goes past every cache, and open maps read again.
-let fresh = false;
+// After a change of your own, each area's next read goes past every cache (the browser keeps an
+// area for `cacheMinutes`), and open maps read again. Per area: the add form reads the area at its
+// pin, which may not be the map's.
+let changed = false;
+const reloaded = new Set<string>();
 let version = 0;
 const watchers = new Set<() => void>();
 
 /** Reads the area again, past the caches: after adding or correcting a place. */
 function refreshPlaces(): void {
   cache.clear();
-  fresh = true;
+  changed = true;
+  reloaded.clear();
   version++;
   for (const w of watchers) w();
 }
@@ -182,12 +186,12 @@ export function loadPlaces(
   const places = (
     import.meta.env.VITE_SUPABASE_URL
       ? // An empty answer may be a copy kept from before the first import: ask past the caches.
-        fresh
+        changed && !reloaded.has(key)
         ? read({ cache: 'reload' })
         : read().then((rows) => (rows.length ? rows : read({ cache: 'reload' })))
       : seedRows()
   ).then(toPlaces);
-  fresh = false;
+  if (changed) reloaded.add(key);
   cache.set(key, { at: now(), places });
   // A failed or empty read is not kept: the next look tries again.
   places.then(

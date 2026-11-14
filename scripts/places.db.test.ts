@@ -95,6 +95,8 @@ describe.skipIf(!url || !local)('places in Postgres', () => {
       expect(added.startsWith('user/')).toBe(true);
       // The same name at the same spot: the stored place gets the hours instead.
       expect((await add(`mine ${tag}`, 'Mo-Su 12:00-20:00')).rows[0].id).toBe(added);
+      // A longer name containing it is the same place too; a short word alone is not.
+      expect((await add(`Mine ${tag} bar cafe`, 'Mo-Su 12:00-20:00')).rows[0].id).toBe(added);
       const mine = async () =>
         (await db.query('select * from places_area(0.5, 1, 5000)')).rows.find(
           (r) => r.id === added,

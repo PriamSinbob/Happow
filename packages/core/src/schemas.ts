@@ -388,7 +388,10 @@ export const appConfigSchema = z.object({
     /** Places one account may add in a day, and changes it may make to places. */
     addsPerDayPerAccount: z.number().int().positive(),
     changesPerDayPerAccount: z.number().int().positive(),
-    /** Adding a place with this name this close to a stored one updates that one instead. */
+    /**
+     * Adding a place this close to a stored one of the same name, or one containing the other
+     * (4+ letters), updates that one instead.
+     */
     sameWithinM: z.number().nonnegative(),
     /** A private party can be marked this far ahead at most. */
     privateMaxHours: z.number().positive(),

@@ -33,7 +33,7 @@ interface Photo {
 
 /**
  * Add a place: what it is, where, and when it is open. It is on the map at once, while it is
- * open; a place of the same name already at that spot gets the hours instead.
+ * open; a place of the same or a containing name (OSM's "Śluza" for "Śluza bar cafe") already at that spot gets the hours instead.
  * One photo of the door fills the form (name, kind, hours, address), with numbered marks tying
  * each field to where it was read. Without an account the photo is the only way in: its read
  * gives the pass that stands in for the account. A place already listed at the spot turns
