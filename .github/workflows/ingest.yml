@@ -18,7 +18,7 @@ on:
         type: string
         default: ''
       source:
-        description: Only this source id (e.g. ticketmaster); empty = all
+        description: Only these source ids, separated by spaces (e.g. ticketmaster nfm); empty = all
         type: string
         default: ''
       force:
@@ -76,4 +76,10 @@ jobs:
         run: pnpm install --frozen-lockfile
       - if: env.DATABASE_URL != ''
         # Inputs arrive through env, never interpolated into the script.
-        run: pnpm ingest ${REGION:+--region "$REGION"} ${SOURCE:+--source "$SOURCE"} ${FORCE:+--force}
+        run: |
+          set -f
+          args=()
+          if [ -n "$REGION" ]; then args+=(--region "$REGION"); fi
+          for s in $SOURCE; do args+=(--source "$s"); done
+          if [ -n "$FORCE" ]; then args+=(--force); fi
+          pnpm ingest "${args[@]}"

@@ -23,10 +23,12 @@ const allFresh = plannedRuns(config)
   .filter(({ source }) => source.schedule)
   .map(({ source, region }) => okRow(source.id, region.id));
 
-function fake(rows: unknown[], dispatchStatus = 204) {
+function fake(rows: unknown[], dispatchStatus = 204, runStatuses: string[] = ['completed']) {
   return vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
     const url = String(input);
     if (url.startsWith(`${SB}/rest/v1/source_run_latest?`)) return Response.json(rows);
+    if (url.includes('/runs?'))
+      return Response.json({ workflow_runs: runStatuses.map((status) => ({ status })) });
     if (url.startsWith('https://api.github.com/') && !url.endsWith('/dispatches'))
       return Response.json({ id: 1, name: 'Ingest sources' });
     if (url.startsWith('https://api.github.com/'))
@@ -49,7 +51,7 @@ describe('dispatchDueIngest', () => {
     const f = fake(allFresh.filter((r) => r.source_id !== 'nfm'));
     const r = await dispatchDueIngest(env, now, { fetch: f, config });
     expect(r).toEqual({ due: ['nfm@wroclaw'], dispatched: true, tokenSet: true });
-    const [url, init] = f.mock.calls[1]!;
+    const [url, init] = f.mock.calls[2]!;
     expect(String(url)).toBe(
       'https://api.github.com/repos/PriamSinbob/happow/actions/workflows/ingest.yml/dispatches',
     );
@@ -61,6 +63,17 @@ describe('dispatchDueIngest', () => {
     expect(new Headers(init!.headers).get('authorization')).toBe('Bearer gh');
     // New-style secret keys go in apikey only, never as a bearer token.
     expect(new Headers(f.mock.calls[0]![1]!.headers).get('authorization')).toBeNull();
+  });
+
+  it('does not dispatch while a run is queued or running, so a waiting run is never replaced', async () => {
+    const f = fake(
+      allFresh.filter((r) => r.source_id !== 'nfm'),
+      204,
+      ['completed', 'in_progress'],
+    );
+    const r = await dispatchDueIngest(env, now, { fetch: f, config });
+    expect(r).toMatchObject({ dispatched: false, reason: 'a run is queued or running' });
+    expect(f.mock.calls.some(([u]) => String(u).endsWith('/dispatches'))).toBe(false);
   });
 
   it('reports a missing token instead of failing the cron', async () => {
