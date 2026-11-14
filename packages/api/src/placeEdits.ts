@@ -101,6 +101,21 @@ export function placeEditRoutes({
   const { maxBytes } = config.app.extraction.photo;
 
   /**
+   * The activated account, or null for a caller that may go on with a photo pass. A waiting
+   * account that sends no pass is told to activate, as before passes existed.
+   */
+  async function caller(req: Request): Promise<User | null> {
+    const user = await optionalUser(req);
+    if (user || !req.headers.has('authorization')) return user;
+    const sent = (await req
+      .clone()
+      .json()
+      .catch(() => null)) as { photoPass?: unknown } | null;
+    if (!sent?.photoPass) await requireUser(req);
+    return null;
+  }
+
+  /**
    * Who a change is by: the account, or (without one) the device whose photo pass is genuine,
    * fresh and unused, within its daily limit. The pass is used up here, so call this last.
    */
@@ -201,7 +216,7 @@ export function placeEditRoutes({
    * → {id}. With an account, or with the pass from a photo read.
    */
   async function add(req: Request): Promise<Response> {
-    const user = await optionalUser(req);
+    const user = await caller(req);
     const { db } = need();
     const input = await body(req, addSchema);
     const region = getRegion(config, input.regionId);
@@ -241,7 +256,7 @@ export function placeEditRoutes({
    * only new hours, with the pass from a photo read.
    */
   async function change(req: Request): Promise<Response> {
-    const user = await optionalUser(req);
+    const user = await caller(req);
     const { db } = need();
     const input = await body(req, changeSchema);
     if (!user && input.openingHours === undefined) await requireUser(req);
