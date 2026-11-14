@@ -22,8 +22,8 @@
       "id": "trojmiasto-muzyczny",
       "name": "Teatr Muzyczny w Gdyni",
       "address": "plac Grunwaldzki 1, Gdynia",
-      "lat": null,
-      "lng": null,
+      "lat": 54.51656,
+      "lng": 18.54556,
       "website": null
     },
     {
@@ -56,9 +56,7 @@
       "externalId": "trojmiasto-01",
       "title": "Jarmark lokalnych twórców",
       "description": "Stoiska z ceramiką, grafiką i rękodziełem.",
-      "categoryIds": [
-        "market"
-      ],
+      "categoryIds": ["market"],
       "venueId": "trojmiasto-dlugitarg",
       "startOffsetMin": -90,
       "durationMin": 300,
@@ -71,9 +69,7 @@
       "externalId": "trojmiasto-02",
       "title": "Wieczór muzyki kameralnej",
       "description": "Kwartet smyczkowy: Haydn i Szymanowski.",
-      "categoryIds": [
-        "music"
-      ],
+      "categoryIds": ["music"],
       "venueId": "trojmiasto-ecs",
       "startOffsetMin": 150,
       "durationMin": 120,
@@ -86,10 +82,7 @@
       "externalId": "trojmiasto-03",
       "title": "Rodzinne warsztaty odkrywców",
       "description": "Doświadczenia dla dzieci i rodziców, wejście co pół godziny.",
-      "categoryIds": [
-        "kids",
-        "exhibition"
-      ],
+      "categoryIds": ["kids", "exhibition"],
       "venueId": "trojmiasto-muzyczny",
       "startOffsetMin": -60,
       "durationMin": null,
@@ -104,10 +97,7 @@
       "externalId": "trojmiasto-04",
       "title": "Wieczór smaków regionu",
       "description": "Degustacje kuchni regionalnej i muzyka na żywo.",
-      "categoryIds": [
-        "food",
-        "happening"
-      ],
+      "categoryIds": ["food", "happening"],
       "venueId": "trojmiasto-molo",
       "startOffsetMin": 30,
       "durationMin": 240,
@@ -117,9 +107,7 @@
       "externalId": "trojmiasto-05",
       "title": "Poranny bieg w parku",
       "description": "Rekreacyjne 5 km dla każdego, bez pomiaru czasu.",
-      "categoryIds": [
-        "sport"
-      ],
+      "categoryIds": ["sport"],
       "venueId": "trojmiasto-zak",
       "startOffsetMin": 60,
       "durationMin": 60,
@@ -132,10 +120,7 @@
       "externalId": "trojmiasto-06",
       "title": "Pokaz filmowy z rozmową",
       "description": "Film dokumentalny i spotkanie z twórcami po seansie.",
-      "categoryIds": [
-        "cinema",
-        "talk"
-      ],
+      "categoryIds": ["cinema", "talk"],
       "venueId": "trojmiasto-ergo",
       "startOffsetMin": 45,
       "durationMin": 150,
@@ -149,10 +134,7 @@
       "externalId": "trojmiasto-07",
       "title": "Koncert pod gwiazdami",
       "description": "Plenerowy koncert miejskiej orkiestry dętej.",
-      "categoryIds": [
-        "happening",
-        "music"
-      ],
+      "categoryIds": ["happening", "music"],
       "venueId": "trojmiasto-dlugitarg",
       "startOffsetMin": 300,
       "durationMin": 45,
@@ -162,9 +144,7 @@
       "externalId": "trojmiasto-08",
       "title": "Festiwal zimowy — otwarcie",
       "description": "Pierwszy dzień miejskiego festiwalu.",
-      "categoryIds": [
-        "festival"
-      ],
+      "categoryIds": ["festival"],
       "venueId": "trojmiasto-ecs",
       "startOffsetMin": 30240,
       "durationMin": 300,

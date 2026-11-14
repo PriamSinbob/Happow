@@ -1,0 +1,35 @@
+{
+  "region": "katowice",
+  "places": [
+    {
+      "id": "seed/katowice-1",
+      "name": "Kawiarnia przy Mariackiej",
+      "kind": "amenity=cafe",
+      "lat": 50.2651,
+      "lng": 19.02718,
+      "address": "ul. Mariacka, Katowice",
+      "website": null,
+      "opening_hours": "Mo-Su 08:00-22:00"
+    },
+    {
+      "id": "seed/katowice-2",
+      "name": "Rolada z modrą kapustą",
+      "kind": "amenity=restaurant",
+      "lat": 50.26851,
+      "lng": 19.02233,
+      "address": "ul. Stawowa, Katowice",
+      "website": null,
+      "opening_hours": "Mo-Su 12:00-22:00"
+    },
+    {
+      "id": "seed/katowice-3",
+      "name": "Bar Mariacka",
+      "kind": "amenity=bar",
+      "lat": 50.26767,
+      "lng": 19.02911,
+      "address": "ul. Mariacka, Katowice",
+      "website": null,
+      "opening_hours": "Th-Sa 18:00-03:00"
+    }
+  ]
+}

@@ -15,8 +15,8 @@
       "id": "seed/lodz-2",
       "name": "Bistro w Fabryce",
       "kind": "amenity=restaurant",
-      "lat": 51.7616,
-      "lng": 19.453,
+      "lat": 51.77575,
+      "lng": 19.46666,
       "address": "ul. Ogrodowa, Łódź",
       "website": null,
       "opening_hours": "Mo-Su 12:00-22:00"
@@ -25,8 +25,8 @@
       "id": "seed/lodz-3",
       "name": "Pub przy Off-ie",
       "kind": "amenity=bar",
-      "lat": 51.7628,
-      "lng": 19.4515,
+      "lat": 51.77108,
+      "lng": 19.4641,
       "address": "ul. Piotrkowska, Łódź",
       "website": null,
       "opening_hours": "We-Sa 18:00-03:00"

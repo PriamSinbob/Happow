@@ -1,0 +1,154 @@
+{
+  "$comment": "Hand-entered demo events. Real venues (points from OpenStreetMap), fictional programmes. Times are offsets in minutes from the moment the seed is applied.",
+  "region": "szczecin",
+  "venues": [
+    {
+      "id": "szczecin-filharmonia",
+      "name": "Filharmonia im. Mieczysława Karłowicza",
+      "address": "ul. Małopolska 48, Szczecin",
+      "lat": 53.43035,
+      "lng": 14.55744,
+      "website": null
+    },
+    {
+      "id": "szczecin-waly",
+      "name": "Wały Chrobrego",
+      "address": "Wały Chrobrego, Szczecin",
+      "lat": 53.42967,
+      "lng": 14.56601,
+      "website": null
+    },
+    {
+      "id": "szczecin-zamek",
+      "name": "Zamek Książąt Pomorskich",
+      "address": "ul. Korsarzy 34, Szczecin",
+      "lat": 53.42731,
+      "lng": 14.5584,
+      "website": null
+    },
+    {
+      "id": "szczecin-polski",
+      "name": "Teatr Polski",
+      "address": "ul. Swarożyca 5, Szczecin",
+      "lat": 53.43363,
+      "lng": 14.57196,
+      "website": null
+    },
+    {
+      "id": "szczecin-pionier",
+      "name": "Kino Pionier 1907",
+      "address": "al. Wojska Polskiego 2, Szczecin",
+      "lat": 53.42379,
+      "lng": 14.54857,
+      "website": null
+    },
+    {
+      "id": "szczecin-blonia",
+      "name": "Jasne Błonia",
+      "address": "Jasne Błonia, Szczecin",
+      "lat": 53.4417,
+      "lng": 14.53864,
+      "website": null
+    }
+  ],
+  "events": [
+    {
+      "externalId": "szczecin-01",
+      "title": "Jarmark lokalnych twórców",
+      "description": "Stoiska z ceramiką, grafiką i rękodziełem.",
+      "categoryIds": ["market"],
+      "venueId": "szczecin-filharmonia",
+      "startOffsetMin": -90,
+      "durationMin": 300,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "szczecin-02",
+      "title": "Wieczór muzyki kameralnej",
+      "description": "Kwartet smyczkowy: Haydn i Szymanowski.",
+      "categoryIds": ["music"],
+      "venueId": "szczecin-waly",
+      "startOffsetMin": 150,
+      "durationMin": 120,
+      "isFree": false,
+      "priceMin": 40,
+      "priceMax": 90,
+      "currency": "PLN"
+    },
+    {
+      "externalId": "szczecin-03",
+      "title": "Rodzinne warsztaty odkrywców",
+      "description": "Doświadczenia dla dzieci i rodziców, wejście co pół godziny.",
+      "categoryIds": ["kids", "exhibition"],
+      "venueId": "szczecin-zamek",
+      "startOffsetMin": -60,
+      "durationMin": null,
+      "isFree": false,
+      "priceMin": 20,
+      "priceMax": 20,
+      "currency": "PLN",
+      "family": true,
+      "entry": "open"
+    },
+    {
+      "externalId": "szczecin-04",
+      "title": "Wieczór smaków regionu",
+      "description": "Degustacje kuchni regionalnej i muzyka na żywo.",
+      "categoryIds": ["food", "happening"],
+      "venueId": "szczecin-polski",
+      "startOffsetMin": 30,
+      "durationMin": 240,
+      "isFree": true
+    },
+    {
+      "externalId": "szczecin-05",
+      "title": "Poranny bieg w parku",
+      "description": "Rekreacyjne 5 km dla każdego, bez pomiaru czasu.",
+      "categoryIds": ["sport"],
+      "venueId": "szczecin-pionier",
+      "startOffsetMin": 60,
+      "durationMin": 60,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "szczecin-06",
+      "title": "Pokaz filmowy z rozmową",
+      "description": "Film dokumentalny i spotkanie z twórcami po seansie.",
+      "categoryIds": ["cinema", "talk"],
+      "venueId": "szczecin-blonia",
+      "startOffsetMin": 45,
+      "durationMin": 150,
+      "isFree": false,
+      "priceMin": 22,
+      "priceMax": 22,
+      "currency": "PLN",
+      "ageMin": 12
+    },
+    {
+      "externalId": "szczecin-07",
+      "title": "Koncert pod gwiazdami",
+      "description": "Plenerowy koncert miejskiej orkiestry dętej.",
+      "categoryIds": ["happening", "music"],
+      "venueId": "szczecin-filharmonia",
+      "startOffsetMin": 300,
+      "durationMin": 45,
+      "isFree": true
+    },
+    {
+      "externalId": "szczecin-08",
+      "title": "Festiwal zimowy — otwarcie",
+      "description": "Pierwszy dzień miejskiego festiwalu.",
+      "categoryIds": ["festival"],
+      "venueId": "szczecin-waly",
+      "startOffsetMin": 30240,
+      "durationMin": 300,
+      "isFree": true
+    }
+  ]
+}

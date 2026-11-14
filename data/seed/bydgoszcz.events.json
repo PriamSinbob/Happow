@@ -1,0 +1,154 @@
+{
+  "$comment": "Hand-entered demo events. Real venues (points from OpenStreetMap), fictional programmes. Times are offsets in minutes from the moment the seed is applied.",
+  "region": "bydgoszcz",
+  "venues": [
+    {
+      "id": "bydgoszcz-nova",
+      "name": "Opera Nova",
+      "address": "ul. Marszałka Focha 5, Bydgoszcz",
+      "lat": 53.1244,
+      "lng": 17.99774,
+      "website": null
+    },
+    {
+      "id": "bydgoszcz-filharmonia",
+      "name": "Filharmonia Pomorska",
+      "address": "ul. Andrzeja Szwalbego 6, Bydgoszcz",
+      "lat": 53.12897,
+      "lng": 18.01083,
+      "website": null
+    },
+    {
+      "id": "bydgoszcz-wyspa",
+      "name": "Wyspa Młyńska",
+      "address": "Wyspa Młyńska, Bydgoszcz",
+      "lat": 53.12345,
+      "lng": 17.99632,
+      "website": null
+    },
+    {
+      "id": "bydgoszcz-rynek",
+      "name": "Stary Rynek",
+      "address": "Stary Rynek, Bydgoszcz",
+      "lat": 53.12174,
+      "lng": 18.0002,
+      "website": null
+    },
+    {
+      "id": "bydgoszcz-orzel",
+      "name": "Kino Orzeł",
+      "address": "ul. Gdańska 20, Bydgoszcz",
+      "lat": 53.12731,
+      "lng": 17.99758,
+      "website": null
+    },
+    {
+      "id": "bydgoszcz-myslecinek",
+      "name": "Leśny Park Kultury i Wypoczynku Myślęcinek",
+      "address": "ul. Gdańska 173-175, Bydgoszcz",
+      "lat": 53.16151,
+      "lng": 18.03936,
+      "website": null
+    }
+  ],
+  "events": [
+    {
+      "externalId": "bydgoszcz-01",
+      "title": "Jarmark lokalnych twórców",
+      "description": "Stoiska z ceramiką, grafiką i rękodziełem.",
+      "categoryIds": ["market"],
+      "venueId": "bydgoszcz-nova",
+      "startOffsetMin": -90,
+      "durationMin": 300,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "bydgoszcz-02",
+      "title": "Wieczór muzyki kameralnej",
+      "description": "Kwartet smyczkowy: Haydn i Szymanowski.",
+      "categoryIds": ["music"],
+      "venueId": "bydgoszcz-filharmonia",
+      "startOffsetMin": 150,
+      "durationMin": 120,
+      "isFree": false,
+      "priceMin": 40,
+      "priceMax": 90,
+      "currency": "PLN"
+    },
+    {
+      "externalId": "bydgoszcz-03",
+      "title": "Rodzinne warsztaty odkrywców",
+      "description": "Doświadczenia dla dzieci i rodziców, wejście co pół godziny.",
+      "categoryIds": ["kids", "exhibition"],
+      "venueId": "bydgoszcz-wyspa",
+      "startOffsetMin": -60,
+      "durationMin": null,
+      "isFree": false,
+      "priceMin": 20,
+      "priceMax": 20,
+      "currency": "PLN",
+      "family": true,
+      "entry": "open"
+    },
+    {
+      "externalId": "bydgoszcz-04",
+      "title": "Wieczór smaków regionu",
+      "description": "Degustacje kuchni regionalnej i muzyka na żywo.",
+      "categoryIds": ["food", "happening"],
+      "venueId": "bydgoszcz-rynek",
+      "startOffsetMin": 30,
+      "durationMin": 240,
+      "isFree": true
+    },
+    {
+      "externalId": "bydgoszcz-05",
+      "title": "Poranny bieg w parku",
+      "description": "Rekreacyjne 5 km dla każdego, bez pomiaru czasu.",
+      "categoryIds": ["sport"],
+      "venueId": "bydgoszcz-orzel",
+      "startOffsetMin": 60,
+      "durationMin": 60,
+      "isFree": true,
+      "rules": {
+        "pets": "allowed"
+      }
+    },
+    {
+      "externalId": "bydgoszcz-06",
+      "title": "Pokaz filmowy z rozmową",
+      "description": "Film dokumentalny i spotkanie z twórcami po seansie.",
+      "categoryIds": ["cinema", "talk"],
+      "venueId": "bydgoszcz-myslecinek",
+      "startOffsetMin": 45,
+      "durationMin": 150,
+      "isFree": false,
+      "priceMin": 22,
+      "priceMax": 22,
+      "currency": "PLN",
+      "ageMin": 12
+    },
+    {
+      "externalId": "bydgoszcz-07",
+      "title": "Koncert pod gwiazdami",
+      "description": "Plenerowy koncert miejskiej orkiestry dętej.",
+      "categoryIds": ["happening", "music"],
+      "venueId": "bydgoszcz-nova",
+      "startOffsetMin": 300,
+      "durationMin": 45,
+      "isFree": true
+    },
+    {
+      "externalId": "bydgoszcz-08",
+      "title": "Festiwal zimowy — otwarcie",
+      "description": "Pierwszy dzień miejskiego festiwalu.",
+      "categoryIds": ["festival"],
+      "venueId": "bydgoszcz-filharmonia",
+      "startOffsetMin": 30240,
+      "durationMin": 300,
+      "isFree": true
+    }
+  ]
+}

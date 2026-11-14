@@ -30,8 +30,8 @@
       "id": "krakow-baranami",
       "name": "Kino Pod Baranami",
       "address": "Rynek Główny 27, Kraków",
-      "lat": null,
-      "lng": null,
+      "lat": 50.0616,
+      "lng": 19.9354,
       "website": null
     },
     {
@@ -46,8 +46,8 @@
       "id": "krakow-jordana",
       "name": "Park Jordana",
       "address": "al. 3 Maja, Kraków",
-      "lat": null,
-      "lng": null,
+      "lat": 50.06273,
+      "lng": 19.91607,
       "website": null
     }
   ],
@@ -56,9 +56,7 @@
       "externalId": "krakow-01",
       "title": "Jarmark lokalnych twórców",
       "description": "Stoiska z ceramiką, grafiką i rękodziełem.",
-      "categoryIds": [
-        "market"
-      ],
+      "categoryIds": ["market"],
       "venueId": "krakow-rynek",
       "startOffsetMin": -90,
       "durationMin": 300,
@@ -71,9 +69,7 @@
       "externalId": "krakow-02",
       "title": "Wieczór muzyki kameralnej",
       "description": "Kwartet smyczkowy: Haydn i Szymanowski.",
-      "categoryIds": [
-        "music"
-      ],
+      "categoryIds": ["music"],
       "venueId": "krakow-ice",
       "startOffsetMin": 150,
       "durationMin": 120,
@@ -86,10 +82,7 @@
       "externalId": "krakow-03",
       "title": "Rodzinne warsztaty odkrywców",
       "description": "Doświadczenia dla dzieci i rodziców, wejście co pół godziny.",
-      "categoryIds": [
-        "kids",
-        "exhibition"
-      ],
+      "categoryIds": ["kids", "exhibition"],
       "venueId": "krakow-opera",
       "startOffsetMin": -60,
       "durationMin": null,
@@ -104,10 +97,7 @@
       "externalId": "krakow-04",
       "title": "Wieczór smaków regionu",
       "description": "Degustacje kuchni regionalnej i muzyka na żywo.",
-      "categoryIds": [
-        "food",
-        "happening"
-      ],
+      "categoryIds": ["food", "happening"],
       "venueId": "krakow-baranami",
       "startOffsetMin": 30,
       "durationMin": 240,
@@ -117,9 +107,7 @@
       "externalId": "krakow-05",
       "title": "Poranny bieg w parku",
       "description": "Rekreacyjne 5 km dla każdego, bez pomiaru czasu.",
-      "categoryIds": [
-        "sport"
-      ],
+      "categoryIds": ["sport"],
       "venueId": "krakow-grzegorzecka",
       "startOffsetMin": 60,
       "durationMin": 60,
@@ -132,10 +120,7 @@
       "externalId": "krakow-06",
       "title": "Pokaz filmowy z rozmową",
       "description": "Film dokumentalny i spotkanie z twórcami po seansie.",
-      "categoryIds": [
-        "cinema",
-        "talk"
-      ],
+      "categoryIds": ["cinema", "talk"],
       "venueId": "krakow-jordana",
       "startOffsetMin": 45,
       "durationMin": 150,
@@ -149,10 +134,7 @@
       "externalId": "krakow-07",
       "title": "Koncert pod gwiazdami",
       "description": "Plenerowy koncert miejskiej orkiestry dętej.",
-      "categoryIds": [
-        "happening",
-        "music"
-      ],
+      "categoryIds": ["happening", "music"],
       "venueId": "krakow-rynek",
       "startOffsetMin": 300,
       "durationMin": 45,
@@ -162,9 +144,7 @@
       "externalId": "krakow-08",
       "title": "Festiwal zimowy — otwarcie",
       "description": "Pierwszy dzień miejskiego festiwalu.",
-      "categoryIds": [
-        "festival"
-      ],
+      "categoryIds": ["festival"],
       "venueId": "krakow-ice",
       "startOffsetMin": 30240,
       "durationMin": 300,
