@@ -16,6 +16,7 @@ Everything not built yet, one line each: what, and why or what it waits for. Lau
 - **Free-form parish timetable pages:** reading a weekly pattern from prose needs an LLM.
 - **RSS feeds:** left out; items carry publishing dates, not event times.
 - **Nationwide results beyond Ticketmaster:** wait for more regions.
+- **Places per area read capped at 1,000 rows:** Supabase's PostgREST answers at most 1,000 rows (its `max-rows`), below `places.maxPerArea` (3,000); the city centre's 5 km read already returns 982. Raise `max-rows` or page the read before more places are added.
 - **Place from a photo, next steps:** HEIC photos from iPhones' galleries do not decode in every browser (the shrink fails and says so); the place log by device has no moderator view yet; the marks rely on the model's boxes, which can be off on busy photos.
 - **Photo upload on submissions:** needs storage and image moderation; the poster photo is read for autofill and discarded.
 - **Batch API for crawl extraction:** halves LLM cost; synchronous calls are enough at a few dozen pages a day.

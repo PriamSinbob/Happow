@@ -51,6 +51,19 @@ export interface Place {
   privateUntil: Date | null;
 }
 
+/** A place whose opening hours are unknown: shown close in as a hollow pin, to be filled in. */
+export interface UnknownPlace {
+  id: string;
+  name: string;
+  kind: Kind;
+  point: LatLng;
+  address: string | null;
+  website: string | null;
+}
+
+/** What a place listed at a spot has in common, with hours or without. */
+export type ListedPlace = Pick<Place, 'id' | 'name' | 'kind' | 'point' | 'address' | 'website'>;
+
 /** A place that is open at the time looked at. */
 export interface OpenPlace extends Place {
   /** Null: it never closes. With a private party on: when the party ends. */
@@ -58,6 +71,24 @@ export interface OpenPlace extends Place {
   /** Closed to the public for a private party. */
   privateParty: boolean;
   distanceM: number;
+}
+
+/** Rows of a configured kind whose hours are missing or can't be read. */
+export function toUnknown(rows: readonly Omit<PlaceRow, 'opening_hours'>[]): UnknownPlace[] {
+  const out: UnknownPlace[] = [];
+  for (const r of rows) {
+    const kind = kinds.get(r.kind);
+    if (!kind || parseOpeningHours((r as PlaceRow).opening_hours)) continue;
+    out.push({
+      id: r.id,
+      name: r.name,
+      kind,
+      point: { lat: r.lat, lng: r.lng },
+      address: r.address,
+      website: r.website,
+    });
+  }
+  return out;
 }
 
 /** Rows of a configured kind whose hours can be read; the rest can never show as open. */
@@ -151,15 +182,20 @@ async function seedRows(): Promise<PlaceRow[]> {
 }
 
 const cache = new Map<string, { at: number; places: Promise<Place[]> }>();
-// After a change of your own: the next read goes past every cache, and open maps read again.
-let fresh = false;
+// After a change of your own, each area's next read goes past every cache (the browser keeps an
+// area for `cacheMinutes`), and open maps read again. Per area: the add form reads the area at its
+// pin, which may not be the map's.
+let changed = false;
+const reloaded = new Set<string>();
 let version = 0;
 const watchers = new Set<() => void>();
 
 /** Reads the area again, past the caches: after adding or correcting a place. */
 function refreshPlaces(): void {
   cache.clear();
-  fresh = true;
+  unknownCache.clear();
+  changed = true;
+  reloaded.clear();
   version++;
   for (const w of watchers) w();
 }
@@ -182,12 +218,12 @@ export function loadPlaces(
   const places = (
     import.meta.env.VITE_SUPABASE_URL
       ? // An empty answer may be a copy kept from before the first import: ask past the caches.
-        fresh
+        changed && !reloaded.has(key)
         ? read({ cache: 'reload' })
         : read().then((rows) => (rows.length ? rows : read({ cache: 'reload' })))
       : seedRows()
   ).then(toPlaces);
-  fresh = false;
+  if (changed) reloaded.add(key);
   cache.set(key, { at: now(), places });
   // A failed or empty read is not kept: the next look tries again.
   places.then(
@@ -211,6 +247,58 @@ export function usePlaces(center: LatLng, on: boolean): Place[] {
     if (!on) return;
     let live = true;
     loadPlaces({ lat: k.lat, lng: k.lng }).then(
+      (p) => live && setPlaces(p),
+      (err) => console.error(err),
+    );
+    return () => {
+      live = false;
+    };
+  }, [on, k.lat, k.lng, seen]);
+  return on ? places : [];
+}
+
+const unknownCache = new Map<string, { at: number; places: Promise<UnknownPlace[]> }>();
+
+/**
+ * The area's places whose hours are unknown (GET /api/places/unknown, the demo seed's places
+ * without hours without a backend). Kept and refreshed like the open places.
+ */
+export function loadUnknown(center: LatLng, now: () => number = Date.now): Promise<UnknownPlace[]> {
+  const k = areaKey(center, density.searchRadiusM, refresh);
+  const key = `lat=${k.lat}&lng=${k.lng}&r=${k.radiusM}`;
+  const hit = unknownCache.get(key);
+  if (hit && now() < hit.at + cfg.cacheMinutes * 60_000) return hit.places;
+  const reload = changed && !reloaded.has(`unknown:${key}`);
+  if (changed) reloaded.add(`unknown:${key}`);
+  const places = (
+    import.meta.env.VITE_SUPABASE_URL
+      ? fetch(`/api/places/unknown?${key}`, reload ? { cache: 'reload' } : undefined).then(
+          async (res) => {
+            if (!res.ok) throw new Error(`unknown places failed: ${res.status}`);
+            return ((await res.json()) as { places: Omit<PlaceRow, 'opening_hours'>[] }).places;
+          },
+        )
+      : seedRows()
+  ).then(toUnknown);
+  unknownCache.set(key, { at: now(), places });
+  places.catch(() => unknownCache.delete(key));
+  return places;
+}
+
+/** The places around `center` whose hours are unknown; empty while loading, off or failing. */
+export function useUnknownPlaces(center: LatLng, on: boolean): UnknownPlace[] {
+  const [places, setPlaces] = useState<UnknownPlace[]>([]);
+  const k = areaKey(center, density.searchRadiusM, refresh);
+  const [seen, setSeen] = useState(version);
+  useEffect(() => {
+    const w = () => setSeen(version);
+    watchers.add(w);
+    return () => void watchers.delete(w);
+  }, []);
+  useEffect(() => {
+    if (!on) return;
+    let live = true;
+    loadUnknown({ lat: k.lat, lng: k.lng }).then(
       (p) => live && setPlaces(p),
       (err) => console.error(err),
     );
@@ -283,31 +371,31 @@ const fold = (s: string) =>
     .replace(/ł/g, 'l')
     .replace(/[^\p{L}\p{N}]/gu, '');
 
+/** Names as one: "Śluza bar cafe" and "Śluza" are the same place; "Bar" alone matches nothing. */
+export function sameName(a: string, b: string): boolean {
+  const x = fold(a);
+  const y = fold(b);
+  return Math.min(x.length, y.length) >= 4 && (x.includes(y) || y.includes(x));
+}
+
 /**
- * The place already listed at this spot (within `places.photo.listedWithinM`) that a photo
- * shows: one whose name contains the other's, or, with no name read, the only one of that kind.
- * The form then updates its hours instead of adding it again.
+ * The places already listed at the pin, with hours or without: `named`, one whose name matches
+ * within `places.sameWithinM` (the server merges those too), and `near`, the others within
+ * `places.photo.listedWithinM`, nearest first, offered as "same place?" to compare by name. In a
+ * city centre many places share an address, so nearness alone never decides.
  */
-export function listedNear(
-  places: readonly Place[],
+export function listedAt<P extends ListedPlace>(
+  places: readonly P[],
   point: LatLng,
   name: string,
-  kind: string | null,
-): Place | null {
-  const near = places
+): { named: P | null; near: P[] } {
+  const around = places
     .map((p) => ({ p, d: distanceM(point, p.point) }))
-    .filter(({ d }) => d <= cfg.photo.listedWithinM)
-    .sort((a, b) => a.d - b.d)
+    .filter(({ d }) => d <= Math.max(cfg.sameWithinM, cfg.photo.listedWithinM))
+    .sort((a, b) => a.d - b.d);
+  const named = name.trim() ? (around.find(({ p }) => sameName(p.name, name))?.p ?? null) : null;
+  const near = around
+    .filter(({ p, d }) => p !== named && d <= cfg.photo.listedWithinM)
     .map(({ p }) => p);
-  const n = fold(name);
-  if (n.length >= 3) {
-    const named = near.find((p) => {
-      const o = fold(p.name);
-      return o.length >= 3 && (o.includes(n) || n.includes(o));
-    });
-    if (named) return named;
-  }
-  if (n.length) return null;
-  const same = near.filter((p) => p.kind.tag === kind);
-  return same.length === 1 ? same[0]! : null;
+  return { named, near };
 }

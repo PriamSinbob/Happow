@@ -25,7 +25,7 @@ import {
   PLACE_HIT_LAYERS,
   PLACE_SOURCE,
 } from '../pinLayers';
-import type { OpenPlace } from '../places';
+import type { OpenPlace, UnknownPlace } from '../places';
 import { pinFeatures, type PinMode } from '../pins';
 import {
   addDragRing,
@@ -55,6 +55,8 @@ interface Props {
   onSelect: (id: string | null) => void;
   /** Open places (restaurants, pubs, galleries), drawn under the events from `places.minZoom` in. */
   places: OpenPlace[];
+  /** Places whose hours are unknown, hollow, from `places.unknownMinZoom` in. */
+  unknownPlaces?: UnknownSpot[];
   selectedPlaceId: string | null;
   onSelectOpenPlace: (id: string) => void;
   /** Tapped a pin that holds several events at one place (cinema screenings, a festival stage). */
@@ -189,6 +191,9 @@ function groupMarkers(
   return out;
 }
 
+/** A place whose hours are unknown, with its distance from the user. */
+export type UnknownSpot = UnknownPlace & { distanceM: number };
+
 /** Places closer than this on screen: only the nearest to the user shows. */
 const PLACE_CELL_PX = 34;
 
@@ -215,6 +220,35 @@ export function thinPlaces(
       (held.id !== selectedId &&
         (p.privateParty !== held.privateParty ? p.privateParty : p.distanceM < held.distanceM));
     if (beats) cells.set(cell, p);
+  }
+  return [...cells.values()];
+}
+
+/**
+ * The places with unknown hours drawn at this zoom: none further out than
+ * `places.unknownMinZoom`; closer in, one per PLACE_CELL_PX square that no open place holds, the
+ * nearest to the user (the selected one always).
+ */
+export function thinUnknown(
+  unknown: UnknownSpot[],
+  open: OpenPlace[],
+  zoom: number,
+  selectedId: string | null,
+): UnknownSpot[] {
+  if (zoom < config.app.places.unknownMinZoom) return unknown.filter((p) => p.id === selectedId);
+  const world = 512 * 2 ** zoom;
+  const cell = (p: { point: LatLng }) => {
+    const c = maplibregl.MercatorCoordinate.fromLngLat(p.point);
+    return `${Math.floor((c.x * world) / PLACE_CELL_PX)}:${Math.floor((c.y * world) / PLACE_CELL_PX)}`;
+  };
+  const taken = new Set(open.map(cell));
+  const cells = new Map<string, UnknownSpot>();
+  for (const p of unknown) {
+    const k = cell(p);
+    if (taken.has(k) && p.id !== selectedId) continue;
+    const held = cells.get(k);
+    if (!held || p.id === selectedId || (held.id !== selectedId && p.distanceM < held.distanceM))
+      cells.set(k, p);
   }
   return [...cells.values()];
 }
@@ -665,18 +699,37 @@ export function MapView(props: Props) {
     const src = map.current?.getSource(PLACE_SOURCE) as GeoJSONSource | undefined;
     src?.setData({
       type: 'FeatureCollection',
-      features: thinPlaces(props.places, zoom, props.selectedPlaceId).map((p) => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [p.point.lng, p.point.lat] },
-        properties: {
-          id: p.id,
-          glyph: p.kind.glyph,
-          selected: p.id === props.selectedPlaceId,
-          party: p.privateParty,
-        },
-      })),
+      features: [
+        ...thinPlaces(props.places, zoom, props.selectedPlaceId).map((p) => ({
+          type: 'Feature' as const,
+          geometry: { type: 'Point' as const, coordinates: [p.point.lng, p.point.lat] },
+          properties: {
+            id: p.id,
+            glyph: p.kind.glyph,
+            selected: p.id === props.selectedPlaceId,
+            party: p.privateParty,
+            unknown: false,
+          },
+        })),
+        ...thinUnknown(
+          props.unknownPlaces ?? [],
+          thinPlaces(props.places, zoom, null),
+          zoom,
+          props.selectedPlaceId,
+        ).map((p) => ({
+          type: 'Feature' as const,
+          geometry: { type: 'Point' as const, coordinates: [p.point.lng, p.point.lat] },
+          properties: {
+            id: p.id,
+            glyph: p.kind.glyph,
+            selected: p.id === props.selectedPlaceId,
+            party: false,
+            unknown: true,
+          },
+        })),
+      ],
     });
-  }, [props.places, props.selectedPlaceId, zoom, styleReady]);
+  }, [props.places, props.unknownPlaces, props.selectedPlaceId, zoom, styleReady]);
 
   // The veil follows the snapshot's grid point; its canvas is redrawn only when the lit cells, the
   // reach (a detent released, locate, long-press) or the theme change. Pan and zoom never redraw

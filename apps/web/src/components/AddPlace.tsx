@@ -14,7 +14,15 @@ import { config, region } from '../config';
 import { errorText } from '../errors';
 import { useI18n } from '../i18n';
 import { photoPoint, shrinkPhoto } from '../photo';
-import { addPlace, changePlace, listedNear, readPlacePhoto, usePlaces } from '../places';
+import {
+  addPlace,
+  changePlace,
+  listedAt,
+  readPlacePhoto,
+  usePlaces,
+  useUnknownPlaces,
+  type ListedPlace,
+} from '../places';
 import { HoursEditor, newHoursRow, rowsToWeek, weekToRows, type HoursRow } from './HoursEditor';
 import { Glyph, Icon } from './Icons';
 import { PinMap } from './PinMap';
@@ -33,18 +41,22 @@ interface Photo {
 
 /**
  * Add a place: what it is, where, and when it is open. It is on the map at once, while it is
- * open; a place of the same name already at that spot gets the hours instead.
+ * open; a place of the same or a containing name (OSM's "Śluza" for "Śluza bar cafe") already at that spot gets the hours instead.
  * One photo of the door fills the form (name, kind, hours, address), with numbered marks tying
  * each field to where it was read. Without an account the photo is the only way in: its read
- * gives the pass that stands in for the account. A place already listed at the spot turns
- * "add" into "update hours".
+ * gives the pass that stands in for the account. A listed place whose name matches (with hours
+ * or without) turns "add" into "update hours"; others within a few metres are offered as "same
+ * place?" to compare. `fix` starts on one listed place, to add or update its hours.
  */
 export function AddPlace({
   onClose,
   onShow,
   here = null,
+  fix = null,
 }: {
   onClose: () => void;
+  /** A listed place to give hours to (from its card): the form updates it. */
+  fix?: ListedPlace | null;
   /** Back to the map, on the new place. */
   onShow: (id: string, point: LatLng) => void;
   /** The phone's precise position, for a photo that carries none. */
@@ -52,13 +64,13 @@ export function AddPlace({
 }) {
   const { t, lang } = useI18n();
   const signedIn = useAccount().status === 'signedIn';
-  const [name, setName] = useState('');
-  const [kind, setKind] = useState<string | null>(null);
-  const [address, setAddress] = useState('');
-  const [point, setPoint] = useState<LatLng | null>(null);
+  const [name, setName] = useState(fix?.name ?? '');
+  const [kind, setKind] = useState<string | null>(fix?.kind.tag ?? null);
+  const [address, setAddress] = useState(fix?.address ?? '');
+  const [point, setPoint] = useState<LatLng | null>(fix?.point ?? null);
   const [geo, setGeo] = useState<'idle' | 'loading' | 'notFound'>('idle');
   const [rows, setRows] = useState<HoursRow[]>([newHoursRow()]);
-  const [website, setWebsite] = useState('');
+  const [website, setWebsite] = useState(fix?.website ?? '');
   const [tried, setTried] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,13 +85,21 @@ export function AddPlace({
   const [reading, setReading] = useState<
     { state: 'idle' | 'loading' | 'none' } | { state: 'error'; message: string }
   >({ state: 'idle' });
-  /** "This is another place": add it even though one is listed at the spot. */
-  const [another, setAnother] = useState(false);
+  /** A place picked from "same place?", and those said to be another place. */
+  const [chosen, setChosen] = useState<string | null>(null);
+  const [others, setOthers] = useState<string[]>([]);
 
-  const around = usePlaces(point ?? region.center, point !== null);
-  const listed =
-    point && !another && (name.trim() || kind) ? listedNear(around, point, name, kind) : null;
+  const withHours = usePlaces(point ?? region.center, point !== null && !fix);
+  const noHours = useUnknownPlaces(point ?? region.center, point !== null && !fix);
+  const candidates = [...withHours, ...noHours].filter((p) => !others.includes(p.id));
+  const { named, near } = point
+    ? listedAt(candidates, point, name)
+    : { named: null, near: [] as ListedPlace[] };
+  const listed: ListedPlace | null =
+    fix ?? near.find((p) => p.id === chosen) ?? (chosen === null ? named : null);
+  const listedHasHours = listed !== null && withHours.some((p) => p.id === listed.id);
 
+  const title = fix ? fix.name : t('addPlace.title');
   const week = rowsToWeek(rows);
   const missing = {
     name: !listed && name.trim().length < 2,
@@ -134,16 +154,20 @@ export function AddPlace({
       }
       const p = res.place;
       setPass(res.pass);
-      if (p.name) setName(p.name);
-      if (p.kind && kinds.some((k) => k.tag === p.kind)) setKind(p.kind);
+      // Giving hours to a listed place: only the hours are taken from the photo.
+      if (!fix) {
+        if (p.name) setName(p.name);
+        if (p.kind && kinds.some((k) => k.tag === p.kind)) setKind(p.kind);
+        if (p.address) setAddress(p.address);
+        if (p.website) setWebsite(p.website);
+        const spot = at ?? here;
+        if (spot) setPoint(spot);
+        setGeo('idle');
+        setChosen(null);
+        setOthers([]);
+      }
       const read = parseOpeningHours(p.openingHours);
       if (read) setRows(weekToRows(read));
-      if (p.address) setAddress(p.address);
-      if (p.website) setWebsite(p.website);
-      const spot = at ?? here;
-      if (spot) setPoint(spot);
-      setGeo('idle');
-      setAnother(false);
       setPhoto({
         src: `data:${shrunk.mediaType};base64,${shrunk.data}`,
         marks: p.marks,
@@ -235,7 +259,7 @@ export function AddPlace({
 
   if (done)
     return (
-      <Screen title={t('addPlace.title')} onClose={onClose}>
+      <Screen title={title} onClose={onClose}>
         <div className="done">
           <span className="done__icon" aria-hidden>
             <Icon name="check" size={32} />
@@ -265,9 +289,9 @@ export function AddPlace({
   // Without an account a place comes only from a photo of its door.
   if (!signedIn && !pass)
     return (
-      <Screen title={t('addPlace.title')} onClose={onClose}>
+      <Screen title={title} onClose={onClose}>
         <div className="add-form">
-          <p className="field__hint">{t('addPlace.photo.lead')}</p>
+          <p className="field__hint">{t(fix ? 'addPlace.fixLead' : 'addPlace.photo.lead')}</p>
           {photoButton}
           {readingNote}
         </div>
@@ -275,7 +299,7 @@ export function AddPlace({
     );
 
   return (
-    <Screen title={t('addPlace.title')} onClose={onClose}>
+    <Screen title={title} onClose={onClose}>
       <form className="add-form" onSubmit={submit} noValidate>
         {photo && (
           <figure className="place-photo">
@@ -312,51 +336,86 @@ export function AddPlace({
         {photoButton}
         {readingNote}
 
-        {listed && (
+        {listed && !fix && (
           <div className="notice" role="status">
-            <p>{t('addPlace.listed', { name: listed.name })}</p>
-            <button type="button" className="inline-link" onClick={() => setAnother(true)}>
+            <p>
+              {t(listedHasHours ? 'addPlace.listed' : 'addPlace.listedNoHours', {
+                name: listed.name,
+              })}
+            </p>
+            <button
+              type="button"
+              className="inline-link"
+              onClick={() => {
+                setOthers((o) => [...o, listed.id]);
+                setChosen(null);
+              }}
+            >
               {t('addPlace.another')}
             </button>
           </div>
         )}
-
-        <label className="field">
-          <span className="field__label">
-            {num('name')}
-            {t('addPlace.name')} {required('name')}
-          </span>
-          <input
-            value={name}
-            maxLength={140}
-            onChange={(e) => setName(e.target.value)}
-            aria-invalid={tried && missing.name}
-          />
-        </label>
-
-        <fieldset className="field">
-          <legend className="field__label">
-            {num('kind')}
-            {t('addPlace.kind')} {required('kind')}
-          </legend>
-          <div className="cat-grid" role="radiogroup">
-            {kinds.map((k) => (
-              <button
-                key={k.tag}
-                type="button"
-                role="radio"
-                aria-checked={kind === k.tag}
-                className={`cat-chip${kind === k.tag ? ' is-on' : ''}`}
-                onClick={() => setKind(k.tag)}
-              >
-                <span className="cat-chip__icon" aria-hidden>
-                  <Glyph id={k.glyph} size={18} />
-                </span>
-                {k.labels[lang]}
-              </button>
-            ))}
+        {!listed && near.length > 0 && (
+          <div className="field">
+            <span className="field__label">{t('addPlace.samePlace')}</span>
+            <div className="cat-grid">
+              {near.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="cat-chip"
+                  onClick={() => setChosen(p.id)}
+                >
+                  <span className="cat-chip__icon" aria-hidden>
+                    <Glyph id={p.kind.glyph} size={18} />
+                  </span>
+                  {p.name}
+                </button>
+              ))}
+            </div>
           </div>
-        </fieldset>
+        )}
+
+        {!fix && (
+          <>
+            <label className="field">
+              <span className="field__label">
+                {num('name')}
+                {t('addPlace.name')} {required('name')}
+              </span>
+              <input
+                value={name}
+                maxLength={140}
+                onChange={(e) => setName(e.target.value)}
+                aria-invalid={tried && missing.name}
+              />
+            </label>
+
+            <fieldset className="field">
+              <legend className="field__label">
+                {num('kind')}
+                {t('addPlace.kind')} {required('kind')}
+              </legend>
+              <div className="cat-grid" role="radiogroup">
+                {kinds.map((k) => (
+                  <button
+                    key={k.tag}
+                    type="button"
+                    role="radio"
+                    aria-checked={kind === k.tag}
+                    className={`cat-chip${kind === k.tag ? ' is-on' : ''}`}
+                    onClick={() => setKind(k.tag)}
+                  >
+                    <span className="cat-chip__icon" aria-hidden>
+                      <Glyph id={k.glyph} size={18} />
+                    </span>
+                    {k.labels[lang]}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          </>
+        )}
 
         <fieldset className="field">
           <legend className="field__label">
@@ -367,63 +426,67 @@ export function AddPlace({
           <span className="field__hint">{t('addPlace.hoursHint')}</span>
         </fieldset>
 
-        <label className="field">
-          <span className="field__label">
-            {num('address')}
-            {t('add.field.address')}
-          </span>
-          <span className="field__row">
-            <input
-              value={address}
-              maxLength={200}
-              autoComplete="street-address"
-              onChange={(e) => setAddress(e.target.value)}
-            />
-            <button
-              type="button"
-              className="btn btn--inline"
-              disabled={geo === 'loading' || (address || name).trim().length < 3}
-              onClick={locate}
-            >
-              <Icon name="search" size={16} />
-              {t('add.findOnMap')}
-            </button>
-          </span>
-        </label>
-        <div className="field">
-          <span className="field__label">{required('point')}</span>
-          <PinMap
-            point={point}
-            onChange={(p) => {
-              setPoint(p);
-              setGeo('idle');
-            }}
-            label={t('add.pinHint')}
-          />
-          <span
-            className={`field__hint${geo === 'notFound' || (photo && !point) ? ' is-warn' : ''}`}
-          >
-            {geo === 'notFound'
-              ? t('add.notOnMap')
-              : photo && !point
-                ? t('addPlace.dropPin')
-                : t('add.pinHint')}
-          </span>
-        </div>
+        {!fix && (
+          <>
+            <label className="field">
+              <span className="field__label">
+                {num('address')}
+                {t('add.field.address')}
+              </span>
+              <span className="field__row">
+                <input
+                  value={address}
+                  maxLength={200}
+                  autoComplete="street-address"
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn btn--inline"
+                  disabled={geo === 'loading' || (address || name).trim().length < 3}
+                  onClick={locate}
+                >
+                  <Icon name="search" size={16} />
+                  {t('add.findOnMap')}
+                </button>
+              </span>
+            </label>
+            <div className="field">
+              <span className="field__label">{required('point')}</span>
+              <PinMap
+                point={point}
+                onChange={(p) => {
+                  setPoint(p);
+                  setGeo('idle');
+                }}
+                label={t('add.pinHint')}
+              />
+              <span
+                className={`field__hint${geo === 'notFound' || (photo && !point) ? ' is-warn' : ''}`}
+              >
+                {geo === 'notFound'
+                  ? t('add.notOnMap')
+                  : photo && !point
+                    ? t('addPlace.dropPin')
+                    : t('add.pinHint')}
+              </span>
+            </div>
 
-        <label className="field">
-          <span className="field__label">
-            {num('website')}
-            {t('addPlace.website')}
-          </span>
-          <input
-            value={website}
-            maxLength={500}
-            inputMode="url"
-            autoCapitalize="none"
-            onChange={(e) => setWebsite(e.target.value)}
-          />
-        </label>
+            <label className="field">
+              <span className="field__label">
+                {num('website')}
+                {t('addPlace.website')}
+              </span>
+              <input
+                value={website}
+                maxLength={500}
+                inputMode="url"
+                autoCapitalize="none"
+                onChange={(e) => setWebsite(e.target.value)}
+              />
+            </label>
+          </>
+        )}
 
         {error && (
           <p className="form-error" role="alert">

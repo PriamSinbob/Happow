@@ -841,6 +841,28 @@ describe('POST /api/route', () => {
   });
 });
 
+describe('GET /api/places/unknown', () => {
+  it("serves an area's places without hours publicly, on the places grid", async () => {
+    const rows = [{ id: 'node/2', name: 'Śluza', kind: 'amenity=cafe', lat: 51.1, lng: 17.06 }];
+    const web = backend({ rpc: { places_unknown: () => ({ body: rows }) } });
+    const api = createApi(env, { config, fetch: web.fetch, now });
+    const res = await api(
+      new Request('https://happow.example/api/places/unknown?lat=51.1&lng=17.05&r=5000'),
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ places: rows });
+    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+    expect(web.calls.find((c) => c.name === 'places_unknown')!.args).toMatchObject({
+      lat: 51.1,
+      lng: 17.05,
+    });
+    const off = await api(
+      new Request('https://happow.example/api/places/unknown?lat=51.12&lng=17.05&r=5000'),
+    );
+    expect(off.status).toBe(400);
+  });
+});
+
 describe('adding and correcting places', () => {
   const post = (path: string, body: unknown, headers: Record<string, string> = auth) =>
     new Request(`https://happow.example/api/${path}`, {

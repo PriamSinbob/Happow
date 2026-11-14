@@ -3,6 +3,7 @@ import { config } from '../config';
 import { formatDistance, formatTime, navigationUrl } from '../format';
 import { useI18n } from '../i18n';
 import type { OpenPlace } from '../places';
+import type { UnknownSpot } from './MapView';
 import { track } from '../analytics';
 import { Glyph, Icon } from './Icons';
 
@@ -132,6 +133,58 @@ export function OpenPlaceCard({
         <button type="button" className="btn" onClick={onEdit}>
           <Icon name="pencil" size={16} /> {t('place.edit')}
         </button>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * A place whose opening hours are unknown (a hollow pin, close in): what it is, that its hours
+ * are unknown, the way there, and adding the hours (from a photo of the door without an account).
+ */
+export function UnknownPlaceCard({
+  place,
+  onClose,
+  onAddHours,
+}: {
+  place: UnknownSpot;
+  onClose: () => void;
+  onAddHours: () => void;
+}) {
+  const { t, lang } = useI18n();
+  const walk = walkingMinutes(place.distanceM, walkingSpeedMPerMin);
+  return (
+    <article className="event-card open-place" aria-labelledby={`place-${place.id}`}>
+      <header className="event-card__head">
+        <span className="cat-icon" style={{ width: 44, height: 44 }} aria-hidden>
+          <Glyph id={place.kind.glyph} size={24} />
+        </span>
+        <div className="event-card__titles">
+          <div className="event-card__cats">{place.kind.labels[lang]}</div>
+          <h2 id={`place-${place.id}`}>{place.name}</h2>
+        </div>
+        <button type="button" className="icon-btn" onClick={onClose} aria-label={t('event.close')}>
+          <Icon name="close" size={16} />
+        </button>
+      </header>
+      <p className="event-card__when">{t('place.hoursUnknown')}</p>
+      {place.address && <p className="event-card__venue">{place.address}</p>}
+      <p className="event-card__distance">
+        {formatDistance(place.distanceM, lang)} · {t('event.walk', { minutes: walk })}
+      </p>
+      <div className="event-card__actions">
+        <button type="button" className="btn btn--primary" onClick={onAddHours}>
+          <Icon name="camera" size={16} /> {t('place.addHours')}
+        </button>
+        <a
+          className="btn"
+          href={navigationUrl(place.point.lat, place.point.lng)}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => track('Directions', { via: 'google' })}
+        >
+          <Icon name="navigate" size={16} /> {t('nav.googleMaps')}
+        </a>
       </div>
     </article>
   );

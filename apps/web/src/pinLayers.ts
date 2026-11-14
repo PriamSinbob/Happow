@@ -53,10 +53,11 @@ const PLACE_PX = 22;
 function addPlaceLayers(m: maplibregl.Map) {
   if (m.getSource(PLACE_SOURCE)) return;
   m.addSource(PLACE_SOURCE, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  // Selected ×1.3; a place whose hours are unknown is a size smaller.
   const size = (base: number): ExpressionSpecification => [
     '*',
     base,
-    ['case', get('selected'), 1.3, 1],
+    ['case', get('selected'), 1.3, get('unknown'), 0.85, 1],
   ];
   const selectedOnTop: ExpressionSpecification = ['case', get('selected'), 1, 0];
   const layout = { ...common, 'symbol-sort-key': selectedOnTop };
@@ -68,7 +69,12 @@ function addPlaceLayers(m: maplibregl.Map) {
       layout: { ...layout, 'icon-image': image, 'icon-size': size(base) },
     } as maplibregl.SymbolLayerSpecification);
   layer('place-disc', 'pin-disc', PLACE_PX / PIN_PX);
-  layer('place-outline', 'pin-outline', PLACE_PX / PIN_PX);
+  // Hours unknown: a dashed outline, the hollow pin that asks for them.
+  layer(
+    'place-outline',
+    ['case', get('unknown'), 'pin-outline-dashed', 'pin-outline'],
+    PLACE_PX / PIN_PX,
+  );
   layer('place-glyph', ['concat', 'glyph-', get('glyph')], 0.66);
   // A private party is on: the lock at the lower left, as on a private event's pin.
   m.addLayer({
@@ -251,7 +257,7 @@ export function pinPaint(
   return [
     ['place-disc', 'icon-color', t.paper],
     ['place-outline', 'icon-color', ['case', get('selected'), t.ink, t.muted]],
-    ['place-glyph', 'icon-color', t.ink],
+    ['place-glyph', 'icon-color', ['case', get('unknown'), t.muted, t.ink]],
     ['pin-select-bed', 'icon-color', t.paper],
     ['pin-select', 'icon-color', t.ink],
     ['pin-ring', 'icon-color', live],

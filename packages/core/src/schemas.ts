@@ -388,7 +388,10 @@ export const appConfigSchema = z.object({
     /** Places one account may add in a day, and changes it may make to places. */
     addsPerDayPerAccount: z.number().int().positive(),
     changesPerDayPerAccount: z.number().int().positive(),
-    /** Adding a place with this name this close to a stored one updates that one instead. */
+    /**
+     * Adding a place this close to a stored one of the same name, or one containing the other
+     * (4+ letters), updates that one instead.
+     */
     sameWithinM: z.number().nonnegative(),
     /** A private party can be marked this far ahead at most. */
     privateMaxHours: z.number().positive(),
@@ -396,6 +399,8 @@ export const appConfigSchema = z.object({
     nearEventM: z.number().nonnegative(),
     /** Closing within this many minutes is said on the card. */
     closingSoonMin: z.number().int().nonnegative(),
+    /** Places whose hours are unknown show from this zoom in, as hollow pins, to be filled in. */
+    unknownMinZoom: z.number().min(0).max(22),
     /**
      * A place from one photo of its door, with or without an account (POST /api/places/photo).
      * The read gives a short-lived pass that lets a device without an account add that one place
@@ -409,7 +414,10 @@ export const appConfigSchema = z.object({
       passMinutes: z.number().int().positive(),
       /** Places a device without an account may add or update in a day. */
       perDayPerDevice: z.number().int().positive(),
-      /** A listed place this close to the spot turns "add" into "update hours". */
+      /**
+       * Listed places this close to the pin are offered as "same place?" to compare. A matching
+       * name counts within `sameWithinM` (the server's merge distance) instead.
+       */
       listedWithinM: z.number().nonnegative(),
     }),
   }),
