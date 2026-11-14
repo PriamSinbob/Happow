@@ -68,6 +68,7 @@ Moderators and admins sign in with an email code like everyone else; the role co
 - [docs/NATIVE.md](docs/NATIVE.md): the Android and iOS apps: what they get from here, shared core, first server steps
 - [docs/SETUP.md](docs/SETUP.md): hosted services, secrets, deploy, cron, admin
 - [docs/DESIGN.md](docs/DESIGN.md): design rules
+- [docs/REDESIGN.md](docs/REDESIGN.md): the redesign: decisions, picked features, order of work
 - [docs/LAUNCH.md](docs/LAUNCH.md): what is left before a public launch
 - [docs/FUTURE.md](docs/FUTURE.md): unbuilt ideas and open items
 - [docs/CRAWLER.md](docs/CRAWLER.md) and [docs/legal](docs/legal): public pages rendered by the build

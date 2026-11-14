@@ -1,6 +1,6 @@
 # Happow — instructions for Claude Code
 
-- Read `README.md` (direction, principles, layout) and `docs/ARCHITECTURE.md` before any work; read `docs/API.md` before touching `/api`, and `docs/NATIVE.md` for anything the apps need.
+- Read `README.md` (direction, principles, layout) and `docs/ARCHITECTURE.md` before any work; read `docs/API.md` before touching `/api`, and `docs/NATIVE.md` for anything the apps need; read `docs/REDESIGN.md` before any redesign work (picked features, decisions, order of work).
 - Happow is an Android app first, then iOS, built in separate repositories against this one's API. This repository is the server, database, ingest, config and the web app.
 - The web app is the reference client, the shared-link page and the embed. Never delete web or PWA functionality; new behaviour is built and tested here first.
 - One API for every client: apps and the web read and write through `/api` and sign in with Supabase Auth; no client calls the database.
