@@ -112,6 +112,18 @@ export async function dispatchDueIngest(
     return { due, dispatched: false, tokenSet, reason: 'dry run', tokenCheck };
   }
 
+  // A dispatch while a run is queued or running would wait as "pending", and GitHub keeps only
+  // the newest pending run of a concurrency group: every 15-minute tick would cancel the last
+  // one, a run started by hand included. The running one picks up what is due when it ends.
+  const active = await doFetch(`${workflowUrl}/runs?per_page=20`, { headers });
+  if (active.ok) {
+    const body = (await active.json().catch(() => ({}))) as {
+      workflow_runs?: { status?: string }[];
+    };
+    if (body.workflow_runs?.some((r) => r.status && r.status !== 'completed'))
+      return { due, dispatched: false, tokenSet, reason: 'a run is queued or running' };
+  }
+
   const gh = await doFetch(`${workflowUrl}/dispatches`, {
     method: 'POST',
     headers: { ...headers, 'Content-Type': 'application/json' },

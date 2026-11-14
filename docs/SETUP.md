@@ -145,7 +145,7 @@ The app runs as one **Cloudflare Worker** named `happow`. Cloudflare serves the 
 
 ### 5a. Scheduled ingestion (Cron Trigger)
 
-The Worker has a Cron Trigger every 15 minutes (`triggers.crons` in `wrangler.jsonc`). Each tick reads the latest run of each source in each region (the `source_run_latest` view) and starts the GitHub **Ingest sources** workflow only when some source is due. A tick that finds nothing due costs nothing, and GitHub's own schedule is only a fallback once a day. This keeps ingestion on time (GitHub runs its own frequent schedules late or not at all) and within the 2,000 free Actions minutes a private repository gets.
+The Worker has a Cron Trigger every 15 minutes (`triggers.crons` in `wrangler.jsonc`). Each tick reads the latest run of each source in each region (the `source_run_latest` view) and starts the GitHub **Ingest sources** workflow only when some source is due. A tick that finds a run already queued or running dispatches nothing (GitHub keeps only the newest waiting run, so it would cancel the last one, a run started by hand included). A tick that finds nothing due costs nothing, and GitHub's own schedule is only a fallback once a day. This keeps ingestion on time (GitHub runs its own frequent schedules late or not at all) and within the 2,000 free Actions minutes a private repository gets.
 
 1. GitHub → your avatar → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
    - **Repository access:** Only select repositories → `PriamSinbob/happow`.
