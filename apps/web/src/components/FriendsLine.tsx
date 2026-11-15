@@ -1,22 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAccount } from '../account';
 import { loadFriends, setFriendsOverride, type FriendsView } from '../contacts';
 import { useI18n } from '../i18n';
 import { Icon } from './Icons';
 
+export interface Friends {
+  view: FriendsView | null;
+  toggle: () => Promise<void>;
+}
+
 /**
- * The friends' view on an event card: friends who are going, on the way or here,
- * by name, for every category, sensitive ones included. Both sides opt in: the account switch,
- * or "show friends I'm going to this" on the event, either way.
+ * The friends' view of one event, loaded once and shared by the switch in the answer row and the
+ * names under it. Both sides opt in: the account switch, or the per-event switch, either way.
+ * Null view when signed out or not loaded: neither part shows.
  */
-export function FriendsLine({ eventId }: { eventId: string }) {
-  const { t } = useI18n();
+export function useFriends(eventId: string, enabled = true): Friends {
   const account = useAccount();
   const [view, setView] = useState<FriendsView | null>(null);
-  const signedIn = account.status === 'signedIn';
+  const signedIn = enabled && account.status === 'signedIn';
+  const friendsVisible = !!account.me?.friendsVisible;
 
   useEffect(() => {
-    if (!signedIn) return;
+    if (!signedIn) {
+      setView(null);
+      return;
+    }
     let live = true;
     loadFriends(eventId).then(
       (v) => live && setView(v),
@@ -27,14 +35,39 @@ export function FriendsLine({ eventId }: { eventId: string }) {
     };
   }, [eventId, signedIn]);
 
-  if (!signedIn || !view) return null;
-  const toggle = async () => {
+  const toggle = useCallback(async () => {
+    if (!view) return;
     // The opposite of what shows now, for this event only.
     const show = !view.shown;
-    const same = show === !!account.me?.friendsVisible;
-    await setFriendsOverride(eventId, same ? null : show);
+    await setFriendsOverride(eventId, show === friendsVisible ? null : show);
     setView(await loadFriends(eventId));
-  };
+  }, [eventId, view, friendsVisible]);
+
+  return { view: signedIn ? view : null, toggle };
+}
+
+/** Icon-only switch beside "I'm going": show friends I'm going to this. */
+export function FriendsToggle({ friends }: { friends: Friends }) {
+  const { t } = useI18n();
+  if (!friends.view) return null;
+  return (
+    <button
+      type="button"
+      className="btn going__btn going__btn--icon"
+      aria-pressed={friends.view.shown}
+      aria-label={t('friends.thisEvent')}
+      onClick={() => void friends.toggle()}
+    >
+      <Icon name="users" size={20} />
+    </button>
+  );
+}
+
+/** Friends who are going, on the way or here, by name, for every category. */
+export function FriendsLine({ friends }: { friends: Friends }) {
+  const { t } = useI18n();
+  const view = friends.view;
+  if (!view?.shown) return null;
   const names = (kind: 'going' | 'onway' | 'here') =>
     view.friends.filter((f) => f.kinds.includes(kind)).map((f) => f.name);
   const parts = (
@@ -49,21 +82,18 @@ export function FriendsLine({ eventId }: { eventId: string }) {
       return n.length ? t(key, { names: n.join(', ') }) : null;
     })
     .filter(Boolean);
+  if (!parts.length && !view.fromMyLinks.length) return null;
 
   return (
     <div className="friends-line">
-      {view.shown && parts.length > 0 && (
+      {parts.length > 0 && (
         <p>
           <Icon name="users" size={16} /> {parts.join(' · ')}
         </p>
       )}
-      {view.shown && view.fromMyLinks.length > 0 && (
+      {view.fromMyLinks.length > 0 && (
         <p className="muted">{t('friends.fromLinks', { names: view.fromMyLinks.join(', ') })}</p>
       )}
-      <label className="check check--small">
-        <input type="checkbox" checked={view.shown} onChange={() => void toggle()} />
-        <span>{t('friends.thisEvent')}</span>
-      </label>
     </div>
   );
 }

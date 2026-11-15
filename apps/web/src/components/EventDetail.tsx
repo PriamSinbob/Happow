@@ -22,7 +22,7 @@ import { countEvent } from '../counts';
 import type { Credit } from '../data/repository';
 import { levelKey } from '../contributions';
 import { isPrivate } from '../private';
-import { FriendsLine } from './FriendsLine';
+import { FriendsLine, FriendsToggle, useFriends } from './FriendsLine';
 import { useOrganiser } from './OrganiserPanel';
 import { PrivatePanel } from './PrivatePanel';
 import { PartyNotice } from './OpenPlaceCard';
@@ -188,6 +188,8 @@ function DetailBody({
   const leadLabel = useLeadLabel();
   const url = eventUrl(ev.id);
   const ended = new Date(ev.endAt) < now;
+  // Loaded once for the switch beside "I'm going" and the names under it; never on private events.
+  const friends = useFriends(ev.id, !priv && !ended);
   const dayLong = isDayLong(ev);
   const start = formatTime(ev.startAt, ev.timezone, lang);
   const end = formatTime(ev.endAt, ev.timezone, lang);
@@ -297,9 +299,14 @@ function DetailBody({
           />
         )}
         {!ended && (!priv || ev.mine || ev.invitation?.status === 'accepted') && (
-          <Going ev={ev} now={now} answer={!priv} />
+          <Going
+            ev={ev}
+            now={now}
+            answer={!priv}
+            beside={!priv && <FriendsToggle friends={friends} />}
+          />
         )}
-        {!ended && !priv && <FriendsLine eventId={ev.id} />}
+        {!ended && !priv && <FriendsLine friends={friends} />}
         <div className="event-card__actions">
           <GoButtons ev={ev} onGo={onGo} />
         </div>

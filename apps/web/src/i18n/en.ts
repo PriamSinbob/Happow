@@ -76,7 +76,7 @@ export const en = {
   'ended.nearbyTitle': 'On now nearby',
   'ended.nearbyNone': 'Nothing is on nearby right now.',
   'going.off': "I'm going",
-  'going.on': "I'm going ✓",
+  'going.on': "I'm going",
   'going.count': '{count}+ going',
   'going.fromLinks':
     '{count, plural, one {# person from your link is going} other {# people from your link are going}}',
@@ -84,7 +84,7 @@ export const en = {
   'presence.onway': '{count}+ on the way',
   'presence.looking': '{count}+ looking',
   'presence.imHere': "I'm here",
-  'presence.imHereOn': "I'm here ✓",
+  'presence.imHereOn': "I'm here",
   'install.iosHint': 'Add Happow to your Home Screen: tap Share, then "Add to Home Screen".',
   'event.verified': 'via {source} · checked {ago}',
   'event.sourcePage': 'Source page',

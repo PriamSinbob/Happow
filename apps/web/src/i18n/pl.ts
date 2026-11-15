@@ -79,7 +79,7 @@ export const pl: Record<MessageKey, string> = {
   'ended.nearbyTitle': 'Teraz w pobliżu',
   'ended.nearbyNone': 'W pobliżu nic teraz nie trwa.',
   'going.off': 'Idę',
-  'going.on': 'Idę ✓',
+  'going.on': 'Idę',
   'going.count': '{count}+ osób idzie',
   'going.fromLinks':
     '{count, plural, one {# osoba z Twojego linku idzie} few {# osoby z Twojego linku idą} many {# osób z Twojego linku idzie} other {# osoby z Twojego linku idą}}',
@@ -87,7 +87,7 @@ export const pl: Record<MessageKey, string> = {
   'presence.onway': '{count}+ w drodze',
   'presence.looking': '{count}+ ogląda',
   'presence.imHere': 'Jestem tu',
-  'presence.imHereOn': 'Jestem tu ✓',
+  'presence.imHereOn': 'Jestem tu',
   'install.iosHint':
     'Dodaj Happow do ekranu początkowego: stuknij Udostępnij, potem „Do ekranu początkowego”.',
   'event.verified': 'źródło: {source} · sprawdzono {ago}',

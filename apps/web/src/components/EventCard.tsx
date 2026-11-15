@@ -10,10 +10,10 @@ import { PartyNotice } from './OpenPlaceCard';
 import type { OpenPlace } from '../places';
 import { en as RULE_KEYS } from '../i18n/en';
 
-const RULE_ICONS: Record<string, string> = {
-  pets: '🐾',
-  accessibility: '♿',
-  dress: '👔',
+const RULE_ICONS: Record<string, ReactNode> = {
+  pets: <Icon name="paw" size={15} />,
+  accessibility: <Icon name="wheelchair" size={15} />,
+  dress: <Icon name="shirt" size={15} />,
 };
 
 /** Known rule values get a translated label; free text from sources is shown as is. */
@@ -48,7 +48,7 @@ function ruleItems(
   if (ev.ageMin !== null)
     items.push({
       key: 'age',
-      icon: ev.ageMin >= 18 ? '🔞' : '•',
+      icon: ev.ageMin >= 18 ? <strong>18+</strong> : '•',
       text: ev.ageMin === 0 ? t('rule.allAges') : t('rule.ageMin', { value: String(ev.ageMin) }),
     });
   const family = <Glyph id="family" size={15} />;

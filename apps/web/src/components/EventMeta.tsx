@@ -41,8 +41,9 @@ export function useEventText(ev: NearbyEvent, now: Date) {
       : minutesToStart <= 90
         ? `${notToday(ev.startAt)}${t('event.startsAt', { time: start })} · ${t('event.startsIn', { minutes: minutesToStart })}`
         : `${day(ev.startAt)}, ${start}–${end}${ev.endEstimated ? '*' : ''}`;
+  // Free shows nothing: only an entrance price is worth a line.
   const price = ev.isFree
-    ? t('event.free')
+    ? null
     : ev.priceMin !== null
       ? ev.priceMax !== null && ev.priceMax !== ev.priceMin
         ? t('event.price', { price: formatPrice(ev.priceMin, ev.currency, lang) })
