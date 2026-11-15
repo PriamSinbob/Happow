@@ -89,13 +89,13 @@ export function Going({
         {offersHere && (
           <button
             type="button"
-            className="btn going__btn"
+            className="btn going__btn going__btn--icon"
             aria-pressed={here}
+            aria-label={t('presence.imHere')}
             onClick={() => toggle('here')}
             disabled={busy}
           >
-            <Icon name={here ? 'check' : 'pin'} size={16} />
-            {here ? t('presence.imHereOn') : t('presence.imHere')}
+            <Icon name="pinTarget" size={22} strokeWidth={1.6} />
           </button>
         )}
         {answer && beside}
