@@ -68,7 +68,7 @@ The future has no end: it starts where the 14 days end and shows only events sta
 
 ## Glyphs and chips
 
-- One glyph set (`glyphs.ts`) for pins, cards, chips, the add form and pill; Tabler-based plus Happow-drawn glyphs. No emoji. Event rules on cards use Tabler glyphs: paw (pets), wheelchair (step-free), shirt (dress code); an 18+ age limit is the text "18+". Food glyphs come from `glyphRules` in `config/categories.json`, never random.
+- One glyph set (`glyphs.ts`) for pins, cards, chips, the add form and pill; Tabler-based plus Happow-drawn glyphs. No emoji. Event rules on cards use Tabler glyphs: paw (pets), wheelchair (step-free), shirt (dress code); an 18+ age limit is the text "18+". A free event shows no price anywhere (list, card, detail); an entrance price shows as a number. Food glyphs come from `glyphRules` in `config/categories.json`, never random.
 - Category chip: tap = only this category; hold 500 ms = hide it (40 % opacity, struck through). An event hides only when all its categories are hidden.
 - Shortcut chip: 40 px, ink when on. Tap toggles; hold opens a grid (family mode first, then categories).
 
