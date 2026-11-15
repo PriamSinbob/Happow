@@ -122,7 +122,7 @@ describe('co-presence', () => {
     ui(<HereButton eventId="e-arrive" />);
     expect(calls).toHaveLength(0);
     fireEvent.click(screen.getByRole('button', { name: "I'm here" }));
-    expect(await screen.findByText("I'm here ✓")).toBeTruthy();
+    expect((await screen.findByRole('status')).textContent).toBe("I'm here");
     expect(calls[0]).toMatchObject({ path: 'attendance/set', body: { kind: 'here', on: true } });
   });
 });

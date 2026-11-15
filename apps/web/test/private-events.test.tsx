@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { entitlementsFor, type NearbyEvent } from '@happow/core';
 import { AccountProvider, type Me } from '../src/account';
-import { FriendsLine } from '../src/components/FriendsLine';
+import { FriendsLine, FriendsToggle, useFriends } from '../src/components/FriendsLine';
 import { OrganiserPanel } from '../src/components/OrganiserPanel';
 import { PrivatePanel } from '../src/components/PrivatePanel';
 import { config } from '../src/config';
@@ -339,12 +339,22 @@ describe('friends and organisers on the card', () => {
         });
       return ok({}, 404);
     });
-    wrap(<FriendsLine eventId="e1" />);
+    function Friends() {
+      const friends = useFriends('e1');
+      return (
+        <>
+          <FriendsToggle friends={friends} />
+          <FriendsLine friends={friends} />
+        </>
+      );
+    }
+    wrap(<Friends />);
     expect(await screen.findByText(/Tomek here · Ola going/)).toBeTruthy();
-    expect(screen.getByRole('checkbox', { name: "Show friends I'm going to this" })).toHaveProperty(
-      'checked',
-      true,
-    );
+    expect(
+      screen
+        .getByRole('button', { name: "Show friends I'm going to this" })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
   });
 
   it('shows the organiser and important posts first; the organiser can post', async () => {

@@ -1,5 +1,5 @@
 import { isRunning, type NearbyEvent } from '@happow/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { track } from '../analytics';
 import { lookAt, setAttendance, type AttendanceView, type Signal } from '../attendance';
 import { config } from '../config';
@@ -22,11 +22,14 @@ export function Going({
   ev,
   now,
   answer = true,
+  beside,
 }: {
   ev: NearbyEvent;
   now: Date;
   /** Off on a private event: the invitation's answer says who is going, by name. */
   answer?: boolean;
+  /** Shown just left of "I'm going" (the friends' switch). */
+  beside?: ReactNode;
 }) {
   const { t } = useI18n();
   const [view, setView] = useState<AttendanceView | null>(null);
@@ -80,17 +83,8 @@ export function Going({
   return (
     <div className="going">
       <div className="going__row">
-        {answer && (
-          <button
-            type="button"
-            className="btn going__btn"
-            aria-pressed={going}
-            onClick={() => toggle('going')}
-            disabled={busy}
-          >
-            <Icon name={going ? 'check' : 'plus'} size={16} />
-            {going ? t('going.on') : t('going.off')}
-          </button>
+        {answer && counts?.going != null && (
+          <span className="going__count">{t('going.count', { count: counts.going })}</span>
         )}
         {offersHere && (
           <button
@@ -104,8 +98,18 @@ export function Going({
             {here ? t('presence.imHereOn') : t('presence.imHere')}
           </button>
         )}
-        {answer && counts?.going != null && (
-          <span className="going__count">{t('going.count', { count: counts.going })}</span>
+        {answer && beside}
+        {answer && (
+          <button
+            type="button"
+            className="btn going__btn"
+            aria-pressed={going}
+            onClick={() => toggle('going')}
+            disabled={busy}
+          >
+            <Icon name={going ? 'check' : 'plus'} size={16} />
+            {going ? t('going.on') : t('going.off')}
+          </button>
         )}
       </div>
       {presence.length > 0 && <p className="going__links">{presence.join(' · ')}</p>}

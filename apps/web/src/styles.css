@@ -1827,14 +1827,24 @@ div.settings-row {
   align-items: center;
   gap: 12px;
 }
+.going__row {
+  justify-content: flex-end;
+}
 .going__btn {
   flex: 0 0 auto;
 }
+.going__btn--icon {
+  width: 44px;
+  padding: 0;
+  justify-content: center;
+}
 .going__btn[aria-pressed='true'] {
-  border-color: color-mix(in srgb, var(--ink) 50%, var(--paper));
-  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
 }
 .going__count {
+  margin-right: auto;
   font-size: 14px;
   font-weight: 600;
   color: var(--quiet);
