@@ -1385,6 +1385,9 @@ div.settings-row {
   border-radius: 999px;
   background: var(--fill-strong);
 }
+.rules li svg {
+  vertical-align: -3px;
+}
 .footnote {
   font-size: 12px !important;
   color: var(--muted);

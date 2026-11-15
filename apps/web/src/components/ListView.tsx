@@ -77,7 +77,7 @@ function TimeCell({ ev, now }: { ev: NearbyEvent; now: Date }) {
       <span className="tt-time tt-time--live">
         <LiveRing ev={ev} now={now} />
         {!ev.endEstimated && isSameDay(ev.endAt, now, ev.timezone) && (
-          <small>–{formatTime(ev.endAt, ev.timezone, lang)}</small>
+          <small>→{formatTime(ev.endAt, ev.timezone, lang)}</small>
         )}
       </span>
     );
